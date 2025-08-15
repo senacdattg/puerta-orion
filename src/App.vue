@@ -1,8 +1,18 @@
 <script setup>
-import Encabezado from './components/encabezado.vue'
+import { RouterView } from 'vue-router'
+
 </script>
 
 <template>
-  <Encabezado />
-  <RouterView />
+  <div class="app">
+    <RouterView />
+  </div>
 </template>
+
+<script>
+
+export default {
+  name: 'App',
+}
+
+</script>

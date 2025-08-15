@@ -1,11 +1,11 @@
 <template>
-  <header class="encabezado">
+  <header class="encabezado" v-if="!sinMenu">
     <i class="fas fa-bars menu-toggle" @click="toggleMenu"></i>
     <img src="@/assets/imgs/logo.png" alt="Logo">
     <div class="menu-categorias" id="menu" v-show="menuVisible">
       <ul id="menu-opciones">
         <li v-for="(op, index) in opciones" :key="index">
-          <a :href="op.link">
+          <a :href="op.link" @click="closeMenu">
             <i :class="op.icono + ' icono-menu'"></i> {{ op.texto }}
           </a>
         </li>
@@ -20,7 +20,11 @@ export default {
   props: {
     rol: {
       type: String,
-      default: ""
+      default: document.body.getAttribute("data-rol") || ""
+    },
+    sinMenu: {
+      type: Boolean,
+      default: document.body.hasAttribute("data-sin-menu")
     }
   },
   data() {
@@ -30,11 +34,25 @@ export default {
     };
   },
   mounted() {
-    this.cargarOpciones();
+    if (!this.sinMenu) {
+      this.cargarOpciones();
+      document.addEventListener("click", this.handleOutsideClick);
+    }
+  },
+  beforeUnmount() {
+    document.removeEventListener("click", this.handleOutsideClick);
   },
   methods: {
     toggleMenu() {
       this.menuVisible = !this.menuVisible;
+    },
+    closeMenu() {
+      this.menuVisible = false;
+    },
+    handleOutsideClick(e) {
+      if (!this.$el.contains(e.target)) {
+        this.menuVisible = false;
+      }
     },
     cargarOpciones() {
       const opcionesPorRol = {
@@ -65,7 +83,9 @@ export default {
           { texto: "Mensualidades", link: "/tabla-mensualidades", icono: "fas fa-wallet" },
         ]
       };
-      this.opciones = opcionesPorRol[this.rol] || [{ texto: "Inicio", link: "/", icono: "fas fa-home" }];
+      this.opciones = opcionesPorRol[this.rol] || [
+        { texto: "Inicio", link: "/", icono: "fas fa-home" }
+      ];
     }
   }
 };
