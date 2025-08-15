@@ -1,0 +1,134 @@
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background-color: white;
+
+}
+
+.encabezado {
+  background-color: #0047ab;
+  height: 60px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1000;
+}
+
+.encabezado img {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto;
+  display: block;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.footer {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    border-top: 2px solid #ffc107; /* Línea dorada arriba */
+}
+
+.footer p {
+    margin: 0;
+}
+
+.menu-toggle {
+  font-size: 28px;
+  cursor: pointer;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: #f4d800;
+  user-select: none;
+  display: inline-block;
+}
+
+.menu-categorias {
+  display: none;
+  background-color: #f4d800;
+  border: 2px solid #f4d800;
+  padding: 10px;
+  position: absolute;
+  top: 60px;
+  left: 10px;
+  z-index: 1000;
+  width: 220px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+
+
+.menu-categorias ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+}
+
+.menu-categorias li {
+  background-color: #f7d600;
+  /* Amarillo */
+  border: 2px solid #0047ab;
+  /* Azul */
+  margin: 10px 0;
+  /* Espacio entre botones */
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  color: #0047ab;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: left;
+
+}
+
+.menu-categorias a {
+  text-decoration: none;
+  color: #0047ab;
+  font-weight: bold;
+}
+
+.icono-menu {
+  margin-right: 8px;
+}
+
+.titulo-club {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40px;
+  position: relative;
+}
+
+.bloque {
+  padding: 18px 32px;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+  width: fit-content;
+  border: none;
+}
+
+.bloque-amarillo {
+  background-color: #f7d600;
+  color: #000;
+  position: relative;
+  z-index: 2;
+  margin-bottom: -5px;
+  transform: translateX(-50px);
+}
+
+.bloque-azul {
+  background-color: #0d47a1;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+  transform: translateX(40px);
+}

@@ -1,0 +1,88 @@
+/* Contenedor principal con fondo azul */
+.contenedor-principal {
+  background-color: #0047ab;
+  margin: 40px 60px;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+/* Fila de búsqueda centrada */
+.contenedor-busqueda {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* Entrada de búsqueda circular y estilizada */
+.entrada-busqueda-circular {
+  width: 250px;
+  padding: 12px 20px;
+  border-radius: 25px;
+  border: none;
+  font-size: 16px;
+  background-color: white;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
+  transition: 0.3s ease;
+}
+
+.entrada-busqueda-circular:focus {
+  outline: none;
+  box-shadow: 0 0 8px rgba(0, 71, 171, 0.4);
+}
+
+/* Contenedor amarillo con separación */
+.contenedor-secundario {
+  display: flex;
+  gap: 20px;
+  background-color: #f4d800;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+/* Tarjeta blanca que contiene la tabla */
+.tarjeta-tabla {
+  flex: 1;
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow-x: auto; /* Hace scroll horizontal en móviles */
+}
+
+/* Tabla con estilo limpio */
+.tarjeta-tabla table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Encabezado de la tabla */
+.tarjeta-tabla th {
+  background-color: #0047ab;
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* Celdas de la tabla */
+.tarjeta-tabla td {
+  text-align: center;
+  padding: 12px;
+  border-top: 1px solid #ddd;
+  font-size: 15px;
+  color: #333;
+}
+
+/* Fila alterna para mejor legibilidad */
+.tarjeta-tabla tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Efecto hover para interacción */
+.tarjeta-tabla tbody tr:hover {
+  background-color: #f1f1f1;
+  cursor: pointer;
+}

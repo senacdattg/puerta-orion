@@ -1,0 +1,132 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #0047ab;
+}
+
+.tabla-mensualidades {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 1200px;
+  background-color: #0047ab;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.busqueda {
+  width: 25%;
+  padding: 0.5rem 1rem;
+  background-color: #f4d800;
+  color: black;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.titulo {
+  flex-grow: 2;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.contenido-principal {
+  background-color: #f4d800;
+  padding: 1.5rem;
+  border-radius: 1rem;
+}
+
+.secciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+}
+
+.filtro {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #0047ab;
+  width: 50%;
+  max-width: 40%;
+}
+
+.historial {
+  width: 100%;
+  max-width: 55%;
+  background-color: #0047ab;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.caja-historial {
+  background-color: white;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  border: 1px solid #0047ab;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.subtitulo {
+  color: #0047ab;
+  font-weight: bold;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  resize: none;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.tabla thead {
+  background-color: #0047ab;
+  color: white;
+}
+
+.tabla th,
+.tabla td {
+  padding: 0.75rem;
+  border: 1px solid #0047ab;
+}
+
+.tabla tbody tr {
+  cursor: pointer;
+}
+
+.tabla tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+.estado-pagado {
+  color: green;
+  font-weight: bold;
+}
+
+.estado-pendiente {
+  color: red;
+  font-weight: bold;
+}

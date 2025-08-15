@@ -1,0 +1,126 @@
+.contenedor-roles {
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.contenedor {
+    width: 80%;
+    max-width: 1000px;
+    background-color: #0047ab;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.titulo {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    letter-spacing: 2px;
+    padding-bottom: 0.5rem;
+    border-bottom: 3px solid white;
+    display: inline-block;
+    padding-left: 2rem;
+    /* extiende línea a la izquierda */
+    padding-right: 2rem;
+    /* extiende línea a la derecha */
+    margin-bottom: 1rem;
+}
+
+.tarjetas {
+    display: flex;
+    flex-wrap: wrap;
+    /* para que se acomoden en pantallas pequeñas */
+    gap: 1.5rem;
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.sub-contenedor {
+    flex: 1 0 calc(20% - 1.5rem);
+    /* responsive: 4 columnas */
+    background-color: #f4d800;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    min-height: 150px;
+    flex-direction: column;
+}
+
+.sub-contenedor:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.sub-titulo {
+    font-size: 1rem;
+    font-weight: bold;
+    color: black;
+    text-align: center;
+    word-break: break-word;
+    padding-top: 0.5rem;
+    border-top: 1.5px solid black;
+    padding-bottom: 0.5rem;
+    border-bottom: 1.5px solid black;
+    letter-spacing: 0.5px;
+}
+
+.icono-rol {
+  font-size: 2rem;  
+  color: black;       
+  margin-bottom: 1rem; 
+}
+
+
+.sub-contenedor i {
+  display: block;
+}
+
+.boton {
+    background-color: white;
+    color: black;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-weight: bold;
+    border-radius: 0.55rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.boton:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Para pantallas pequeñas */
+@media (max-width: 768px) {
+    .sub-contenedor {
+        flex: 1 1 calc(50% - 1.5rem);
+        /* 2 columnas */
+    }
+}
+
+@media (max-width: 480px) {
+    .sub-contenedor {
+        flex: 1 1 100%;
+        /* 1 columna */
+    }
+}
