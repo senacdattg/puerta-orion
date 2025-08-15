@@ -1,4 +1,12 @@
-import './assets/main.css'
+import './assets/css/main.css'
+import './assets/css/calendario.css'
+import './assets/css/deportistas.css'
+import './assets/css/formulario.css'
+import './assets/css/inicio.css'
+import './assets/css/login.css'
+import './assets/css/perfiles.css'
+import './assets/css/mensualidades.css'
+import './assets/css/roles.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
