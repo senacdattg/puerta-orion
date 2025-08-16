@@ -56,14 +56,6 @@
     background-color: #002e6d;
 }
 
-.seccion-formulario {
-    display: none;
-}
-
-.seccion-formulario.activa {
-    display: block;
-}
-
 .botones-formulario {
     display: flex;
     justify-content: space-between;
