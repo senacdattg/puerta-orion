@@ -299,14 +299,10 @@ function anterior() {
 }
 
 function aceptar() {
-  // Aquí harías submit a tu API o lo que necesites
   console.log("Formulario listo para enviar:", form.value);
   alert("Datos listos para enviar (revisa consola).");
 }
 function cancelar() {
-  // Reiniciar o navegar
   indiceActual.value = 0;
-  // Si quieres limpiar:
-  // Object.keys(form.value).forEach(k => form.value[k] = "");
 }
 </script>
