@@ -21,7 +21,7 @@ function manejarCancelacion() {
 
 <template>
   <main>
-    <Encabezado rol="Administrador"/>
+    <Encabezado :sinMenu="true"/>
     <div class="contenido-principal">
       <FormularioGeneral 
         :modo="'registrar'"

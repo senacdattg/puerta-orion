@@ -1,6 +1,10 @@
 <template>
-  <header class="encabezado" v-if="!sinMenu">
-    <i class="fa-solid fa-bars menu-toggle" @click="toggleMenu"></i>
+  <header class="encabezado" >
+    <i v-if="!sinMenu"
+    class="fa-solid fa-bars menu-toggle"
+    @click="toggleMenu"
+    ></i>
+    
     <img src="@/assets/imgs/logo.png" alt="Logo">
     <div class="menu-categorias" id="menu" v-show="menuVisible">
       <ul id="menu-opciones">
