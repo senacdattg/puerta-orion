@@ -2,12 +2,10 @@
     background-color: #f4d800;
     border: 3px solid #0047ab;
     padding: 30px;
-    width: 100%;
     max-width: 700px;
     box-sizing: border-box;
-    min-width: 700px;
+    width: 700px;
 }
-
 
 .formulario-datos h3 {
     background-color: #0047ab;
@@ -15,31 +13,6 @@
     padding: 20px;
     text-align: center;
     margin: -20px -20px 20px -20px;
-}
-
-.fila-formulario {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px 20px;;
-    margin-bottom: 15px;
-}
-
-.fila-formulario input,
-.fila-formulario select {
-    padding: 12px 14px;
-    border: 2px solid #0047ab;
-    font-size: 16px;
-    box-sizing: border-box;
-    border-radius: 6px;
-    min-width: 100px;
-}
-
-.fila-formulario input:focus,
-.fila-formulario select:focus {
-  outline: none;
-  border: 2px solid #0047ab;
-  box-shadow: 0 0 5px rgba(0, 71, 171, 0.3);
-  transition: all 0.2s ease;
 }
 
 .boton-formulario {
@@ -63,7 +36,6 @@
 }
 
 .campo-condicional {
-    display: none;
     margin-top: 15px;
     background-color: white;
     /* tono más claro que el fondo base */
