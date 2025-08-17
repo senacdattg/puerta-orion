@@ -7,6 +7,7 @@ import RegistrarGeneral from '../views/registrar-general.vue'
 import VerGeneral from '../views/ver-general.vue'
 import ActualizarGeneral from '../views/actualizar-general.vue'
 import VerRoles from '../views/vista-roles.vue'
+import TablaMensualidades from '../views/mensualidades.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: '/ver-roles',
       name: 'ver-roles',
       component: VerRoles,
+    },
+    {
+      path: '/mensualidades',
+      name: 'mensualidades',
+      component: TablaMensualidades
     }
   ],
 })
