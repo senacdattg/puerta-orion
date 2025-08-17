@@ -59,7 +59,7 @@ function manejarCancelacion() {
 <template>
   <main>
     <Encabezado rol="Deportista"/>
-    <div class="contenido-principal">
+    <div class="contenido-principal-tarjetas">
       <div class="contenedor-tarjetas">
         <TarjetaPerfil rol="Deportista" :mostrarBoton="false" />
         <TarjetaAcudientesAcudidos rol="Deportista" :mostrarVer="false" :mostrarAgregar="false" />

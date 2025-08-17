@@ -22,7 +22,7 @@ function manejarCancelacion() {
 <template>
   <main>
     <Encabezado :sinMenu="true"/>
-    <div class="contenido-principal">
+    <div class="contenido-principal-tarjetas">
       <FormularioDeportista 
         :modo="'registrar'"
         @submit="manejarRegistro"

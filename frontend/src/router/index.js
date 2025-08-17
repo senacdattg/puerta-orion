@@ -9,6 +9,7 @@ import ActualizarGeneral from '../views/actualizar-general.vue'
 import VerRoles from '../views/vista-roles.vue'
 import TablaMensualidades from '../views/mensualidades.vue'
 import TablaDeportistas from '../views/deportistas.vue'
+import Galeria from '../views/galeria-vista.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +63,11 @@ const router = createRouter({
       path: '/deportistas',
       name: 'deportistas',
       component: TablaDeportistas
+    },
+    {
+      path: '/galeria',
+      name: 'galeria',
+      component: Galeria
     }
   ],
 })

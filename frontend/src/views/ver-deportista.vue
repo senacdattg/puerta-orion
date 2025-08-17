@@ -44,7 +44,7 @@ const datosUsuario = {
 <template>
   <main>
     <Encabezado rol="Deportista"/>
-    <div class="contenido-principal">
+    <div class="contenido-principal-tarjetas">
       <div class="contenedor-tarjetas">
         <TarjetaPerfil rol="Deportista" />
         <TarjetaAcudientesAcudidos rol="Deportista" />
