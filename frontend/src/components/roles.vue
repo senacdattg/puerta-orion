@@ -46,19 +46,3 @@
   };
   </script>
   
-  <style scoped>
-  @import "@/assets/css/roles.css";
-  
-  /* Extra: estilo gris para roles inactivos */
-  .sub-contenedor.inactivo {
-    background-color: #d3d3d3; /* gris claro */
-    color: #666;
-    cursor: not-allowed;
-  }
-  
-  .sub-contenedor.inactivo .icono-rol,
-  .sub-contenedor.inactivo .sub-titulo {
-    color: #666;
-    border-color: #666;
-  }
-  </style>
