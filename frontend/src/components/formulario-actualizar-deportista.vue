@@ -5,7 +5,7 @@
     <section class="seccion-formulario" v-show="indiceActual === 0">
       <h3>Actualizar perfil</h3>
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <input v-model="form.nombre1" type="text" placeholder="¿Cuál es su primer nombre?" required />
         <input v-model="form.nombre2" type="text" placeholder="¿Cuál es su segundo nombre?" />
         <input v-model="form.apellido1" type="text" placeholder="¿Cuál es su primer apellido?" required />
@@ -14,7 +14,7 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <select v-model="form.tipoDocumento" required>
           <option value="" disabled>¿Cuál es su tipo de documento?</option>
           <option>Cédula</option>
@@ -26,7 +26,7 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <input v-model="form.fechaNacimiento" type="date" placeholder="¿En qué fecha nació?" required />
         <select v-model="form.genero" required>
           <option value="" disabled>¿Cuál es su género?</option>
@@ -37,14 +37,14 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <input v-model="form.correo" type="text" placeholder="¿Cuál es su correo electrónico?" />
         <input v-model="form.telefono" type="text" placeholder="¿Cuál es su número telefónico?" />
       </div>
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <select v-model="form.ciudad" required>
           <option value="" disabled>¿Cuál es su ciudad de residencia?</option>
           <option>Retorno</option>
@@ -57,7 +57,7 @@
       <hr class="form-divider" />
 
       <div>
-        <div class="fila-formulario">
+        <div class="fila-texto">
           <input v-model="form.password" type="password" placeholder="Contraseña" />
           <input v-model="form.password2" type="password" placeholder="Confirmar contraseña" />
         </div>
@@ -76,7 +76,7 @@
     <section class="seccion-formulario" v-show="indiceActual === 1">
       <h3>Antecedentes Médicos</h3>
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <select v-model="form.eps" required>
           <option value="" disabled>¿A que EPS está afiliado?</option>
           <option>Nueva EPS</option>
@@ -87,7 +87,7 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario bloque-radio">
+      <div class="fila-texto bloque-radio">
         <label>¿Existe algún tipo de recomendación médica que se deba tener presente para la actividad deportiva?</label>
         <div class="opciones">
           <input type="radio" id="reco-si" name="recomendacion-medica" value="si" v-model="form.recomendacionMedica" />
@@ -104,7 +104,7 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <select v-model="form.grupoSanguineo" required>
           <option value="" disabled>¿Cuál es su grupo sanguíneo?</option>
           <option>A+</option>
@@ -127,7 +127,7 @@
     <section class="seccion-formulario" v-show="indiceActual === 2">
       <h3>Información Escolar</h3>
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <select v-model="form.institucion" required>
           <option value="" disabled>¿En qué institución educativa estudia actualmente?</option>
           <option>SENA</option>
@@ -197,7 +197,7 @@
     <section class="seccion-formulario" v-show="indiceActual === 4">
       <h3>Información del Acudiente</h3>
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <input v-model="form.acudienteNombre1" type="text" placeholder="¿Cuál es el primer nombre de su acudiente?" required />
         <input v-model="form.acudienteNombre2" type="text" placeholder="¿Cuál es el segundo nombre de su acudiente?" />
         <input v-model="form.acudienteApellido1" type="text" placeholder="¿Cuál es el primer apellido de su acudiente?" required />
@@ -206,7 +206,7 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario fila-centro">
+      <div class="fila-texto fila-centro">
         <select v-model="form.parentesco" required>
           <option value="" disabled>¿Qué parentesco tienen?</option>
           <option>Padre</option>
@@ -218,13 +218,13 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <input v-model="form.acudienteFechaNac" type="date" placeholder="¿En qué fecha nació el acudiente?" required />
       </div>
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <select v-model="form.acudienteTipoDoc" required>
           <option value="" disabled>¿Cuál es el tipo de documento de su acudiente?</option>
           <option>Cédula</option>
@@ -236,7 +236,7 @@
 
       <hr class="form-divider" />
 
-      <div class="fila-formulario">
+      <div class="fila-texto">
         <input v-model="form.acudienteCorreo" type="text" placeholder="¿Cuál es el correo electrónico de su acudiente?" />
         <input v-model="form.acudienteTelefono" type="text" placeholder="¿Cuál es el número telefónico de su acudiente?" />
       </div>
@@ -299,10 +299,14 @@ function anterior() {
 }
 
 function aceptar() {
+  // Aquí harías submit a tu API o lo que necesites
   console.log("Formulario listo para enviar:", form.value);
   alert("Datos listos para enviar (revisa consola).");
 }
 function cancelar() {
+  // Reiniciar o navegar
   indiceActual.value = 0;
+  // Si quieres limpiar:
+  // Object.keys(form.value).forEach(k => form.value[k] = "");
 }
 </script>

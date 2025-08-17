@@ -62,7 +62,30 @@ body {
   border-radius: 12px;
 }
 
+.fila-texto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px 20px;;
+  margin-bottom: 15px;
+}
 
+.fila-texto input,
+.fila-texto select {
+  padding: 12px 14px;
+  border: 2px solid #0047ab;
+  font-size: 16px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  min-width: 100px;
+}
+
+.fila-texto input:focus,
+.fila-texto select:focus {
+outline: none;
+border: 2px solid #0047ab;
+box-shadow: 0 0 5px rgba(0, 71, 171, 0.3);
+transition: all 0.2s ease;
+}
 
 .menu-categorias ul {
   list-style: none;
