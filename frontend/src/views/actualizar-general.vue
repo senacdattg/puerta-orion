@@ -40,7 +40,7 @@ function manejarCancelacion() {
 
 <template>
   <main>
-    <Encabezado />
+    <Encabezado rol="Admin"/>
     <div class="contenido-principal">
       <div class="contenedor-tarjetas">
         <TarjetaPerfil rol="Administrador" />
