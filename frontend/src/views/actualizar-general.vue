@@ -3,11 +3,10 @@ import Encabezado from '../components/encabezado.vue';
 import Pie from '../components/pie.vue';
 import FormularioGeneral from '../components/formulario-general.vue';
 import TarjetaPerfil from '../components/tarjeta-perfil.vue';
+import tarjetaAcudientesAcudidos from '@/components/tarjeta-acudientes-acudidos.vue';
 
-// Variable reactiva para pasarla como prop
-import { reactive } from "vue";
 
-const datosUsuario = reactive({
+const datosUsuario = {
   nombre1: "Juan",
   nombre2: "Carlos",
   apellido1: "Pérez",
@@ -20,7 +19,7 @@ const datosUsuario = reactive({
   telefono: "3178901234",
   contrasena: "1234567890",
   confirmarContrasena: "1234567890",
-});
+};
 
 // Función para manejar la actualización
 function manejarActualizacion(datos) {
@@ -43,7 +42,8 @@ function manejarCancelacion() {
     <Encabezado rol="Admin"/>
     <div class="contenido-principal">
       <div class="contenedor-tarjetas">
-        <TarjetaPerfil rol="Administrador" />
+        <TarjetaPerfil rol="Admin" />
+        <tarjetaAcudientesAcudidos rol="" :mostrarVer="false" :mostrarAgregar="false" />
       </div>
       <FormularioGeneral 
         :modo="'actualizar'"
