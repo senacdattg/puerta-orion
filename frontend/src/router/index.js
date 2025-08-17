@@ -6,6 +6,7 @@ import VerDeportista from '../views/ver-deportista.vue'
 import RegistrarGeneral from '../views/registrar-general.vue'
 import VerGeneral from '../views/ver-general.vue'
 import ActualizarGeneral from '../views/actualizar-general.vue'
+import VerRoles from '../views/vista-roles.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -44,6 +45,11 @@ const router = createRouter({
       path: '/actualizar-general',
       name: 'actualizar-general',
       component: ActualizarGeneral,
+    },
+    {
+      path: '/ver-roles',
+      name: 'ver-roles',
+      component: VerRoles,
     }
   ],
 })
