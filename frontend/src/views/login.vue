@@ -6,7 +6,7 @@ import Pie from '../components/pie.vue';
 
 <template>
     <main>
-        <Encabezado rol="Aspirante" />
+        <Encabezado :sin-menu="true"/>
         <Login />
         <Pie />
     </main>
