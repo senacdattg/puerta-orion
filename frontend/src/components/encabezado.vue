@@ -61,30 +61,30 @@ export default {
     cargarOpciones() {
       const opcionesPorRol = {
         Aspirante: [
-          { texto: "Inicio", link: "/inicio", icono: "fas fa-home" },
-          { texto: "Perfil", link: "/perfil_aspirante", icono: "fas fa-user" },
-          { texto: "Inscribirse", link: "#", icono: "fas fa-file-signature" },
+          { texto: "Inicio", link: "/", icono: "fas fa-home" },
+          { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+          { texto: "Registrarse", link: "/roles-registro", icono: "fas fa-file-signature" },
         ],
         Entrenador: [
-          { texto: "Inicio", link: "/inicio", icono: "fas fa-home" },
-          { texto: "Perfil", link: "/perfil_entrenador", icono: "fas fa-user" },
-          { texto: "Deportistas", link: "/tabla-deportistas", icono: "fas fa-users" },
+          { texto: "Inicio", link: "/", icono: "fas fa-home" },
+          { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+          { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
         ],
         Acudiente: [
-          { texto: "Inicio", link: "/inicio", icono: "fas fa-home" },
-          { texto: "Perfil", link: "/perfil_acudiente", icono: "fas fa-user" },
-          { texto: "Mensualidades", link: "/mensualidades_deportista", icono: "fas fa-wallet" },
+          { texto: "Inicio", link: "/", icono: "fas fa-home" },
+          { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+          { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
         ],
         Deportista: [
-          { texto: "Inicio", link: "/inicio", icono: "fas fa-home" },
-          { texto: "Perfil", link: "/perfil_deportista", icono: "fas fa-user" },
-          { texto: "Mensualidades", link: "/mensualidades_deportista", icono: "fas fa-wallet" },
+          { texto: "Inicio", link: "/", icono: "fas fa-home" },
+          { texto: "Perfil", link: "/deportista", icono: "fas fa-user" },
+          { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
         ],
         Admin: [
-          { texto: "Inicio", link: "/inicio", icono: "fas fa-home" },
-          { texto: "Perfil", link: "/perfil_admin", icono: "fas fa-user" },
-          { texto: "Deportistas", link: "/tabla-deportistas-admin", icono: "fas fa-users" },
-          { texto: "Mensualidades", link: "/tabla-mensualidades", icono: "fas fa-wallet" },
+          { texto: "Inicio", link: "/", icono: "fas fa-home" },
+          { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+          { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
+          { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
         ]
       };
       this.opciones = opcionesPorRol[this.rol] || [

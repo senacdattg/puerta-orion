@@ -20,6 +20,9 @@
 
 <script setup>
 import { defineProps, defineEmits } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter()
 
 // Props para reutilizar el componente
 const props = defineProps({
@@ -37,10 +40,7 @@ const props = defineProps({
   }
 });
 
-// Emitir eventos hacia el padre
-const emit = defineEmits(["clickBoton"]);
-
 function accionBoton() {
-  emit("clickBoton", props.rol);
+  router.push("/ver-roles");
 }
 </script>

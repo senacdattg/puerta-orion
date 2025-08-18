@@ -10,6 +10,7 @@ import VerRoles from '../views/vista-roles.vue'
 import TablaMensualidades from '../views/mensualidades.vue'
 import TablaDeportistas from '../views/deportistas.vue'
 import Galeria from '../views/galeria-vista.vue'
+import RolesRegistroVista from '@/views/roles-registro-vista.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -68,6 +69,11 @@ const router = createRouter({
       path: '/galeria',
       name: 'galeria',
       component: Galeria
+    },
+    {
+      path: '/roles-registro',
+      name: 'roles-registro',
+      component: RolesRegistroVista
     }
   ],
 })

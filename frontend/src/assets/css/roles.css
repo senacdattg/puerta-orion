@@ -36,17 +36,15 @@
 
 .tarjetas {
     display: flex;
-    flex-wrap: wrap;
-    /* para que se acomoden en pantallas pequeñas */
-    gap: 1.5rem;
+    justify-content: center; /* centra horizontalmente */
+    gap: 1.5rem; /* espacio entre tarjetas */
     width: 100%;
-    justify-content: center;
     margin-bottom: 1rem;
+    flex-wrap: nowrap; /* 🔹 evita que bajen a otra línea */
 }
 
 .sub-contenedor {
-    flex: 1 0 calc(20% - 1.5rem);
-    /* responsive: 4 columnas */
+    width: 180px; /* tamaño fijo para que queden iguales */
     background-color: #f4d800;
     padding: 1.5rem;
     display: flex;
