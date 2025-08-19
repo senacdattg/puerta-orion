@@ -12,6 +12,7 @@ import TablaDeportistas from '../views/deportistas.vue'
 import Galeria from '../views/galeria-vista.vue'
 import RolesRegistroVista from '@/views/roles-registro-vista.vue'
 import Login from '../views/login.vue'
+import Admin from '../views/admin-manager.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -80,6 +81,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login
+    },
+    {
+      path: '/admin-manager',
+      name: 'admin-manager',
+      component: Admin
     }
   ],
 })
