@@ -1,5 +1,7 @@
 <script setup>
 import Encabezado from '../components/encabezado.vue';
+import Titulo from '../components/titulo-club.vue';
+import Botones from '../components/botones-generales.vue';
 import CalendarioComponent from '../components/calendario/calendario-component.vue';
 import Pie from '../components/pie.vue';
 
@@ -12,6 +14,8 @@ defineOptions({
 <template>
   <main>
     <Encabezado rol="Admin"/>
+    <Titulo />
+    <Botones />
     <CalendarioComponent rol="Usuario" />
     <Pie />
   </main>
