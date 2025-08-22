@@ -129,6 +129,15 @@
   box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.2);
 }
 
+.input-evento:disabled,
+.select-evento:disabled,
+.textarea-evento:disabled {
+  background-color: #f7fafc;
+  color: #4a5568;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .textarea-evento {
   resize: vertical;
 }
@@ -265,16 +274,46 @@
   gap: 0.25rem;
 }
 
-.evento-item i.fa-edit {
-  color: #FFD700;
-  font-size: 1.2rem;
-  transition: all 0.3s ease;
-}
+        .evento-item i.fa-edit,
+        .evento-item i.fa-eye {
+          color: #FFD700;
+          font-size: 1.2rem;
+          transition: all 0.3s ease;
+        }
 
-.evento-item:hover i.fa-edit {
-  color: #FFA500;
-  transform: scale(1.2);
-}
+        .evento-item:hover i.fa-edit,
+        .evento-item:hover i.fa-eye {
+          color: #FFA500;
+          transform: scale(1.2);
+        }
+
+        /* Estilos para usuarios no-admin */
+        .evento-item-usuario {
+          background: #f0f9ff;
+          border-left: 4px solid #3b82f6;
+        }
+
+        .evento-item-usuario:hover {
+          background: #e0f2fe;
+          border-left-color: #1d4ed8;
+        }
+
+        .evento-descripcion {
+          margin-top: 0.5rem;
+          padding: 0.5rem;
+          background: rgba(59, 130, 246, 0.1);
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          color: #1e40af;
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+
+        .evento-descripcion i {
+          margin-top: 0.125rem;
+          color: #3b82f6;
+        }
 
 /* Responsive */
 @media (max-width: 768px) {

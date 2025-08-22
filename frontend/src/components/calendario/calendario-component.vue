@@ -1,5 +1,14 @@
 <template>
   <div class="calendario-container">
+                    <!-- Título principal del calendario -->
+                <div class="titulo-principal">
+                  <h1>Calendario de Entrenamientos y Eventos</h1>
+                  <p v-if="!esAdmin" class="subtitulo-usuario">
+                    <i class="fas fa-eye"></i>
+                    Modo de solo lectura - Puedes ver eventos pero no modificarlos
+                  </p>
+                </div>
+
     <!-- Header del calendario con navegación -->
     <div class="calendar-header">
       <div class="header-left">
@@ -61,7 +70,7 @@
     <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>{{ modoEdicion ? 'Editar Evento' : 'Agregar Evento' }}</h3>
+          <h3>{{ modoEdicion ? 'Editar Evento' : (esAdmin ? 'Agregar Evento' : 'Ver Evento') }}</h3>
           <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
             <i class="fas fa-times"></i>
           </button>
@@ -80,6 +89,7 @@
               placeholder="Ej: Entrenamiento de fuerza"
               required
               class="input-evento"
+              :disabled="!esAdmin"
             />
           </div>
 
@@ -88,7 +98,7 @@
               <i class="fas fa-tag"></i>
               Tipo de evento *
             </label>
-            <select id="tipo" v-model="nuevoEvento.tipo" required class="select-evento">
+            <select id="tipo" v-model="nuevoEvento.tipo" required class="select-evento" :disabled="!esAdmin">
               <option value="">Seleccionar tipo</option>
               <option value="Entrenamiento">🏋️ Entrenamiento</option>
               <option value="Evento">🎉 Evento</option>
@@ -108,6 +118,7 @@
                 type="date"
                 required
                 class="input-evento"
+                :disabled="!esAdmin"
               />
             </div>
             <div class="campo-formulario">
@@ -121,6 +132,7 @@
                 type="time"
                 required
                 class="input-evento"
+                :disabled="!esAdmin"
               />
             </div>
           </div>
@@ -137,6 +149,7 @@
               placeholder="Ej: Gimnasio principal"
               required
               class="input-evento"
+              :disabled="!esAdmin"
             />
           </div>
 
@@ -151,19 +164,20 @@
               placeholder="Detalles adicionales del evento..."
               rows="3"
               class="textarea-evento"
+              :disabled="!esAdmin"
             ></textarea>
           </div>
 
           <div class="botones-modal">
             <button type="button" @click="cerrarModal" class="btn-secundario">
               <i class="fas fa-times"></i>
-              Cancelar
+              Cerrar
             </button>
-            <button v-if="modoEdicion" type="button" @click="eliminarEvento" class="btn-eliminar">
+            <button v-if="esAdmin && modoEdicion" type="button" @click="eliminarEvento" class="btn-eliminar">
               <i class="fas fa-trash"></i>
               Eliminar
             </button>
-            <button type="submit" class="btn-principal">
+            <button v-if="esAdmin" type="submit" class="btn-principal">
               <i :class="modoEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
               {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
             </button>
@@ -172,47 +186,52 @@
       </div>
     </div>
 
-    <!-- Modal para seleccionar evento a editar -->
-    <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
-      <div class="modal-content selector-eventos" @click.stop>
-        <div class="modal-header">
-          <h3>Seleccionar Evento</h3>
-          <button @click="cerrarSelectorEventos" class="btn-cerrar">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+                    <!-- Modal para seleccionar evento a editar -->
+                <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
+                  <div class="modal-content selector-eventos" @click.stop>
+                    <div class="modal-header">
+                      <h3>{{ esAdmin ? 'Seleccionar Evento' : 'Eventos del Día' }}</h3>
+                      <button @click="cerrarSelectorEventos" class="btn-cerrar">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
 
-        <div class="lista-eventos">
-          <div
-            v-for="evento in eventosDelDia"
-            :key="evento.id"
-            @click="editarEvento(evento)"
-            class="evento-item"
-          >
-            <div class="evento-info">
-              <div class="evento-titulo">{{ evento.titulo }}</div>
-              <div class="evento-detalles">
-                <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
-                  {{ evento.tipo }}
-                </span>
-                <span class="evento-hora">
-                  <i class="fas fa-clock"></i>
-                  {{ evento.hora }}
-                </span>
-                <span class="evento-lugar">
-                  <i class="fas fa-map-marker-alt"></i>
-                  {{ evento.lugar }}
-                </span>
-              </div>
-            </div>
-            <i class="fas fa-edit"></i>
-          </div>
-        </div>
-      </div>
-    </div>
+                    <div class="lista-eventos">
+                      <div
+                        v-for="evento in eventosDelDia"
+                        :key="evento.id"
+                        @click="esAdmin ? editarEvento(evento) : verEvento(evento)"
+                        class="evento-item"
+                        :class="{ 'evento-item-usuario': !esAdmin }"
+                      >
+                        <div class="evento-info">
+                          <div class="evento-titulo">{{ evento.titulo }}</div>
+                          <div class="evento-detalles">
+                            <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
+                              {{ evento.tipo }}
+                            </span>
+                            <span class="evento-hora">
+                              <i class="fas fa-clock"></i>
+                              {{ evento.hora }}
+                            </span>
+                            <span class="evento-lugar">
+                              <i class="fas fa-map-marker-alt"></i>
+                              {{ evento.lugar }}
+                            </span>
+                          </div>
+                          <div v-if="!esAdmin" class="evento-descripcion">
+                            <i class="fas fa-align-left"></i>
+                            {{ evento.descripcion || 'Sin descripción' }}
+                          </div>
+                        </div>
+                        <i :class="esAdmin ? 'fas fa-edit' : 'fas fa-eye'" :title="esAdmin ? 'Editar evento' : 'Ver detalles'"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-    <!-- Botón flotante para agregar evento -->
-    <button @click="abrirModal" class="btn-flotante" title="Agregar evento">
+        <!-- Botón flotante para agregar evento (solo admin) -->
+    <button v-if="esAdmin" @click="abrirModal" class="btn-flotante" title="Agregar evento">
       <i class="fas fa-plus"></i>
     </button>
   </div>
@@ -223,6 +242,12 @@ import calendarioService from '@/services/calendarioService.js';
 
 export default {
   name: 'CalendarioComponent',
+  props: {
+    rol: {
+      type: String,
+      default: 'Usuario'
+    }
+  },
   data() {
     return {
       fechaActual: new Date(),
@@ -244,6 +269,12 @@ export default {
         fecha: null
       }
     };
+  },
+
+  computed: {
+    esAdmin() {
+      return this.rol === 'Admin';
+    }
   },
 
   mounted() {
@@ -359,16 +390,20 @@ export default {
     seleccionarDia(dia) {
       if (dia.esMesActual) {
         if (dia.eventos && dia.eventos.length > 0) {
+          // Cualquier usuario puede ver eventos
           this.eventosDelDia = dia.eventos;
           this.mostrarSelectorEventos();
-        } else {
+        } else if (this.esAdmin) {
+          // Solo el admin puede crear eventos
           this.nuevoEvento.fecha = dia.fecha;
           this.abrirModal();
         }
       }
     },
 
-    abrirModal() {
+        abrirModal() {
+      if (!this.esAdmin) return; // Solo admin puede abrir modal para crear
+
       this.modalVisible = true;
       this.modoEdicion = false;
       this.limpiarFormulario();
@@ -400,7 +435,23 @@ export default {
       this.modalVisible = true;
     },
 
-        async guardarEvento() {
+                    verEvento(evento) {
+                  this.eventoSeleccionado = evento;
+                  this.nuevoEvento = { ...evento };
+                  this.modoEdicion = false;
+                  this.selectorEventosVisible = false;
+                  this.modalVisible = true;
+
+                  // Para usuarios no-admin, mostrar solo información de lectura
+                  if (!this.esAdmin) {
+                    // El modal ya está configurado para mostrar solo lectura
+                    // Los campos están deshabilitados automáticamente
+                  }
+                },
+
+            async guardarEvento() {
+      if (!this.esAdmin) return; // Solo admin puede guardar
+
       // Validar datos del evento
       const errores = calendarioService.validarEvento(this.nuevoEvento);
       if (errores.length > 0) {
@@ -424,6 +475,8 @@ export default {
     },
 
     eliminarEvento() {
+      if (!this.esAdmin) return; // Solo admin puede eliminar
+
       if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
         try {
           calendarioService.eliminarEvento(this.eventoSeleccionado.id);
