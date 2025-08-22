@@ -11,6 +11,49 @@
   border: 1px solid #e2e8f0;
 }
 
+/* Título principal del calendario */
+.titulo-principal {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.titulo-principal h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a202c;
+  margin: 0 0 1rem 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+        .titulo-principal p {
+          font-size: 1.2rem;
+          color: #4a5568;
+          margin: 0;
+          font-weight: 500;
+        }
+
+        .subtitulo-usuario {
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.75rem;
+          font-size: 1rem;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 1rem;
+          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .subtitulo-usuario i {
+          font-size: 1.1rem;
+        }
+
 /* Header del calendario */
 .calendar-header {
   display: flex;
@@ -227,6 +270,19 @@
   .calendario-container {
     padding: 1rem;
     margin: 1rem;
+  }
+
+  .titulo-principal {
+    padding: 1.5rem 0;
+    margin-bottom: 1.5rem;
+  }
+
+  .titulo-principal h1 {
+    font-size: 2rem;
+  }
+
+  .titulo-principal p {
+    font-size: 1rem;
   }
 
   .calendar-header {
