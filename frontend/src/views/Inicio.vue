@@ -7,7 +7,7 @@ import Pie from '../components/pie.vue';
 
 <template>
   <main>
-    <Encabezado rol="Aspirante"/>
+    <Encabezado rol="Admin"/>
     <Titulo />
     <Botones />
     <Pie />
