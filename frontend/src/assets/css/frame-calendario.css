@@ -17,14 +17,13 @@
 /* Contenido del modal */
 .modal-content {
   background: white;
-  padding: 0;
+  opacity: 1;
   border-radius: 0.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   max-width: 500px;
   width: 90%;
   border: none;
   position: relative;
-  overflow: hidden;
 }
 
 /* Header del modal */
@@ -60,7 +59,7 @@
 }
 
 .btn-cerrar:hover {
-  background: white;
+  background: rgb(255, 0, 0);
   transform: scale(1.1);
 }
 
@@ -79,10 +78,12 @@
 
 /* Formulario del evento */
 .formulario-evento {
+  background-color: #fff;
   padding: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  border-radius: 0 0 0.5rem 0.5rem;
 }
 
 /* Campos del formulario */
@@ -184,12 +185,12 @@
 }
 
 .btn-secundario {
-  background: #6b7280;
+  background: #4b5563;
   color: white;
 }
 
 .btn-secundario:hover {
-  background: #4b5563;
+  background: #ff0000;
 }
 
 .btn-eliminar {

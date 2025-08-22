@@ -505,8 +505,3 @@ export default {
     }
 };
 </script>
-
-<style scoped>
-/* Importar todos los estilos del calendario desde el archivo índice */
-@import "@/assets/css/calendario-index.css";
-</style>
