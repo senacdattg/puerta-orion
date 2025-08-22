@@ -16,7 +16,7 @@ defineOptions({
     <Encabezado rol="Admin"/>
     <Titulo />
     <Botones />
-    <CalendarioComponent rol="Deportista" />
+    <CalendarioComponent rol="Admin" />
     <Pie />
   </main>
 </template>
