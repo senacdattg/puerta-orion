@@ -11,6 +11,7 @@ import TablaMensualidades from '../views/mensualidades.vue'
 import TablaDeportistas from '../views/deportistas.vue'
 import Galeria from '../views/galeria-vista.vue'
 import RolesRegistroVista from '@/views/roles-registro-vista.vue'
+import Calendario from '../views/calendario.vue'
 import Login from '../views/login.vue'
 import Admin from '../views/admin-manager.vue'
 
@@ -81,6 +82,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login
+    },
+    {
+      path: '/calendario',
+      name: 'calendario',
+      component: Calendario
     },
     {
       path: '/admin-manager',

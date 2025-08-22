@@ -1,0 +1,302 @@
+/* Estilos consolidados del modal - Solo lo esencial */
+
+/* Overlay del modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Contenido del modal */
+.modal-content {
+  background: white;
+  padding: 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header del modal */
+.modal-header {
+  background: #FFD700;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1a202c;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.btn-cerrar {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #1a202c;
+  font-size: 1rem;
+}
+
+.btn-cerrar:hover {
+  background: white;
+  transform: scale(1.1);
+}
+
+.modal-content.selector-eventos {
+  max-width: 500px;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  color: #1e293b;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* Formulario del evento */
+.formulario-evento {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Campos del formulario */
+.campo-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.campo-formulario label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.campo-formulario label i {
+  color: #FFD700;
+  font-size: 1.1rem;
+}
+
+/* Inputs del formulario */
+.input-evento,
+.select-evento,
+.textarea-evento {
+  padding: 12px 14px;
+  border: 2px solid #0047ab;
+  font-size: 16px;
+  box-sizing: border-box;
+  border-radius: 0.3rem;
+  font-family: inherit;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.input-evento:focus,
+.select-evento:focus,
+.textarea-evento:focus {
+  outline: none;
+  border-color: #0047ab;
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.2);
+}
+
+.textarea-evento {
+  resize: vertical;
+}
+
+/* Fila de dos columnas */
+.fila-dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Botones del modal */
+.botones-modal {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+.btn-principal,
+.btn-secundario,
+.btn-eliminar {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 0.3rem;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.btn-principal {
+  background: #0047ab;
+  color: white;
+}
+
+.btn-principal:hover {
+  background: #003d91;
+}
+
+.btn-secundario {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secundario:hover {
+  background: #4b5563;
+}
+
+.btn-eliminar {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-eliminar:hover {
+  background: #b91c1c;
+}
+
+/* Modal selector de eventos */
+.lista-eventos {
+  padding: 1rem 0;
+}
+
+.evento-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  margin: 0.5rem 0;
+  background: #f7fafc;
+  border-radius: 0.75rem;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.evento-item:hover {
+  background: #edf2f7;
+  border-color: #FFD700;
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.evento-info {
+  flex: 1;
+}
+
+.evento-titulo {
+  font-weight: 700;
+  color: #2d3748;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.evento-detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #4a5568;
+}
+
+.evento-tipo {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.evento-tipo.tipo-entrenamiento {
+  background: #bee3f8;
+  color: #2b6cb0;
+}
+
+.evento-tipo.tipo-evento {
+  background: #fed7e2;
+  color: #b83280;
+}
+
+.evento-tipo.tipo-competencia {
+  background: #feebc8;
+  color: #c05621;
+}
+
+.evento-hora,
+.evento-lugar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.evento-item i.fa-edit {
+  color: #FFD700;
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.evento-item:hover i.fa-edit {
+  color: #FFA500;
+  transform: scale(1.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    margin: 1rem;
+  }
+
+  .fila-dos-columnas {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .botones-modal {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .btn-principal,
+  .btn-secundario,
+  .btn-eliminar {
+    width: 100%;
+    justify-content: center;
+  }
+}

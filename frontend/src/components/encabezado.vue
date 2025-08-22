@@ -4,7 +4,7 @@
     class="fa-solid fa-bars menu-toggle"
     @click="toggleMenu"
     ></i>
-    
+
     <img src="@/assets/imgs/logo.png" alt="Logo">
     <div class="menu-categorias" id="menu" v-show="menuVisible">
       <ul id="menu-opciones">
@@ -69,6 +69,7 @@ export default {
           { texto: "Inicio", link: "/", icono: "fas fa-home" },
           { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
           { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
+          { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
         ],
         Acudiente: [
           { texto: "Inicio", link: "/", icono: "fas fa-home" },
@@ -79,12 +80,14 @@ export default {
           { texto: "Inicio", link: "/", icono: "fas fa-home" },
           { texto: "Perfil", link: "/deportista", icono: "fas fa-user" },
           { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
+          { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
         ],
         Admin: [
           { texto: "Inicio", link: "/", icono: "fas fa-home" },
           { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
           { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
           { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
+          { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
         ]
       };
       this.opciones = opcionesPorRol[this.rol] || [

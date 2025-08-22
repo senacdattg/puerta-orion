@@ -1,0 +1,12 @@
+/*
+ * Archivo índice para todos los estilos del calendario
+ * Solo archivos esenciales y consolidados
+ */
+
+/* Estilos del calendario */
+@import "./calendario-simplificado.css";
+
+/* Estilos del modal */
+@import "./modal-consolidado.css";
+
+
