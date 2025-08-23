@@ -13,10 +13,10 @@ defineOptions({
 
 <template>
   <main>
-    <Encabezado rol="Admin"/>
+    <Encabezado rol="Aspirante"/>
     <Titulo />
     <Botones />
-    <CalendarioComponent rol="Admin" />
+    <CalendarioComponent rol="Aspirante" />
     <Pie />
   </main>
 </template>

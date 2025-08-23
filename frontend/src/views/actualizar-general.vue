@@ -39,11 +39,11 @@ function manejarCancelacion() {
 
 <template>
   <main>
-    <Encabezado rol="Acudiente"/>
+    <Encabezado rol="Aspirante"/>
     <div class="contenido-principal-tarjetas">
       <div class="contenedor-tarjetas">
-        <TarjetaPerfil rol="Acudiente" />
-        <tarjetaAcudientesAcudidos rol="Acudiente" :mostrarVer="false" :mostrarAgregar="false" />
+        <TarjetaPerfil rol="Aspirante"/>
+        <tarjetaAcudientesAcudidos rol="" :mostrarVer="false" :mostrarAgregar="false" />
       </div>
       <FormularioGeneral 
         :modo="'actualizar'"

@@ -6,8 +6,8 @@ import Pie from '../components/pie.vue';
 
 <template>
   <main>
-    <Encabezado rol="Admin"/>
-    <Roles :usuario-roles="['Deportista', 'Entrenador']"/>
+    <Encabezado :sin-menu="true"/>
+    <Roles :usuario-roles="['Aspirante', 'Deportista', 'Entrenador']"/>
     <Pie />
   </main>
 </template>

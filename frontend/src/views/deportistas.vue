@@ -6,7 +6,7 @@ import Pie from '../components/pie.vue';
 
 <template>
   <main>
-    <Encabezado rol="Admin"/>
+    <Encabezado rol="Entrenador"/>
     <TablaDeportistas />
     <Pie />
   </main>

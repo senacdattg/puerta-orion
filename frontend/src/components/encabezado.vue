@@ -63,7 +63,6 @@ export default {
         Aspirante: [
           { texto: "Inicio", link: "/", icono: "fas fa-home" },
           { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
-          { texto: "Registrarse", link: "/roles-registro", icono: "fas fa-file-signature" },
         ],
         Entrenador: [
           { texto: "Inicio", link: "/", icono: "fas fa-home" },
