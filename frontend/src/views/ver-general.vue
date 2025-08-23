@@ -23,11 +23,11 @@ const datosUsuario = {
 
 <template>
   <main>
-    <Encabezado rol="Admin"/>
+    <Encabezado rol="Acudiente"/>
     <div class="contenido-principal-tarjetas">
       <div class="contenedor-tarjetas">
-        <TarjetaPerfil rol="Admin" />
-        <TarjetaAcudientesAcudidos rol="" />
+        <TarjetaPerfil rol="Acudiente" />
+        <TarjetaAcudientesAcudidos rol="Acudiente" />
       </div>
       <FormularioGeneral 
         :modo="'ver'"
