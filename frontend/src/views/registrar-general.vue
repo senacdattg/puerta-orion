@@ -1,6 +1,6 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import Pie from '../components/pie.vue';
+import Encabezado from '../components/iu/encabezado.vue';
+import Pie from '../components/iu/pie.vue';
 import FormularioGeneral from '../components/formulario-general.vue';
 
 // Función para manejar el registro
@@ -23,7 +23,7 @@ function manejarCancelacion() {
   <main>
     <Encabezado :sinMenu="true"/>
     <div class="contenido-principal-tarjetas">
-      <FormularioGeneral 
+      <FormularioGeneral
         :modo="'registrar'"
         @submit="manejarRegistro"
         @cancel="manejarCancelacion"

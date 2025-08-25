@@ -1,8 +1,8 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import Pie from '../components/pie.vue';
+import Encabezado from '../components/iu/encabezado.vue';
+import Pie from '../components/iu/pie.vue';
 import FormularioDeportista from '../components/formulario-deportista.vue';
-import TarjetaPerfil from '../components/tarjeta-perfil.vue';
+import TarjetaPerfil from '../components/iu/tarjeta-perfil.vue';
 import TarjetaAcudientesAcudidos from '@/components/tarjeta-acudientes-acudidos.vue';
 
 // Datos simulados del usuario (en un caso real vendrían de una API)
@@ -49,7 +49,7 @@ const datosUsuario = {
         <TarjetaPerfil rol="Deportista" />
         <TarjetaAcudientesAcudidos rol="Deportista" />
       </div>
-      <FormularioDeportista 
+      <FormularioDeportista
         :modo="'ver'"
         :datos="datosUsuario"
       />

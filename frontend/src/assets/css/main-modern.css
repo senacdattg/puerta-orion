@@ -1,0 +1,136 @@
+/* ===== ARCHIVO PRINCIPAL DE ESTILOS MODERNOS - PUERTA ORION ===== */
+
+/* ===== IMPORTS BASE ===== */
+@import './base/variables.css';
+
+/* ===== IMPORTS DE COMPONENTES ===== */
+@import './components/botones.css';
+
+/* ===== IMPORTS DE VISTAS ===== */
+@import './deportistas-modern.css';
+
+/* ===== ESTILOS GLOBALES ADICIONALES ===== */
+
+/* Reset básico para mejor consistencia */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--color-gris-oscuro);
+  background-color: var(--color-gris-claro);
+}
+
+/* Mejoras de accesibilidad */
+:focus {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-gris-claro);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gris);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gris-oscuro);
+}
+
+/* Selección de texto */
+::selection {
+  background-color: var(--color-secundario);
+  color: var(--color-gris-oscuro);
+}
+
+/* Transiciones globales para elementos interactivos */
+a, button, input, select, textarea {
+  transition: var(--transicion);
+}
+
+/* Mejoras para formularios */
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Estados de carga */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Utilidades adicionales */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Mejoras para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 48px; /* Área mínima de toque para móviles */
+  }
+
+  .tarjeta-deportista:hover {
+    transform: none; /* Desactivar efectos hover en móviles */
+  }
+}
+
+/* Modo oscuro (opcional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-blanco: #1a1a1a;
+    --color-gris-claro: #2d2d2d;
+    --color-gris-medio: #404040;
+    --color-gris: #a0a0a0;
+    --color-gris-oscuro: #e0e0e0;
+    --color-negro: #ffffff;
+  }
+}

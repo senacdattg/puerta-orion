@@ -1,7 +1,7 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import RolesVista from '../components/roles-registro.vue';
-import Pie from '../components/pie.vue';
+import Encabezado from '../components/iu/encabezado.vue';
+import RolesVista from '../components/roles/roles-registro.vue';
+import Pie from '../components/iu/pie.vue';
 </script>
 
 <template>

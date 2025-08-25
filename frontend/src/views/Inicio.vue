@@ -1,8 +1,8 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import HeroSection from '../components/hero-section.vue';
-import QuickNavigation from '../components/quick-navigation.vue';
-import FooterEnhanced from '../components/footer-enhanced.vue';
+import Encabezado from '../components/iu/encabezado.vue';
+import HeroSection from '../components/ui/hero-section.vue';
+import QuickNavigation from '../components/ui/quick-navigation.vue';
+import FooterEnhanced from '../components/layout/footer-enhanced.vue';
 
 // Definir nombre del componente para el linter
 defineOptions({

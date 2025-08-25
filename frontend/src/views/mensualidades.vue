@@ -1,7 +1,7 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import TablaMensualidades from '../components/tabla-mensualidades.vue';
-import Pie from '../components/pie.vue';
+import Encabezado from '../components/iu/encabezado.vue';
+import TablaMensualidades from '../components/admin/tabla-mensualidades.vue';
+import Pie from '../components/iu/pie.vue';
 </script>
 
 <template>

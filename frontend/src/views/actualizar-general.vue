@@ -1,8 +1,8 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import Pie from '../components/pie.vue';
+import Encabezado from '../components/iu/encabezado.vue';
+import Pie from '../components/iu/pie.vue';
 import FormularioGeneral from '../components/formulario-general.vue';
-import TarjetaPerfil from '../components/tarjeta-perfil.vue';
+import TarjetaPerfil from '../components/iu/tarjeta-perfil.vue';
 import tarjetaAcudientesAcudidos from '@/components/tarjeta-acudientes-acudidos.vue';
 
 
@@ -45,7 +45,7 @@ function manejarCancelacion() {
         <TarjetaPerfil rol="Acudiente" />
         <tarjetaAcudientesAcudidos rol="Acudiente" :mostrarVer="false" :mostrarAgregar="false" />
       </div>
-      <FormularioGeneral 
+      <FormularioGeneral
         :modo="'actualizar'"
         :datos="datosUsuario"
       />
