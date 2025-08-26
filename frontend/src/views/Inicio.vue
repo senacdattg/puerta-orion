@@ -1,6 +1,8 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
+import Encabezado from '../components/layout/encabezado.vue';
 import HeroSection from '../components/ui/hero-section.vue';
+import ClubInfo from '../components/ui/club-info.vue';
+import CallToAction from '../components/ui/call-to-action.vue';
 import QuickNavigation from '../components/ui/quick-navigation.vue';
 import FooterEnhanced from '../components/layout/footer-enhanced.vue';
 

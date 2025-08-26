@@ -1,7 +1,7 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
-import ListaDeportistas from '../components/lista-deportistas.vue';
-import Pie from '../components/iu/pie.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
+import Pie from '../components/ui/pie.vue';
 import { ref } from 'vue';
 
 // Datos de ejemplo para demostrar la funcionalidad

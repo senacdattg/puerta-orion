@@ -1,7 +1,7 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
+import Encabezado from '../components/layout/encabezado.vue';
 import Admin from '@/components/admin/permisos-admin.vue';
-import Pie from '../components/iu/pie.vue';
+import Pie from '../components/ui/pie.vue';
 </script>
 
 <template>

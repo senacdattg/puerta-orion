@@ -1,13 +1,13 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
-import RolesVista from '../components/roles/roles-registro.vue';
-import Pie from '../components/iu/pie.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import RolesRegistro from '../components/roles/roles-registro.vue';
+import Pie from '../components/ui/pie.vue';
 </script>
 
 <template>
   <main>
     <Encabezado rol="Admin"/>
-    <RolesVista />
+    <RolesRegistro />
     <Pie />
   </main>
 </template>

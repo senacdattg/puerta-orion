@@ -1,7 +1,7 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
-import Pie from '../components/iu/pie.vue';
-import FormularioGeneral from '../components/formulario-general.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import Pie from '../components/ui/pie.vue';
+import FormularioGeneral from '../components/formularios/formulario-general.vue';
 
 // Función para manejar el registro
 function manejarRegistro(datos) {

@@ -1,7 +1,7 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
-import Login from '../components/iu/login.vue'
-import Pie from '../components/iu/pie.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import Login from '../components/ui/login.vue';
+import Pie from '../components/ui/pie.vue';
 </script>
 
 <template>

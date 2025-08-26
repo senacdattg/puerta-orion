@@ -1,9 +1,9 @@
 <script setup>
-import Encabezado from '../components/iu/encabezado.vue';
-import Pie from '../components/iu/pie.vue';
-import FormularioGeneral from '../components/formulario-general.vue';
-import TarjetaPerfil from '../components/iu/tarjeta-perfil.vue';
-import tarjetaAcudientesAcudidos from '@/components/tarjeta-acudientes-acudidos.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import Pie from '../components/ui/pie.vue';
+import FormularioGeneral from '../components/formularios/formulario-general.vue';
+import TarjetaPerfil from '../components/ui/tarjeta-perfil.vue';
+import tarjetaAcudientesAcudidos from '../components/deportistas/tarjeta-acudientes-acudidos.vue';
 
 
 const datosUsuario = {
