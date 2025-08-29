@@ -1,7 +1,27 @@
 <script setup>
+import { ref } from 'vue';
 import Encabezado from '../components/layout/encabezado.vue';
 import Admin from '@/components/admin/permisos-admin.vue';
 import Pie from '../components/ui/pie.vue';
+import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
+
+// Estado del modal
+const mostrarModalRegistro = ref(false);
+
+// Funciones
+function abrirModalRegistro() {
+  mostrarModalRegistro.value = true;
+}
+
+function cerrarModalRegistro() {
+  mostrarModalRegistro.value = false;
+}
+
+function manejarUsuarioRegistrado(datosUsuario) {
+  console.log('Usuario registrado desde admin-manager:', datosUsuario);
+  // Aquí puedes agregar lógica adicional como actualizar la lista de usuarios
+  // o mostrar notificaciones
+}
 </script>
 
 <template>
@@ -17,7 +37,7 @@ import Pie from '../components/ui/pie.vue';
             <p class="page-subtitle">Gestiona usuarios, roles y configuraciones del club deportivo</p>
           </div>
           <div class="header-actions">
-            <button class="btn btn--primary">
+            <button class="btn btn--primary" @click="abrirModalRegistro">
               <i class="fas fa-plus"></i>
               Nuevo Usuario
             </button>
@@ -155,6 +175,13 @@ import Pie from '../components/ui/pie.vue';
         </div>
       </div>
     </section>
+
+    <!-- Modal de Registro de Usuario -->
+    <ModalRegistroUsuario
+      :mostrar="mostrarModalRegistro"
+      @cerrar="cerrarModalRegistro"
+      @usuario-registrado="manejarUsuarioRegistrado"
+    />
 
     <Pie />
   </main>
