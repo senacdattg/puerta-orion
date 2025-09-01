@@ -1,4 +1,5 @@
 import './assets/css/main.css'
+import './assets/css/inicio.css'
 import './assets/css/deportistas.css'
 import './assets/css/formulario.css'
 import './assets/css/login.css'

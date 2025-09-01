@@ -1,9 +1,9 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import Titulo from '../components/titulo-club.vue';
-import Botones from '../components/botones-generales.vue';
-import CalendarioComponent from '../components/calendario-component.vue';
-import Pie from '../components/pie.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import Titulo from '../components/ui/titulo-club.vue';
+import Botones from '../components/ui/botones-generales.vue';
+import CalendarioComponent from '../components/admin/calendario-component.vue';
+import Pie from '../components/ui/pie.vue';
 
 // Definir nombre del componente para evitar error del linter
 defineOptions({

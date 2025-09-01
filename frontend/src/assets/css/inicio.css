@@ -1,0 +1,97 @@
+/* Estilos específicos para la página de inicio */
+/* Siguiendo el principio SRP - este archivo solo maneja estilos del inicio */
+
+/* Variables CSS para consistencia */
+:root {
+  --primary-color: #0047ab;
+  --secondary-color: #f7d600;
+  --accent-color: #0d47a1;
+  --text-dark: #333;
+  --text-light: #666;
+  --background-light: #f8f9fa;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.15);
+  --border-radius: 16px;
+  --transition: all 0.3s ease;
+}
+
+/* Estilos base para secciones */
+.section-base {
+  padding: 80px 20px;
+}
+
+.container-base {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Tipografía consistente */
+.title-base {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 25px;
+}
+
+.subtitle-base {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+/* Botones base */
+.button-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: var(--transition);
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+/* Responsive base */
+@media (max-width: 768px) {
+  .section-base {
+    padding: 60px 20px;
+  }
+  
+  .title-base {
+    font-size: 2rem;
+  }
+  
+  .subtitle-base {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animaciones base */
+.fade-in {
+  animation: fadeIn 0.8s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Hover effects base */
+.hover-lift {
+  transition: var(--transition);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px var(--shadow-medium);
+}
+

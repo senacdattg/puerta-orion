@@ -15,10 +15,14 @@
           <td class="p-2">{{ user.name }}</td>
           <td class="p-2">{{ user.role }}</td>
           <td class="p-2">
-            <select v-model="user.role" @change="updateRole(user, user.role)" class="border p-1 rounded">
-              <option value="user">Usuario</option>
-              <option value="moderator">Moderador</option>
-              <option value="admin">Administrador</option>
+            <select
+              v-model="user.role"
+              @change="updateRole(user, user.role)"
+              class="border p-1 rounded"
+            >
+              <option v-for="rol in roles" :key="rol.value" :value="rol.value">
+                {{ rol.label }}
+              </option>
             </select>
           </td>
         </tr>
@@ -26,20 +30,28 @@
     </table>
   </div>
 </template>
-<script setup>
-import { ref } from "vue"
 
-// Simulación de usuarios
+<script setup>
+import { ref } from 'vue';
+
+// Constantes
+const roles = [
+  { value: 'user', label: 'Usuario' },
+  { value: 'moderator', label: 'Moderador' },
+  { value: 'admin', label: 'Administrador' }
+];
+
+// Estado reactivo
 const users = ref([
   { id: 1, name: "Kevin", role: "user" },
   { id: 2, name: "Santiago", role: "moderator" },
   { id: 3, name: "Prada", role: "admin" }
-])
+]);
 
-// Función para cambiar rol
+// Funciones
 function updateRole(user, newRole) {
-  user.role = newRole
-  // Aquí podrías hacer una petición a la API para guardar el cambio
-  console.log(`Rol actualizado: ${user.name} ahora es ${newRole}`)
+  user.role = newRole;
+  // Aquí se implementaría la llamada a la API para guardar el cambio
+  console.log(`Rol actualizado: ${user.name} ahora es ${newRole}`);
 }
 </script>

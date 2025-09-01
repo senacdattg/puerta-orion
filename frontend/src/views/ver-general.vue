@@ -1,9 +1,9 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import Pie from '../components/pie.vue';
-import FormularioGeneral from '../components/formulario-general.vue';
-import TarjetaPerfil from '../components/tarjeta-perfil.vue';
-import TarjetaAcudientesAcudidos from '@/components/tarjeta-acudientes-acudidos.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import Pie from '../components/ui/pie.vue';
+import FormularioGeneral from '../components/formularios/formulario-general.vue';
+import TarjetaPerfil from '../components/ui/tarjeta-perfil.vue';
+import TarjetaAcudientesAcudidos from '../components/deportistas/tarjeta-acudientes-acudidos.vue';
 
 const datosUsuario = {
   nombre1: "Juan",
@@ -29,7 +29,7 @@ const datosUsuario = {
         <TarjetaPerfil rol="Aspirante" />
         <TarjetaAcudientesAcudidos rol="Aspirante" />
       </div>
-      <FormularioGeneral 
+      <FormularioGeneral
         :modo="'ver'"
         :datos="datosUsuario"
       />

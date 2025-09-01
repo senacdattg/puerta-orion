@@ -1,13 +1,18 @@
-<script setup>
-import Encabezado from '../components/encabezado.vue';
-import TablaDeportistas from '../components/tabla-deportistas.vue';
-import Pie from '../components/pie.vue';
+<template>
+  <div>
+    <h1>Lista de Deportistas</h1>
+    <!-- Aquí puedes agregar la lógica para mostrar la lista de deportistas -->
+  </div>
+</template>
+
+<script>
+export default {
+  name: "VistaDeportistas",
+  // Aquí puedes agregar la lógica y datos necesarios para la vista
+};
 </script>
 
-<template>
-  <main>
-    <Encabezado rol="Entrenador"/>
-    <TablaDeportistas />
-    <Pie />
-  </main>
-</template>
+<style scoped>
+/* Estilos específicos para la vista de deportistas */
+</style>
+

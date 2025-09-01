@@ -1,9 +1,9 @@
 <script setup>
-import Encabezado from '../components/encabezado.vue';
-import Pie from '../components/pie.vue';
-import FormularioGeneral from '../components/formulario-general.vue';
-import TarjetaPerfil from '../components/tarjeta-perfil.vue';
-import tarjetaAcudientesAcudidos from '@/components/tarjeta-acudientes-acudidos.vue';
+import Encabezado from '../components/layout/encabezado.vue';
+import Pie from '../components/ui/pie.vue';
+import FormularioGeneral from '../components/formularios/formulario-general.vue';
+import TarjetaPerfil from '../components/ui/tarjeta-perfil.vue';
+import tarjetaAcudientesAcudidos from '../components/deportistas/tarjeta-acudientes-acudidos.vue';
 
 
 const datosUsuario = {
@@ -45,7 +45,7 @@ function manejarCancelacion() {
         <TarjetaPerfil rol="Aspirante"/>
         <tarjetaAcudientesAcudidos rol="" :mostrarVer="false" :mostrarAgregar="false" />
       </div>
-      <FormularioGeneral 
+      <FormularioGeneral
         :modo="'actualizar'"
         :datos="datosUsuario"
       />
