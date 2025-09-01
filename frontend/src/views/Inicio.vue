@@ -2,7 +2,7 @@
 import Encabezado from '../components/layout/encabezado.vue';
 import HeroSection from '../components/ui/hero-section.vue';
 import QuickNavigation from '../components/ui/quick-navigation.vue';
-import FooterEnhanced from '../components/layout/footer-enhanced.vue';
+import FooterEnhanced from '../components/layout/pie.vue';
 
 // Definir nombre del componente para el linter
 defineOptions({

@@ -3,7 +3,7 @@ import Encabezado from '../components/layout/encabezado.vue';
 import Titulo from '../components/ui/titulo-club.vue';
 import Botones from '../components/ui/botones-generales.vue';
 import Galeria from '../components/galeria/galeria.vue';
-import Pie from '../components/ui/pie.vue';
+import Pie from '../components/layout/pie.vue';
 </script>
 
 <template>

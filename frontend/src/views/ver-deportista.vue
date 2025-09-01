@@ -1,6 +1,6 @@
 <script setup>
 import Encabezado from '../components/layout/encabezado.vue';
-import Pie from '../components/ui/pie.vue';
+import Pie from '../components/layout/pie.vue';
 import FormularioDeportista from '../components/formularios/formulario-deportista.vue';
 import TarjetaPerfil from '../components/ui/tarjeta-perfil.vue';
 import TarjetaAcudientesAcudidos from '../components/deportistas/tarjeta-acudientes-acudidos.vue';

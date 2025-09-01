@@ -1,7 +1,7 @@
 <script setup>
 import Encabezado from '../components/layout/encabezado.vue';
 import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
-import Pie from '../components/ui/pie.vue';
+import Pie from '../components/layout/pie.vue';
 import { ref } from 'vue';
 
 // Datos de ejemplo para demostrar la funcionalidad

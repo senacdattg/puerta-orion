@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import Encabezado from '../components/layout/encabezado.vue';
 import Admin from '@/components/admin/permisos-admin.vue';
-import Pie from '../components/ui/pie.vue';
+import Pie from '../components/layout/pie.vue';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
 
 // Estado del modal
