@@ -109,8 +109,6 @@
 import { ref } from 'vue';
 import FormularioGeneral from '../formularios/formulario-general.vue';
 import FormularioDeportista from '../formularios/formulario-deportista.vue';
-import FormularioEntrenador from '../formularios/formulario-entrenador.vue';
-import FormularioAcudiente from '../formularios/formulario-acudiente.vue';
 
 // Props
 defineProps({
