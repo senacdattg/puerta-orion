@@ -9,6 +9,7 @@ import './assets/css/roles.css'
 import './assets/css/galeria.css'
 import "./assets/css/calendario.css";
 import "./assets/css/frame-calendario.css";
+import "./assets/css/modal.css";
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'

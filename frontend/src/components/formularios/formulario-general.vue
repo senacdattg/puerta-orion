@@ -1,6 +1,6 @@
 <template>
   <form class="formulario-datos" @submit.prevent="manejarSubmit">
-  <section class="seccion-formulario" v-show="indiceActual === 0">
+  <section v-show="indiceActual === 0">
     <h3>{{  obtenerTitulo() }}</h3>
     
     <!-- Nombres -->
