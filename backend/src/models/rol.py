@@ -30,3 +30,4 @@ class Rol(db.Model):
         }
 
 
+
