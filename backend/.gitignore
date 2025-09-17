@@ -113,3 +113,11 @@ config/local.py
 *.temp
 .DS_Store
 Thumbs.db
+
+# Archivos de configuración de IDEs
+.vscode/
+.idea/
+*.swp
+
+# Ignorar archivos de migraciones si se usan
+migrations/

@@ -2,7 +2,7 @@
 <template>
   <form class="formulario-datos" @submit.prevent="manejarSubmit">
     <!-- Sección 1: Información Básica -->
-    <section v-show="indiceActual === 0">
+    <section class="seccion-formulario" v-show="indiceActual === 0">
       <h3>{{ obtenerTitulo() }}</h3>
 
       <div class="fila-texto">
