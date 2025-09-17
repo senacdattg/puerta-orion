@@ -1,0 +1,43 @@
+# Ignorar archivos y carpetas generados automáticamente
+
+# Entornos virtuales
+venv/
+.env/
+.venv/
+
+# Archivos de configuración de entorno
+.env
+*.env
+
+# Archivos de bases de datos temporales
+*.sqlite3
+*.db
+
+# Archivos de logs
+logs/
+*.log
+
+# Archivos de caché y temporales de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de configuración de IDEs
+.vscode/
+.idea/
+*.swp
+
+# Archivos de pruebas y resultados temporales
+*.bak
+*.tmp
+
+# Otros archivos sensibles o generados
+.DS_Store
+
+# Ignorar archivos de migraciones si se usan
+migrations/
+# End Generation Here

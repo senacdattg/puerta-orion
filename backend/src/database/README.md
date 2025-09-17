@@ -170,6 +170,3 @@ SHOW STATUS LIKE 'Questions';
 - ✅ **Conexiones con timeout**
 - ✅ **Manejo seguro de errores**
 - ✅ **Archivos .env en .gitignore**
-
-
-
