@@ -113,21 +113,6 @@
 	margin-bottom: 30px;
 }
 
-/* Sección de contenido */
-.seccion-contenido {
-	background-color: #0047ab;
-	margin: 0 auto;
-	max-width: 1500px;
-	text-align: center;
-	margin-bottom: 2rem;
-	padding: 2rem 0;
-	border-radius: 1rem;
-}
-
-.seccion-contenido.grande {
-	padding: 60px 40px;
-	max-width: 1700px;
-}
 
 /* Cuadrícula de tarjetas */
 .cuadricula-tarjetas {
@@ -269,31 +254,6 @@
 	background-color: #2196f3;
 	/* azul */
 }
-
-.bloque-subtitulo {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	text-align: center;
-  
-	border-top: 2px solid #FFD700;   /* línea arriba */
-	border-bottom: 2px solid #FFD700; /* línea abajo */
-	padding: 15px 0; /* espacio entre líneas */
-	margin-bottom: 30px;
-  }
-
-.subtitulo-galeria {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #FFD700;
-	font-size: 2.5rem;
-	font-weight: bold;
-	margin-bottom: 20px;
-	text-align: center;
-}
-
-
 
 /* Texto placeholder */
 .placeholder-texto {

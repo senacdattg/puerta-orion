@@ -6,6 +6,7 @@ defineOptions({
   name: 'VistaDeportistas'
 });
 import Encabezado from '../components/layout/encabezado.vue';
+import tituloClub from '@/components/ui/titulo-club.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
 import Pie from '../components/ui/pie.vue';
 import { ref } from 'vue';
@@ -61,6 +62,7 @@ const deportistas = ref([
 <template>
   <main>
     <Encabezado rol="Admin"/>
+    <tituloClub></tituloClub>
     <ListaDeportistas
       :deportistas="deportistas"
       @editar="editarDeportista"

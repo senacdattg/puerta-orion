@@ -8,7 +8,7 @@
     <div class="seccion-contenido grande">
 
       <div class="bloque-subtitulo">
-        <span class="subtitulo-galeria">Categorías de búsqueda</span>
+        <span class="subtitulo-bloque">Categorías de búsqueda</span>
 
         <div class="contenedor-filtros">
           <div class="buscador">
