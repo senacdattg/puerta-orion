@@ -36,7 +36,7 @@
 /* ===== COMPONENTE LISTA MENSUALIDADES ===== */
 .lista-mensualidades {
   padding: 2rem;
-  background: linear-gradient(135deg, var(--color-primario) 0%, #0056cc 100%);
+  background: linear-gradient(135deg, var(--color-primario) 0%, 100%);
   min-height: 100vh;
 }
 
