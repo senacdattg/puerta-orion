@@ -72,7 +72,3 @@ const deportistas = ref([
   </main>
 </template>
 
-<style>
-/* Importamos el CSS moderno para deportistas */
-@import '../assets/css/deportistas-modern.css';
-</style>

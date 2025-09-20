@@ -50,6 +50,13 @@ const navigationItems = [
     route: '/deportistas',
     icon: 'fas fa-users',
     colorClass: 'nav-card--green'
+  },
+  {
+    id: 'mensualidades',
+    title: 'Mensualidades',
+    route: '/mensualidades',
+    icon: 'fas fa-money-bill-wave',
+    colorClass: 'nav-card--purple'
   }
 ]
 </script>
@@ -114,6 +121,10 @@ const navigationItems = [
 
 .nav-card--green {
   background-color: #28a745;
+}
+
+.nav-card--purple {
+  background-color: #6d05c2;
 }
 
 .nav-icon {

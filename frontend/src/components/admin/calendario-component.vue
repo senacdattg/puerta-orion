@@ -95,7 +95,7 @@
                             Tipo de evento *
                         </label>
                         <select id="tipo" v-model="nuevoEvento.tipo" required class="select-evento" :disabled="!esAdmin">
-                            <option value="">Seleccionar tipo</option>
+                            <option disabled.value="">Seleccionar tipo</option>
                             <option value="Entrenamiento">🏋️ Entrenamiento</option>
                             <option value="Evento">🎉 Evento</option>
                             <option value="Competencia">🏆 Competencia</option>

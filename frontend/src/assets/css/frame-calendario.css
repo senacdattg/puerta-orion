@@ -185,13 +185,10 @@
 }
 
 .btn-secundario {
-  background: #4b5563;
+  background: #ff0000;
   color: white;
 }
 
-.btn-secundario:hover {
-  background: #ff0000;
-}
 
 .btn-eliminar {
   background: #dc2626;

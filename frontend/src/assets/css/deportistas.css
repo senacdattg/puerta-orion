@@ -1,88 +1,299 @@
-/* Contenedor principal con fondo azul */
-.contenedor-principal {
-  background-color: #0047ab;
-  margin: 40px 60px;
-  padding: 20px;
-  border-radius: 5px;
+/* ===== ESTILOS PARA DEPORTISTAS - VERSIÓN MODERNA ===== */
+
+/* Importamos las variables base para mantener consistencia (DRY) */
+@import './base/variables.css';
+@import './components/botones.css';
+
+/* ===== COMPONENTE LISTA DEPORTISTAS ===== */
+.lista-deportistas {
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--color-primario) 0%, 100%);
+  min-height: 100vh;
 }
 
-/* Fila de búsqueda centrada */
-.contenedor-busqueda {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-/* Entrada de búsqueda circular y estilizada */
-.entrada-busqueda-circular {
-  width: 250px;
-  padding: 12px 20px;
-  border-radius: 25px;
-  border: none;
-  font-size: 16px;
-  background-color: white;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
-  transition: 0.3s ease;
-}
-
-.entrada-busqueda-circular:focus {
-  outline: none;
-  box-shadow: 0 0 8px rgba(0, 71, 171, 0.4);
-}
-
-/* Contenedor amarillo con separación */
-.contenedor-secundario {
-  display: flex;
-  gap: 20px;
-  background-color: #f4d800;
-  padding: 20px;
-  border-radius: 5px;
-}
-
-/* Tarjeta blanca que contiene la tabla */
-.tarjeta-tabla {
-  flex: 1;
-  background-color: white;
-  padding: 10px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  overflow-x: auto; /* Hace scroll horizontal en móviles */
-}
-
-/* Tabla con estilo limpio */
-.tarjeta-tabla table {
+.entrada-busqueda {
   width: 100%;
-  border-collapse: collapse;
-  background-color: white;
-  border-radius: 10px;
-  overflow: hidden;
+  padding: 1rem 3rem 1rem 1.5rem;
+  border: none;
+  border-radius: var(--radio-borde);
+  font-size: 1rem;
+  background: var(--color-blanco);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
 }
 
-/* Encabezado de la tabla */
-.tarjeta-tabla th {
-  background-color: #0047ab;
-  color: white;
-  padding: 15px;
-  text-align: center;
-  font-size: 16px;
+.entrada-busqueda:focus {
+  outline: none;
+  box-shadow: var(--sombra-media);
+  transform: translateY(-2px);
 }
 
-/* Celdas de la tabla */
-.tarjeta-tabla td {
-  text-align: center;
-  padding: 12px;
-  border-top: 1px solid #ddd;
-  font-size: 15px;
-  color: #333;
+.icono-busqueda {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: var(--color-gris);
 }
 
-/* Fila alterna para mejor legibilidad */
-.tarjeta-tabla tbody tr:nth-child(even) {
-  background-color: #f9f9f9;
+.filtros {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-/* Efecto hover para interacción */
-.tarjeta-tabla tbody tr:hover {
-  background-color: #f1f1f1;
+.filtro-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid transparent;
+  border-radius: var(--radio-borde);
+  background: var(--color-blanco);
+  color: var(--color-gris-oscuro);
+  font-size: 0.9rem;
   cursor: pointer;
+  transition: var(--transicion);
+  box-shadow: var(--sombra-suave);
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: var(--color-secundario);
+  box-shadow: var(--sombra-media);
+}
+
+/* ===== ESTADÍSTICAS ===== */
+.estadisticas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--color-blanco);
+  padding: 1.5rem;
+  border-radius: var(--radio-borde);
+  text-align: center;
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--sombra-media);
+  border-color: var(--color-secundario);
+}
+
+.stat-numero {
+  display: block;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--color-primario);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: var(--color-gris);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ===== GRID DE DEPORTISTAS ===== */
+.grid-deportistas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* ===== TARJETA DE DEPORTISTA ===== */
+.tarjeta-deportista {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: 1.5rem;
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.tarjeta-deportista:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--sombra-fuerte);
+  border-color: var(--color-secundario);
+}
+
+.tarjeta-deportista::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.imagen-deportista {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.imagen-deportista img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--color-secundario);
+  box-shadow: var(--sombra-media);
+  transition: var(--transicion);
+}
+
+.tarjeta-deportista:hover .imagen-deportista img {
+  transform: scale(1.1);
+  border-color: var(--color-primario);
+}
+
+.contenido-deportista {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.nombre-deportista {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 0.5rem;
+}
+
+.categoria-deportista {
+  color: var(--color-gris);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.estado-deportista {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.estado-deportista.activo {
+  background: var(--color-exito);
+  color: var(--color-blanco);
+}
+
+.estado-deportista.inactivo {
+  background: var(--color-gris);
+  color: var(--color-blanco);
+}
+
+.estado-deportista.suspendido {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+/* ===== ACCIONES ===== */
+.acciones-deportista {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transicion);
+}
+
+.tarjeta-deportista:hover .acciones-deportista {
+  opacity: 1;
+}
+
+/* Usamos las clases de botones reutilizables */
+.boton-accion {
+  @extend .btn, .btn-circle, .btn-sm;
+}
+
+.boton-accion.editar {
+  @extend .btn-info;
+}
+
+.boton-accion.eliminar {
+  @extend .btn-danger;
+}
+
+/* ===== ESTADO SIN RESULTADOS ===== */
+.sin-resultados {
+  text-align: center;
+  padding: 3rem;
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-suave);
+}
+
+.sin-resultados p {
+  color: var(--color-gris);
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.boton-limpiar {
+  @extend .btn, .btn-primary;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .lista-deportistas {
+    padding: 1rem;
+  }
+
+  .contenedor-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .buscador {
+    min-width: auto;
+  }
+
+  .filtros {
+    justify-content: center;
+  }
+
+  .grid-deportistas {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .estadisticas {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-numero {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .estadisticas {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta-deportista {
+    padding: 1rem;
+  }
+
+  .imagen-deportista img {
+    width: 60px;
+    height: 60px;
+  }
 }
