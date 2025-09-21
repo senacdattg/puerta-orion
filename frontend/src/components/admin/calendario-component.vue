@@ -34,27 +34,21 @@
 
         <!-- Grid del calendario -->
         <div class="calendario-grid">
-            <div
-                v-for="(dia, index) in diasCalendario"
-                :key="index"
-                @click="seleccionarDia(dia)"
-                :class="[
-                    'dia-calendario',
-                    {
-                        'dia-otro-mes': !dia.esMesActual,
-                        'dia-hoy': dia.esHoy,
-                        'dia-con-eventos': dia.eventos && dia.eventos.length > 0
-                    }
-                ]"
-            >
+            <div v-for="(dia, index) in diasCalendario" :key="index" @click="seleccionarDia(dia)" :class="[
+                'dia-calendario',
+                {
+                    'dia-otro-mes': !dia.esMesActual,
+                    'dia-hoy': dia.esHoy,
+                    'dia-con-eventos': dia.eventos && dia.eventos.length > 0
+                }
+            ]">
                 <div class="numero-dia">{{ dia.numero }}</div>
 
                 <!-- Indicador de eventos -->
                 <div v-if="dia.eventos && dia.eventos.length > 0" class="indicador-eventos">
                     <span class="contador-eventos">{{ dia.eventos.length }}</span>
                     <div class="puntos-eventos">
-                        <span v-for="(evento, idx) in dia.eventos.slice(0, 3)"
-                            :key="idx"
+                        <span v-for="(evento, idx) in dia.eventos.slice(0, 3)" :key="idx"
                             :class="['punto-evento', `tipo-${evento.tipo.toLowerCase()}`]">
                         </span>
                     </div>
@@ -78,15 +72,9 @@
                             <i class="fas fa-heading"></i>
                             Título del evento *
                         </label>
-                        <input
-                            id="titulo"
-                            v-model="nuevoEvento.titulo"
-                            type="text"
-                            placeholder="Ej: Entrenamiento de fuerza"
-                            required
-                            class="input-evento"
-                            :disabled="!esAdmin"
-                        />
+                        <input id="titulo" v-model="nuevoEvento.titulo" type="text"
+                            placeholder="Ej: Entrenamiento de fuerza" required class="input-evento"
+                            :disabled="!esAdmin" />
                     </div>
 
                     <div class="campo-formulario">
@@ -94,7 +82,8 @@
                             <i class="fas fa-tag"></i>
                             Tipo de evento *
                         </label>
-                        <select id="tipo" v-model="nuevoEvento.tipo" required class="select-evento" :disabled="!esAdmin">
+                        <select id="tipo" v-model="nuevoEvento.tipo" required class="select-evento"
+                            :disabled="!esAdmin">
                             <option disabled.value="">Seleccionar tipo</option>
                             <option value="Entrenamiento">🏋️ Entrenamiento</option>
                             <option value="Evento">🎉 Evento</option>
@@ -108,28 +97,16 @@
                                 <i class="fas fa-calendar"></i>
                                 Fecha *
                             </label>
-                            <input
-                                id="fecha"
-                                v-model="nuevoEvento.fecha"
-                                type="date"
-                                required
-                                class="input-evento"
-                                :disabled="!esAdmin"
-                            />
+                            <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
+                                :disabled="!esAdmin" />
                         </div>
                         <div class="campo-formulario">
                             <label for="hora">
                                 <i class="fas fa-clock"></i>
                                 Hora *
                             </label>
-                            <input
-                                id="hora"
-                                v-model="nuevoEvento.hora"
-                                type="time"
-                                required
-                                class="input-evento"
-                                :disabled="!esAdmin"
-                            />
+                            <input id="hora" v-model="nuevoEvento.hora" type="time" required class="input-evento"
+                                :disabled="!esAdmin" />
                         </div>
                     </div>
 
@@ -138,15 +115,8 @@
                             <i class="fas fa-map-marker-alt"></i>
                             Lugar *
                         </label>
-                        <input
-                            id="lugar"
-                            v-model="nuevoEvento.lugar"
-                            type="text"
-                            placeholder="Ej: Gimnasio principal"
-                            required
-                            class="input-evento"
-                            :disabled="!esAdmin"
-                        />
+                        <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
+                            required class="input-evento" :disabled="!esAdmin" />
                     </div>
 
                     <div class="campo-formulario">
@@ -154,14 +124,9 @@
                             <i class="fas fa-align-left"></i>
                             Descripción
                         </label>
-                        <textarea
-                            id="descripcion"
-                            v-model="nuevoEvento.descripcion"
-                            placeholder="Detalles adicionales del evento..."
-                            rows="3"
-                            class="textarea-evento"
-                            :disabled="!esAdmin"
-                        ></textarea>
+                        <textarea id="descripcion" v-model="nuevoEvento.descripcion"
+                            placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento"
+                            :disabled="!esAdmin"></textarea>
                     </div>
 
                     <div class="botones-modal">
@@ -169,7 +134,8 @@
                             <i class="fas fa-times"></i>
                             Cerrar
                         </button>
-                        <button v-if="esAdmin && modoEdicion" type="button" @click="eliminarEvento" class="btn-eliminar">
+                        <button v-if="esAdmin && modoEdicion" type="button" @click="eliminarEvento"
+                            class="btn-eliminar">
                             <i class="fas fa-trash"></i>
                             Eliminar
                         </button>
@@ -193,13 +159,9 @@
                 </div>
 
                 <div class="lista-eventos">
-                    <div
-                        v-for="evento in eventosDelDia"
-                        :key="evento.id"
-                        @click="esAdmin ? editarEvento(evento) : verEvento(evento)"
-                        class="evento-item"
-                        :class="{ 'evento-item-usuario': !esAdmin }"
-                    >
+                    <div v-for="evento in eventosDelDia" :key="evento.id"
+                        @click="esAdmin ? editarEvento(evento) : verEvento(evento)" class="evento-item"
+                        :class="{ 'evento-item-usuario': !esAdmin }">
                         <div class="evento-info">
                             <div class="evento-titulo">{{ evento.titulo }}</div>
                             <div class="evento-detalles">
@@ -220,7 +182,8 @@
                                 {{ evento.descripcion || 'Sin descripción' }}
                             </div>
                         </div>
-                        <i :class="esAdmin ? 'fas fa-edit' : 'fas fa-eye'" :title="esAdmin ? 'Editar evento' : 'Ver detalles'"></i>
+                        <i :class="esAdmin ? 'fas fa-edit' : 'fas fa-eye'"
+                            :title="esAdmin ? 'Editar evento' : 'Ver detalles'"></i>
                     </div>
                 </div>
             </div>
@@ -384,16 +347,20 @@ export default {
         },
 
         seleccionarDia(dia) {
-            if (dia.esMesActual) {
-                if (dia.eventos && dia.eventos.length > 0) {
-                    // Cualquier usuario puede ver eventos
-                    this.eventosDelDia = dia.eventos;
-                    this.mostrarSelectorEventos();
-                } else if (this.esAdmin) {
-                    // Solo el admin puede crear eventos
-                    this.nuevoEvento.fecha = dia.fecha;
-                    this.abrirModal();
+            if (!dia.esMesActual) return;
+
+            if (dia.eventos && dia.eventos.length > 0) {
+                // 👉 Si hay eventos y es admin, abrir directamente el primero en modo edición
+                if (this.esAdmin) {
+                    this.editarEvento(dia.eventos[0]);
+                } else {
+                    // 👉 Si no es admin, mostrar el evento en modo lectura
+                    this.verEvento(dia.eventos[0]);
                 }
+            } else if (this.esAdmin) {
+                // 👉 Solo el admin puede crear eventos en días vacíos
+                this.nuevoEvento.fecha = dia.fecha;
+                this.abrirModal();
             }
         },
 
