@@ -106,18 +106,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import FormularioGeneral from '../formularios/formulario-general.vue';
 import FormularioDeportista from '../formularios/formulario-deportista.vue';
 import FormularioEntrenador from '../formularios/formulario-entrenador.vue';
 import FormularioAcudiente from '../formularios/formulario-acudiente.vue';
 
 // Props
-defineProps({
+const props = defineProps({
   mostrar: {
     type: Boolean,
     default: false
   }
+});
+
+// Debug: Log cuando cambie la prop mostrar
+watch(() => props.mostrar, (nuevoValor) => {
+  console.log('Modal mostrar cambió a:', nuevoValor);
 });
 
 // Emits
@@ -224,8 +229,9 @@ function resetearModal() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
   padding: 20px;
+  backdrop-filter: blur(4px);
 }
 
 /* Modal Content */
@@ -285,7 +291,7 @@ function resetearModal() {
 }
 
 .btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(55, 51, 51, 0.3);
   transform: scale(1.1);
 }
 
@@ -468,12 +474,12 @@ function resetearModal() {
 
 .btn--outline {
   background-color: transparent;
-  color: #6c757d;
+  color: #7d6c6c;
   border: 2px solid #6c757d;
 }
 
 .btn--outline:hover {
-  background-color: #6c757d;
+  background-color: #e30f0f;
   color: white;
 }
 
