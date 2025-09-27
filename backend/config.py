@@ -16,7 +16,8 @@ class Config:
     PORT = int(os.environ.get('PORT', 5000))
     
     # Configuración de la base de datos
-    DATABASE_URL = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+mysqlconnector://usuario:contraseña@localhost/puerta_orion'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de CORS
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
