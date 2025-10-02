@@ -5,6 +5,7 @@ Responsabilidad:
 - Inicializa la aplicación Flask.
 - Carga la configuración adecuada según el entorno.
 - Configura CORS para permitir peticiones desde orígenes definidos.
+- Inicializa la base de datos y migraciones.
 - Expone endpoints básicos de estado y bienvenida.
 - (Preparado para registrar blueprints de rutas de la aplicación).
 
@@ -13,7 +14,9 @@ Este archivo sigue el principio SRP: solo se encarga de la inicialización y arr
 
 from flask import Flask, request, g
 from flask_cors import CORS
+from flask_migrate import Migrate
 from config import config
+from src.models import db
 import os
 
 def create_app(config_name=None):
@@ -32,6 +35,12 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     CORS(app, origins=app.config['CORS_ORIGINS'])
+
+    # Configurar base de datos
+    db.init_app(app)
+    
+    # Configurar migraciones
+    migrate = Migrate(app, db)
 
     # Aquí se pueden registrar blueprints de rutas adicionales
     # from .routes import main_bp

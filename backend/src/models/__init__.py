@@ -1,87 +1,116 @@
 """
-Módulo de modelos para la aplicación Puerta Orion.
-Importa todos los modelos de la base de datos de manera organizada.
-Cada tabla tiene su propio archivo de modelo siguiendo el principio SRP.
+Módulo principal de modelos.
+Importa todos los modelos organizados por módulos.
 """
+from .base import db, BaseModel
 
-# Importar configuración de base de datos
-from ..database.database import db, init_database, create_tables, drop_tables
+# Importar módulos completos
+from . import personas
+from . import categorias
+from . import usuarios
+from . import eventos
+from . import pagos
+from . import roles_y_permisos
+from . import salud
+from . import acudientes
+from . import deportistas
+from . import catalogos
 
-# Importar modelos individuales - Catálogos
-from .tipo_documento import TipoDocumento
-from .ciudad_residencia import CiudadResidencia
-from .grupo_sanguineo import GrupoSanguineo
-from .institucion_registro import InstitucionRegistro
-from .eps import EPS
-from .sexo import Sexo
-from .tipo_enfermedad import TipoEnfermedad
-from .enfermedad import Enfermedad
-from .metodo_pago import MetodoPago
-from .categoria import Categoria
-from .tipo_evento import TipoEvento
-from .sesion import Sesion
+# Importar modelos específicos para acceso directo 
+from .personas.persona import Persona
+from .categorias.categoria import Categoria
+from .categorias.ciudad_residencia import CiudadResidencia
+from .categorias.grupo_sanguineo import GrupoSanguineo
+from .categorias.institucion_registro import InstitucionRegistro
+from .categorias.sexo import Sexo
 
-# Importar modelos individuales - Usuarios
-from .permiso import Permiso
-from .rol import Rol
-from .usuario import Usuario
-from .rol_usuario import RolUsuario
+from .eventos.sesion import Sesion
+from .eventos.evento import Evento
+from .eventos.tipo_evento import TipoEvento
+from .pagos.cuota import Cuota
+from .pagos.mensualidad import Mensualidad
+from .pagos.metodo_pago import MetodoPago
+from .roles_y_permisos.rol import Rol
+from .roles_y_permisos.permiso import Permiso
+from .roles_y_permisos.rol_permiso import RolPermiso
+from .roles_y_permisos.usuario_rol import UsuarioRol
+from .salud.tipo_enfermedad import TipoEnfermedad
+from .usuarios.usuario import Usuario
+from .acudientes.acudiente import Acudiente
+from .acudientes.deportista_acudiente import DeportistaAcudiente
+from .acudientes.parentesco import Parentesco
+from .deportistas.deportista import Deportista
+from .catalogos.tipo_documento import TipoDocumento
+from .catalogos.eps import EPS
 
-# Importar modelo principal
-from .Personas import Persona
+# Nuevas tablas agregadas
+from .deportistas.informacion_deportiva import InformacionDeportiva
+from .roles_y_permisos.personas_rol import PersonasRol
+from .eventos.sesionAuth import SesionAuth
+from .salud.diagnostico import Diagnostico  
+from .salud.diagnostico_persona import DiagnosticoPersona
 
-# Importar modelos individuales - Pagos
-from .cuota import Cuota
-from .mensualidad import Mensualidad
-
-# Importar modelos individuales - Eventos
-from .evento import Evento
-
-# Importar tablas de asociación
-from .rol_permiso import rol_permiso
-from .usuario_rol import usuario_rol
-
-# Lista de todos los modelos para facilitar la importación
 __all__ = [
-    # Configuración de base de datos
+    # Base y utilidades
     'db',
-    'init_database',
-    'create_tables',
-    'drop_tables',
+    'BaseModel',
     
-    # Modelos de catálogos
-    'TipoDocumento',
+    # Módulos
+    'personas',
+    'categorias', 
+    'usuarios',
+    'eventos',
+    'pagos',
+    'roles_y_permisos',
+    'salud',
+    'acudientes',
+    'deportistas',
+    'catalogos',
+    
+    # Modelos principales
+    'Persona',
+    'Usuario',
+    'Deportista',
+    'Acudiente',
+    'DeportistaAcudiente',
+    'Parentesco',
+    
+    # Modelos de categorías
+    'Categoria',
     'CiudadResidencia',
     'GrupoSanguineo',
     'InstitucionRegistro',
-    'EPS',
     'Sexo',
-    'TipoEnfermedad',
-    'Enfermedad',
-    'MetodoPago',
-    'Categoria',
+    'TipoDocumento',
+    'EPS',
+    
+    # Modelos de eventos
+    'Evento',
     'TipoEvento',
     'Sesion',
-    
-    # Modelos de usuarios
-    'Permiso',
-    'Rol',
-    'Usuario',
-    'RolUsuario',
-    
-    # Modelo principal
-    'Persona',
+    'SesionAuth',  # Nueva tabla
     
     # Modelos de pagos
     'Cuota',
     'Mensualidad',
+    'MetodoPago',
     
-    # Modelos de eventos
-    'Evento',
+    # Modelos de roles y permisos
+    'Rol',
+    'Permiso',
+    'RolPermiso',
+    'UsuarioRol',
     
-    # Tablas de asociación
-    'rol_permiso',
-    'usuario_rol'
+    # Modelos de salud
+    'TipoEnfermedad',
+
+    # Modelos de deportistas
+    'InformacionDeportiva',
+    
+    # Nuevas tablas agregadas
+    'PersonasRol',           # Nueva tabla
+    'DiagnosticoPersona',    # Nueva tabla
+    'Diagnostico',           # Nueva tabla
+    'Escuela',
+    'Deporte',
 ]
-
-
