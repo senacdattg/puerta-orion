@@ -34,6 +34,18 @@ body {
 	margin-bottom: 30px;
 }
 
+.linea-arriba {
+  border-top: 2px solid #FFD700;
+  padding: 15px 0;
+	margin-bottom: 30px;
+}
+
+.linea-abajo {
+  border-bottom: 2px solid #FFD700;
+  padding: 1px 0;
+	margin-bottom: 30px;
+}
+
 .subtitulo-bloque {
 	display: flex;
 	align-items: center;

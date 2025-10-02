@@ -70,8 +70,8 @@
     </div>
 
     <!-- Indicador de vencimiento -->
-    <div v-if="mensualidad.vencimiento" class="indicador-vencimiento" :class="getClaseVencimiento()">
-      <span class="vencimiento-texto">{{ getTextoVencimiento() }}</span>
+    <div class="indicador-vencimiento" :class="claseVencimiento">
+      <span class="vencimiento-texto">{{ textoVencimiento }}</span>
     </div>
   </div>
 </template>
@@ -104,16 +104,96 @@ const emit = defineEmits(['ver-detalle', 'gestionar', 'reporte', 'ver-detalle-co
 
 // Computed properties
 const esVencida = computed(() => {
-  if (!props.mensualidad.vencimiento) return false;
-  return new Date(props.mensualidad.vencimiento) < new Date();
+  // Si no hay fechas de pago, no está vencida (no ha pagado)
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
+    return false;
+  }
+
+  // Obtener la última fecha de pago
+  const ultimaFechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
+  if (!ultimaFechaPago) return false;
+
+  // Calcular la fecha de vencimiento (fecha de pago + 1 mes)
+  const fechaPago = new Date(ultimaFechaPago);
+  const fechaVencimiento = new Date(fechaPago);
+  fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+
+  // Verificar si está vencida
+  const hoy = new Date();
+  return fechaVencimiento < hoy;
 });
 
 const diasParaVencimiento = computed(() => {
-  if (!props.mensualidad.vencimiento) return null;
+  // Si no hay fechas de pago, no hay vencimiento calculado
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
+    return null;
+  }
+
+  // Obtener la última fecha de pago
+  const ultimaFechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
+  if (!ultimaFechaPago) return null;
+
+  // Calcular la fecha de vencimiento (fecha de pago + 1 mes)
+  const fechaPago = new Date(ultimaFechaPago);
+  const fechaVencimiento = new Date(fechaPago);
+  fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+
+  // Calcular días restantes
   const hoy = new Date();
-  const vencimiento = new Date(props.mensualidad.vencimiento);
-  const diffTime = vencimiento - hoy;
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffTime = fechaVencimiento - hoy;
+  const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  return diasRestantes;
+});
+
+// Computed para la clase del indicador de vencimiento
+const claseVencimiento = computed(() => {
+  // Si no hay fechas de pago, no hay vencimiento
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
+    return 'sin-pagos';
+  }
+
+  if (esVencida.value) {
+    return 'vencido';
+  }
+  
+  const dias = diasParaVencimiento.value;
+  
+  if (dias === null) {
+    return 'sin-fecha';
+  }
+  if (dias <= 3) {
+    return 'proximo-vencer';
+  }
+  if (dias <= 7) {
+    return 'advertencia';
+  }
+  return 'normal';
+});
+
+// Computed para el texto del indicador de vencimiento
+const textoVencimiento = computed(() => {
+  // Si no hay fechas de pago, no hay vencimiento
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
+    return 'Sin pagos';
+  }
+
+  if (esVencida.value) {
+    return 'Vencido';
+  }
+
+  const dias = diasParaVencimiento.value;
+  
+  if (dias === null) {
+    return 'Sin fecha';
+  }
+  if (dias <= 3) {
+    return `Vence en ${dias} día${dias !== 1 ? 's' : ''}`;
+  }
+  if (dias <= 7) {
+    return `Vence en ${dias} días`;
+  }
+  return `Vence en ${dias} días`;
 });
 
 // Funciones
@@ -148,35 +228,48 @@ function getIconoEstado() {
 }
 
 function getClaseSaldo() {
-  const saldo = props.mensualidad.saldoPendiente || 0;
-  if (saldo === 0) return 'saldo-completo';
-
-  const valorTotal = parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
-  if (saldo <= valorTotal * 0.3) return 'saldo-bajo';
-  if (saldo <= valorTotal * 0.7) return 'saldo-medio';
+  const totalMensualidad = 150000;
+  const numPagos = props.mensualidad.fechasPago ? props.mensualidad.fechasPago.length : 0;
+  
+  if (numPagos === 0) return 'saldo-alto'; // Sin pagos
+  
+  // Calcular saldo pendiente
+  let totalPagado = 0;
+  if (numPagos === 1) {
+    totalPagado = totalMensualidad; // Pago completo
+  } else {
+    const montoPorPago = Math.floor(totalMensualidad / numPagos);
+    totalPagado = numPagos * montoPorPago;
+  }
+  
+  const saldoPendiente = totalMensualidad - totalPagado;
+  
+  if (saldoPendiente === 0) return 'saldo-completo';
+  if (saldoPendiente <= totalMensualidad * 0.3) return 'saldo-bajo';
+  if (saldoPendiente <= totalMensualidad * 0.7) return 'saldo-medio';
   return 'saldo-alto';
 }
 
 function calcularSaldoPendiente() {
-  if (props.mensualidad.estado === 'Pagado') return '$0';
-
-  const valorTotal = parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
-  const saldoPendiente = props.mensualidad.saldoPendiente || valorTotal;
-
-  return `$${saldoPendiente.toLocaleString('es-CO')}`;
+  const totalMensualidad = 150000;
+  const numPagos = props.mensualidad.fechasPago ? props.mensualidad.fechasPago.length : 0;
+  
+  if (numPagos === 0) {
+    return `$${totalMensualidad.toLocaleString('es-CO')}`;
+  }
+  
+  // Calcular total pagado
+  let totalPagado = 0;
+  if (numPagos === 1) {
+    totalPagado = totalMensualidad; // Si hay solo un pago, es el total completo
+  } else {
+    // Si hay múltiples pagos, dividir equitativamente
+    const montoPorPago = Math.floor(totalMensualidad / numPagos);
+    totalPagado = numPagos * montoPorPago;
+  }
+  
+  const saldoPendiente = totalMensualidad - totalPagado;
+  return `$${Math.max(0, saldoPendiente).toLocaleString('es-CO')}`;
 }
 
-function getClaseVencimiento() {
-  if (!props.mensualidad.vencimiento) return '';
-  if (esVencida.value) return 'vencido';
-  if (diasParaVencimiento.value <= 3) return 'proximo-vencer';
-  if (diasParaVencimiento.value <= 7) return 'advertencia';
-  return 'normal';
-}
-
-function getTextoVencimiento() {
-  if (!props.mensualidad.vencimiento) return '';
-  if (esVencida.value) return 'Vencido';
-  return `Vence en ${diasParaVencimiento.value} días`;
-}
 </script>

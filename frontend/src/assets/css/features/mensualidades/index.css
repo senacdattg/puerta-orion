@@ -6,14 +6,15 @@
   --color-primario: #0047ab;
   --color-secundario: #f4d800;
   --color-blanco: #ffffff;
-  --color-gris: #6c757d;
+  --color-negro: #000000;
+  /* --color-gris: #6c757d; */
   --color-gris-claro: #f8f9fa;
   --color-gris-medio: #e9ecef;
   --color-gris-oscuro: #343a40;
   --color-exito: #28a745;
   --color-advertencia: #ffc107;
   --color-peligro: #dc3545;
-  --color-info: #17a2b8;
+  --color-info: #0047ab;
 
   /* Sombras */
   --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -177,7 +178,7 @@
 .tarjeta-mensualidad:hover {
   transform: translateY(-5px);
   box-shadow: var(--sombra-media);
-  border-color: var(--color-primario);
+  border-color: var(--color-secundario);
 }
 
 /* Estados de mensualidad */
@@ -276,8 +277,8 @@
 }
 
 .detalle-item {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  flex-direction: row;
   gap: 0.25rem;
 }
 
@@ -366,7 +367,7 @@
 
 /* Botón principal (Ver Detalles) */
 .boton-principal {
-  background: linear-gradient(135deg, var(--color-info), #138496);
+  background: linear-gradient(135deg, #138496);
   color: var(--color-blanco);
   padding: 0.875rem 2rem;
   font-weight: 600;
@@ -520,7 +521,7 @@
   margin: 0;
   font-size: 1.5rem;
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: black;
 }
 
 .btn-cerrar {
@@ -748,6 +749,9 @@
   padding: 1.5rem;
   border-radius: 0 0 var(--radio-borde) var(--radio-borde);
   border-top: 2px solid var(--color-gris-claro);
+  display: flex;          /* activa flexbox */
+  justify-content: flex-end; /* alinea los botones a la derecha (opcional) */
+  gap: 1rem;    
 }
 
 .acciones-footer {
@@ -787,30 +791,42 @@
 }
 
 .btn-secondary {
-  background: var(--color-gris);
+  background: var(--color-peligro);
   color: var(--color-blanco);
 }
 
 .btn-secondary:hover {
-  background: #5a6268;
-}
-
-.btn-warning {
-  background: var(--color-advertencia);
+  background: #ed3245 !important;
   color: var(--color-gris-oscuro);
 }
 
-.btn-warning:hover {
-  background: #e0a800;
+.btn-mensualidad {
+  background: #f4d800 !important;
 }
 
-.btn-info {
+.btn-mensualidad:hover {
+  background: #e6c700d5 !important;
+}
+
+
+.btn-reporte {
+  background: var(--color-advertencia);
+  color: var(--color-blanco);
+}
+
+.btn-reporte:hover {
+  background: #e0a800;
+  color: var(--color-gris-);
+}
+
+.btn-gestionar {
   background: var(--color-info);
   color: var(--color-blanco);
 }
 
-.btn-info:hover {
-  background: #138496;
+.btn-gestionar:hover {
+  background: #0047ab !important;
+  color: var(--color-gris-claro);
 }
 
 .btn-lg {
@@ -831,6 +847,216 @@
   font-size: 1.1rem;
   color: var(--color-gris);
   margin-bottom: 1.5rem;
+}
+
+/* ===== FORMULARIO MODAL PARA NUEVA MENSUALIDAD ===== */
+.formulario-mensualidad {
+  padding: 1.5rem;
+}
+
+.campo-formulario {
+  margin-bottom: 1.5rem;
+}
+
+.campo-formulario label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.campo-formulario label i {
+  color: var(--color-primario);
+  font-size: 1rem;
+  width: 16px;
+  text-align: center;
+}
+
+.input-mensualidad,
+.select-mensualidad {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde);
+  font-size: 1rem;
+  background: var(--color-blanco);
+  transition: var(--transicion);
+  box-shadow: var(--sombra-suave);
+}
+
+.input-mensualidad:focus,
+.select-mensualidad:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
+  transform: translateY(-1px);
+}
+
+.input-mensualidad::placeholder {
+  color: var(--color-gris);
+  opacity: 0.7;
+}
+
+.select-mensualidad {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  padding-right: 3rem;
+}
+
+/* Botones del formulario */
+.acciones {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--color-gris-claro);
+}
+
+.acciones.centrado {
+  justify-content: center;
+}
+
+.btn-principal {
+  background: linear-gradient(135deg, var(--color-primario), #0056cc);
+  color: var(--color-blanco);
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: var(--radio-borde);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicion);
+  box-shadow: var(--sombra-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 120px;
+}
+
+.btn-principal:hover {
+  background: linear-gradient(135deg, #0056cc, #0047ab);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+}
+
+.btn-principal:active {
+  transform: translateY(0);
+}
+
+.btn-secundario {
+  background: #dc3545;
+  color: var(--color-gris-oscuro) !important;
+  border: 2px solid var(--color-gris-medio);
+  padding: 1rem 2rem;
+  border-radius: var(--radio-borde);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicion);
+  min-width: 120px;
+}
+
+.btn-secundario:hover {
+  background: #fc3e51;
+  color: var(--color-blanco) !important;
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-suave);
+}
+
+/* Modal específico para formulario */
+.modal-content {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-fuerte);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalEntrada 0.3s ease-out;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--color-primario), #FFD700);
+  color: var(--color-blanco);
+  padding: 1.5rem;
+  border-radius: var(--radio-borde) var(--radio-borde) 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.504);
+}
+
+.btn-cerrar {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: var(--color-blanco);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transicion);
+}
+
+.btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* Validación visual */
+.input-mensualidad:invalid,
+.select-mensualidad:invalid {
+  border-color: var(--color-peligro);
+}
+
+.input-mensualidad:valid,
+.select-mensualidad:valid {
+  border-color: var(--color-exito);
+}
+
+/* Responsive para formulario */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 1rem;
+    max-height: 95vh;
+  }
+  
+  .modal-header {
+    padding: 1rem;
+  }
+  
+  .modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .formulario-mensualidad {
+    padding: 1rem;
+  }
+  
+  .acciones {
+    flex-direction: column;
+  }
+  
+  .btn-principal,
+  .btn-secundario {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ===== RESPONSIVE ===== */
@@ -906,4 +1132,433 @@
     min-width: 140px;
     padding: 0.75rem 1.5rem;
   }
+}
+
+
+/* Estilos para el Modal de Detalles en modo edición */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-edit {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-edit:hover {
+  background: #2980b9;
+}
+
+.formulario-edicion {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.campo-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.campo-formulario label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #34495e;
+  font-size: 0.9rem;
+}
+
+.campo-formulario label i {
+  color: #3498db;
+  width: 16px;
+}
+
+.input-edicion, .select-edicion {
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease;
+  background: #fff;
+}
+
+.input-edicion:focus, .select-edicion:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.select-edicion {
+  cursor: pointer;
+}
+
+.input-with-symbol {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.dollar-symbol {
+  position: absolute;
+  left: 12px;
+  color: #27ae60;
+  font-weight: bold;
+  font-size: 1rem;
+  z-index: 1;
+}
+
+.input-with-symbol .input-edicion {
+  padding-left: 30px;
+  width: 100%;
+  flex: 1;
+}
+
+.help-text {
+  font-size: 0.75rem;
+  color: #7f8c8d;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.acciones-rapidas {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.acciones-rapidas h6 {
+  margin: 0 0 1rem 0;
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.botones-rapidos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.btn-rapido {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 120px;
+}
+
+.btn-rapido:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.btn-pagado {
+  background: #27ae60;
+  color: white;
+}
+
+.btn-pagado:hover {
+  background: #229954;
+}
+
+.btn-pendiente {
+  background: #f39c12;
+  color: white;
+}
+
+.btn-pendiente:hover {
+  background: #e67e22;
+}
+
+.btn-vencido {
+  background: #e74c3c;
+  color: white;
+}
+
+.btn-vencido:hover {
+  background: #c0392b;
+}
+
+/* Responsive para el modal de detalles en modo edición */
+@media (max-width: 768px) {
+  .header-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .btn-edit {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .botones-rapidos {
+    flex-direction: column;
+  }
+  
+  .btn-rapido {
+    flex: none;
+    width: 100%;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+  }
+}
+
+/* Estilos para fechas de pago múltiples */
+.fechas-pago-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fecha-pago-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input-fecha {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.input-fecha:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.btn-eliminar-fecha {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.btn-eliminar-fecha:hover {
+  background: #c0392b;
+}
+
+.btn-agregar-fecha {
+  background: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  align-self: flex-start;
+}
+
+.btn-agregar-fecha:hover {
+  background: #229954;
+}
+
+/* Estilos para historial de pagos */
+.historial-pagos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.resumen-pagos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.resumen-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.resumen-valor {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.resumen-valor.pagado {
+  color: #27ae60;
+}
+
+.resumen-valor.pendiente {
+  color: #f39c12;
+}
+
+.resumen-valor.estado.sin-pagos {
+  color: #e74c3c;
+}
+
+.resumen-valor.estado.parcial {
+  color: #f39c12;
+}
+
+.resumen-valor.estado.completo,
+.resumen-valor.estado.pagado {
+  color: #27ae60;
+}
+
+.lista-pagos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lista-pagos h6 {
+  margin: 0;
+  color: #495057;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pagos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pago-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+}
+
+.fecha-pago {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.monto-pago {
+  font-weight: 600;
+  color: #27ae60;
+}
+
+.sin-pagos {
+  text-align: center;
+  padding: 1rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Responsive para fechas de pago y historial */
+@media (max-width: 768px) {
+  .resumen-pagos {
+    grid-template-columns: 1fr;
+  }
+  
+  .fecha-pago-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .btn-eliminar-fecha {
+    align-self: flex-end;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Estilos para el formulario de nueva mensualidad */
+.input-mensualidad {
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease;
+  background: #fff;
+  width: 100%;
+}
+
+.input-mensualidad:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.select-mensualidad {
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.3s ease;
+  background: #fff;
+  cursor: pointer;
+  width: 100%;
+}
+
+.select-mensualidad:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Aplicar estilos del input con símbolo también al formulario de nueva mensualidad */
+.modal-content .input-with-symbol .input-mensualidad {
+  padding-left: 30px;
+  width: 100%;
+  flex: 1;
+}
+
+/* Estilos adicionales para indicadores de vencimiento */
+.indicador-vencimiento.sin-pagos {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.indicador-vencimiento.sin-fecha {
+  background: #95a5a6;
+  color: var(--color-blanco);
 }
