@@ -106,6 +106,20 @@
             </div>
 
             <div class="campo-formulario">
+              <label for="tipo-pago">
+                <i class="fas fa-money-bill-wave"></i>
+                Tipo de Pago *
+              </label>
+              <select id="tipo-pago" v-model="form.tipoPago" class="select-mensualidad" required @change="onTipoPagoChange">
+                <option disabled value="">Selecciona el tipo de pago</option>
+                <option value="mes-individual">Mes Individual</option>
+                <option value="multiples-meses">Múltiples Meses</option>
+                <option value="año-completo">Año Completo</option>
+              </select>
+            </div>
+
+            <!-- Selección de mes individual -->
+            <div v-if="form.tipoPago === 'mes-individual'" class="campo-formulario">
               <label for="mes">
                 <i class="fas fa-calendar"></i>
                 Mes *
@@ -114,6 +128,28 @@
                 <option disabled value="">Selecciona el mes</option>
                 <option v-for="mes in meses" :key="mes" :value="mes">{{ mes }}</option>
               </select>
+            </div>
+
+            <!-- Selección de múltiples meses -->
+            <div v-if="form.tipoPago === 'multiples-meses'" class="campo-formulario">
+              <label>
+                <i class="fas fa-calendar-alt"></i>
+                Meses a Pagar *
+              </label>
+              <div class="meses-multiples-container">
+                <div v-for="(mes, index) in form.mesesSeleccionados" :key="index" class="mes-item">
+                  <select v-model="form.mesesSeleccionados[index]" class="select-mes-multiple">
+                    <option disabled value="">Selecciona mes</option>
+                    <option v-for="mesDisponible in getMesesDisponibles(index)" :key="mesDisponible" :value="mesDisponible">
+                      {{ mesDisponible }}
+                    </option>
+                  </select>
+                  <button type="button" @click="eliminarMes(index)" class="btn-eliminar-mes">×</button>
+                </div>
+                <button type="button" @click="agregarMes" class="btn-agregar-mes">
+                  + Agregar Mes
+                </button>
+              </div>
             </div>
 
             <div class="campo-formulario">
@@ -162,8 +198,12 @@
                 Fechas de Pago
               </label>
               <div class="fechas-pago-container">
-                <div v-for="(fecha, index) in form.fechasPago" :key="index" class="fecha-pago-item">
-                  <input v-model="form.fechasPago[index]" type="date" class="input-fecha" />
+                <div v-for="(pago, index) in form.fechasPago" :key="index" class="fecha-pago-item">
+                  <input v-model="pago.fecha" type="date" class="input-fecha" placeholder="Fecha" />
+                  <div class="input-with-symbol">
+                    <span class="dollar-symbol">$</span>
+                    <input v-model="pago.monto" type="number" class="input-edicion" placeholder="Monto" />
+                  </div>
                   <button type="button" @click="eliminarFechaPagoNuevo(index)" class="btn-eliminar-fecha">×</button>
                 </div>
                 <button type="button" @click="agregarFechaPagoNuevo" class="btn-agregar-fecha">
@@ -239,7 +279,9 @@ const modalDetalleEnEdicion = ref(false);
 const mostrarFormulario = ref(false);
 const form = ref({
   nombre: '',
+  tipoPago: '',
   mes: '',
+  mesesSeleccionados: [],
   año: new Date().getFullYear(),
   valorSinSimbolo: '',
   valor: '',
@@ -401,7 +443,9 @@ function cerrarFormulario() {
 function limpiarFormulario() {
   form.value = {
     nombre: '',
+    tipoPago: '',
     mes: '',
+    mesesSeleccionados: [],
     año: new Date().getFullYear(),
     valorSinSimbolo: '',
     valor: '',
@@ -410,6 +454,34 @@ function limpiarFormulario() {
     fechasPago: [],
     observaciones: ''
   };
+}
+
+// Función para obtener meses disponibles para un índice específico
+function getMesesDisponibles(index) {
+  const mesActual = form.value.mesesSeleccionados[index];
+  return meses.filter(mes => {
+    // Permitir el mes actual o meses no seleccionados en otros índices
+    return mes === mesActual || !form.value.mesesSeleccionados.includes(mes);
+  });
+}
+
+// Funciones para manejar múltiples meses
+function onTipoPagoChange() {
+  if (form.value.tipoPago === 'multiples-meses' && form.value.mesesSeleccionados.length === 0) {
+    form.value.mesesSeleccionados = [''];
+  } else if (form.value.tipoPago === 'año-completo') {
+    form.value.mesesSeleccionados = [...meses];
+  } else if (form.value.tipoPago === 'mes-individual') {
+    form.value.mesesSeleccionados = [];
+  }
+}
+
+function agregarMes() {
+  form.value.mesesSeleccionados.push('');
+}
+
+function eliminarMes(index) {
+  form.value.mesesSeleccionados.splice(index, 1);
 }
 
 function actualizarValorConSimbolo() {
@@ -424,7 +496,10 @@ function actualizarValorConSimbolo() {
 }
 
 function agregarFechaPagoNuevo() {
-  form.value.fechasPago.push('');
+  form.value.fechasPago.push({
+    fecha: '',
+    monto: ''
+  });
 }
 
 function eliminarFechaPagoNuevo(index) {
@@ -432,48 +507,94 @@ function eliminarFechaPagoNuevo(index) {
 }
 
 function guardarMensualidad() {
-  // Validar formulario
-  if (!form.value.nombre || !form.value.mes || !form.value.año ||
+  // Validar formulario básico
+  if (!form.value.nombre || !form.value.tipoPago || !form.value.año ||
     !form.value.valor || !form.value.vencimiento || !form.value.estado) {
     alert('Por favor, completa todos los campos obligatorios');
     return;
   }
 
-  // Determinar fecha principal basada en fechas de pago
-  let fechaPrincipal = 'Pendiente';
-  if (form.value.fechasPago && form.value.fechasPago.length > 0) {
-    const fechasValidas = form.value.fechasPago.filter(fecha => fecha);
-    if (fechasValidas.length > 0) {
-      fechaPrincipal = fechasValidas[fechasValidas.length - 1]; // Última fecha de pago
+  // Validaciones específicas por tipo de pago
+  if (form.value.tipoPago === 'mes-individual' && !form.value.mes) {
+    alert('Por favor, selecciona un mes');
+    return;
+  }
+
+  if (form.value.tipoPago === 'multiples-meses') {
+    const mesesValidos = form.value.mesesSeleccionados.filter(mes => mes);
+    if (mesesValidos.length === 0) {
+      alert('Por favor, selecciona al menos un mes');
+      return;
     }
   }
 
-  // Crear objeto de mensualidad con la estructura esperada
-  const nuevaMensualidad = {
-    id: Date.now(), // ID temporal, en producción debería venir del backend
-    nombre: form.value.nombre,
-    mes: form.value.mes,
-    valor: form.value.valor,
-    estado: form.value.estado,
-    fecha: fechaPrincipal,
-    fechasPago: form.value.fechasPago.filter(fecha => fecha), // Solo fechas válidas
-    vencimiento: new Date(form.value.vencimiento).toLocaleDateString('es-CO'),
-    avatar: null,
-    // Campos adicionales para compatibilidad
-    año: form.value.año,
-    observaciones: form.value.observaciones || '',
-    fechaCreacion: new Date().toISOString().split('T')[0]
-  };
+  // Determinar fecha principal basada en fechas de pago
+  let fechaPrincipal = 'Pendiente';
+  if (form.value.fechasPago && form.value.fechasPago.length > 0) {
+    const fechasValidas = form.value.fechasPago.filter(pago => pago.fecha);
+    if (fechasValidas.length > 0) {
+      fechaPrincipal = fechasValidas[fechasValidas.length - 1].fecha;
+    }
+  }
 
-  console.log('Emitiendo nueva mensualidad:', nuevaMensualidad);
+  // Crear mensualidades según el tipo de pago
+  const mensualidadesACrear = [];
 
-  // Emitir evento al componente padre
-  emit('nueva', nuevaMensualidad);
+  if (form.value.tipoPago === 'mes-individual') {
+    // Un solo mes
+    mensualidadesACrear.push({
+      mes: form.value.mes,
+      valor: form.value.valor
+    });
+  } else if (form.value.tipoPago === 'multiples-meses') {
+    // Múltiples meses seleccionados
+    const mesesValidos = form.value.mesesSeleccionados.filter(mes => mes);
+    mesesValidos.forEach(mes => {
+      mensualidadesACrear.push({
+        mes: mes,
+        valor: form.value.valor
+      });
+    });
+  } else if (form.value.tipoPago === 'año-completo') {
+    // Todos los meses del año
+    meses.forEach(mes => {
+      mensualidadesACrear.push({
+        mes: mes,
+        valor: form.value.valor
+      });
+    });
+  }
+
+  // Crear cada mensualidad
+  mensualidadesACrear.forEach((mensualidadData, index) => {
+    const nuevaMensualidad = {
+      id: Date.now() + index, // ID temporal único para cada mensualidad
+      nombre: form.value.nombre,
+      mes: mensualidadData.mes,
+      valor: mensualidadData.valor,
+      estado: form.value.estado,
+      fecha: fechaPrincipal,
+      fechasPago: form.value.fechasPago.filter(pago => pago.fecha),
+      vencimiento: new Date(form.value.vencimiento).toLocaleDateString('es-CO'),
+      avatar: null,
+      // Campos adicionales
+      año: form.value.año,
+      observaciones: form.value.observaciones || '',
+      fechaCreacion: new Date().toISOString().split('T')[0],
+      tipoPago: form.value.tipoPago
+    };
+
+    console.log('Emitiendo nueva mensualidad:', nuevaMensualidad);
+    emit('nueva', nuevaMensualidad);
+  });
 
   // Cerrar formulario
   cerrarFormulario();
 
   // Mostrar mensaje de éxito
-  alert('Mensualidad agregada exitosamente');
+  const mensaje = mensualidadesACrear.length === 1 
+    ? 'Mensualidad agregada exitosamente'
+    : `${mensualidadesACrear.length} mensualidades agregadas exitosamente`;
+  alert(mensaje);
 }
 </script>

@@ -109,18 +109,47 @@ const esVencida = computed(() => {
     return false;
   }
 
-  // Obtener la última fecha de pago
-  const ultimaFechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
-  if (!ultimaFechaPago) return false;
+  // Obtener la fecha de pago (puede ser string o objeto)
+  let fechaPago;
+  if (typeof props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1] === 'object') {
+    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1].fecha;
+  } else {
+    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
+  }
 
-  // Calcular la fecha de vencimiento (fecha de pago + 1 mes)
-  const fechaPago = new Date(ultimaFechaPago);
-  const fechaVencimiento = new Date(fechaPago);
-  fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+  if (!fechaPago) return false;
 
-  // Verificar si está vencida
-  const hoy = new Date();
-  return fechaVencimiento < hoy;
+  try {
+    // Crear fecha de pago evitando problemas de zona horaria
+    let fechaPagoObj;
+    if (typeof fechaPago === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaPago)) {
+      // Si es formato YYYY-MM-DD, crear fecha localmente
+      const [año, mes, dia] = fechaPago.split('-');
+      fechaPagoObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+    } else {
+      fechaPagoObj = new Date(fechaPago + 'T00:00:00');
+    }
+
+    if (isNaN(fechaPagoObj.getTime())) return false;
+
+    // Determinar el mes de esta mensualidad
+    const mesActual = props.mensualidad.mes;
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const indiceMesActual = meses.indexOf(mesActual);
+    
+    if (indiceMesActual === -1) return false;
+
+    // Calcular la fecha de vencimiento basada en el mes de la mensualidad
+    const fechaVencimiento = new Date(fechaPagoObj.getFullYear(), indiceMesActual + 1, fechaPagoObj.getDate());
+
+    // Verificar si está vencida
+    const hoy = new Date();
+    return fechaVencimiento < hoy;
+  } catch (error) {
+    console.error('Error verificando si está vencida:', error);
+    return false;
+  }
 });
 
 const diasParaVencimiento = computed(() => {
@@ -129,21 +158,51 @@ const diasParaVencimiento = computed(() => {
     return null;
   }
 
-  // Obtener la última fecha de pago
-  const ultimaFechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
-  if (!ultimaFechaPago) return null;
+  // Obtener la fecha de pago (puede ser string o objeto)
+  let fechaPago;
+  if (typeof props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1] === 'object') {
+    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1].fecha;
+  } else {
+    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
+  }
 
-  // Calcular la fecha de vencimiento (fecha de pago + 1 mes)
-  const fechaPago = new Date(ultimaFechaPago);
-  const fechaVencimiento = new Date(fechaPago);
-  fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
+  if (!fechaPago) return null;
 
-  // Calcular días restantes
-  const hoy = new Date();
-  const diffTime = fechaVencimiento - hoy;
-  const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  try {
+    // Crear fecha de pago evitando problemas de zona horaria
+    let fechaPagoObj;
+    if (typeof fechaPago === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaPago)) {
+      // Si es formato YYYY-MM-DD, crear fecha localmente
+      const [año, mes, dia] = fechaPago.split('-');
+      fechaPagoObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+    } else {
+      fechaPagoObj = new Date(fechaPago + 'T00:00:00');
+    }
 
-  return diasRestantes;
+    if (isNaN(fechaPagoObj.getTime())) return null;
+
+    // Determinar el mes de esta mensualidad
+    const mesActual = props.mensualidad.mes;
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const indiceMesActual = meses.indexOf(mesActual);
+    
+    if (indiceMesActual === -1) return null;
+
+    // Calcular la fecha de vencimiento basada en el mes de la mensualidad
+    // Si es octubre, vence en noviembre; si es noviembre, vence en diciembre
+    const fechaVencimiento = new Date(fechaPagoObj.getFullYear(), indiceMesActual + 1, fechaPagoObj.getDate());
+
+    // Calcular días restantes
+    const hoy = new Date();
+    const diffTime = fechaVencimiento - hoy;
+    const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diasRestantes;
+  } catch (error) {
+    console.error('Error calculando días para vencimiento:', error);
+    return null;
+  }
 });
 
 // Computed para la clase del indicador de vencimiento
