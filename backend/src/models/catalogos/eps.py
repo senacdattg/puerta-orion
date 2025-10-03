@@ -2,10 +2,9 @@
 Modelo para Entidades Promotoras de Salud (EPS).
 """
 
-from ..base import BaseModel
+from ..base import BaseModel, db
 from sqlalchemy import Column, Integer, String, Boolean
 from sqlalchemy.orm import relationship
-from ...database.database import db
 
 
 class EPS(BaseModel):

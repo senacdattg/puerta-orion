@@ -2,10 +2,9 @@
 Modelo para tipos de parentesco.
 """
 
-from ..base import BaseModel
+from ..base import BaseModel, db
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
-from ...database.database import db
 
 
 class Parentesco(BaseModel):

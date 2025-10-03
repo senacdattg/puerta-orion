@@ -2,10 +2,9 @@
 Modelo para la relación muchos a muchos entre deportistas y acudientes.
 """
 
-from ..base import BaseModel
+from ..base import BaseModel, db
 from sqlalchemy import Column, Integer, Boolean, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from ...database.database import db
 
 
 class DeportistaAcudiente(BaseModel):

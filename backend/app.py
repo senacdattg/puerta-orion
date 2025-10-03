@@ -16,7 +16,7 @@ from flask import Flask, request, g
 from flask_cors import CORS
 from flask_migrate import Migrate
 from config import config
-from src.models import db
+from src.models.base import db
 import os
 
 def create_app(config_name=None):

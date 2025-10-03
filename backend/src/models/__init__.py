@@ -47,8 +47,8 @@ from .catalogos.eps import EPS
 from .deportistas.informacion_deportiva import InformacionDeportiva
 from .roles_y_permisos.personas_rol import PersonasRol
 from .eventos.sesionAuth import SesionAuth
-from .salud.diagnostico import Diagnostico  
-from .salud.diagnostico_persona import DiagnosticoPersona
+from .salud.diagnostico import Diagnostico
+from .salud.diagnostico_deportista import DiagnosticoDeportista
 
 __all__ = [
     # Base y utilidades
@@ -103,14 +103,14 @@ __all__ = [
     
     # Modelos de salud
     'TipoEnfermedad',
+    'Diagnostico',
+    'DiagnosticoDeportista',
 
     # Modelos de deportistas
     'InformacionDeportiva',
     
     # Nuevas tablas agregadas
-    'PersonasRol',           # Nueva tabla
-    'DiagnosticoPersona',    # Nueva tabla
-    'Diagnostico',           # Nueva tabla
+    'PersonasRol',         
     'Escuela',
     'Deporte',
 ]

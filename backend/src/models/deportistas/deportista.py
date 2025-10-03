@@ -4,7 +4,7 @@ Modelo para deportistas del sistema.
 
 from datetime import date
 from ..base import BaseModel
-from sqlalchemy import Column, Integer, Float, Date, ForeignKey
+from sqlalchemy import Column, Integer, Float, Date, ForeignKey, SmallInteger
 from sqlalchemy.orm import relationship
 
 
@@ -13,35 +13,62 @@ class Deportista(BaseModel):
     Modelo para deportistas del sistema.
 
     Representa a los deportistas registrados en el sistema, incluyendo
-    información específica como peso, altura, fecha de ingreso y estado deportivo.
+    información específica como peso, altura, datos médicos y ubicación.
+    Según el MER, el deportista tiene sus propias FKs a catálogos (EPS, ciudad, etc.)
+    además de la relación con Persona.
     Hereda de BaseModel para incluir campos de auditoría.
 
     Attributes:
         id_deportista (int): Identificador único del deportista (clave primaria).
-        id_persona (int): Clave foránea a la tabla de personas.
-        id_categoria (int): Clave foránea a la categoría del deportista.
-        peso (float): Peso del deportista en kilogramos.
-        altura (float): Altura del deportista en metros.
+        peso (float): Peso del deportista en kilogramos (opcional).
+        altura (float): Altura del deportista en metros (opcional).
         fecha_ingreso (date): Fecha de ingreso del deportista al sistema.
-        estado_deportivo (int): Estado deportivo del deportista (tinyint en MER).
-        persona (Persona): Relación uno a uno con el modelo Persona.
-        categoria (Categoria): Relación muchos a uno con el modelo Categoria.
-        deportistas_acudientes (list): Relación muchos a muchos con Acudiente a través de DeportistaAcudiente.
+        id_categoria (int): Clave foránea a la categoría del deportista.
+        id_persona (int): Clave foránea a la tabla de personas.
+        id_tipo_sanguineo (int): Clave foránea al grupo sanguíneo.
+        id_diagnosco_deportista (int): Clave foránea al diagnóstico del deportista.
+        id_ciudad_recidencia (int): Clave foránea a la ciudad de residencia.
+        id_mensualidad (int): Clave foránea a la mensualidad.
+        id_informacion_deportiva (int): Clave foránea a información deportiva adicional.
+        id_eps (int): Clave foránea a la EPS.
+        fecha_nacimiento (int): Fecha de nacimiento (tinyint en MER).
     """
     __tablename__ = 'puerta_orion_deportista'
     
+    # Clave primaria
     id_deportista = Column(Integer, primary_key=True)
-    id_persona = Column(Integer, ForeignKey('puerta_orion_personas.id_persona'), nullable=False, unique=True)
-    id_categoria = Column(Integer, ForeignKey('puerta_orion_categoria.id_categoria'), nullable=False)
+    
+    # Campos básicos del deportista
     peso = Column(Float, nullable=True)
     altura = Column(Float, nullable=True)
     fecha_ingreso = Column(Date, nullable=False)
-    estado_deportivo = Column(Integer, nullable=False)  # tinyint en MER se mapea a Integer
+    fecha_nacimiento = Column(SmallInteger, nullable=True)  # tinyint en MER
+    
+    # Claves foráneas según el MER
+    id_categoria = Column(Integer, ForeignKey('puerta_orion_categoria.id_categoria'), nullable=False)
+    id_persona = Column(Integer, ForeignKey('puerta_orion_personas.id_persona'), nullable=False, unique=True)
+    id_tipo_sanguineo = Column(Integer, ForeignKey('puerta_orion_grupo_sanguineo.id_tipo_sangre'), nullable=True)
+    # id_diagnostico_deportista = Column(Integer, ForeignKey('diagnostico.id_diagnostico'), nullable=True)  # Relación eliminada
+    id_ciudad_recidencia = Column(Integer, ForeignKey('puerta_orion_ciudad_residencia.id_ciudad'), nullable=True)
+    id_mensualidad = Column(Integer, ForeignKey('puerta_orion_mensualidad.id_mensualidad'), nullable=True)
+    id_informacion_deportiva = Column(Integer, ForeignKey('informaciondeportiva.id_informacion_deportiva'), nullable=True)
+    id_eps = Column(Integer, ForeignKey('puerta_orion_eps.id_eps'), nullable=True)
     
     # Relaciones
     persona = relationship('Persona', backref='deportista_obj', uselist=False)
     categoria = relationship('Categoria', backref='deportistas', lazy=True)
-    deportistas_acudientes = relationship('DeportistaAcudiente', backref='deportista_obj', lazy=True)
+    tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], backref='deportistas_sangre', lazy=True)
+    # diagnostico = relationship('Diagnostico', foreign_keys=[id_diagnostico_deportista], backref='deportistas_diagnostico', lazy=True)  # Relación eliminada
+    ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], backref='deportistas_ciudad', lazy=True)
+    mensualidad = relationship('Mensualidad', foreign_keys=[id_mensualidad], backref='deportistas_mensualidad', lazy=True)
+    informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], backref='deportista_info', lazy=True)
+    eps = relationship('EPS', foreign_keys=[id_eps], backref='deportistas_eps', lazy=True)
+    
+    # Relación muchos a muchos con acudientes a través de DeportistaAcudiente
+    deportistas_acudientes = relationship('DeportistaAcudiente', backref='deportista', lazy=True)
+    
+    # Relación uno a muchos con diagnósticos históricos de deportistas
+    # La relación diagnosticos_deportista se define vía backref desde DiagnosticoDeportista
     
     def __repr__(self):
         """
@@ -75,9 +102,15 @@ class Deportista(BaseModel):
             'id_deportista': self.id_deportista,
             'id_persona': self.id_persona,
             'id_categoria': self.id_categoria,
+            'id_tipo_sanguineo': self.id_tipo_sanguineo,
+            'id_diagnostico_deportista': self.id_diagnostico_deportista,
+            'id_ciudad_recidencia': self.id_ciudad_recidencia,
+            'id_mensualidad': self.id_mensualidad,
+            'id_informacion_deportiva': self.id_informacion_deportiva,
+            'id_eps': self.id_eps,
             'peso': self.peso,
             'altura': self.altura,
             'fecha_ingreso': self.fecha_ingreso.isoformat() if self.fecha_ingreso else None,
-            'estado_deportivo': self.estado_deportivo,
+            'fecha_nacimiento': self.fecha_nacimiento,
             'imc': self.imc
         }

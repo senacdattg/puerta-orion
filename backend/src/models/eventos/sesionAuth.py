@@ -9,7 +9,7 @@ from ..base import db, BaseModel
 
 class SesionAuth(BaseModel):
     """Sesiones de autenticación de usuarios"""
-    __tablename__ = "SesionAuth"
+    __tablename__ = "sesionauth"
 
     id_sesion = db.Column(db.Integer, primary_key=True)
     id_usuario = db.Column(
