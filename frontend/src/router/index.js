@@ -34,7 +34,7 @@ const router = createRouter({
       component: RegistrarDeportista,
     },
     {
-      path: '/ver-deportista',
+      path: '/ver-deportista/:id',
       name: 'ver-deportista',
       component: VerDeportista,
     },

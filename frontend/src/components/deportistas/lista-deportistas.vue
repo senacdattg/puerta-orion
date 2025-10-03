@@ -51,6 +51,11 @@
       <div class="grid-deportistas">
         <TarjetaDeportista v-for="deportista in deportistasFiltrados" :key="deportista.id" :deportista="deportista"
           @editar="editarDeportista" @eliminar="eliminarDeportista" />
+        
+        <!-- Botón para agregar deportista -->
+        <div class="boton-agregar" @click="agregarDeportista">
+          +
+        </div>
       </div>
   
       <!-- Mensaje cuando no hay resultados -->
@@ -81,7 +86,7 @@ const props = defineProps({
 });
 
 // Emits para comunicación con el componente padre
-const emit = defineEmits(['editar', 'eliminar']);
+const emit = defineEmits(['editar', 'eliminar', 'agregar']);
 
 // Estado local para filtros (KISS - simple y directo)
 const busqueda = ref('');
@@ -128,4 +133,10 @@ function limpiarFiltros() {
   filtroCategoria.value = '';
   filtroEstado.value = '';
 }
+
+function agregarDeportista() {
+  emit('agregar');
+}
 </script>
+
+
