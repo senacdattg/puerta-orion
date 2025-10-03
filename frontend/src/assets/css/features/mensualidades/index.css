@@ -1219,7 +1219,8 @@
   z-index: 1;
 }
 
-.input-with-symbol .input-edicion {
+.input-with-symbol .input-edicion,
+.input-with-symbol .input-mensualidad {
   padding-left: 30px;
   width: 100%;
   flex: 1;
@@ -1346,11 +1347,85 @@
   padding: 0.75rem;
   border: 2px solid #e1e8ed;
   border-radius: 8px;
+}
+
+.input-monto {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
   font-size: 0.9rem;
   background: #fff;
 }
 
-.input-fecha:focus {
+/* Estilos para múltiples meses */
+.meses-multiples-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mes-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.select-mes-multiple {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: #fff;
+  cursor: pointer;
+}
+
+.select-mes-multiple:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.btn-eliminar-mes {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.btn-eliminar-mes:hover {
+  background: #c0392b;
+}
+
+.btn-agregar-mes {
+  background: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease;
+  align-self: flex-start;
+}
+
+.btn-agregar-mes:hover {
+  background: #229954;
+}
+
+.input-fecha:focus,
+.input-monto:focus {
   outline: none;
   border-color: #3498db;
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);

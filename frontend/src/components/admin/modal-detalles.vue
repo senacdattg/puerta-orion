@@ -83,8 +83,12 @@
                 Fechas de Pago
               </label>
               <div class="fechas-pago-container">
-                <div v-for="(fecha, index) in formEdicion.fechasPago" :key="index" class="fecha-pago-item">
-                  <input v-model="formEdicion.fechasPago[index]" type="date" class="input-fecha" />
+                <div v-for="(pago, index) in formEdicion.fechasPago" :key="index" class="fecha-pago-item">
+                  <input v-model="pago.fecha" type="date" class="input-fecha" placeholder="Fecha" />
+                  <div class="input-with-symbol">
+                    <span class="dollar-symbol">$</span>
+                    <input v-model="pago.monto" type="number" class="input-edicion" placeholder="Monto" />
+                  </div>
                   <button type="button" @click="eliminarFechaPago(index)" class="btn-eliminar-fecha">×</button>
                 </div>
                 <button type="button" @click="agregarFechaPago" class="btn-agregar-fecha">
@@ -151,10 +155,10 @@
           <h5>📊 Historial de Pagos</h5>
           <div class="historial-pagos-container">
             <div class="resumen-pagos">
-              <div class="resumen-item">
-                <span class="resumen-label">Valor Total Mensualidad</span>
-                <span class="resumen-valor">$150,000</span>
-              </div>
+            <div class="resumen-item">
+              <span class="resumen-label">Valor Total Mensualidad</span>
+              <span class="resumen-valor">{{ mensualidad.valor }}</span>
+            </div>
               <div class="resumen-item">
                 <span class="resumen-label">Total Pagado</span>
                 <span class="resumen-valor pagado">${{ calcularTotalPagado().toLocaleString('es-CO') }}</span>
@@ -172,9 +176,9 @@
             <div class="lista-pagos">
               <h6>Fechas de Pago</h6>
               <div v-if="mensualidad.fechasPago && mensualidad.fechasPago.length > 0" class="pagos-list">
-                <div v-for="(fecha, index) in mensualidad.fechasPago" :key="index" class="pago-item">
-                  <span class="fecha-pago">{{ formatearFecha(fecha) }}</span>
-                  <span class="monto-pago">${{ calcularMontoPorPago().toLocaleString('es-CO') }}</span>
+                <div v-for="(pago, index) in mensualidad.fechasPago" :key="index" class="pago-item">
+                  <span class="fecha-pago">{{ formatearFecha(pago.fecha || pago) }}</span>
+                  <span class="monto-pago">${{ obtenerMontoPago(pago).toLocaleString('es-CO') }}</span>
                 </div>
               </div>
               <div v-else class="sin-pagos">
@@ -239,7 +243,7 @@ const formEdicion = ref({
   estado: props.mensualidad.estado || '',
   valor: props.mensualidad.valor || '',
   valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
-  fechasPago: props.mensualidad.fechasPago || (props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? [props.mensualidad.fecha] : []),
+  fechasPago: convertirFechasPagoAObjetos(props.mensualidad.fechasPago || (props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? [props.mensualidad.fecha] : [])),
   vencimiento: props.mensualidad.vencimiento || '',
   observaciones: props.mensualidad.observaciones || ''
 });
@@ -272,6 +276,47 @@ function extraerNumeroDeValor(valor) {
   return valor.replace(/[^0-9.-]+/g, '');
 }
 
+function convertirFechasPagoAObjetos(fechasPago) {
+  if (!fechasPago || !Array.isArray(fechasPago)) return [];
+  
+  return fechasPago.map(fecha => {
+    // Si ya es un objeto con fecha y monto, devolverlo tal como está
+    if (typeof fecha === 'object' && fecha.fecha !== undefined) {
+      return {
+        fecha: fecha.fecha,
+        monto: fecha.monto || ''
+      };
+    }
+    // Si es solo una fecha string, convertir a objeto con monto vacío
+    return {
+      fecha: fecha,
+      monto: ''
+    };
+  });
+}
+
+function convertirObjetosAFechasPago(objetosPago) {
+  if (!objetosPago || !Array.isArray(objetosPago)) return [];
+  
+  return objetosPago.map(pago => {
+    if (typeof pago === 'object' && pago.fecha) {
+      return {
+        fecha: pago.fecha,
+        monto: parseFloat(pago.monto) || 0
+      };
+    }
+    return pago;
+  });
+}
+
+function obtenerMontoPago(pago) {
+  if (typeof pago === 'object' && pago.monto !== undefined) {
+    return parseFloat(pago.monto) || 0;
+  }
+  // Si es solo una fecha string, no hay monto especificado
+  return 0;
+}
+
 function actualizarValorConSimbolo() {
   if (formEdicion.value.valorSinSimbolo) {
     const numero = parseFloat(formEdicion.value.valorSinSimbolo);
@@ -284,7 +329,10 @@ function actualizarValorConSimbolo() {
 }
 
 function agregarFechaPago() {
-  formEdicion.value.fechasPago.push('');
+  formEdicion.value.fechasPago.push({
+    fecha: '',
+    monto: ''
+  });
 }
 
 function eliminarFechaPago(index) {
@@ -299,7 +347,7 @@ function toggleEdicion() {
       estado: props.mensualidad.estado || '',
       valor: props.mensualidad.valor || '',
       valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
-      fechasPago: props.mensualidad.fechasPago || (props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? [props.mensualidad.fecha] : []),
+      fechasPago: convertirFechasPagoAObjetos(props.mensualidad.fechasPago || (props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? [props.mensualidad.fecha] : [])),
       vencimiento: props.mensualidad.vencimiento || '',
       observaciones: props.mensualidad.observaciones || ''
     };
@@ -316,9 +364,9 @@ function guardarCambios() {
   // Determinar fecha principal basada en fechas de pago
   let fechaPrincipal = 'Pendiente';
   if (formEdicion.value.fechasPago && formEdicion.value.fechasPago.length > 0) {
-    const fechasValidas = formEdicion.value.fechasPago.filter(fecha => fecha);
+    const fechasValidas = formEdicion.value.fechasPago.filter(pago => pago.fecha);
     if (fechasValidas.length > 0) {
-      fechaPrincipal = fechasValidas[fechasValidas.length - 1]; // Última fecha de pago
+      fechaPrincipal = fechasValidas[fechasValidas.length - 1].fecha; // Última fecha de pago
     }
   }
 
@@ -328,7 +376,7 @@ function guardarCambios() {
     estado: formEdicion.value.estado,
     valor: formEdicion.value.valor,
     fecha: fechaPrincipal,
-    fechasPago: formEdicion.value.fechasPago.filter(fecha => fecha), // Solo fechas válidas
+    fechasPago: convertirObjetosAFechasPago(formEdicion.value.fechasPago.filter(pago => pago.fecha)), // Solo fechas válidas
     vencimiento: formEdicion.value.vencimiento,
     observaciones: formEdicion.value.observaciones
   };
@@ -344,7 +392,10 @@ function marcarComoPagado() {
   formEdicion.value.estado = 'Pagado';
   // Si marca como pagado y no hay fechas, agregar fecha actual
   if (!formEdicion.value.fechasPago || formEdicion.value.fechasPago.length === 0) {
-    formEdicion.value.fechasPago = [new Date().toISOString().split('T')[0]];
+    formEdicion.value.fechasPago = [{
+      fecha: new Date().toISOString().split('T')[0],
+      monto: ''
+    }];
   }
 }
 
@@ -360,30 +411,22 @@ function marcarComoVencido() {
 }
 
 // Funciones para el historial de pagos
-function calcularTotalPagado() {
-  const totalMensualidad = 150000;
-  const numPagos = props.mensualidad.fechasPago ? props.mensualidad.fechasPago.length : 0;
-  
-  if (numPagos === 0) return 0;
-  if (numPagos === 1) return totalMensualidad; // Si hay solo un pago, es el total completo
-  
-  // Si hay múltiples pagos, sumar todos los montos
-  return numPagos * calcularMontoPorPago();
+function obtenerValorNumericoMensualidad() {
+  if (!props.mensualidad.valor) return 0;
+  return parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
 }
 
-function calcularMontoPorPago() {
-  const totalMensualidad = 150000;
-  const numPagos = props.mensualidad.fechasPago ? props.mensualidad.fechasPago.length : 0;
+function calcularTotalPagado() {
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) return 0;
   
-  if (numPagos === 0) return 0;
-  if (numPagos === 1) return totalMensualidad; // Si hay solo un pago, es el total completo
-  
-  // Si hay múltiples pagos, dividir equitativamente
-  return Math.floor(totalMensualidad / numPagos);
+  return props.mensualidad.fechasPago.reduce((total, pago) => {
+    return total + obtenerMontoPago(pago);
+  }, 0);
 }
+
 
 function calcularSaldoPendienteHistorial() {
-  const totalMensualidad = 150000;
+  const totalMensualidad = obtenerValorNumericoMensualidad();
   const totalPagado = calcularTotalPagado();
   const saldo = totalMensualidad - totalPagado;
   return Math.max(0, saldo); // Nunca negativo
@@ -391,7 +434,7 @@ function calcularSaldoPendienteHistorial() {
 
 function getEstadoPago() {
   const totalPagado = calcularTotalPagado();
-  const totalMensualidad = 150000;
+  const totalMensualidad = obtenerValorNumericoMensualidad();
   
   if (totalPagado === 0) return 'Sin pagos';
   if (totalPagado === totalMensualidad) return 'Pagado';
@@ -401,7 +444,7 @@ function getEstadoPago() {
 
 function getClaseEstado() {
   const totalPagado = calcularTotalPagado();
-  const totalMensualidad = 150000;
+  const totalMensualidad = obtenerValorNumericoMensualidad();
   
   if (totalPagado === 0) return 'sin-pagos';
   if (totalPagado === totalMensualidad) return 'completo';
@@ -411,6 +454,42 @@ function getClaseEstado() {
 
 function formatearFecha(fecha) {
   if (!fecha) return '';
-  return new Date(fecha).toLocaleDateString('es-CO');
+  
+  try {
+    // Si la fecha ya está en formato DD/MM/YYYY, devolverla tal como está
+    if (typeof fecha === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fecha)) {
+      return fecha;
+    }
+    
+    // Si es un string en formato YYYY-MM-DD (formato de input date)
+    if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      const [año, mes, dia] = fecha.split('-');
+      return `${parseInt(dia)}/${parseInt(mes)}/${año}`;
+    }
+    
+    // Para otros casos, crear la fecha evitando problemas de zona horaria
+    let fechaObj;
+    if (typeof fecha === 'string') {
+      // Si es un string con formato YYYY-MM-DD, crear fecha localmente
+      if (fecha.includes('-')) {
+        const [año, mes, dia] = fecha.split('-');
+        fechaObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+      } else {
+        fechaObj = new Date(fecha + 'T00:00:00'); // Agregar tiempo para evitar problemas de UTC
+      }
+    } else {
+      fechaObj = new Date(fecha);
+    }
+    
+    if (isNaN(fechaObj.getTime())) return fecha;
+    
+    const dia = fechaObj.getDate();
+    const mes = fechaObj.getMonth() + 1;
+    const año = fechaObj.getFullYear();
+    
+    return `${dia}/${mes}/${año}`;
+  } catch (error) {
+    return fecha;
+  }
 }
 </script>
