@@ -132,8 +132,56 @@
   height: auto;
   max-height: 100px;
   margin-bottom: 15px;
-
 }
 
+/* Estilos para inputs de archivos mejorados */
+.file-wrapper {
+  position: relative;
+  width: 100%;
+}
 
+.file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
 
+.file-label {
+  display: block;
+  cursor: pointer;
+  width: 100%;
+}
+
+.file-button {
+  display: block;
+  background: white;
+  border: 2px solid #0047ab;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.file-button:hover {
+  background: #f8f9fa;
+  border-color: #0d47a1;
+  color: #0047ab;
+}
+
+.file-input:disabled + .file-button {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .file-button {
+    font-size: 0.9rem;
+    padding: 10px 14px;
+  }
+}

@@ -133,6 +133,7 @@
           />
         </div>
 
+        <!-- Divider line below password fields -->
         <hr class="form-divider" />
       </div>
 
