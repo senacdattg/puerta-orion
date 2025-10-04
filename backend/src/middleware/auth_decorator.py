@@ -19,6 +19,8 @@ from flask import request, jsonify, g, current_app
 from ..models.base import db
 from ..models.usuarios.usuario import Usuario
 from ..models.eventos.sesionAuth import SesionAuth
+from ..models.roles_y_permisos.permiso import Permiso
+from ..models.roles_y_permisos.rol_permiso import RolPermiso
 from ..services.Auth.auth_service import auth_service
 from ..utils.logger import obtener_registrador
 
@@ -26,6 +28,100 @@ from ..utils.logger import obtener_registrador
 class TokenRequiredError(Exception):
     """Excepción personalizada para errores del decorador de autenticación."""
     pass
+
+
+def check_permission(usuario: Usuario, permiso: str) -> bool:
+    """
+    Verifica si un usuario tiene un permiso específico.
+    
+    Args:
+        usuario (Usuario): Usuario a verificar
+        permiso (str): Nombre del permiso a verificar
+        
+    Returns:
+        bool: True si el usuario tiene el permiso, False en caso contrario
+        
+    Raises:
+        TokenRequiredError: Si hay error en la consulta de permisos
+    """
+    logger = obtener_registrador('aplicacion')
+    
+    try:
+        # Verificar que el usuario existe
+        if not usuario:
+            logger.warning("Usuario no proporcionado para verificación de permisos")
+            return False
+        
+        # Obtener todos los roles del usuario
+        roles_usuario = usuario.roles
+        if not roles_usuario:
+            logger.info(f"Usuario {usuario.usuario} no tiene roles asignados")
+            return False
+        
+        # Buscar el permiso en la base de datos
+        permiso_obj = Permiso.query.filter_by(nombre=permiso).first()
+        if not permiso_obj:
+            logger.warning(f"Permiso '{permiso}' no existe en el sistema")
+            return False
+        
+        # Verificar si algún rol del usuario tiene el permiso
+        for rol in roles_usuario:
+            # Verificar si el rol tiene el permiso específico
+            rol_permiso = RolPermiso.query.filter_by(
+                id_rol=rol.id_rol,
+                id_permiso=permiso_obj.id_permiso
+            ).first()
+            
+            if rol_permiso:
+                logger.info(f"Usuario {usuario.usuario} tiene permiso '{permiso}' a través del rol '{rol.nombre_rol}'")
+                return True
+        
+        logger.info(f"Usuario {usuario.usuario} no tiene permiso '{permiso}'")
+        return False
+        
+    except Exception as e:
+        logger.error(f"Error al verificar permiso '{permiso}' para usuario {usuario.usuario}: {str(e)}")
+        raise TokenRequiredError(f"Error al verificar permisos: {str(e)}")
+
+
+def get_user_permissions(usuario: Usuario) -> list:
+    """
+    Obtiene todos los permisos de un usuario a través de sus roles.
+    
+    Args:
+        usuario (Usuario): Usuario del cual obtener permisos
+        
+    Returns:
+        list: Lista de nombres de permisos del usuario
+        
+    Raises:
+        TokenRequiredError: Si hay error en la consulta de permisos
+    """
+    logger = obtener_registrador('aplicacion')
+    
+    try:
+        if not usuario:
+            return []
+        
+        permisos = []
+        roles_usuario = usuario.roles
+        
+        if not roles_usuario:
+            return []
+        
+        # Obtener todos los permisos de todos los roles del usuario
+        for rol in roles_usuario:
+            # Obtener permisos del rol usando la relación many-to-many
+            for permiso in rol.permisos:
+                if permiso.nombre not in permisos:  # Evitar duplicados
+                    permisos.append(permiso.nombre)
+        
+        logger.info(f"Usuario {usuario.usuario} tiene {len(permisos)} permisos únicos")
+        return permisos
+        
+    except Exception as e:
+        logger.error(f"Error al obtener permisos del usuario {usuario.usuario}: {str(e)}")
+        raise TokenRequiredError(f"Error al obtener permisos: {str(e)}")
 
 
 class TokenRequired:
@@ -36,14 +132,16 @@ class TokenRequired:
     correspondiente esté activa en la base de datos.
     """
     
-    def __init__(self, required_roles: Optional[list] = None):
+    def __init__(self, required_roles: Optional[list] = None, required_permissions: Optional[list] = None):
         """
         Inicializa el decorador.
         
         Args:
             required_roles (list, optional): Lista de roles requeridos para acceder
+            required_permissions (list, optional): Lista de permisos requeridos para acceder
         """
         self.required_roles = required_roles or []
+        self.required_permissions = required_permissions or []
         self.logger = obtener_registrador('aplicacion')
     
     def __call__(self, f: Callable) -> Callable:
@@ -82,6 +180,11 @@ class TokenRequired:
                 # Verificar roles si se especificaron
                 if self.required_roles:
                     if not self._verificar_roles(usuario, self.required_roles):
+                        return self._error_response("Roles insuficientes", 403)
+                
+                # Verificar permisos si se especificaron
+                if self.required_permissions:
+                    if not self._verificar_permisos(usuario, self.required_permissions):
                         return self._error_response("Permisos insuficientes", 403)
                 
                 # Inyectar datos en el contexto global
@@ -218,6 +321,34 @@ class TokenRequired:
             self.logger.error(f"Error al verificar roles: {str(e)}")
             return False
     
+    def _verificar_permisos(self, usuario: Usuario, required_permissions: list) -> bool:
+        """
+        Verifica que el usuario tenga los permisos requeridos.
+        
+        Args:
+            usuario (Usuario): Usuario a verificar
+            required_permissions (list): Permisos requeridos
+            
+        Returns:
+            bool: True si tiene los permisos requeridos
+        """
+        try:
+            if not required_permissions:
+                return True
+            
+            # Verificar que tenga todos los permisos requeridos
+            for permiso in required_permissions:
+                if not check_permission(usuario, permiso):
+                    self.logger.info(f"Usuario {usuario.usuario} no tiene permiso '{permiso}'")
+                    return False
+            
+            self.logger.info(f"Usuario {usuario.usuario} tiene todos los permisos requeridos")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error al verificar permisos: {str(e)}")
+            return False
+    
     def _inyectar_datos_usuario(self, usuario: Usuario, sesion: SesionAuth, payload: Dict[str, Any]) -> None:
         """
         Inyecta los datos del usuario autenticado en el contexto global.
@@ -233,12 +364,16 @@ class TokenRequired:
             if hasattr(usuario, 'roles') and usuario.roles:
                 roles_usuario = [rol.to_dict() for rol in usuario.roles]
             
+            # Obtener permisos del usuario
+            permisos_usuario = get_user_permissions(usuario)
+            
             # Inyectar en el contexto global de Flask
             g.current_user = {
                 'id_usuario': usuario.id_usuario,
                 'username': usuario.usuario,
                 'estado': usuario.estado,
                 'roles': roles_usuario,
+                'permisos': permisos_usuario,
                 'persona': {
                     'id_persona': usuario.persona.id_persona,
                     'nombre_completo': usuario.persona.nombre_completo,
@@ -343,6 +478,75 @@ def any_role_required(*roles: str):
     return token_required(list(roles))
 
 
+def permission_required(*permissions: str):
+    """
+    Decorador para rutas que requieren permisos específicos.
+    
+    Args:
+        *permissions: Permisos requeridos
+        
+    Returns:
+        Callable: Decorador configurado
+    """
+    return token_required(required_permissions=list(permissions))
+
+
+def any_permission_required(*permissions: str):
+    """
+    Decorador para rutas que requieren al menos uno de los permisos especificados.
+    
+    Args:
+        *permissions: Permisos permitidos (al menos uno)
+        
+    Returns:
+        Callable: Decorador configurado
+    """
+    def decorator(f: Callable) -> Callable:
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            try:
+                # Obtener usuario del contexto
+                usuario_data = get_current_user()
+                if not usuario_data:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Usuario no autenticado',
+                        'status_code': 401
+                    }), 401
+                
+                # Obtener usuario completo de la base de datos
+                usuario = Usuario.query.get(usuario_data['id_usuario'])
+                if not usuario:
+                    return jsonify({
+                        'success': False,
+                        'message': 'Usuario no encontrado',
+                        'status_code': 401
+                    }), 401
+                
+                # Verificar que tenga al menos uno de los permisos
+                for permiso in permissions:
+                    if check_permission(usuario, permiso):
+                        return f(*args, **kwargs)
+                
+                return jsonify({
+                    'success': False,
+                    'message': 'Permisos insuficientes',
+                    'status_code': 403
+                }), 403
+                
+            except Exception as e:
+                logger = obtener_registrador('aplicacion')
+                logger.error(f"Error en verificación de permisos: {str(e)}")
+                return jsonify({
+                    'success': False,
+                    'message': 'Error interno del servidor',
+                    'status_code': 500
+                }), 500
+        
+        return decorated_function
+    return decorator
+
+
 # Funciones helper para acceder a los datos inyectados
 def get_current_user() -> Optional[Dict[str, Any]]:
     """
@@ -362,6 +566,77 @@ def get_current_session() -> Optional[Dict[str, Any]]:
         Dict: Datos de la sesión actual o None
     """
     return getattr(g, 'current_session', None)
+
+
+def has_permission(permiso: str) -> bool:
+    """
+    Verifica si el usuario actual tiene un permiso específico.
+    
+    Args:
+        permiso (str): Nombre del permiso a verificar
+        
+    Returns:
+        bool: True si tiene el permiso, False en caso contrario
+    """
+    try:
+        usuario_data = get_current_user()
+        if not usuario_data:
+            return False
+        
+        usuario = Usuario.query.get(usuario_data['id_usuario'])
+        if not usuario:
+            return False
+        
+        return check_permission(usuario, permiso)
+        
+    except Exception as e:
+        logger = obtener_registrador('aplicacion')
+        logger.error(f"Error al verificar permiso '{permiso}': {str(e)}")
+        return False
+
+
+def has_role(rol: str) -> bool:
+    """
+    Verifica si el usuario actual tiene un rol específico.
+    
+    Args:
+        rol (str): Nombre del rol a verificar
+        
+    Returns:
+        bool: True si tiene el rol, False en caso contrario
+    """
+    try:
+        usuario_data = get_current_user()
+        if not usuario_data:
+            return False
+        
+        roles_usuario = usuario_data.get('roles', [])
+        return any(r.get('nombre_rol') == rol for r in roles_usuario)
+        
+    except Exception as e:
+        logger = obtener_registrador('aplicacion')
+        logger.error(f"Error al verificar rol '{rol}': {str(e)}")
+        return False
+
+
+def get_user_permissions_list() -> list:
+    """
+    Obtiene la lista de permisos del usuario actual.
+    
+    Returns:
+        list: Lista de permisos del usuario actual
+    """
+    try:
+        usuario_data = get_current_user()
+        if not usuario_data:
+            return []
+        
+        return usuario_data.get('permisos', [])
+        
+    except Exception as e:
+        logger = obtener_registrador('aplicacion')
+        logger.error(f"Error al obtener permisos del usuario: {str(e)}")
+        return []
 
 
 def get_token_payload() -> Optional[Dict[str, Any]]:
