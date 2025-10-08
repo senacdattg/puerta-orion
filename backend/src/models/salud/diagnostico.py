@@ -43,10 +43,10 @@ class Diagnostico(BaseModel):
     )
 
     # Relación con TipoEnfermedad (muchos a uno)
-    tipo_enfermedad = db.relationship('TipoEnfermedad', backref='diagnosticos', lazy=True)
+    tipo_enfermedad = db.relationship('TipoEnfermedad', lazy=True)
 
     # Relación con DiagnosticoDeportista (uno a muchos)
-    diagnosticos_deportista = db.relationship('DiagnosticoDeportista', backref='diagnostico_obj', lazy=True)
+    diagnosticos_deportista = db.relationship('DiagnosticoDeportista', lazy=True)
 
     def __repr__(self):
         return f"<Diagnostico {self.id_diagnostico} - {self.nombre}>"

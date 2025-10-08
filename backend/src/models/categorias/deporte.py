@@ -23,7 +23,7 @@ class Deporte(BaseModel):
     nombre = db.Column(db.String(100), nullable=False, unique=True)
     
     # Relaciones
-    informaciones_deportivas = db.relationship('InformacionDeportiva', backref='deporte_obj', lazy=True)
+    informaciones_deportivas = db.relationship('InformacionDeportiva', lazy=True)
 
     def __repr__(self):
         return f"<Deporte(id_deporte={self.id_deporte}, nombre='{self.nombre}')>"

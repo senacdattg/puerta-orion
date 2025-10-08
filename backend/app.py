@@ -17,6 +17,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from config import config
 from src.models.base import db
+from src.utils.logger import gestor_logs
 import os
 
 def create_app(config_name=None):
@@ -36,15 +37,16 @@ def create_app(config_name=None):
     app.config.from_object(config[config_name])
     CORS(app, origins=app.config['CORS_ORIGINS'])
 
+    gestor_logs.inicializar_aplicacion(app)
+    
     # Configurar base de datos
     db.init_app(app)
     
     # Configurar migraciones
     migrate = Migrate(app, db)
 
-    # Aquí se pueden registrar blueprints de rutas adicionales
-    # from .routes import main_bp
-    # app.register_blueprint(main_bp)
+    from src.routes.auth_routes import registrar_auth_routes
+    registrar_auth_routes(app)
 
     @app.route('/')
     def index():

@@ -66,11 +66,11 @@ class InformacionDeportiva(BaseModel):
         nullable=False
     )
     
-    # Relaciones
-    persona = db.relationship('Persona', backref='informacion_deportiva_obj', uselist=False)
-    escuela = db.relationship('Escuela', backref='informaciones_deportivas', lazy=True)
-    deporte = db.relationship('Deporte', backref='informaciones_deportivas', lazy=True)
-    institucion_registro = db.relationship('InstitucionRegistro', foreign_keys=[id_institucion_registro], backref='informaciones_deportivas', lazy=True)
+    # Relaciones (sin backrefs para evitar conflictos)
+    persona = db.relationship('Persona', uselist=False)
+    escuela = db.relationship('Escuela', lazy=True)
+    deporte = db.relationship('Deporte', lazy=True)
+    institucion_registro = db.relationship('InstitucionRegistro', foreign_keys=[id_institucion_registro], lazy=True)
 
     def to_dict(self):
         return {

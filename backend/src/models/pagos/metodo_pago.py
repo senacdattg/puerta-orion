@@ -28,7 +28,7 @@ class MetodoPago(BaseModel):
     estado = Column(Boolean, default=True, nullable=False) # tinyint en MER se mapea a Boolean
     
     # Relaciones
-    cuotas = relationship('Cuota', backref='metodo_pago', lazy=True)
+    cuotas = relationship('Cuota', lazy=True)
     
     def __repr__(self):
         """

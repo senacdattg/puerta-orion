@@ -184,9 +184,6 @@ class UsuarioService:
             UsuarioServiceError: Si hay errores en la creación
         """
         try:
-            # Iniciar transacción
-            db.session.begin()
-            
             # Crear persona
             persona = self._crear_persona(datos_persona)
             db.session.flush()  # Obtener ID sin hacer commit

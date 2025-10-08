@@ -23,6 +23,8 @@ from .categorias.ciudad_residencia import CiudadResidencia
 from .categorias.grupo_sanguineo import GrupoSanguineo
 from .categorias.institucion_registro import InstitucionRegistro
 from .categorias.sexo import Sexo
+from .categorias.deporte import Deporte
+from .categorias.escuela import Escuela
 
 from .eventos.sesion import Sesion
 from .eventos.evento import Evento
