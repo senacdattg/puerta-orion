@@ -1,7 +1,7 @@
 <script setup>
 import Encabezado from '../components/layout/encabezado.vue';
-import HeroSection from '../components/ui/hero-section.vue';
-import QuickNavigation from '../components/ui/quick-navigation.vue';
+import MainVista from '../components/ui/main-vista.vue';
+import BotonesNavegacion from '../components/ui/botones-navegacion.vue';
 import FooterEnhanced from '../components/layout/pie.vue';
 
 // Definir nombre del componente para el linter
@@ -13,8 +13,8 @@ defineOptions({
 <template>
   <main class="inicio-page">
     <Encabezado rol="Admin"/>
-    <HeroSection />
-    <QuickNavigation />
+    <MainVista />
+    <BotonesNavegacion />
     <FooterEnhanced />
   </main>
 </template>

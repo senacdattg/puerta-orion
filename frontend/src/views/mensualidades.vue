@@ -207,5 +207,5 @@ function nuevaMensualidad(nuevaMensualidad) {
 
 <style>
 /* Importamos el CSS moderno para mensualidades */
-@import '../assets/css/features/mensualidades/index.css';
+@import '../assets/css/mensualidades.css';
 </style>
