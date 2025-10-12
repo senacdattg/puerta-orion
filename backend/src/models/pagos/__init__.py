@@ -10,4 +10,5 @@ __all__ = [
     'Cuota',
     'Mensualidad',
     'MetodoPago',
+    'TransaccionMercadoPago',
 ]
