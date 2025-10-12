@@ -1,0 +1,417 @@
+"""
+Servicio para gestión de usuarios del sistema Puerta Orion.
+
+Responsabilidad:
+- Registrar nuevas personas y usuarios
+- Validar unicidad de datos críticos
+- Manejar hashing de contraseñas
+- Gestionar transacciones de base de datos
+
+Este módulo sigue los principios SRP, KISS, DRY y SOLID.
+"""
+
+from datetime import date
+from typing import Dict, Any, Optional, Tuple
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from src.models.base import db  
+from src.models.personas.persona import Persona
+from src.models.usuarios.usuario import Usuario
+from src.models.roles_y_permisos.rol import Rol
+from src.models.roles_y_permisos.usuario_rol import UsuarioRol
+from src.utils.logger import obtener_registrador
+
+
+class UsuarioServiceError(Exception):
+    """Excepción personalizada para errores del servicio de usuario."""
+    pass
+
+
+class UsuarioService:
+    """
+    Servicio para gestión de usuarios.
+    
+    Encapsula toda la lógica de negocio relacionada con el registro
+    y gestión de usuarios, siguiendo el principio de responsabilidad única.
+    """
+    
+    def __init__(self):
+        """Inicializa el servicio con el logger configurado."""
+        self.logger = obtener_registrador('aplicacion')
+    
+    def registrar_usuario_completo(
+        self, 
+        datos_persona: Dict[str, Any], 
+        datos_usuario: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Registra una persona y crea su usuario asociado.
+        
+        Args:
+            datos_persona (Dict): Datos de la persona a registrar
+            datos_usuario (Dict): Datos del usuario a crear
+            
+        Returns:
+            Dict: Información del usuario creado (sin password)
+            
+        Raises:
+            UsuarioServiceError: Si hay errores de validación o duplicación
+        """
+        try:
+            # Validar datos de entrada
+            self._validar_datos_persona(datos_persona)
+            self._validar_datos_usuario(datos_usuario)
+            
+            # Validar unicidad antes de crear
+            self._validar_unicidad(datos_persona, datos_usuario)
+            
+            # Crear persona y usuario en una transacción
+            usuario_creado = self._crear_persona_y_usuario(datos_persona, datos_usuario)
+            
+            self.logger.info(f"Usuario registrado exitosamente: {usuario_creado['usuario']}")
+            
+            return usuario_creado
+            
+        except UsuarioServiceError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error inesperado al registrar usuario: {str(e)}")
+            raise UsuarioServiceError(f"Error interno del servidor: {str(e)}")
+    
+    def _validar_datos_persona(self, datos: Dict[str, Any]) -> None:
+        """
+        Valida los datos requeridos para crear una persona.
+        
+        Args:
+            datos (Dict): Datos de la persona
+            
+        Raises:
+            UsuarioServiceError: Si faltan campos requeridos
+        """
+        campos_requeridos = [
+            'primer_nombre', 'primer_apellido', 'documento',
+            'correo_electronico', 'direccion', 'telefono',
+            'id_tipo_documento', 'id_sexo'
+        ]
+        
+        campos_faltantes = [campo for campo in campos_requeridos if not datos.get(campo)]
+        
+        if campos_faltantes:
+            raise UsuarioServiceError(f"Campos requeridos faltantes: {', '.join(campos_faltantes)}")
+        
+        # Validar formato de email básico
+        email = datos.get('correo_electronico', '')
+        if '@' not in email or '.' not in email.split('@')[-1]:
+            raise UsuarioServiceError("Formato de email inválido")
+        
+        # Validar longitud de campos
+        if len(datos.get('primer_nombre', '')) > 50:
+            raise UsuarioServiceError("El primer nombre excede la longitud máxima (50 caracteres)")
+        
+        if len(datos.get('primer_apellido', '')) > 50:
+            raise UsuarioServiceError("El primer apellido excede la longitud máxima (50 caracteres)")
+    
+    def _validar_datos_usuario(self, datos: Dict[str, Any]) -> None:
+        """
+        Valida los datos requeridos para crear un usuario.
+        
+        Args:
+            datos (Dict): Datos del usuario
+            
+        Raises:
+            UsuarioServiceError: Si faltan campos requeridos o son inválidos
+        """
+        campos_requeridos = ['usuario', 'password']
+        campos_faltantes = [campo for campo in campos_requeridos if not datos.get(campo)]
+        
+        if campos_faltantes:
+            raise UsuarioServiceError(f"Campos de usuario requeridos faltantes: {', '.join(campos_faltantes)}")
+        
+        # Validar longitud de contraseña
+        password = datos.get('password', '')
+        if len(password) < 6:
+            raise UsuarioServiceError("La contraseña debe tener al menos 6 caracteres")
+        
+        # Validar longitud de nombre de usuario
+        usuario = datos.get('usuario', '')
+        if len(usuario) < 3:
+            raise UsuarioServiceError("El nombre de usuario debe tener al menos 3 caracteres")
+        
+        if len(usuario) > 200:
+            raise UsuarioServiceError("El nombre de usuario excede la longitud máxima (200 caracteres)")
+    
+    def _validar_unicidad(self, datos_persona: Dict[str, Any], datos_usuario: Dict[str, Any]) -> None:
+        """
+        Valida que no existan duplicados en campos únicos.
+        
+        Args:
+            datos_persona (Dict): Datos de la persona
+            datos_usuario (Dict): Datos del usuario
+            
+        Raises:
+            UsuarioServiceError: Si se encuentran duplicados
+        """
+        documento = datos_persona.get('documento')
+        email = datos_persona.get('correo_electronico')
+        username = datos_usuario.get('usuario')
+        
+        # Verificar documento único
+        if Persona.query.filter_by(documento=documento).first():
+            raise UsuarioServiceError(f"Ya existe una persona con el documento {documento}")
+        
+        # Verificar email único
+        if Persona.query.filter_by(correo_electronico=email).first():
+            raise UsuarioServiceError(f"Ya existe una persona con el email {email}")
+        
+        # Verificar username único
+        if Usuario.query.filter_by(usuario=username).first():
+            raise UsuarioServiceError(f"Ya existe un usuario con el nombre {username}")
+    
+    def _crear_persona_y_usuario(self, datos_persona: Dict[str, Any], datos_usuario: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Crea la persona, el usuario y asigna el rol por defecto en una transacción atómica.
+        
+        Args:
+            datos_persona (Dict): Datos de la persona
+            datos_usuario (Dict): Datos del usuario
+            
+        Returns:
+            Dict: Información del usuario creado
+            
+        Raises:
+            UsuarioServiceError: Si hay errores en la creación
+        """
+        try:
+            # Iniciar transacción
+            db.session.begin()
+            
+            # Crear persona
+            persona = self._crear_persona(datos_persona)
+            db.session.flush()  # Obtener ID sin hacer commit
+            
+            # Crear usuario asociado
+            usuario = self._crear_usuario(persona.id_persona, datos_usuario)
+            db.session.flush()
+            
+            # Asignar rol por defecto
+            self._asignar_rol_por_defecto(usuario.id_usuario)
+            
+            # Commit de la transacción
+            db.session.commit()
+            
+            # Retornar datos del usuario (sin password)
+            return self._serializar_usuario(usuario)
+            
+        except IntegrityError as e:
+            db.session.rollback()
+            self.logger.error(f"Error de integridad al crear usuario: {str(e)}")
+            raise UsuarioServiceError("Error de duplicación de datos")
+        except Exception as e:
+            db.session.rollback()
+            self.logger.error(f"Error al crear usuario: {str(e)}")
+            raise UsuarioServiceError(f"Error al crear usuario: {str(e)}")
+    
+    def _crear_persona(self, datos: Dict[str, Any]) -> Persona:
+        """
+        Crea una nueva persona en la base de datos.
+        
+        Args:
+            datos (Dict): Datos de la persona
+            
+        Returns:
+            Persona: Instancia de la persona creada
+        """
+        persona = Persona(
+            primer_nombre=datos['primer_nombre'],
+            segundo_nombre=datos.get('segundo_nombre'),
+            primer_apellido=datos['primer_apellido'],
+            segundo_apellido=datos.get('segundo_apellido'),
+            documento=datos['documento'],
+            correo_electronico=datos['correo_electronico'],
+            direccion=datos['direccion'],
+            telefono=datos['telefono'],
+            estado=True,
+            fecha_registro=date.today(),
+            id_tipo_documento=datos['id_tipo_documento'],
+            id_sexo=datos['id_sexo']
+        )
+        
+        db.session.add(persona)
+        return persona
+    
+    def _crear_usuario(self, id_persona: int, datos: Dict[str, Any]) -> Usuario:
+        """
+        Crea un nuevo usuario asociado a una persona.
+        
+        Args:
+            id_persona (int): ID de la persona asociada
+            datos (Dict): Datos del usuario
+            
+        Returns:
+            Usuario: Instancia del usuario creado
+        """
+        # Hashear contraseña
+        password_hash = generate_password_hash(datos['password'])
+        
+        usuario = Usuario(
+            id_persona=id_persona,
+            usuario=datos['usuario'],
+            password=password_hash,
+            estado=True
+        )
+        
+        db.session.add(usuario)
+        return usuario
+    
+    def _asignar_rol_por_defecto(self, id_usuario: int) -> None:
+        """
+        Asigna el rol por defecto 'usuario' al usuario recién creado.
+        
+        Args:
+            id_usuario (int): ID del usuario al que asignar el rol
+            
+        Raises:
+            UsuarioServiceError: Si hay errores al asignar el rol
+        """
+        try:
+            # Obtener o crear el rol por defecto
+            rol_usuario = self._obtener_o_crear_rol_usuario()
+            
+            # Crear la relación usuario-rol
+            usuario_rol = UsuarioRol(
+                id_usuario=id_usuario,
+                id_rol=rol_usuario.id_rol
+            )
+            
+            db.session.add(usuario_rol)
+            self.logger.info(f"Rol 'usuario' asignado al usuario ID: {id_usuario}")
+            
+        except Exception as e:
+            self.logger.error(f"Error al asignar rol por defecto: {str(e)}")
+            raise UsuarioServiceError(f"Error al asignar rol por defecto: {str(e)}")
+    
+    def _obtener_o_crear_rol_usuario(self) -> Rol:
+        """
+        Obtiene el rol 'usuario' o lo crea si no existe.
+        
+        Returns:
+            Rol: Instancia del rol 'usuario'
+            
+        Raises:
+            UsuarioServiceError: Si hay errores al crear el rol
+        """
+        try:
+            # Buscar el rol 'usuario'
+            rol_usuario = Rol.query.filter_by(nombre_rol='usuario').first()
+            
+            if not rol_usuario:
+                # Crear el rol 'usuario' si no existe
+                rol_usuario = Rol(
+                    nombre_rol='usuario',
+                    descripcion='Rol por defecto para usuarios del sistema'
+                )
+                
+                db.session.add(rol_usuario)
+                db.session.flush()  # Obtener ID sin hacer commit
+                
+                self.logger.info("Rol 'usuario' creado automáticamente")
+            
+            return rol_usuario
+            
+        except Exception as e:
+            self.logger.error(f"Error al obtener/crear rol usuario: {str(e)}")
+            raise UsuarioServiceError(f"Error al gestionar rol usuario: {str(e)}")
+    
+    def _serializar_usuario(self, usuario: Usuario) -> Dict[str, Any]:
+        """
+        Serializa un usuario para retorno (sin exponer password).
+        
+        Args:
+            usuario (Usuario): Instancia del usuario
+            
+        Returns:
+            Dict: Datos del usuario serializados
+        """
+        # Obtener roles del usuario
+        roles_usuario = []
+        if hasattr(usuario, 'roles') and usuario.roles:
+            roles_usuario = [rol.to_dict() for rol in usuario.roles]
+        
+        return {
+            'id_usuario': usuario.id_usuario,
+            'id_persona': usuario.id_persona,
+            'usuario': usuario.usuario,
+            'estado': usuario.estado,
+            'roles': roles_usuario,
+            'persona': {
+                'nombre_completo': usuario.persona.nombre_completo,
+                'correo_electronico': usuario.persona.correo_electronico,
+                'documento': usuario.persona.documento,
+                'telefono': usuario.persona.telefono
+            },
+            'fecha_creacion': usuario.created_at.isoformat() if usuario.created_at else None
+        }
+    
+    def verificar_credenciales(self, usuario: str, password: str) -> Optional[Usuario]:
+        """
+        Verifica las credenciales de un usuario.
+        
+        Args:
+            usuario (str): Nombre de usuario
+            password (str): Contraseña en texto plano
+            
+        Returns:
+            Usuario: Usuario si las credenciales son válidas, None en caso contrario
+        """
+        try:
+            usuario_obj = Usuario.query.filter_by(usuario=usuario, estado=True).first()
+            
+            if usuario_obj and check_password_hash(usuario_obj.password, password):
+                return usuario_obj
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error al verificar credenciales: {str(e)}")
+            return None
+    
+    def obtener_usuario_por_id(self, id_usuario: int) -> Optional[Usuario]:
+        """
+        Obtiene un usuario por su ID.
+        
+        Args:
+            id_usuario (int): ID del usuario
+            
+        Returns:
+            Usuario: Usuario encontrado o None
+        """
+        try:
+            return Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
+        except Exception as e:
+            self.logger.error(f"Error al obtener usuario por ID: {str(e)}")
+            return None
+    
+    def obtener_usuario_con_roles(self, id_usuario: int) -> Optional[Dict[str, Any]]:
+        """
+        Obtiene un usuario por su ID con información de roles.
+        
+        Args:
+            id_usuario (int): ID del usuario
+            
+        Returns:
+            Dict: Usuario con roles o None
+        """
+        try:
+            usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
+            if usuario:
+                return self._serializar_usuario(usuario)
+            return None
+        except Exception as e:
+            self.logger.error(f"Error al obtener usuario con roles: {str(e)}")
+            return None
+
+
+# Instancia global del servicio para uso en la aplicación
+usuario_service = UsuarioService()
