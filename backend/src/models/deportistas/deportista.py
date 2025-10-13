@@ -55,17 +55,17 @@ class Deportista(BaseModel):
     id_eps = Column(Integer, ForeignKey('puerta_orion_eps.id_eps'), nullable=True)
     
     # Relaciones
-    persona = relationship('Persona', backref='deportista_obj', uselist=False)
-    categoria = relationship('Categoria', backref='deportistas', lazy=True)
-    tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], backref='deportistas_sangre', lazy=True)
+    persona = relationship('Persona', uselist=False)
+    categoria = relationship('Categoria', lazy=True)
+    tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], lazy=True)
     # diagnostico = relationship('Diagnostico', foreign_keys=[id_diagnostico_deportista], backref='deportistas_diagnostico', lazy=True)  # Relación eliminada
-    ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], backref='deportistas_ciudad', lazy=True)
-    mensualidad = relationship('Mensualidad', foreign_keys=[id_mensualidad], backref='deportistas_mensualidad', lazy=True)
-    informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], backref='deportista_info', lazy=True)
-    eps = relationship('EPS', foreign_keys=[id_eps], backref='deportistas_eps', lazy=True)
+    ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], lazy=True)
+    mensualidad = relationship('Mensualidad', foreign_keys=[id_mensualidad], lazy=True)
+    informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], lazy=True)
+    eps = relationship('EPS', foreign_keys=[id_eps], lazy=True)
     
     # Relación muchos a muchos con acudientes a través de DeportistaAcudiente
-    deportistas_acudientes = relationship('DeportistaAcudiente', backref='deportista', lazy=True)
+    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True)
     
     # Relación uno a muchos con diagnósticos históricos de deportistas
     # La relación diagnosticos_deportista se define vía backref desde DiagnosticoDeportista

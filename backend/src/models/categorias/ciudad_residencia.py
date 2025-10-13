@@ -25,7 +25,7 @@ class CiudadResidencia(BaseModel):
     nombre_ciudad = Column(String(150), nullable=False, unique=True)
     
     # Relaciones
-    personas = relationship('Persona', backref='ciudad_residencia_obj', lazy=True)
+    deportistas = relationship('Deportista', lazy=True)
     
     def __repr__(self):
         """

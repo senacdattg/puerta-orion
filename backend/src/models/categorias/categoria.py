@@ -36,8 +36,9 @@ class Categoria(BaseModel):
     estado = Column(Boolean, default=True, nullable=False)
     
     # Relaciones
-    eventos = relationship('Evento', backref='categoria_obj', lazy=True)
-    mensualidades = relationship('Mensualidad', backref='categoria_obj', lazy=True)
+    eventos = relationship('Evento', lazy=True)
+    mensualidades = relationship('Mensualidad', lazy=True)
+    deportistas = relationship('Deportista', lazy=True)
     
     def __repr__(self):
         """

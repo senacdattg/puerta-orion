@@ -26,7 +26,7 @@ class TipoDocumento(BaseModel):
     nombre_documento = Column(String(50), nullable=False, unique=True)
     
     # Relaciones
-    personas = relationship('Persona', backref='tipo_documento_obj', lazy=True)
+    personas = relationship('Persona', lazy=True)
     
     def __repr__(self):
         """

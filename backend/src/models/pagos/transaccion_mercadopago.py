@@ -51,8 +51,8 @@ class TransaccionMercadoPago(BaseModel):
     id_mensualidad = Column(Integer, ForeignKey('puerta_orion_mensualidad.id_mensualidad'), nullable=True)
     
     # Relaciones
-    cuota = relationship('Cuota', backref='transacciones_mercadopago', lazy=True)
-    mensualidad = relationship('Mensualidad', backref='transacciones_mercadopago', lazy=True)
+    cuota = relationship('Cuota', lazy=True)
+    mensualidad = relationship('Mensualidad', lazy=True)
     
     def __repr__(self):
         """

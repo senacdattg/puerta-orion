@@ -54,8 +54,8 @@ LOG_ARCHIVE_DIR=logs/archive
 # ===========================================
 
 # Credenciales de Sandbox (para desarrollo)
-MERCADOPAGO_ACCESS_TOKEN=TEST-7405850780286164-101217-e3dee7e8d50d1c3a850d51f57c9667aa-2922151645
-MERCADOPAGO_PUBLIC_KEY=TEST-e6b78062-2396-468c-a5bb-26853bc07710
+MERCADOPAGO_ACCESS_TOKEN=TEST-tu_access_token_de_sandbox_aqui
+MERCADOPAGO_PUBLIC_KEY=TEST-tu_public_key_de_sandbox_aqui
 
 # Credenciales de Producción (para cuando esté listo)
 # MERCADOPAGO_ACCESS_TOKEN_PROD=APP-tu_access_token_de_produccion_aqui

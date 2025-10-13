@@ -58,8 +58,8 @@ class Persona(BaseModel):
     id_sexo = Column(Integer, ForeignKey('puerta_orion_sexo.id_sexo'), nullable=False)
     
     # Relaciones con catálogos (solo 2 según el MER actualizado)
-    tipo_documento = relationship('TipoDocumento', backref='personas', lazy=True)
-    sexo = relationship('Sexo', backref='personas', lazy=True)
+    tipo_documento = relationship('TipoDocumento', lazy=True)
+    sexo = relationship('Sexo', lazy=True)
     
     # Relaciones con entidades principales (1:1 via backref)
     # deportista_obj, usuario_obj, acudiente_obj, informacion_deportiva_obj

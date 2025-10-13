@@ -36,9 +36,9 @@ class DeportistaAcudiente(BaseModel):
     fecha_registro = Column(Date, nullable=False)
     
     # Relaciones
-    deportista = relationship('Deportista', backref='deportistas_acudientes', lazy=True)
-    acudiente = relationship('Acudiente', backref='deportistas_acudientes', lazy=True)
-    parentesco = relationship('Parentesco', backref='deportistas_acudientes', lazy=True)
+    deportista = relationship('Deportista', lazy=True)
+    acudiente = relationship('Acudiente', lazy=True)
+    parentesco = relationship('Parentesco', lazy=True)
     
     def __repr__(self):
         """
