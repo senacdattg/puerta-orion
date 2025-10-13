@@ -26,7 +26,7 @@ class Sexo(BaseModel):
     sexo = Column(Boolean, nullable=False)
     
     # Relaciones
-    personas = relationship('Persona', backref='sexo_obj', lazy=True)
+    personas = relationship('Persona', lazy=True)
     
     def __repr__(self):
         """

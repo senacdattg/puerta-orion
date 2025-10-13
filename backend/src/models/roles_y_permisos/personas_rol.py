@@ -44,8 +44,8 @@ class PersonasRol(BaseModel):
     estado = db.Column(db.Boolean, default=True)
     
     # Relaciones
-    persona = db.relationship('Persona', backref='personas_roles', lazy=True)
-    rol = db.relationship('Rol', backref='personas_roles', lazy=True)
+    persona = db.relationship('Persona', lazy=True)
+    rol = db.relationship('Rol', lazy=True)
 
     def to_dict(self):
         return {

@@ -25,7 +25,7 @@ class GrupoSanguineo(BaseModel):
     tipo_sangre = Column(String(150), nullable=False, unique=True)
     
     # Relaciones
-    personas = relationship('Persona', backref='grupo_sanguineo_obj', lazy=True)
+    deportistas = relationship('Deportista', lazy=True)
     
     def __repr__(self):
         """

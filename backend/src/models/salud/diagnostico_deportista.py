@@ -37,8 +37,8 @@ class DiagnosticoDeportista(BaseModel):
     fecha = db.Column(db.Date, nullable=False)
 
     # Relaciones
-    diagnostico = db.relationship('Diagnostico', backref='diagnostico_deportista_items', lazy=True)
-    deportista = db.relationship('Deportista', backref='diagnosticos_deportista', lazy=True)
+    diagnostico = db.relationship('Diagnostico', lazy=True)
+    deportista = db.relationship('Deportista', lazy=True)
 
     def __repr__(self):
         return f"<DiagnosticoDeportista {self.id_diagnostico_deportista} - Deportista {self.id_deportista} - Diagnostico {self.id_diagnostico}>"

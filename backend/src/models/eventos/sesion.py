@@ -16,8 +16,7 @@ class Sesion(BaseModel):
     descripcion = Column(String(250))
     
     # Relaciones
-    eventos = relationship('Evento', backref='sesion', lazy=True)
-    roles_usuarios = relationship('RolUsuario', backref='sesion', lazy=True)
+    eventos = relationship('Evento', lazy=True)
     
     def __repr__(self):
         """

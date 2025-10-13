@@ -29,8 +29,8 @@ class Acudiente(BaseModel):
     estado = Column(Boolean, default=True, nullable=False)
     
     # Relaciones
-    persona = relationship('Persona', backref='acudiente_obj', uselist=False)
-    deportistas_acudientes = relationship('DeportistaAcudiente', backref='acudiente', lazy=True)
+    persona = relationship('Persona', uselist=False)
+    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True)
     
     def __repr__(self):
         """

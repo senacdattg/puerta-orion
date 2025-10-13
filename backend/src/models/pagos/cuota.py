@@ -36,6 +36,7 @@ class Cuota(BaseModel):
     monto_cuota = Column(Numeric(10, 2), nullable=False)
     fecha_cuota = Column(Date, nullable=False)
     descuento = Column(Boolean, default=False, nullable=False)
+    saldo_pendiente = Column(Numeric(10, 2), nullable=True)  # Saldo pendiente de pago
     
     def __repr__(self):
         """
@@ -59,6 +60,32 @@ class Cuota(BaseModel):
             'id_metodo_pago': self.id_metodo_pago,
             'monto_cuota': float(self.monto_cuota) if self.monto_cuota else None,
             'fecha_cuota': self.fecha_cuota.isoformat() if self.fecha_cuota else None,
-            'descuento': self.descuento
+            'descuento': self.descuento,
+            'saldo_pendiente': float(self.saldo_pendiente) if self.saldo_pendiente else None
         }
+    
+    def calcular_saldo_pendiente(self):
+        """
+        Calcula el saldo pendiente basado en los pagos realizados.
+        """
+        from ..base import db
+        from .transaccion_mercadopago import TransaccionMercadoPago
+        
+        # Sumar todos los pagos aprobados para esta cuota
+        pagos_aprobados = db.session.query(db.func.sum(TransaccionMercadoPago.monto)).filter(
+            TransaccionMercadoPago.id_cuota == self.id_cuota,
+            TransaccionMercadoPago.estado == 'approved'
+        ).scalar() or 0
+        
+        # Calcular saldo pendiente
+        saldo = float(self.monto_cuota) - float(pagos_aprobados)
+        return max(0, saldo)  # No puede ser negativo
+    
+    def actualizar_saldo_pendiente(self):
+        """
+        Actualiza el saldo pendiente en la base de datos.
+        """
+        from ..base import db
+        self.saldo_pendiente = self.calcular_saldo_pendiente()
+        db.session.commit()
 

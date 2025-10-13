@@ -119,5 +119,5 @@ Thumbs.db
 .idea/
 *.swp
 
-# Ignorar archivos de migraciones si se usan
-migrations/
+# Archivos de migraciones (NO ignorar - son necesarios para el equipo)
+# migrations/

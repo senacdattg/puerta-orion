@@ -28,7 +28,7 @@ class TipoEvento(BaseModel):
     descripcion = Column(String(300))
     
     # Relaciones
-    eventos = relationship('Evento', backref='tipo_evento_obj', lazy=True)
+    eventos = relationship('Evento', lazy=True)
     
     def __repr__(self):
         """
