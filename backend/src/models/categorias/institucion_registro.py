@@ -25,8 +25,7 @@ class InstitucionRegistro(BaseModel):
     nombre_institucion = Column(String(200), nullable=False, unique=True)
     
     # Relaciones
-    # Nota: La relación con InformacionDeportiva se define en el modelo InformacionDeportiva
-    # ya que la institución está en la tabla InformacionDeportiva, no en Persona
+    informaciones_deportivas = relationship('InformacionDeportiva', lazy=True)
     
     def __repr__(self):
         """

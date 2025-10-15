@@ -28,7 +28,7 @@ class Acudiente(BaseModel):
     id_persona = Column(Integer, ForeignKey('puerta_orion_personas.id_persona'), nullable=False, unique=True)
     estado = Column(Boolean, default=True, nullable=False)
     
-    # Relaciones (sin backrefs para evitar conflictos)
+    # Relaciones
     persona = relationship('Persona', uselist=False)
     deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True)
     

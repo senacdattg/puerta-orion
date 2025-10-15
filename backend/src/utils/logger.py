@@ -214,3 +214,7 @@ def registrar_error(error, contexto=None):
 def registrar_base_datos(operacion, tabla=None, consulta=None, duracion=None):
     """Función helper para loggear operaciones de BD"""
     gestor_logs.registrar_base_datos(operacion, tabla, consulta, duracion)
+
+# Logger simple para uso directo
+import logging
+logger = logging.getLogger(__name__)

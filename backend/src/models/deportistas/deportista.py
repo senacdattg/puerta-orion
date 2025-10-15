@@ -54,10 +54,11 @@ class Deportista(BaseModel):
     id_informacion_deportiva = Column(Integer, ForeignKey('informaciondeportiva.id_informacion_deportiva'), nullable=True)
     id_eps = Column(Integer, ForeignKey('puerta_orion_eps.id_eps'), nullable=True)
     
-    # Relaciones (sin backrefs para evitar conflictos)
+    # Relaciones
     persona = relationship('Persona', uselist=False)
     categoria = relationship('Categoria', lazy=True)
     tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], lazy=True)
+    # diagnostico = relationship('Diagnostico', foreign_keys=[id_diagnostico_deportista], backref='deportistas_diagnostico', lazy=True)  # Relación eliminada
     ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], lazy=True)
     mensualidad = relationship('Mensualidad', foreign_keys=[id_mensualidad], lazy=True)
     informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], lazy=True)

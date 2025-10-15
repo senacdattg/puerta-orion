@@ -37,9 +37,9 @@ class Mensualidad(BaseModel):
     fecha_pago = Column(Date, nullable=False)
     monto_pago = Column(Numeric(10, 2), nullable=False)
     
-    # Relaciones (sin backref para evitar conflictos)
-    metodo_pago_obj = relationship('MetodoPago', lazy=True)
-    categoria_obj = relationship('Categoria', lazy=True)
+    # Relaciones
+    metodo_pago = relationship('MetodoPago', lazy=True)
+    categoria = relationship('Categoria', lazy=True)
     
     def __repr__(self):
         """

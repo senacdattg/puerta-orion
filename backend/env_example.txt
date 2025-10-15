@@ -48,3 +48,19 @@ LOG_ERROR_FILE=logs/app/error.log
 LOG_ACCESS_FILE=logs/app/access.log
 LOG_DB_FILE=logs/database/db.log
 LOG_ARCHIVE_DIR=logs/archive
+
+# ===========================================
+# MERCADO PAGO - CREDENCIALES
+# ===========================================
+
+# Credenciales de Sandbox (para desarrollo)
+MERCADOPAGO_ACCESS_TOKEN=TEST-tu_access_token_de_sandbox_aqui
+MERCADOPAGO_PUBLIC_KEY=TEST-tu_public_key_de_sandbox_aqui
+
+# Credenciales de Producción (para cuando esté listo)
+# MERCADOPAGO_ACCESS_TOKEN_PROD=APP-tu_access_token_de_produccion_aqui
+# MERCADOPAGO_PUBLIC_KEY_PROD=APP-tu_public_key_de_produccion_aqui
+
+# Configuración adicional
+MERCADOPAGO_WEBHOOK_SECRET=tu_webhook_secret_aqui
+MERCADOPAGO_ENVIRONMENT=sandbox  # o 'production'

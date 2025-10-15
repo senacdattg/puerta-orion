@@ -35,7 +35,7 @@ class DeportistaAcudiente(BaseModel):
     es_responsable = Column(Boolean, default=False, nullable=False)
     fecha_registro = Column(Date, nullable=False)
     
-    # Relaciones (sin backrefs para evitar conflictos)
+    # Relaciones
     deportista = relationship('Deportista', lazy=True)
     acudiente = relationship('Acudiente', lazy=True)
     parentesco = relationship('Parentesco', lazy=True)

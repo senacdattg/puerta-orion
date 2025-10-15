@@ -30,8 +30,7 @@ class EPS(BaseModel):
     codigo_eps = Column(Integer, nullable=True)
     
     # Relaciones
-    # Nota: La relación con Deportista se define en el modelo Deportista
-    # ya que el EPS está en la tabla Deportista, no en Persona
+    deportistas = relationship('Deportista', lazy=True)
     
     def __repr__(self):
         """

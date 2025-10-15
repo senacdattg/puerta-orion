@@ -32,6 +32,7 @@ from .eventos.tipo_evento import TipoEvento
 from .pagos.cuota import Cuota
 from .pagos.mensualidad import Mensualidad
 from .pagos.metodo_pago import MetodoPago
+from .pagos.transaccion_mercadopago import TransaccionMercadoPago
 from .roles_y_permisos.rol import Rol
 from .roles_y_permisos.permiso import Permiso
 from .roles_y_permisos.rol_permiso import RolPermiso
@@ -96,6 +97,7 @@ __all__ = [
     'Cuota',
     'Mensualidad',
     'MetodoPago',
+    'TransaccionMercadoPago',
     
     # Modelos de roles y permisos
     'Rol',
@@ -112,7 +114,5 @@ __all__ = [
     'InformacionDeportiva',
     
     # Nuevas tablas agregadas
-    'PersonasRol',         
-    'Escuela',
-    'Deporte',
+    'PersonasRol',
 ]

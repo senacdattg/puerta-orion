@@ -34,10 +34,14 @@ class Usuario(BaseModel):
     password = Column(String(200), nullable=False)
     estado = Column(Boolean, default=True, nullable=False)
     
-    # Relaciones (sin backrefs para evitar conflictos)
+    # Relaciones
     persona = relationship('Persona', uselist=False)
     roles = relationship('Rol', secondary='puerta_orion_usuario_rol', back_populates='usuarios')
-    # roles_usuarios = relationship('UsuarioRol', lazy=True)  # Comentado porque UsuarioRol es solo tabla de asociación
+    # Nota: RolUsuario es una tabla de asociación para la relación muchos a muchos entre Usuario y Rol.
+    # Si RolUsuario es un modelo aparte para añadir atributos a la relación, entonces esta definición está bien.
+    # Si es solo una tabla de unión simple, se puede simplificar la relación 'roles'.
+    # Para mantener la flexibilidad, mantendremos roles_usuarios.
+    roles_usuarios = relationship('UsuarioRol', lazy=True)
     
     def __repr__(self):
         """

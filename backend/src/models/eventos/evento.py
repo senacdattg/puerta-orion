@@ -20,6 +20,10 @@ class Evento(BaseModel):
     fecha_evento = Column(Date, nullable=False)
     duracion = Column(Time, nullable=False)
     
+    # Relaciones
+    categoria = relationship('Categoria', lazy=True)
+    sesion = relationship('Sesion', lazy=True)
+    
     def __repr__(self):
         """
         Representación de cadena de la instancia de Evento.

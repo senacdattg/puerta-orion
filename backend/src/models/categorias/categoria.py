@@ -35,9 +35,10 @@ class Categoria(BaseModel):
     edad_maxima = Column(Integer, nullable=False)
     estado = Column(Boolean, default=True, nullable=False)
     
-    # Relaciones (sin backref para evitar conflictos)
+    # Relaciones
     eventos = relationship('Evento', lazy=True)
     mensualidades = relationship('Mensualidad', lazy=True)
+    deportistas = relationship('Deportista', lazy=True)
     
     def __repr__(self):
         """

@@ -29,6 +29,7 @@ class MetodoPago(BaseModel):
     
     # Relaciones
     cuotas = relationship('Cuota', lazy=True)
+    mensualidades = relationship('Mensualidad', lazy=True)
     
     def __repr__(self):
         """

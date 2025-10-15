@@ -1,32 +1,33 @@
 <template>
   <form class="formulario-datos" @submit.prevent="manejarSubmit">
-    <!-- Sección 1: Información Básica -->
+
+    <!-- Sección 1: Información Personal -->
     <section class="seccion-formulario" v-show="indiceActual === 0">
       <h3>{{ obtenerTitulo() }}</h3>
 
       <div class="fila-texto">
         <input
-          v-model="form.nombre1"
+          v-model="form.primer_nombre"
           type="text"
           placeholder="¿Cuál es su primer nombre?"
           required
           :readonly="modo === 'ver'"
         />
         <input
-          v-model="form.nombre2"
+          v-model="form.segundo_nombre"
           type="text"
           placeholder="¿Cuál es su segundo nombre?"
           :readonly="modo === 'ver'"
         />
         <input
-          v-model="form.apellido1"
+          v-model="form.primer_apellido"
           type="text"
           placeholder="¿Cuál es su primer apellido?"
           required
           :readonly="modo === 'ver'"
         />
         <input
-          v-model="form.apellido2"
+          v-model="form.segundo_apellido"
           type="text"
           placeholder="¿Cuál es su segundo apellido?"
           :readonly="modo === 'ver'"
@@ -37,18 +38,18 @@
 
       <div class="fila-texto">
         <select
-          v-model="form.tipoDocumento"
+          v-model="form.id_tipo_documento"
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>¿Cuál es su tipo de documento?</option>
-          <option>Cédula</option>
-          <option>Tarjeta de identidad</option>
-          <option>Pasaporte</option>
+          <option value="" disabled selected>Seleccione el tipo de documento</option>
+          <option v-for="tipo in tiposDocumento" :key="tipo.id_tipo_documento" :value="tipo.id_tipo_documento">
+            {{ tipo.nombre_documento }}
+          </option>
         </select>
         <input
-          v-model="form.numeroDocumento"
-          type="text"
+          v-model="form.documento"
+          type="number"
           placeholder="¿Cuál es su número de documento?"
           required
           :readonly="modo === 'ver'"
@@ -58,48 +59,32 @@
       <hr class="form-divider" />
 
       <div class="fila-texto">
-        <input
-          v-model="form.fechaNacimiento"
-          type="date"
-          :readonly="modo === 'ver'"
-        />
         <select
-          v-model="form.genero"
+          v-model="form.id_sexo"
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>¿Cuál es su género?</option>
-          <option value="masculino">Masculino</option>
-          <option value="femenino">Femenino</option>
+          <option value="" disabled selected>Seleccione el género</option>
+          <option v-for="sexo in sexos" :key="sexo.id_sexo" :value="sexo.id_sexo">
+            {{ sexo.sexo ? 'Masculino' : 'Femenino' }}
+          </option>
         </select>
-      </div>
-
-      <hr class="form-divider" />
-
-      <div class="fila-texto">
         <input
-          v-model="form.correo"
+          v-model="form.correo_electronico"
           type="email"
           placeholder="¿Cuál es su correo electrónico?"
           required
           :readonly="modo === 'ver'"
         />
-        <input
-          v-model="form.telefono"
-          type="text"
-          placeholder="¿Cuál es su número telefónico?"
-          required
-          :readonly="modo === 'ver'"
-        />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input
-          v-model="form.ciudad"
-          type="text"
-          placeholder="¿En qué ciudad reside?"
+          v-model="form.telefono"
+          type="number"
+          placeholder="¿Cuál es su número telefónico?"
           required
           :readonly="modo === 'ver'"
         />
@@ -117,43 +102,49 @@
       <div class="fila-texto" style="display: flex; justify-content: center;">
         <input
           type="password"
-          v-model="form.contrasena"
+          v-model="form.password_hash"
           placeholder="Ingrese una contraseña"
           required
           :readonly="modo === 'ver'"
         />
         <input
           type="password"
-          v-model="form.confirmarContrasena"
+          v-model="form.confirmar_password"
           placeholder="Confirme su contraseña"
           required
           :readonly="modo === 'ver'"
         />
       </div>
+
+      <!-- Divider line below password fields -->
+      <hr class="form-divider" />
+
+      <!-- Botones de navegación - SIEMPRE visibles para poder ver todas las secciones -->
+      <div class="botones-formulario" style="justify-content: center; gap: 10px;">
+        <button type="button" class="boton-formulario siguiente" style="width: 120px;" @click="siguienteSeccion">Siguiente</button>
+      </div>
+
+      <hr class="form-divider" />
     </section>
 
-    <!-- Sección 2: Información Familiar -->
+    <!-- Sección 2: Información del Acudiente -->
     <section class="seccion-formulario" v-show="indiceActual === 1">
-      <h3>Información Familiar</h3>
+      <h3>Información del Acudiente</h3>
 
       <div class="fila-texto">
         <select
-          v-model="form.estadoCivil"
+          v-model="form.estado"
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>¿Cuál es su estado civil?</option>
-          <option value="soltero">Soltero/a</option>
-          <option value="casado">Casado/a</option>
-          <option value="union_libre">Unión libre</option>
-          <option value="divorciado">Divorciado/a</option>
-          <option value="viudo">Viudo/a</option>
+          <option value="" disabled>Seleccione el estado del acudiente</option>
+          <option value="1">Activo</option>
+          <option value="0">Inactivo</option>
         </select>
         <input
-          v-model="form.ocupacion"
+          v-model="form.observaciones_acudiente"
           type="text"
-          placeholder="¿Cuál es su ocupación?"
-          required
+          placeholder="Información adicional sobre el acudiente (opcional)"
           :readonly="modo === 'ver'"
         />
       </div>
@@ -161,203 +152,100 @@
       <hr class="form-divider" />
 
       <div class="fila-texto">
-        <input
-          v-model="form.empresa"
-          type="text"
-          placeholder="¿En qué empresa trabaja?"
+        <textarea
+          v-model="form.informacion_contacto_emergencia"
+          placeholder="Información de contacto de emergencia..."
+          rows="4"
           :readonly="modo === 'ver'"
-        />
-        <input
-          v-model="form.cargo"
-          type="text"
-          placeholder="¿Qué cargo desempeña?"
-          :readonly="modo === 'ver'"
-        />
+        ></textarea>
       </div>
 
       <hr class="form-divider" />
 
-      <div class="fila-texto">
-        <input
-          v-model="form.ingresosMensuales"
-          type="number"
-          placeholder="¿Cuáles son sus ingresos mensuales?"
-          min="0"
-          :readonly="modo === 'ver'"
-        />
-        <input
-          v-model="form.nivelEducativo"
-          type="text"
-          placeholder="¿Cuál es su nivel educativo?"
-          :readonly="modo === 'ver'"
-        />
+      <!-- Botones de navegación - SIEMPRE visibles -->
+      <div class="botones-formulario" style="justify-content: center; gap: 10px;">
+        <button type="button" class="boton-formulario anterior" style="width: 120px;" @click="anteriorSeccion">Anterior</button>
+        <button type="button" class="boton-formulario siguiente" style="width: 120px;" @click="siguienteSeccion">Siguiente</button>
       </div>
+
+      <hr class="form-divider" />
     </section>
 
-    <!-- Sección 3: Información de Contacto Adicional -->
+    <!-- Sección 3: Relación con Deportista -->
     <section class="seccion-formulario" v-show="indiceActual === 2">
-      <h3>Contacto Adicional</h3>
+      <h3>Relación con Deportista</h3>
 
       <div class="fila-texto">
-        <input
-          v-model="form.telefonoTrabajo"
-          type="text"
-          placeholder="¿Cuál es su teléfono del trabajo?"
-          :readonly="modo === 'ver'"
-        />
-        <input
-          v-model="form.correoTrabajo"
-          type="email"
-          placeholder="¿Cuál es su correo del trabajo?"
-          :readonly="modo === 'ver'"
-        />
-      </div>
-
-      <hr class="form-divider" />
-
-      <div class="fila-texto">
-        <input
-          v-model="form.telefonoEmergencia"
-          type="text"
-          placeholder="¿Cuál es su teléfono de emergencia?"
-          required
-          :readonly="modo === 'ver'"
-        />
-        <input
-          v-model="form.parentescoEmergencia"
-          type="text"
-          placeholder="¿Cuál es su parentesco con el contacto de emergencia?"
-          :readonly="modo === 'ver'"
-        />
-      </div>
-
-      <hr class="form-divider" />
-
-      <div class="fila-texto">
-        <textarea
-          v-model="form.observacionesFamilia"
-          placeholder="Observaciones sobre su situación familiar..."
-          rows="4"
-          :readonly="modo === 'ver'"
-        ></textarea>
-      </div>
-    </section>
-
-    <!-- Sección 4: Información del Deportista -->
-    <section class="seccion-formulario" v-show="indiceActual === 3">
-      <h3>Información del Deportista</h3>
-
-      <div class="fila-texto">
-        <input
-          v-model="form.deportista.nombre"
-          type="text"
-          placeholder="¿Cuál es el nombre del deportista?"
-          required
-          :readonly="modo === 'ver'"
-        />
-        <input
-          v-model="form.deportista.apellido"
-          type="text"
-          placeholder="¿Cuál es el apellido del deportista?"
-          required
-          :readonly="modo === 'ver'"
-        />
-      </div>
-
-      <hr class="form-divider" />
-
-      <div class="fila-texto">
-        <input
-          v-model="form.deportista.fechaNacimiento"
-          type="date"
-          :readonly="modo === 'ver'"
-        />
         <select
-          v-model="form.deportista.genero"
+          v-model="form.id_deportista"
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>¿Cuál es el género del deportista?</option>
-          <option value="masculino">Masculino</option>
-          <option value="femenino">Femenino</option>
+          <option value="" disabled selected>Seleccione el deportista</option>
+          <option v-for="deportista in deportistas" :key="deportista.id_deportista" :value="deportista.id_deportista">
+            {{ deportista.persona.primer_nombre }} {{ deportista.persona.primer_apellido }}
+          </option>
+        </select>
+        <select
+          v-model="form.id_parentesco"
+          required
+          :disabled="modo === 'ver'"
+        >
+          <option value="" disabled selected>Seleccione el parentesco</option>
+          <option v-for="parentesco in parentescos" :key="parentesco.id_parentesco" :value="parentesco.id_parentesco">
+            {{ parentesco.nombre }}
+          </option>
         </select>
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
-        <input
-          v-model="form.deportista.tipoDocumento"
-          type="text"
-          placeholder="¿Cuál es el tipo de documento del deportista?"
-          :readonly="modo === 'ver'"
-        />
-        <input
-          v-model="form.deportista.numeroDocumento"
-          type="text"
-          placeholder="¿Cuál es el número de documento del deportista?"
-          :readonly="modo === 'ver'"
-        />
+        <div class="checkbox-item">
+          <input
+            type="checkbox"
+            id="es_responsable"
+            v-model="form.es_responsable"
+            :disabled="modo === 'ver'"
+          />
+          <label for="es_responsable">
+            ¿Es responsable legal del deportista?
+          </label>
+        </div>
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <textarea
-          v-model="form.deportista.observaciones"
-          placeholder="Observaciones sobre el deportista..."
+          v-model="form.observaciones_relacion"
+          placeholder="Observaciones sobre la relación con el deportista..."
           rows="4"
           :readonly="modo === 'ver'"
         ></textarea>
       </div>
+
+      <hr class="form-divider" />
+
+      <!-- Botones de navegación - SIEMPRE visibles -->
+      <div class="botones-formulario" style="justify-content: center; gap: 10px;">
+        <button type="button" class="boton-formulario anterior" style="width: 120px;" @click="anteriorSeccion">Anterior</button>
+        <button type="button" class="boton-formulario siguiente" style="width: 120px;" @click="siguienteSeccion">Siguiente</button>
+      </div>
+
+      <hr class="form-divider" />
     </section>
 
-    <!-- Sección 5: Documentos y Autorizaciones -->
-    <section class="seccion-formulario" v-show="indiceActual === 4">
-      <h3>Documentos y Autorizaciones</h3>
-
-      <div class="fila-texto">
-        <input
-          @change="manejarArchivo('cedula', $event)"
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          :disabled="modo === 'ver'"
-        />
-        <input
-          @change="manejarArchivo('certificadoLaboral', $event)"
-          type="file"
-          accept=".pdf,.doc,.docx"
-          :disabled="modo === 'ver'"
-        />
-      </div>
-
-      <hr class="form-divider" />
-
-      <div class="fila-texto">
-        <input
-          @change="manejarArchivo('certificadoBancario', $event)"
-          type="file"
-          accept=".pdf,.doc,.docx"
-          :disabled="modo === 'ver'"
-        />
-        <input
-          @change="manejarArchivo('otros', $event)"
-          type="file"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          :disabled="modo === 'ver'"
-        />
-      </div>
-
-      <hr class="form-divider" />
+    <!-- Sección 4: Autorizaciones -->
+    <section class="seccion-formulario" v-show="indiceActual === 3">
+      <h3>Autorizaciones</h3>
 
       <div class="autorizaciones">
-        <h4>Autorizaciones</h4>
-
         <div class="checkbox-item">
           <input
             type="checkbox"
             id="autorizacionDeportiva"
-            v-model="form.autorizaciones.deportiva"
+            v-model="form.autorizacion_deportiva"
             :disabled="modo === 'ver'"
           />
           <label for="autorizacionDeportiva">
@@ -369,7 +257,7 @@
           <input
             type="checkbox"
             id="autorizacionMedica"
-            v-model="form.autorizaciones.medica"
+            v-model="form.autorizacion_medica"
             :disabled="modo === 'ver'"
           />
           <label for="autorizacionMedica">
@@ -381,7 +269,7 @@
           <input
             type="checkbox"
             id="autorizacionImagen"
-            v-model="form.autorizaciones.imagen"
+            v-model="form.autorizacion_imagen"
             :disabled="modo === 'ver'"
           />
           <label for="autorizacionImagen">
@@ -393,7 +281,7 @@
           <input
             type="checkbox"
             id="autorizacionViajes"
-            v-model="form.autorizaciones.viajes"
+            v-model="form.autorizacion_viajes"
             :disabled="modo === 'ver'"
           />
           <label for="autorizacionViajes">
@@ -406,65 +294,40 @@
 
       <div class="fila-texto">
         <textarea
-          v-model="form.observacionesGenerales"
+          v-model="form.observaciones_generales"
+          
           placeholder="Observaciones generales..."
           rows="4"
           :readonly="modo === 'ver'"
         ></textarea>
       </div>
+
+      <hr class="form-divider" />
+
+      <!-- Botones de navegación - SIEMPRE visibles -->
+      <div class="botones-formulario" style="justify-content: center; gap: 10px;">
+        <button type="button" class="boton-formulario anterior" style="width: 120px;" @click="anteriorSeccion">Anterior</button>
+      </div>
+
+      <hr class="form-divider" />
+
+      <!-- Botones de acción - SOLO en modos actualizar y registrar -->
+      <div v-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px;">
+        <button type="submit" class="boton-formulario" style="width: 120px;">
+          {{ obtenerTextoBoton() }}
+        </button>
+        <button
+          v-if="modo === 'actualizar'"
+          type="button"
+          class="boton-formulario"
+          style="width: 120px;"
+          @click="cancelar"
+        >
+          Cancelar actualización
+        </button>
+      </div>
     </section>
 
-    <!-- Navegación entre secciones -->
-    <div class="navegacion-secciones">
-      <button
-        v-if="indiceActual > 0"
-        type="button"
-        class="btn-navegacion btn-anterior"
-        @click="anteriorSeccion"
-        :disabled="modo === 'ver'"
-      >
-        <i class="fas fa-arrow-left"></i>
-        Anterior
-      </button>
-
-      <button
-        v-if="indiceActual < totalSecciones - 1"
-        type="button"
-        class="btn-navegacion btn-siguiente"
-        @click="siguienteSeccion"
-        :disabled="modo === 'ver'"
-      >
-        Siguiente
-        <i class="fas fa-arrow-right"></i>
-      </button>
-    </div>
-
-    <!-- Indicador de progreso -->
-    <div class="indicador-progreso">
-      <div class="progreso-barra">
-        <div
-          class="progreso-fill"
-          :style="{ width: `${((indiceActual + 1) / totalSecciones) * 100}%` }"
-        ></div>
-      </div>
-      <span class="progreso-texto">{{ indiceActual + 1 }} de {{ totalSecciones }}</span>
-    </div>
-
-    <!-- Botones de acción - SOLO en modos actualizar y registrar -->
-    <div v-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px;">
-      <button type="submit" class="boton-formulario" style="width: 120px;">
-        {{ obtenerTextoBoton() }}
-      </button>
-      <button
-        v-if="modo === 'actualizar'"
-        type="button"
-        class="boton-formulario"
-        style="width: 120px;"
-        @click="cancelar"
-      >
-        Cancelar actualización
-      </button>
-    </div>
   </form>
 </template>
 
@@ -488,51 +351,48 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'cancel']);
 
 const indiceActual = ref(0);
-const totalSecciones = 5;
+const totalSecciones = 4;
 
 const form = ref({
-  // Básicos
-  nombre1: "", nombre2: "", apellido1: "", apellido2: "",
-  tipoDocumento: "", numeroDocumento: "",
-  fechaNacimiento: "", genero: "",
-  correo: "", telefono: "",
-  ciudad: "", direccion: "",
-  contrasena: "", confirmarContrasena: "",
+  // Campos de la tabla Personas
+  primer_nombre: "",
+  segundo_nombre: "",
+  primer_apellido: "",
+  segundo_apellido: "",
+  documento: "",
+  correo_electronico: "",
+  direccion: "",
+  telefono: "",
+  password_hash: "",
+  confirmar_password: "",
+  estado: "",
+  fecha_registro: new Date().toISOString().split('T')[0],
+  id_tipo_documento: "",
+  id_sexo: "",
 
-  // Familiar
-  estadoCivil: "", ocupacion: "",
-  empresa: "", cargo: "",
-  ingresosMensuales: "", nivelEducativo: "",
+  // Campos de la tabla Acudiente
+  observaciones_acudiente: "",
+  informacion_contacto_emergencia: "",
 
-  // Contacto adicional
-  telefonoTrabajo: "", correoTrabajo: "",
-  telefonoEmergencia: "", parentescoEmergencia: "",
-  observacionesFamilia: "",
+  // Campos de la tabla DeportistaAcudiente
+  id_deportista: "",
+  id_parentesco: "",
+  es_responsable: false,
+  observaciones_relacion: "",
 
-  // Deportista
-  deportista: {
-    nombre: "", apellido: "",
-    fechaNacimiento: "", genero: "",
-    tipoDocumento: "", numeroDocumento: "",
-    observaciones: ""
-  },
-
-  // Documentos
-  documentos: {
-    cedula: "", certificadoLaboral: "",
-    certificadoBancario: "", otros: ""
-  },
-
-  // Autorizaciones
-  autorizaciones: {
-    deportiva: false,
-    medica: false,
-    imagen: false,
-    viajes: false
-  },
-
-  observacionesGenerales: ""
+  // Autorizaciones (campos adicionales)
+  autorizacion_deportiva: false,
+  autorizacion_medica: false,
+  autorizacion_imagen: false,
+  autorizacion_viajes: false,
+  observaciones_generales: ""
 });
+
+// Datos para los selects
+const tiposDocumento = ref([]);
+const sexos = ref([]);
+const deportistas = ref([]);
+const parentescos = ref([]);
 
 // Función para obtener el título según el modo
 function obtenerTitulo() {
@@ -576,23 +436,22 @@ function anteriorSeccion() {
 // Manejo del formulario
 function manejarSubmit() {
   // Validar contraseñas
-  if (form.value.contrasena !== form.value.confirmarContrasena) {
+  if (form.value.password_hash !== form.value.confirmar_password) {
     alert("Las contraseñas no coinciden");
     return;
   }
 
   // Validar campos requeridos
-  if (!form.value.nombre1 || !form.value.apellido1 || !form.value.tipoDocumento ||
-      !form.value.numeroDocumento || !form.value.correo || !form.value.telefono ||
-      !form.value.ciudad || !form.value.direccion || !form.value.contrasena ||
-      !form.value.estadoCivil || !form.value.ocupacion || !form.value.telefonoEmergencia ||
-      !form.value.deportista.nombre || !form.value.deportista.apellido) {
+  if (!form.value.primer_nombre || !form.value.primer_apellido || !form.value.id_tipo_documento ||
+      !form.value.documento || !form.value.correo_electronico || !form.value.telefono ||
+      !form.value.direccion || !form.value.password_hash || !form.value.id_sexo ||
+      !form.value.id_deportista || !form.value.id_parentesco) {
     alert("Por favor complete todos los campos obligatorios");
     return;
   }
 
   // Validar autorizaciones mínimas
-  if (!form.value.autorizaciones.deportiva || !form.value.autorizaciones.medica) {
+  if (!form.value.autorizacion_deportiva || !form.value.autorizacion_medica) {
     alert("Debe autorizar la participación deportiva y la atención médica");
     return;
   }
@@ -605,16 +464,46 @@ function cancelar() {
   emit('cancel');
 }
 
-// Función para manejar archivos
-function manejarArchivo(campo, event) {
-  const file = event.target.files[0];
-  if (file) {
-    form.value.documentos[campo] = file;
+// Función para cargar datos de los selects
+async function cargarDatosSelects() {
+  try {
+    // Aquí se harían las llamadas a la API para cargar los datos
+    // Por ahora se simulan con datos estáticos
+    tiposDocumento.value = [
+      { id_tipo_documento: 1, nombre_documento: "Cédula" },
+      { id_tipo_documento: 2, nombre_documento: "Tarjeta de identidad" },
+      { id_tipo_documento: 3, nombre_documento: "Pasaporte" }
+    ];
+
+    sexos.value = [
+      { id_sexo: 1, sexo: true }, // Masculino
+      { id_sexo: 2, sexo: false }  // Femenino
+    ];
+
+    parentescos.value = [
+      { id_parentesco: 1, nombre: "Padre" },
+      { id_parentesco: 2, nombre: "Madre" },
+      { id_parentesco: 3, nombre: "Tutor" },
+      { id_parentesco: 4, nombre: "Abuelo/a" },
+      { id_parentesco: 5, nombre: "Tío/a" }
+    ];
+
+    // Los deportistas se cargarían desde la API
+    deportistas.value = [
+      // Ejemplo de estructura esperada
+      // { id_deportista: 1, persona: { primer_nombre: "Juan", primer_apellido: "Pérez" } }
+    ];
+  } catch (error) {
+    console.error("Error cargando datos de selects:", error);
   }
 }
 
 // Cargar datos si se proporcionan
-onMounted(() => {
+onMounted(async () => {
+  // Cargar datos de los selects
+  await cargarDatosSelects();
+  
+  // Cargar datos del formulario si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
     form.value = { ...form.value, ...props.datos };
   }
@@ -630,55 +519,6 @@ watch(() => props.datos, (nuevosDatos) => {
 
 <style scoped>
 /* Estilos específicos para el formulario de acudiente */
-.formulario-datos {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.seccion-formulario {
-  margin-bottom: 30px;
-}
-
-.seccion-formulario h3 {
-  color: #0047ab;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  text-align: center;
-  border-bottom: 2px solid #0047ab;
-  padding-bottom: 10px;
-}
-
-.fila-texto {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.fila-texto input,
-.fila-texto select,
-.fila-texto textarea {
-  padding: 12px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.fila-texto input:focus,
-.fila-texto select:focus,
-.fila-texto textarea:focus {
-  outline: none;
-  border-color: #0047ab;
-  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
-}
-
-.fila-texto textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
 .form-divider {
   border: none;
   height: 1px;
@@ -723,35 +563,6 @@ watch(() => props.datos, (nuevosDatos) => {
   cursor: pointer;
 }
 
-/* Navegación entre secciones */
-.navegacion-secciones {
-  display: flex;
-  justify-content: space-between;
-  margin: 30px 0;
-}
-
-.btn-navegacion {
-  background: #0047ab;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-navegacion:hover:not(:disabled) {
-  background: #003d91;
-  transform: translateY(-2px);
-}
-
-.btn-navegacion:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
 
 /* Indicador de progreso */
 .indicador-progreso {
@@ -779,54 +590,12 @@ watch(() => props.datos, (nuevosDatos) => {
   font-size: 0.9rem;
 }
 
-/* Botones del formulario */
-.botones-formulario {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
-}
-
-.boton-formulario {
-  background: #0047ab;
-  color: white;
-  border: none;
-  padding: 15px 30px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.boton-formulario:hover {
-  background: #003d91;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 71, 171, 0.3);
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-  .fila-texto {
-    grid-template-columns: 1fr;
-  }
-
-  .navegacion-secciones {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .btn-navegacion {
-    width: 100%;
-    justify-content: center;
-  }
-
   .checkbox-item {
     flex-direction: column;
     gap: 8px;
   }
 }
 </style>
-
-
 

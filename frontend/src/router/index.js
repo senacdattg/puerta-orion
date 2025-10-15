@@ -13,7 +13,7 @@ import Galeria from '../views/galeria-vista.vue'
 import RolesRegistroVista from '@/views/roles-registro-vista.vue'
 import Calendario from '../views/calendario.vue'
 import Login from '../views/login.vue'
-import Admin from '../views/admin-manager.vue'
+import panelAdmin from '../views/admin-manager.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -91,7 +91,7 @@ const router = createRouter({
     {
       path: '/admin-manager',
       name: 'admin-manager',
-      component: Admin
+      component: panelAdmin
     }
   ],
 })

@@ -66,7 +66,7 @@ class InformacionDeportiva(BaseModel):
         nullable=False
     )
     
-    # Relaciones (sin backrefs para evitar conflictos)
+    # Relaciones
     persona = db.relationship('Persona', uselist=False)
     escuela = db.relationship('Escuela', lazy=True)
     deporte = db.relationship('Deporte', lazy=True)

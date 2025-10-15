@@ -18,6 +18,7 @@ from flask_migrate import Migrate
 from config import config
 from src.models.base import db
 from src.utils.logger import gestor_logs
+from src.models import *
 import os
 
 def create_app(config_name=None):
@@ -45,8 +46,12 @@ def create_app(config_name=None):
     # Configurar migraciones
     migrate = Migrate(app, db)
 
+    # Registrar blueprints de rutas
     from src.routes.auth_routes import registrar_auth_routes
     registrar_auth_routes(app)
+    
+    from src.routes.pagos_routes import pagos_bp
+    app.register_blueprint(pagos_bp, url_prefix='/api')
 
     @app.route('/')
     def index():

@@ -43,7 +43,7 @@ class PersonasRol(BaseModel):
     )
     estado = db.Column(db.Boolean, default=True)
     
-    # Relaciones (sin backrefs para evitar conflictos)
+    # Relaciones
     persona = db.relationship('Persona', lazy=True)
     rol = db.relationship('Rol', lazy=True)
 
