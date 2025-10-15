@@ -12,18 +12,18 @@ class Sexo(BaseModel):
     Modelo para tipos de sexo.
     
     Representa el sexo biológico de las personas en el sistema.
-    Usa un campo booleano donde True = Masculino, False = Femenino.
+    Almacena valores descriptivos como "Masculino", "Femenino", etc.
     Hereda de BaseModel para incluir campos de auditoría.
     
     Attributes:
         id_sexo (int): Identificador único del sexo (clave primaria).
-        sexo (bool): Sexo de la persona (True/False).
+        nombre (str): Nombre descriptivo del sexo.
         personas (list): Relación uno a muchos con el modelo Persona.
     """
     __tablename__ = 'puerta_orion_sexo'
     
     id_sexo = Column(Integer, primary_key=True)
-    sexo = Column(Boolean, nullable=False)
+    nombre = Column(db.String(150), nullable=False)
     
     # Relaciones
     personas = relationship('Persona', lazy=True)
@@ -32,11 +32,11 @@ class Sexo(BaseModel):
         """
         Representación de cadena de la instancia de Sexo.
         """
-        return f'<Sexo {self.sexo}>'
+        return f'<Sexo {self.nombre}>'
     
     def to_dict(self):
         """Convierte el objeto a diccionario para serialización."""
         return {
             'id_sexo': self.id_sexo,
-            'sexo': self.sexo
+            'nombre': self.nombre
         }

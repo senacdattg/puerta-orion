@@ -8,9 +8,11 @@ Responsabilidad:
 - Manejar expiración de tokens
 
 Este módulo sigue los principios SRP, KISS, DRY y SOLID.
+
 """
 
 import jwt
+
 import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Tuple
@@ -18,11 +20,10 @@ from flask import current_app, request
 from werkzeug.security import check_password_hash
 from sqlalchemy.exc import IntegrityError
 
-from ..models.base import db
-from ..models.usuarios.usuario import Usuario
-from ..models.eventos.sesionAuth import SesionAuth
-from ..utils.logger import obtener_registrador
-
+from ...models.base import db
+from ...models.usuarios.usuario import Usuario
+from ...models.eventos.sesionAuth import SesionAuth
+from ...utils.logger import obtener_registrador
 
 class AuthServiceError(Exception):
     """Excepción personalizada para errores del servicio de autenticación."""
