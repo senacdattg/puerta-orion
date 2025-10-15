@@ -45,23 +45,22 @@ def seed_sexo(force=False):
     """Seed para Sexo"""
     print("\n👤 Iniciando seed de Sexo...")
     
-    # True = Masculino, False = Femenino
     datos = [
-        {'sexo': True},   # Masculino
-        {'sexo': False},  # Femenino
+        {'nombre': 'Masculino'},
+        {'nombre': 'Femenino'},
+        {'nombre': 'Otro'},
     ]
     
     insertados = 0
     for dato in datos:
         # Verificar si ya existe
-        existe = Sexo.query.filter_by(sexo=dato['sexo']).first()
+        existe = Sexo.query.filter_by(nombre=dato['nombre']).first()
         if not existe:
             sexo = Sexo(**dato)
             db.session.add(sexo)
             insertados += 1
         else:
-            nombre_sexo = 'Masculino' if dato['sexo'] else 'Femenino'
-            print(f"   ⏭️  {nombre_sexo} ya existe, saltando...")
+            print(f"   ⏭️  {dato['nombre']} ya existe, saltando...")
     
     db.session.commit()
     print(f"✅ Sexo seed completado: {insertados} nuevos registros insertados")

@@ -86,7 +86,7 @@ def run():
             db.session.add(categoria)
             insertados += 1
             print(f"  ✅ Insertado: {categoria_data['nombre_categoria']} "
-                  f"({categoria_data['edad_minima']}-{categoria_data['edad_maxima']} años)")
+                f"({categoria_data['edad_minima']}-{categoria_data['edad_maxima']} años)")
         else:
             existentes += 1
             print(f"  ⏭️  Ya existe: {categoria_data['nombre_categoria']}")
