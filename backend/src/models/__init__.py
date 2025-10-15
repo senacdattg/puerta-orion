@@ -43,6 +43,8 @@ from .acudientes.parentesco import Parentesco
 from .deportistas.deportista import Deportista
 from .catalogos.tipo_documento import TipoDocumento
 from .catalogos.eps import EPS
+from .categorias.escuela import Escuela
+from .categorias.deporte import Deporte
 
 # Nuevas tablas agregadas
 from .deportistas.informacion_deportiva import InformacionDeportiva
@@ -82,6 +84,8 @@ __all__ = [
     'GrupoSanguineo',
     'InstitucionRegistro',
     'Sexo',
+    'Escuela',
+    'Deporte',
     'TipoDocumento',
     'EPS',
     
