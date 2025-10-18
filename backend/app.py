@@ -54,7 +54,7 @@ def create_app(config_name=None):
     from src.routes.catalogos_routes import catalogos_bp
     from src.routes.dynamic_data_routes import dynamic_data_bp
     app.register_blueprint(pagos_bp, url_prefix='/api')
-    app.register_blueprint(catalogos_bp, url_prefix='/api')
+    app.register_blueprint(catalogos_bp)  # Ya tiene url_prefix='/api/catalogos'
     app.register_blueprint(dynamic_data_bp, url_prefix='/api')
 
     @app.route('/')

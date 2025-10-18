@@ -41,6 +41,6 @@ function irFormulario(ruta) {
 }
 
 function accionBoton() {
-  router.push("/")
+  router.push("/login")
 }
 </script>

@@ -16,11 +16,17 @@ class Config:
     PORT = int(os.environ.get('PORT', 5000))
     
     # Configuración de la base de datos
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+mysqlconnector://usuario:contraseña@localhost/puerta_orion'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///instance/puerta_orion.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de CORS
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
+    CORS_ORIGINS = [
+        'http://localhost:3000',
+        'http://localhost:5173', 
+        'http://localhost:4173',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000'
+    ]
     
     # Configuración de JWT
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or SECRET_KEY

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import Inicio from '../views/Inicio.vue'
 import ActualizarDeportista from '../views/actualizar-deportista.vue'
 import RegistrarDeportista from '../views/registrar-deportista.vue'
@@ -20,80 +21,141 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      redirect: '/login'
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: Login,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/home',
       name: 'home',
       component: Inicio,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/inicio',
+      redirect: '/home'
     },
     {
       path: '/actualizar-deportista',
       name: 'actualizar-deportista',
       component: ActualizarDeportista,
+      meta: { requiresAuth: true }
     },
     {
       path: '/registrar-deportista',
       name: 'registrar-deportista',
       component: RegistrarDeportista,
+      meta: { requiresAuth: true }
     },
     {
       path: '/ver-deportista/:id',
       name: 'ver-deportista',
       component: VerDeportista,
+      meta: { requiresAuth: true }
     },
     {
       path: '/registrar-general',
       name: 'registrar-general',
       component: RegistrarGeneral,
+      meta: { requiresGuest: true }
     },
     {
       path: '/ver-general',
       name: 'ver-general',
       component: VerGeneral,
+      meta: { requiresAuth: true }
     },
     {
       path: '/actualizar-general',
       name: 'actualizar-general',
       component: ActualizarGeneral,
+      meta: { requiresAuth: true }
     },
     {
       path: '/ver-roles',
       name: 'ver-roles',
       component: VerRoles,
+      meta: { requiresAuth: true }
     },
     {
       path: '/mensualidades',
       name: 'mensualidades',
-      component: TablaMensualidades
+      component: TablaMensualidades,
+      meta: { requiresAuth: true }
     },
     {
       path: '/deportistas',
       name: 'deportistas',
-      component: TablaDeportistas
+      component: TablaDeportistas,
+      meta: { requiresAuth: true }
     },
     {
       path: '/galeria',
       name: 'galeria',
-      component: Galeria
+      component: Galeria,
+      meta: { requiresAuth: true }
     },
     {
       path: '/roles-registro',
       name: 'roles-registro',
-      component: RolesRegistroVista
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: Login
+      component: RolesRegistroVista,
+      meta: { requiresGuest: true }
     },
     {
       path: '/calendario',
       name: 'calendario',
-      component: Calendario
+      component: Calendario,
+      meta: { requiresAuth: true }
     },
     {
       path: '/admin-manager',
       name: 'admin-manager',
-      component: panelAdmin
+      component: panelAdmin,
+      meta: { requiresAuth: true }
     }
   ],
+})
+
+// Guard de navegación global
+router.beforeEach((to, from, next) => {
+  console.log('🔒 Guard de navegación ejecutándose...')
+  console.log('Ruta destino:', to.path)
+  console.log('Ruta origen:', from.path)
+
+  const authStore = useAuthStore()
+
+  // Inicializar el store si no está inicializado
+  if (!authStore.usuario && authStore.obtenerToken) {
+    console.log('🔄 Inicializando store...')
+    authStore.inicializar()
+  }
+
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+  const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
+  const isAuthenticated = authStore.estaAutenticado
+
+  console.log('Requiere autenticación:', requiresAuth)
+  console.log('Requiere invitado:', requiresGuest)
+  console.log('Está autenticado:', isAuthenticated)
+  console.log('Usuario actual:', authStore.usuario)
+
+  if (requiresAuth && !isAuthenticated) {
+    // Ruta requiere autenticación pero el usuario no está autenticado
+    console.log('❌ Redirigiendo a login (no autenticado)')
+    next('/login')
+  } else if (requiresGuest && isAuthenticated) {
+    // Ruta es para invitados pero el usuario ya está autenticado
+    console.log('✅ Redirigiendo a home (ya autenticado)')
+    next('/home')
+  } else {
+    // Permitir navegación
+    console.log('✅ Permitiendo navegación')
+    next()
+  }
 })
 
 export default router
