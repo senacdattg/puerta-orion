@@ -27,7 +27,7 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173
 
 # Configuración de JWT (para autenticación)
 JWT_SECRET_KEY=tu_jwt_secret_key_muy_segura_aqui
-JWT_ACCESS_TOKEN_EXPIRES=3600
+JWT_ACCESS_TOKEN_EXPIRES=1800  # 30 minutos
 
 # Configuración de Email (opcional)
 MAIL_SERVER=smtp.gmail.com

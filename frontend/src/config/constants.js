@@ -62,7 +62,7 @@ export const ROUTES = {
   deportistas: '/deportistas',
   mensualidades: '/mensualidades',
   login: '/login',
-  registro: '/roles-registro',
+  registro: '/registrar-general',
   admin: '/admin-manager'
 }
 

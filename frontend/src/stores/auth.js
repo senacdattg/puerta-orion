@@ -30,32 +30,23 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = true
       error.value = null
 
-      console.log('🔐 Store: Iniciando login...', credentials)
       const response = await authService.login(credentials)
-      console.log('🔐 Store: Respuesta del servicio:', response)
 
       if (response.success) {
-        token.value = response.data.token
-        user.value = response.data.usuario
-
-        console.log('🔐 Store: Token guardado:', token.value)
-        console.log('🔐 Store: Usuario guardado:', user.value)
+        token.value = response.token
+        user.value = response.user
 
         // Guardar en localStorage
         localStorage.setItem('token', token.value)
         localStorage.setItem('user', JSON.stringify(user.value))
 
-        console.log('🔐 Store: Datos guardados en localStorage')
-
-        return { success: true, data: response.data }
+        return { success: true, user: response.user, token: response.token }
       } else {
         error.value = response.error || 'Error de autenticación'
-        console.log('🔐 Store: Error en login:', error.value)
         return { success: false, error: error.value }
       }
     } catch (err) {
       error.value = err.message || 'Error de conexión'
-      console.log('🔐 Store: Excepción en login:', err)
       return { success: false, error: error.value }
     } finally {
       isLoading.value = false
@@ -104,7 +95,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   const verifyToken = async () => {
     try {
-      if (!token.value) return false
+      if (!token.value || token.value === 'null' || token.value === 'undefined') {
+        return false
+      }
 
       const response = await authService.verifyToken(token.value)
 
@@ -116,12 +109,16 @@ export const useAuthStore = defineStore('auth', () => {
         return true
       } else {
         // Token inválido, limpiar estado
+        console.log('Token inválido según respuesta del servidor')
         await logout()
         return false
       }
     } catch (err) {
       console.warn('Error al verificar token:', err)
-      await logout()
+      // Solo hacer logout si hay un token válido
+      if (token.value && token.value !== 'null' && token.value !== 'undefined') {
+        await logout()
+      }
       return false
     }
   }
@@ -149,14 +146,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   const inicializar = async () => {
     try {
-      // Cargar datos del localStorage
+      // Cargar datos del localStorage con validación
       const savedUser = localStorage.getItem('user')
-      if (savedUser) {
-        user.value = JSON.parse(savedUser)
+      if (savedUser && savedUser !== 'null' && savedUser !== 'undefined') {
+        try {
+          user.value = JSON.parse(savedUser)
+        } catch (parseError) {
+          console.warn('Error al parsear usuario guardado:', parseError)
+          localStorage.removeItem('user')
+        }
       }
 
       // Verificar token si existe
-      if (token.value) {
+      if (token.value && token.value !== 'null' && token.value !== 'undefined') {
         const isValid = await verifyToken()
         if (!isValid) {
           console.log('Token inválido, limpiando sesión')
@@ -164,7 +166,11 @@ export const useAuthStore = defineStore('auth', () => {
       }
     } catch (err) {
       console.warn('Error al inicializar auth store:', err)
-      await logout()
+      // Limpiar datos corruptos
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      token.value = null
+      user.value = null
     }
   }
 

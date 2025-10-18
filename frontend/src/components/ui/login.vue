@@ -46,7 +46,7 @@
       <div class="text-center mt-3">
         <p>
           ¿No tienes una cuenta?
-          <router-link to="/roles-registro" class="text-primary fw-bold">Regístrate aquí</router-link>
+          <router-link to="/registrar-general" class="text-primary fw-bold">Regístrate aquí</router-link>
         </p>
       </div>
     </form>
@@ -86,57 +86,33 @@ async function handleLogin() {
   mensajeExito.value = ""
 
   try {
-    console.log('🔐 Login: Iniciando proceso...')
-    console.log('🔐 Login: Credenciales:', { username: username.value, password: '***' })
-
-    // Probar conexión directa primero
-    console.log('🔐 Login: Probando conexión directa...')
-    const testResponse = await fetch('http://localhost:5000/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        username: username.value,
-        password: password.value
-      })
-    })
-
-    console.log('🔐 Login: Respuesta directa:', testResponse.status)
-    const testData = await testResponse.json()
-    console.log('🔐 Login: Datos directos:', testData)
-
-    if (!testResponse.ok) {
-      mensajeError.value = testData.error || "Error al iniciar sesión"
-      return
-    }
-
-    // Si la conexión directa funciona, usar el store
-    console.log('🔐 Login: Usando store...')
     const resultado = await authStore.login({
       username: username.value,
       password: password.value
     })
 
-    console.log('🔐 Login: Resultado del store:', resultado)
-    console.log('🔐 Login: Usuario autenticado:', authStore.estaAutenticado)
-    console.log('🔐 Login: Usuario actual:', authStore.usuario)
-
     if (resultado.success) {
       mensajeExito.value = "¡Login exitoso! Redirigiendo..."
 
-      console.log('🔐 Login: Intentando redirigir a /home...')
+      // Verificar roles del usuario para decidir la redirección
+      const userRoles = resultado.user?.roles || []
+      const roleNames = userRoles.map(role => role.nombre_rol)
 
-      // Redirigir al home después de 1 segundo
+      // Determinar ruta de redirección según el rol
+      let rutaDestino = "/home"
+
+      if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
+        rutaDestino = "/admin-manager"
+      }
+
+      // Redirigir después de 1 segundo
       setTimeout(() => {
-        console.log('🔐 Login: Ejecutando redirección...')
-        router.push("/home")
+        router.push(rutaDestino)
       }, 1000)
     } else {
       mensajeError.value = resultado.error || "Error al iniciar sesión"
     }
   } catch (error) {
-    console.error('🔐 Login: Error completo:', error)
     mensajeError.value = error.message || "Error de conexión"
   } finally {
     cargando.value = false
