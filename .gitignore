@@ -30,17 +30,12 @@ __pycache__/
 .env.test.local
 .env.production
 .env.production.local
-config.env
 
-# ============ LOGS ============
-logs/
-*.log
-*.log.*
-
-# ============ BASE DE DATOS LOCAL ============
-*.db
-*.sqlite3
-instance/
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
 
 # ============ IDEs Y EDITORES ============
 .vscode/
