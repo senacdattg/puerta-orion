@@ -48,7 +48,7 @@ class Persona(BaseModel):
     documento = Column(Integer, nullable=False)
     correo_electronico = Column(String(50), nullable=False)
     direccion = Column(String(50), nullable=False)
-    telefono = Column(Integer, nullable=False)
+    telefono = Column(String(15), nullable=False)
     password_hash = Column(String(255), nullable=True)
     estado = Column(Boolean, default=True, nullable=False)
     fecha_registro = Column(Date, default=db.func.current_date(), nullable=False)
