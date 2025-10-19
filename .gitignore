@@ -25,6 +25,7 @@ logs/
 .env.development.local
 .env.test.local
 .env.production.local
+backend/config.py
 
 # Archivos temporales del sistema
 .DS_Store
