@@ -63,3 +63,9 @@ dist/
 build/
 *.min.js
 *.min.css
+
+# ============ LOGS ============
+# Archivos de log generados por la aplicación
+*.log
+logs/
+backend/logs/
