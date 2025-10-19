@@ -1,20 +1,12 @@
-# Entorno virtual de Python
-venv/
-env/
-.env
-.venv
+# ==================================================
+# GITIGNORE BACKEND - Python/Flask
+# Solo reglas específicas de Python avanzado
+# Las reglas básicas están en /.gitignore (raíz)
+# ==================================================
 
-# Archivos de caché de Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-
-# Distribuciones / empaquetado
+# ============ DISTRIBUCIONES / EMPAQUETADO PYTHON ============
 .Python
-build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
@@ -31,15 +23,15 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-# PyInstaller
+# ============ PyInstaller ============
 *.manifest
 *.spec
 
-# Installer logs
+# ============ INSTALLER LOGS ============
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# ============ TESTING / COVERAGE ============
 htmlcov/
 .tox/
 .nox/
@@ -53,13 +45,15 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
-# Jupyter Notebook
+# ============ JUPYTER NOTEBOOK ============
 .ipynb_checkpoints
+*.ipynb
 
-# IPython
+# ============ IPython ============
 profile_default/
 ipython_config.py
 
+# ============ VERSION MANAGERS ============
 # pyenv
 .python-version
 
@@ -69,55 +63,26 @@ Pipfile.lock
 # PEP 582
 __pypackages__/
 
-# Celery stuff
+# ============ CELERY ============
 celerybeat-schedule
 celerybeat.pid
 
-# SageMath parsed files
+# ============ SageMath ============
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
+# ============ TYPE CHECKERS ============
 # mypy
 .mypy_cache/
 .dmypy.json
 dmypy.json
 
-# Pyre type checker
+# Pyre
 .pyre/
 
-# Logs específicos del proyecto
-logs/
-*.log
-
-# Archivos de configuración locales
+# ============ CONFIGURACIÓN LOCAL BACKEND ============
 config/local.py
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+config.env.local
 
-# Base de datos local
-*.db
-*.sqlite3
-
-# Archivos temporales
-*.tmp
-*.temp
-.DS_Store
-Thumbs.db
-
-# Archivos de configuración de IDEs
-.vscode/
-.idea/
-*.swp
-
-# Archivos de migraciones (NO ignorar - son necesarios para el equipo)
+# ============ MIGRACIONES ============
+# NO ignorar - son necesarias para el equipo
 # migrations/

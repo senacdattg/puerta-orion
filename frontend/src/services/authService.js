@@ -15,8 +15,6 @@ class AuthService {
    */
   async login(credentials) {
     try {
-      console.log('🌐 AuthService: Enviando login...', credentials)
-
       const response = await fetch(`${this.baseURL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -25,18 +23,15 @@ class AuthService {
         body: JSON.stringify(credentials)
       })
 
-      console.log('🌐 AuthService: Respuesta recibida:', response.status)
-
       const data = await response.json()
-      console.log('🌐 AuthService: Datos parseados:', data)
 
       if (!response.ok) {
         throw new Error(data.error || 'Error de autenticación')
       }
 
-      return { success: true, data: data.data }
+      return { success: true, ...data.data }
     } catch (error) {
-      console.error('🌐 AuthService: Error en login:', error)
+      console.error('Error en login:', error)
       return { success: false, error: error.message || 'Error de conexión' }
     }
   }

@@ -30,7 +30,10 @@ from backend.src.seeders import (
     seed_metodo_pago,
     seed_parentesco,
     seed_tipo_enfermedad,
-    seed_diagnostico
+    seed_diagnostico,
+    seed_permisos,
+    seed_roles,
+    seed_superadmin
 )
 
 
@@ -70,13 +73,26 @@ def run_all_seeders():
             seed_tipo_enfermedad.run()
             seed_diagnostico.run()  # Depende de TipoEnfermedad
             
+            # PASO 3: Sistema de permisos y roles
+            print("\n📦 PASO 3: Configurando sistema de permisos...")
+            print("-" * 70)
+            seed_permisos.run()
+            seed_roles.run()  # Depende de permisos
+            
+            # PASO 4: Super Administrador
+            print("\n📦 PASO 4: Creando Super Administrador...")
+            print("-" * 70)
+            seed_superadmin.run()  # Depende de roles, tipos documento y sexo
+            
             print("=" * 70)
             print("✅ TODOS LOS SEEDERS SE EJECUTARON EXITOSAMENTE")
             print("=" * 70)
             print()
             print("📊 Resumen:")
-            print("  - 10 seeders ejecutados")
+            print("  - 13 seeders ejecutados")
             print("  - Base de datos poblada con datos iniciales")
+            print("  - Sistema de permisos configurado")
+            print("  - Super Administrador creado")
             print("  - Sistema listo para usar")
             print()
             

@@ -121,39 +121,31 @@ const router = createRouter({
 })
 
 // Guard de navegación global
-router.beforeEach((to, from, next) => {
-  console.log('🔒 Guard de navegación ejecutándose...')
-  console.log('Ruta destino:', to.path)
-  console.log('Ruta origen:', from.path)
-
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   // Inicializar el store si no está inicializado
-  if (!authStore.usuario && authStore.obtenerToken) {
-    console.log('🔄 Inicializando store...')
-    authStore.inicializar()
+  if (!authStore.usuario && authStore.token) {
+    await authStore.inicializar()
   }
 
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
-  const isAuthenticated = authStore.estaAutenticado
 
-  console.log('Requiere autenticación:', requiresAuth)
-  console.log('Requiere invitado:', requiresGuest)
-  console.log('Está autenticado:', isAuthenticated)
-  console.log('Usuario actual:', authStore.usuario)
+  // Verificar si el token es válido (no solo si existe)
+  let isAuthenticated = false
+  if (authStore.token) {
+    isAuthenticated = await authStore.verifyToken()
+  }
 
   if (requiresAuth && !isAuthenticated) {
-    // Ruta requiere autenticación pero el usuario no está autenticado
-    console.log('❌ Redirigiendo a login (no autenticado)')
+    // Ruta requiere autenticación pero el usuario no está autenticado o token expirado
     next('/login')
   } else if (requiresGuest && isAuthenticated) {
     // Ruta es para invitados pero el usuario ya está autenticado
-    console.log('✅ Redirigiendo a home (ya autenticado)')
     next('/home')
   } else {
     // Permitir navegación
-    console.log('✅ Permitiendo navegación')
     next()
   }
 })

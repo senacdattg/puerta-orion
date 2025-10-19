@@ -30,7 +30,9 @@ class MercadoPagoService:
         self.environment = os.getenv('MERCADOPAGO_ENVIRONMENT', 'sandbox')
         
         if not self.access_token or not self.public_key:
-            raise ValueError("Credenciales de Mercado Pago no configuradas")
+            logger.warning("Credenciales de Mercado Pago no configuradas. Funcionalidad limitada.")
+            self.sdk = None
+            return
         
         # Inicializar SDK de Mercado Pago
         self.sdk = mercadopago.SDK(self.access_token)
@@ -47,6 +49,9 @@ class MercadoPagoService:
         Returns:
             dict: Respuesta de Mercado Pago con la preferencia creada.
         """
+        if not self.sdk:
+            return {"success": False, "error": "Servicio de Mercado Pago no configurado"}
+            
         try:
             # Estructurar la preferencia según la API de Mercado Pago
             preference_data = {
@@ -129,6 +134,9 @@ class MercadoPagoService:
         Returns:
             dict: Información del pago y su estado.
         """
+        if not self.sdk:
+            return {"success": False, "error": "Servicio de Mercado Pago no configurado"}
+            
         try:
             # Buscar el pago en Mercado Pago
             result = self.sdk.payment().get(payment_id)

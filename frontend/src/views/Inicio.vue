@@ -3,6 +3,10 @@ import Encabezado from '../components/layout/encabezado.vue';
 import MainVista from '../components/ui/main-vista.vue';
 import BotonesNavegacion from '../components/ui/botones-navegacion.vue';
 import FooterEnhanced from '../components/layout/pie.vue';
+import { useUserRole } from '@/composables/useUserRole'
+
+// Usar el composable para obtener el rol del usuario
+const { userRole } = useUserRole()
 
 // Definir nombre del componente para el linter
 defineOptions({
@@ -12,7 +16,7 @@ defineOptions({
 
 <template>
   <main class="inicio-page">
-    <Encabezado rol="Admin"/>
+    <Encabezado :rol="userRole"/>
     <MainVista />
     <BotonesNavegacion />
     <FooterEnhanced />

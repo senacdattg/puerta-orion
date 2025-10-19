@@ -28,9 +28,9 @@
 
       <div class="welcome-section">
         <div class="welcome-content">
-          <h2 class="welcome-title">¡Bienvenido, Usuario!</h2>
+          <h2 class="welcome-title">{{ welcomeMessage.title }}</h2>
           <p class="welcome-description">
-            Gestiona el club deportivo desde tu panel de administración
+            {{ welcomeMessage.description }}
           </p>
         </div>
 
@@ -50,6 +50,8 @@
 </template>
 
 <script setup>
-// Componente enfocado únicamente en mostrar la sección hero
-// No tiene lógica de negocio, solo presentación
+import { useUserRole } from '@/composables/useUserRole'
+
+// Usar el composable para obtener el mensaje de bienvenida personalizado
+const { welcomeMessage } = useUserRole()
 </script>

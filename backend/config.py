@@ -1,8 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde .env
-load_dotenv()
+# Cargar variables de entorno desde .env si existe
+if os.path.exists('.env'):
+    load_dotenv()
 
 class Config:
     """Configuración base de la aplicación Flask"""
@@ -16,7 +17,7 @@ class Config:
     PORT = int(os.environ.get('PORT', 5000))
     
     # Configuración de la base de datos
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///instance/puerta_orion.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.join(os.path.dirname(__file__), "instance", "puerta_orion.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de CORS
@@ -72,4 +73,3 @@ config = {
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
-

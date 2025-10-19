@@ -373,19 +373,36 @@ class AuthService:
             bool: True si se cerró exitosamente, False en caso contrario
         """
         try:
-            # Buscar sesión por token
-            sesion = SesionAuth.query.filter_by(
-                token_sesion=token,
-                estado=True
-            ).first()
+            # Verificar y decodificar el token JWT para obtener el user_id
+            payload = self.verificar_token_jwt(token)
+            if not payload:
+                self.logger.warning("Token JWT inválido o expirado para logout")
+                return False
             
-            if sesion:
-                sesion.estado = False
+            user_id = payload.get('user_id')
+            if not user_id:
+                self.logger.warning("Token JWT no contiene user_id")
+                return False
+            
+            # Buscar sesiones activas del usuario y cerrarlas
+            sesiones_activas = SesionAuth.query.filter_by(
+                id_usuario=user_id,
+                estado=True
+            ).filter(
+                SesionAuth.fecha_expiracion > datetime.utcnow()
+            ).all()
+            
+            if sesiones_activas:
+                for sesion in sesiones_activas:
+                    sesion.estado = False
+                
                 db.session.commit()
-                self.logger.info(f"Sesión cerrada para usuario ID: {sesion.id_usuario}")
+                self.logger.info(f"Sesión cerrada para usuario ID: {user_id}")
                 return True
             
-            return False
+            # Si no hay sesiones activas, consideramos el logout exitoso
+            self.logger.info(f"No hay sesiones activas para usuario ID: {user_id}")
+            return True
             
         except Exception as e:
             self.logger.error(f"Error al cerrar sesión: {str(e)}")

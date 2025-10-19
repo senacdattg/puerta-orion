@@ -21,43 +21,9 @@
 </template>
 
 <script setup>
-// Datos de navegación específicos para la imagen
-const navigationItems = [
-  {
-    id: 'calendario',
-    title: 'Ver Calendario',
-    route: '/calendario',
-    icon: 'fas fa-calendar-alt',
-    colorClass: 'nav-card--blue'
-  },
-  {
-    id: 'galeria',
-    title: 'Galería',
-    route: '/galeria',
-    icon: 'fas fa-images',
-    colorClass: 'nav-card--gray'
-  },
-  {
-    id: 'admin',
-    title: 'Panel Admin',
-    route: '/admin-manager',
-    icon: 'fas fa-cog',
-    colorClass: 'nav-card--red'
-  },
-  {
-    id: 'deportistas',
-    title: 'Deportistas',
-    route: '/deportistas',
-    icon: 'fas fa-users',
-    colorClass: 'nav-card--green'
-  },
-  {
-    id: 'mensualidades',
-    title: 'Mensualidades',
-    route: '/mensualidades',
-    icon: 'fas fa-money-bill-wave',
-    colorClass: 'nav-card--purple'
-  }
-]
+import { useUserRole } from '@/composables/useUserRole'
+
+// Usar el composable para obtener la navegación filtrada
+const { filteredNavigation: navigationItems } = useUserRole()
 </script>
 
