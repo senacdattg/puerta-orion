@@ -255,7 +255,7 @@ class CalendarioService {
    */
   async cargarCategorias() {
     try {
-      const response = await fetch(`${this.baseURL}/categoria`, {
+      const response = await fetch(`${this.baseURL}/catalogos/categorias`, {
         method: 'GET',
         headers: API_CONFIG.headers
       });

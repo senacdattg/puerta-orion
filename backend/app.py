@@ -12,14 +12,20 @@ Responsabilidad:
 Este archivo sigue el principio SRP: solo se encarga de la inicialización y arranque de la app.
 """
 
-from flask import Flask, request, g
-from flask_cors import CORS
+from flask import Flask, request, g, make_response
 from flask_migrate import Migrate
 from config import config
 from src.models.base import db
 from src.utils.logger import gestor_logs
 from src.models import *
 import os
+
+# Configurar PyMySQL como reemplazo de MySQLdb
+try:
+    import pymysql
+    pymysql.install_as_MySQLdb()
+except ImportError:
+    pass  # Si no está instalado, intentará usar MySQLdb
 
 def create_app(config_name=None):
     """
@@ -37,12 +43,22 @@ def create_app(config_name=None):
     app = Flask(__name__)
     app.config.from_object(config[config_name])
     
-    # Configuración de CORS más permisiva para desarrollo
-    CORS(app, 
-         origins=['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:8080'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-         allow_headers=['Content-Type', 'Authorization'],
-         supports_credentials=True)
+    # Configuración simple de CORS
+    @app.after_request
+    def after_request(response):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+        return response
+    
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = make_response()
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+            return response
 
     gestor_logs.inicializar_aplicacion(app)
     

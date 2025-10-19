@@ -46,7 +46,7 @@ def run_all_seeders():
     2. Tablas dependientes
     """
     print("=" * 70)
-    print("🌱 INICIANDO SEEDERS DEL SISTEMA PUERTA_ORION")
+    print(" INICIANDO SEEDERS DEL SISTEMA PUERTA_ORION")
     print("=" * 70)
     print()
     
@@ -56,7 +56,7 @@ def run_all_seeders():
     with app.app_context():
         try:
             # PASO 1: Catálogos básicos (sin dependencias)
-            print("📦 PASO 1: Insertando catálogos básicos...")
+            print(" PASO 1: Insertando catálogos básicos...")
             print("-" * 70)
             seed_tipo_documento.run()
             seed_sexo.run()
@@ -68,27 +68,27 @@ def run_all_seeders():
             seed_parentesco.run()
             
             # PASO 2: Tablas con dependencias
-            print("📦 PASO 2: Insertando tablas con dependencias...")
+            print(" PASO 2: Insertando tablas con dependencias...")
             print("-" * 70)
             seed_tipo_enfermedad.run()
             seed_diagnostico.run()  # Depende de TipoEnfermedad
             
             # PASO 3: Sistema de permisos y roles
-            print("\n📦 PASO 3: Configurando sistema de permisos...")
+            print("\n PASO 3: Configurando sistema de permisos...")
             print("-" * 70)
             seed_permisos.run()
             seed_roles.run()  # Depende de permisos
             
             # PASO 4: Super Administrador
-            print("\n📦 PASO 4: Creando Super Administrador...")
+            print("\n PASO 4: Creando Super Administrador...")
             print("-" * 70)
             seed_superadmin.run()  # Depende de roles, tipos documento y sexo
             
             print("=" * 70)
-            print("✅ TODOS LOS SEEDERS SE EJECUTARON EXITOSAMENTE")
+            print("TODOS LOS SEEDERS SE EJECUTARON EXITOSAMENTE")
             print("=" * 70)
             print()
-            print("📊 Resumen:")
+            print(" Resumen:")
             print("  - 13 seeders ejecutados")
             print("  - Base de datos poblada con datos iniciales")
             print("  - Sistema de permisos configurado")
@@ -98,7 +98,7 @@ def run_all_seeders():
             
         except Exception as e:
             print("=" * 70)
-            print("❌ ERROR AL EJECUTAR SEEDERS")
+            print(" ERROR AL EJECUTAR SEEDERS")
             print("=" * 70)
             print(f"Error: {str(e)}")
             print()

@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, current_app
 from flask_cors import cross_origin
 from ..models.catalogos.tipo_documento import TipoDocumento
 from ..models.categorias.sexo import Sexo
+from ..models.categorias.categoria import Categoria
 from ..utils.logger import obtener_registrador
 
 # Crear Blueprint de catálogos
@@ -177,6 +178,37 @@ def obtener_catalogos_completos():
             'success': False,
             'error': 'Error interno del servidor',
             'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/categorias', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_categorias():
+    """Obtener todas las categorías disponibles"""
+    try:
+        categorias = Categoria.query.filter_by(estado=True).all()
+        
+        categorias_data = []
+        for categoria in categorias:
+            categorias_data.append({
+                'id_categoria': categoria.id_categoria,
+                'nombre_categoria': categoria.nombre_categoria,
+                'codigo_categoria': categoria.codigo_categoria,
+                'edad_minima': categoria.edad_minima,
+                'edad_maxima': categoria.edad_maxima
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': categorias_data,
+            'message': 'Categorías obtenidas exitosamente'
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener categorías: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error al obtener categorías: {str(e)}'
         }), 500
 
 

@@ -3,6 +3,7 @@ Rutas para la gestión de eventos deportivos.
 """
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from src.models.base import db
 from src.models import Evento, Sesion, TipoEvento, Categoria
 from datetime import datetime, date, time
