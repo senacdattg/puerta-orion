@@ -36,7 +36,13 @@ def create_app(config_name=None):
     
     app = Flask(__name__)
     app.config.from_object(config[config_name])
-    CORS(app, origins=app.config['CORS_ORIGINS'])
+    
+    # Configuración de CORS más permisiva para desarrollo
+    CORS(app, 
+         origins=['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:8080'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         allow_headers=['Content-Type', 'Authorization'],
+         supports_credentials=True)
 
     gestor_logs.inicializar_aplicacion(app)
     
@@ -54,10 +60,12 @@ def create_app(config_name=None):
     from src.routes.catalogos_routes import catalogos_bp
     from src.routes.dynamic_data_routes import dynamic_data_bp
     from src.routes.personas_routes import personas_bp
+    from src.routes.eventos_routes import eventos_bp
     app.register_blueprint(pagos_bp, url_prefix='/api')
     app.register_blueprint(catalogos_bp)  # Ya tiene url_prefix='/api/catalogos'
     app.register_blueprint(dynamic_data_bp, url_prefix='/api')
     app.register_blueprint(personas_bp, url_prefix='/api')
+    app.register_blueprint(eventos_bp, url_prefix='/api')
 
     @app.route('/')
     def index():

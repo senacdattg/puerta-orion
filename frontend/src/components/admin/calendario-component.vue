@@ -82,32 +82,56 @@
                             <i class="fas fa-tag"></i>
                             Tipo de evento *
                         </label>
-                        <select id="tipo" v-model="nuevoEvento.tipo" required class="select-evento"
+                        <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento"
                             :disabled="!esAdmin">
-                            <option disabled.value="">Seleccionar tipo</option>
-                            <option value="Entrenamiento">🏋️ Entrenamiento</option>
-                            <option value="Evento">🎉 Evento</option>
-                            <option value="Competencia">🏆 Competencia</option>
+                            <option value="">Seleccionar tipo</option>
+                            <option v-for="tipo in tiposEvento" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">
+                                {{ tipo.nombre }}
+                            </option>
                         </select>
+                    </div>
+
+                    <div class="campo-formulario">
+                        <label for="fecha">
+                            <i class="fas fa-calendar"></i>
+                            Fecha *
+                        </label>
+                        <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
+                            :disabled="!esAdmin" />
                     </div>
 
                     <div class="fila-dos-columnas">
                         <div class="campo-formulario">
-                            <label for="fecha">
-                                <i class="fas fa-calendar"></i>
-                                Fecha *
+                            <label for="horaInicio">
+                                <i class="fas fa-clock"></i>
+                                Hora Inicio *
                             </label>
-                            <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
+                            <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento"
                                 :disabled="!esAdmin" />
                         </div>
                         <div class="campo-formulario">
-                            <label for="hora">
+                            <label for="horaFin">
                                 <i class="fas fa-clock"></i>
-                                Hora *
+                                Hora Fin *
                             </label>
-                            <input id="hora" v-model="nuevoEvento.hora" type="time" required class="input-evento"
+                            <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento"
                                 :disabled="!esAdmin" />
                         </div>
+                    </div>
+
+                    <div class="campo-formulario">
+                        <label for="categoria">
+                            <i class="fas fa-layer-group"></i>
+                            Categoría *
+                        </label>
+                        <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento"
+                            :disabled="!esAdmin">
+                            <option value="">Seleccionar categoría</option>
+                            <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">
+                                {{ categoria.nombre_categoria }}
+                            </option>
+                        </select>
+                        
                     </div>
 
                     <div class="campo-formulario">
@@ -170,7 +194,7 @@
                                 </span>
                                 <span class="evento-hora">
                                     <i class="fas fa-clock"></i>
-                                    {{ evento.hora }}
+                                    {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}
                                 </span>
                                 <span class="evento-lugar">
                                     <i class="fas fa-map-marker-alt"></i>
@@ -221,12 +245,19 @@ export default {
             eventosDelDia: [],
             nuevoEvento: {
                 titulo: '',
-                tipo: '',
+                idTipoEvento: '',
+                idCategoria: '',
                 lugar: '',
-                hora: '',
+                horaInicio: '',
+                horaFin: '',
                 descripcion: '',
                 fecha: null
-            }
+            },
+            cargando: false,
+            error: null,
+            tiposEvento: [],
+            sesiones: [],
+            categorias: []
         };
     },
 
@@ -236,11 +267,46 @@ export default {
         }
     },
 
-    mounted() {
-        this.actualizarCalendario();
+    async mounted() {
+        await this.inicializarComponente();
     },
 
     methods: {
+        async inicializarComponente() {
+            try {
+                this.cargando = true;
+                this.error = null;
+                
+                // Primero mostrar el calendario vacío
+                this.actualizarCalendario();
+                
+                // Luego cargar datos del backend en segundo plano
+                try {
+                    const catalogos = await calendarioService.cargarCatalogos();
+                    await calendarioService.cargarEventos();
+                    
+                    // Guardar catálogos en variables locales
+                    this.tiposEvento = catalogos.tiposEvento || [];
+                    this.sesiones = catalogos.sesiones || [];
+                    this.categorias = catalogos.categorias || [];
+                    
+                    
+                    // Actualizar el calendario con los eventos cargados
+                    this.actualizarCalendario();
+                } catch (apiError) {
+                    console.warn('⚠️ Error cargando datos del backend:', apiError.message);
+                    // El calendario ya está visible, solo no tendrá eventos
+                }
+                
+            } catch (error) {
+                console.error('❌ Error al inicializar calendario:', error);
+                this.error = 'Error al cargar los datos del calendario';
+                this.mostrarNotificacion('Error al cargar los datos del calendario', 'error');
+            } finally {
+                this.cargando = false;
+            }
+        },
+
         actualizarCalendario() {
             const año = this.fechaActual.getFullYear();
             const mes = this.fechaActual.getMonth();
@@ -251,6 +317,7 @@ export default {
             const primerDia = new Date(año, mes, 1);
             const ultimoDia = new Date(año, mes + 1, 0);
             const primerDiaSemana = primerDia.getDay() || 7; // Lunes = 1, Domingo = 7
+
 
             this.diasCalendario = [];
 
@@ -281,6 +348,7 @@ export default {
                 });
             }
 
+
             // Días del mes siguiente
             const diasRestantes = 42 - this.diasCalendario.length;
             for (let i = 1; i <= diasRestantes; i++) {
@@ -296,7 +364,13 @@ export default {
         },
 
         obtenerEventosPorFecha(fecha) {
-            return calendarioService.obtenerEventosPorFecha(fecha);
+            try {
+                // Usar los eventos ya cargados en memoria
+                return calendarioService.obtenerEventosPorFecha(fecha);
+            } catch (error) {
+                console.error('Error al obtener eventos por fecha:', error);
+                return [];
+            }
         },
 
         obtenerNombreMes(mes) {
@@ -392,7 +466,11 @@ export default {
 
         editarEvento(evento) {
             this.eventoSeleccionado = evento;
-            this.nuevoEvento = { ...evento };
+            this.nuevoEvento = { 
+                ...evento,
+                idTipoEvento: evento.idTipoEvento || evento.tipo,
+                idCategoria: evento.idCategoria || evento.id_categoria
+            };
             this.modoEdicion = true;
             this.selectorEventosVisible = false;
             this.modalVisible = true;
@@ -423,31 +501,41 @@ export default {
             }
 
             try {
+                this.cargando = true;
+                
                 if (this.modoEdicion) {
-                    calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+                    await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+                    this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
                 } else {
-                    calendarioService.crearEvento(this.nuevoEvento);
+                    await calendarioService.crearEvento(this.nuevoEvento);
+                    this.mostrarNotificacion('Evento creado exitosamente', 'success');
                 }
 
                 this.actualizarCalendario();
                 this.cerrarModal();
-                this.mostrarNotificacion('Evento guardado exitosamente', 'success');
             } catch (error) {
-                this.mostrarNotificacion(error.message, 'error');
+                console.error('Error al guardar evento:', error);
+                this.mostrarNotificacion(error.message || 'Error al guardar el evento', 'error');
+            } finally {
+                this.cargando = false;
             }
         },
 
-        eliminarEvento() {
+        async eliminarEvento() {
             if (!this.esAdmin) return; // Solo admin puede eliminar
 
             if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
                 try {
-                    calendarioService.eliminarEvento(this.eventoSeleccionado.id);
+                    this.cargando = true;
+                    await calendarioService.eliminarEvento(this.eventoSeleccionado.id);
                     this.actualizarCalendario();
                     this.cerrarModal();
                     this.mostrarNotificacion('Evento eliminado exitosamente', 'success');
                 } catch (error) {
-                    this.mostrarNotificacion(error.message, 'error');
+                    console.error('Error al eliminar evento:', error);
+                    this.mostrarNotificacion(error.message || 'Error al eliminar el evento', 'error');
+                } finally {
+                    this.cargando = false;
                 }
             }
         },
@@ -455,9 +543,11 @@ export default {
         limpiarFormulario() {
             this.nuevoEvento = {
                 titulo: '',
-                tipo: '',
+                idTipoEvento: '',
+                idCategoria: '',
                 lugar: '',
-                hora: '',
+                horaInicio: '',
+                horaFin: '',
                 descripcion: '',
                 fecha: this.nuevoEvento.fecha || this.obtenerFechaActual()
             };

@@ -1,0 +1,383 @@
+### ============================================================================
+### EJEMPLOS DE PRUEBA - CRUD DE EVENTOS
+### ============================================================================
+### Archivo para probar con extensiones como REST Client de VS Code
+### o importar en Postman/Insomnia
+
+@baseUrl = http://localhost:5000/api
+
+### ============================================================================
+### EVENTOS
+### ============================================================================
+
+### 1. Listar todos los eventos
+GET {{baseUrl}}/eventos
+Content-Type: application/json
+
+### 2. Listar eventos con filtros
+GET {{baseUrl}}/eventos?page=1&per_page=5&search=torneo&categoria_id=1
+Content-Type: application/json
+
+### 3. Listar eventos por rango de fechas
+GET {{baseUrl}}/eventos?fecha_desde=2024-01-01&fecha_hasta=2024-12-31
+Content-Type: application/json
+
+### 4. Obtener un evento específico
+GET {{baseUrl}}/eventos/1
+Content-Type: application/json
+
+### 5. Crear un nuevo evento
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "nombre": "Torneo Regional de Fútbol",
+  "fecha_evento": "2024-03-15",
+  "hora_inicio": "14:00",
+  "hora_fin": "16:00",
+  "lugar": "Estadio Municipal",
+  "descripcion": "Torneo regional categoría juvenil",
+  "id_categoria": 1,
+  "id_tipo_evento": 1,
+  "id_sesion": 1
+}
+
+### 6. Crear evento de entrenamiento
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "nombre": "Entrenamiento de Fuerza",
+  "fecha_evento": "2024-02-28",
+  "hora_inicio": "08:00",
+  "hora_fin": "09:30",
+  "lugar": "Gimnasio Principal",
+  "descripcion": "Entrenamiento de fuerza y resistencia",
+  "id_categoria": 2,
+  "id_tipo_evento": 2,
+  "id_sesion": 1
+}
+
+### 7. Actualizar un evento
+PUT {{baseUrl}}/eventos/1
+Content-Type: application/json
+
+{
+  "nombre": "Torneo Nacional de Fútbol",
+  "fecha_evento": "2024-03-20",
+  "hora_inicio": "15:00",
+  "hora_fin": "18:00",
+  "lugar": "Estadio Nacional",
+  "descripcion": "Torneo nacional de fútbol juvenil - Fase final"
+}
+
+### 8. Actualizar solo la fecha de un evento
+PUT {{baseUrl}}/eventos/1
+Content-Type: application/json
+
+{
+  "fecha_evento": "2024-04-01"
+}
+
+### 9. Eliminar un evento
+DELETE {{baseUrl}}/eventos/1
+Content-Type: application/json
+
+### ============================================================================
+### SESIONES
+### ============================================================================
+
+### 10. Listar todas las sesiones
+GET {{baseUrl}}/sesiones
+Content-Type: application/json
+
+### 11. Listar sesiones con paginación
+GET {{baseUrl}}/sesiones?page=1&per_page=5
+Content-Type: application/json
+
+### 12. Buscar sesiones
+GET {{baseUrl}}/sesiones?search=mañana
+Content-Type: application/json
+
+### 13. Obtener una sesión específica
+GET {{baseUrl}}/sesiones/1
+Content-Type: application/json
+
+### 14. Crear una nueva sesión
+POST {{baseUrl}}/sesiones
+Content-Type: application/json
+
+{
+  "nombre": "Noche",
+  "descripcion": "Sesión nocturna de 18:00 a 22:00"
+}
+
+### 15. Crear sesión sin descripción
+POST {{baseUrl}}/sesiones
+Content-Type: application/json
+
+{
+  "nombre": "Madrugada"
+}
+
+### 16. Actualizar una sesión
+PUT {{baseUrl}}/sesiones/1
+Content-Type: application/json
+
+{
+  "nombre": "Mañana Extendida",
+  "descripcion": "Sesión matutina de 7:00 AM a 1:00 PM"
+}
+
+### 17. Actualizar solo la descripción
+PUT {{baseUrl}}/sesiones/1
+Content-Type: application/json
+
+{
+  "descripcion": "Nueva descripción de la sesión"
+}
+
+### 18. Eliminar una sesión
+DELETE {{baseUrl}}/sesiones/1
+Content-Type: application/json
+
+### ============================================================================
+### TIPOS DE EVENTO
+### ============================================================================
+
+### 19. Listar todos los tipos de evento
+GET {{baseUrl}}/tipos-evento
+Content-Type: application/json
+
+### 20. Listar tipos de evento con paginación
+GET {{baseUrl}}/tipos-evento?page=1&per_page=5
+Content-Type: application/json
+
+### 21. Buscar tipos de evento
+GET {{baseUrl}}/tipos-evento?search=competencia
+Content-Type: application/json
+
+### 22. Obtener un tipo de evento específico
+GET {{baseUrl}}/tipos-evento/1
+Content-Type: application/json
+
+### 23. Crear un nuevo tipo de evento
+POST {{baseUrl}}/tipos-evento
+Content-Type: application/json
+
+{
+  "nombre": "Amistoso",
+  "descripcion": "Partidos amistosos sin clasificación oficial"
+}
+
+### 24. Crear tipo de evento sin descripción
+POST {{baseUrl}}/tipos-evento
+Content-Type: application/json
+
+{
+  "nombre": "Práctica Libre"
+}
+
+### 25. Actualizar un tipo de evento
+PUT {{baseUrl}}/tipos-evento/1
+Content-Type: application/json
+
+{
+  "nombre": "Competencia Oficial",
+  "descripcion": "Competencia con validez para ranking"
+}
+
+### 26. Actualizar solo el nombre
+PUT {{baseUrl}}/tipos-evento/1
+Content-Type: application/json
+
+{
+  "nombre": "Competencia Regional"
+}
+
+### 27. Eliminar un tipo de evento
+DELETE {{baseUrl}}/tipos-evento/1
+Content-Type: application/json
+
+### ============================================================================
+### ENDPOINTS ADICIONALES
+### ============================================================================
+
+### 28. Obtener eventos próximos (desde hoy)
+GET {{baseUrl}}/eventos/proximos
+Content-Type: application/json
+
+### 29. Obtener eventos próximos con límite
+GET {{baseUrl}}/eventos/proximos?limit=5
+Content-Type: application/json
+
+### 30. Obtener eventos próximos de una categoría
+GET {{baseUrl}}/eventos/proximos?categoria_id=1&limit=10
+Content-Type: application/json
+
+### 31. Obtener eventos de una categoría específica
+GET {{baseUrl}}/eventos/categoria/1
+Content-Type: application/json
+
+### ============================================================================
+### PRUEBAS DE VALIDACIÓN (Errores esperados)
+### ============================================================================
+
+### 32. Error: Crear evento sin nombre
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "fecha_evento": "2024-03-15",
+  "duracion": "02:00:00",
+  "id_categoria": 1,
+  "id_tipo_evento": 1,
+  "id_sesion": 1
+}
+
+### 33. Error: Crear evento con fecha inválida
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "nombre": "Evento Test",
+  "fecha_evento": "2024-15-45",
+  "hora_inicio": "10:00",
+  "hora_fin": "12:00",
+  "lugar": "Lugar Test",
+  "id_categoria": 1,
+  "id_tipo_evento": 1,
+  "id_sesion": 1
+}
+
+### 34. Error: Crear evento con hora inválida
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "nombre": "Evento Test",
+  "fecha_evento": "2024-03-15",
+  "hora_inicio": "25:99",
+  "hora_fin": "26:00",
+  "lugar": "Lugar Test",
+  "id_categoria": 1,
+  "id_tipo_evento": 1,
+  "id_sesion": 1
+}
+
+### 35. Error: Crear evento con categoría inexistente
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "nombre": "Evento Test",
+  "fecha_evento": "2024-03-15",
+  "hora_inicio": "10:00",
+  "hora_fin": "12:00",
+  "lugar": "Lugar Test",
+  "id_categoria": 9999,
+  "id_tipo_evento": 1,
+  "id_sesion": 1
+}
+
+### 36. Error: Crear sesión con nombre corto
+POST {{baseUrl}}/sesiones
+Content-Type: application/json
+
+{
+  "nombre": "AB"
+}
+
+### 37. Error: Crear sesión con nombre duplicado
+POST {{baseUrl}}/sesiones
+Content-Type: application/json
+
+{
+  "nombre": "Mañana"
+}
+
+### 38. Error: Obtener evento inexistente
+GET {{baseUrl}}/eventos/9999
+Content-Type: application/json
+
+### 39. Error: Actualizar evento inexistente
+PUT {{baseUrl}}/eventos/9999
+Content-Type: application/json
+
+{
+  "nombre": "Test"
+}
+
+### 40. Error: Eliminar sesión con eventos asociados
+DELETE {{baseUrl}}/sesiones/1
+Content-Type: application/json
+
+### ============================================================================
+### FLUJO COMPLETO DE TRABAJO
+### ============================================================================
+
+### PASO 1: Crear una sesión nueva
+POST {{baseUrl}}/sesiones
+Content-Type: application/json
+
+{
+  "nombre": "Sesión Especial",
+  "descripcion": "Sesión para eventos especiales"
+}
+
+### PASO 2: Crear un tipo de evento nuevo
+POST {{baseUrl}}/tipos-evento
+Content-Type: application/json
+
+{
+  "nombre": "Festival Deportivo",
+  "descripcion": "Eventos festivos y recreativos"
+}
+
+### PASO 3: Crear un evento usando las entidades creadas
+# (Usar los IDs obtenidos en los pasos anteriores)
+POST {{baseUrl}}/eventos
+Content-Type: application/json
+
+{
+  "nombre": "Festival de Verano 2024",
+  "fecha_evento": "2024-06-15",
+  "hora_inicio": "10:00",
+  "hora_fin": "14:00",
+  "lugar": "Parque Central Deportivo",
+  "descripcion": "Festival deportivo de verano con actividades recreativas y competencias",
+  "id_categoria": 1,
+  "id_tipo_evento": 8,
+  "id_sesion": 5
+}
+
+### PASO 4: Actualizar el evento
+PUT {{baseUrl}}/eventos/[ID_DEL_EVENTO]
+Content-Type: application/json
+
+{
+  "nombre": "Gran Festival de Verano 2024",
+  "hora_inicio": "09:00",
+  "hora_fin": "15:00",
+  "lugar": "Estadio Principal"
+}
+
+### PASO 5: Consultar eventos próximos
+GET {{baseUrl}}/eventos/proximos?limit=5
+Content-Type: application/json
+
+### ============================================================================
+### NOTAS
+### ============================================================================
+# 
+# - Reemplazar [ID_DEL_EVENTO] con IDs reales de tu base de datos
+# - La fecha debe estar en formato YYYY-MM-DD
+# - Las horas (hora_inicio y hora_fin) pueden ser HH:MM o HH:MM:SS
+# - hora_fin debe ser posterior a hora_inicio
+# - El lugar es obligatorio (mínimo 3 caracteres)
+# - La descripción es opcional
+# - Asegúrate de que existan las categorías, sesiones y tipos de evento
+#   antes de crear eventos
+# - Crea sesiones y tipos de evento primero usando los endpoints correspondientes
+#
+
