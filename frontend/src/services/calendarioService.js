@@ -31,7 +31,7 @@ class CalendarioService {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data) {
         // Mapear eventos del backend al formato del frontend
         this.eventos = data.data.map(evento => this.mapearEventoBackendAFrontend(evento));
@@ -192,7 +192,7 @@ class CalendarioService {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data) {
         this.sesiones = data.data;
         return this.sesiones;
@@ -201,14 +201,14 @@ class CalendarioService {
       return [];
     } catch (error) {
       console.warn('⚠️ Backend no disponible, usando sesiones de ejemplo:', error.message);
-      
+
       // Fallback: sesiones de ejemplo
       this.sesiones = [
         { id_sesion: 1, nombre: 'Mañana', descripcion: 'Sesión matutina 8:00 AM - 12:00 PM' },
         { id_sesion: 2, nombre: 'Tarde', descripcion: 'Sesión vespertina 2:00 PM - 6:00 PM' },
         { id_sesion: 3, nombre: 'Noche', descripcion: 'Sesión nocturna 6:00 PM - 10:00 PM' }
       ];
-      
+
       return this.sesiones;
     }
   }
@@ -228,7 +228,7 @@ class CalendarioService {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data) {
         this.tiposEvento = data.data;
         return this.tiposEvento;
@@ -238,14 +238,14 @@ class CalendarioService {
       return [];
     } catch (error) {
       console.warn('⚠️ Backend no disponible, usando tipos de ejemplo:', error.message);
-      
+
       // Fallback: tipos de evento de ejemplo (incluyendo el que tienes en la BD)
       this.tiposEvento = [
         { id_tipo_evento: 1, nombre: 'Entrenamiento', descripcion: 'Sesiones de práctica' },
         { id_tipo_evento: 2, nombre: 'Evento', descripcion: 'Eventos especiales' },
         { id_tipo_evento: 3, nombre: 'Competencia', descripcion: 'Competiciones deportivas' }
       ];
-      
+
       return this.tiposEvento;
     }
   }
@@ -265,7 +265,7 @@ class CalendarioService {
       }
 
       const data = await response.json();
-      
+
       if (data.success && data.data) {
         this.categorias = data.data;
         return this.categorias;
@@ -274,14 +274,14 @@ class CalendarioService {
       return [];
     } catch (error) {
       console.warn('⚠️ Backend no disponible, usando categorías de ejemplo:', error.message);
-      
+
       // Fallback: categorías de ejemplo
       this.categorias = [
         { id_categoria: 1, nombre: 'Fútbol', descripcion: 'Categoría de fútbol' },
         { id_categoria: 2, nombre: 'Básquetbol', descripcion: 'Categoría de básquetbol' },
         { id_categoria: 3, nombre: 'Voleibol', descripcion: 'Categoría de voleibol' }
       ];
-      
+
       return this.categorias;
     }
   }
@@ -296,13 +296,13 @@ class CalendarioService {
         this.cargarTiposEvento(),
         this.cargarCategorias()
       ]);
-      
+
       const result = {
         sesiones: this.sesiones,
         tiposEvento: this.tiposEvento,
         categorias: this.categorias
       };
-      
+
       return result;
     } catch (error) {
       console.error('Error al cargar catálogos:', error);
@@ -469,7 +469,7 @@ class CalendarioService {
    * Obtener tipo de evento por nombre
    */
   obtenerTipoEventoPorNombre(nombreTipo) {
-    return this.tiposEvento.find(tipo => 
+    return this.tiposEvento.find(tipo =>
       tipo.nombre.toLowerCase() === nombreTipo.toLowerCase()
     );
   }
@@ -478,7 +478,7 @@ class CalendarioService {
    * Obtener sesión por nombre
    */
   obtenerSesionPorNombre(nombreSesion) {
-    return this.sesiones.find(sesion => 
+    return this.sesiones.find(sesion =>
       sesion.nombre.toLowerCase() === nombreSesion.toLowerCase()
     );
   }

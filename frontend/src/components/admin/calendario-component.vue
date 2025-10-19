@@ -131,7 +131,7 @@
                                 {{ categoria.nombre_categoria }}
                             </option>
                         </select>
-                        
+
                     </div>
 
                     <div class="campo-formulario">
@@ -276,28 +276,28 @@ export default {
             try {
                 this.cargando = true;
                 this.error = null;
-                
+
                 // Primero mostrar el calendario vacío
                 this.actualizarCalendario();
-                
+
                 // Luego cargar datos del backend en segundo plano
                 try {
                     const catalogos = await calendarioService.cargarCatalogos();
                     await calendarioService.cargarEventos();
-                    
+
                     // Guardar catálogos en variables locales
                     this.tiposEvento = catalogos.tiposEvento || [];
                     this.sesiones = catalogos.sesiones || [];
                     this.categorias = catalogos.categorias || [];
-                    
-                    
+
+
                     // Actualizar el calendario con los eventos cargados
                     this.actualizarCalendario();
                 } catch (apiError) {
                     console.warn('⚠️ Error cargando datos del backend:', apiError.message);
                     // El calendario ya está visible, solo no tendrá eventos
                 }
-                
+
             } catch (error) {
                 console.error('❌ Error al inicializar calendario:', error);
                 this.error = 'Error al cargar los datos del calendario';
@@ -424,18 +424,24 @@ export default {
             if (!dia.esMesActual) return;
 
             if (dia.eventos && dia.eventos.length > 0) {
-                // 👉 Si hay eventos y es admin, abrir directamente el primero en modo edición
-                if (this.esAdmin) {
-                    this.editarEvento(dia.eventos[0]);
+                // Si hay múltiples eventos, mostrar selector
+                if (dia.eventos.length > 1) {
+                    this.eventosDelDia = dia.eventos;
+                    this.mostrarSelectorEventos();
                 } else {
-                    // 👉 Si no es admin, mostrar el evento en modo lectura
-                    this.verEvento(dia.eventos[0]);
+                    // Si hay un solo evento
+                    if (this.esAdmin) {
+                        this.editarEvento(dia.eventos[0]);
+                    } else {
+                        this.verEvento(dia.eventos[0]);
+                    }
                 }
             } else if (this.esAdmin) {
-                // 👉 Solo el admin puede crear eventos en días vacíos
+                // Solo el admin puede crear eventos en días vacíos
                 this.nuevoEvento.fecha = dia.fecha;
                 this.abrirModal();
             }
+            // Si no es admin y no hay eventos, no hace nada (no puede crear)
         },
 
         abrirModal() {
@@ -466,7 +472,7 @@ export default {
 
         editarEvento(evento) {
             this.eventoSeleccionado = evento;
-            this.nuevoEvento = { 
+            this.nuevoEvento = {
                 ...evento,
                 idTipoEvento: evento.idTipoEvento || evento.tipo,
                 idCategoria: evento.idCategoria || evento.id_categoria
@@ -502,7 +508,7 @@ export default {
 
             try {
                 this.cargando = true;
-                
+
                 if (this.modoEdicion) {
                     await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
                     this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
