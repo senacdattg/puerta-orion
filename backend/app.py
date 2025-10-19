@@ -35,7 +35,13 @@ def create_app(config_name=None):
     
     app = Flask(__name__)
     app.config.from_object(config[config_name])
-    CORS(app, origins=app.config['CORS_ORIGINS'])
+    
+    # Configuración de CORS más permisiva para desarrollo
+    CORS(app, 
+         origins=['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:8080'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         allow_headers=['Content-Type', 'Authorization'],
+         supports_credentials=True)
 
     # Configurar base de datos
     db.init_app(app)
