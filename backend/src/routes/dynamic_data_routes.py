@@ -10,6 +10,7 @@ from src.models import (
     TipoEvento,
     TipoEnfermedad
 )
+from src.models.roles_y_permisos.rol import Rol
 
 dynamic_data_bp = Blueprint('dynamic_data', __name__)
 
@@ -22,7 +23,8 @@ TEMA_MODELOS = {
     'ciudad-residencia': CiudadResidencia,
     'institucion-registro': InstitucionRegistro,
     'tipo-evento': TipoEvento,
-    'tipo-enfermedad': TipoEnfermedad
+    'tipo-enfermedad': TipoEnfermedad,
+    'roles': Rol
 }
 
 # Mapeo de temas a nombres de campos
@@ -34,7 +36,8 @@ TEMA_CAMPOS = {
     'ciudad-residencia': 'nombre_ciudad',
     'institucion-registro': 'nombre_institucion',
     'tipo-evento': 'nombre',
-    'tipo-enfermedad': 'nombre'
+    'tipo-enfermedad': 'nombre',
+    'roles': 'nombre_rol'
 }
 
 def validar_tema(tema):
@@ -144,6 +147,8 @@ def crear_dato_dinamico(tema):
             nuevo_registro.codigo_eps = data['codigo_eps']
         elif tema == 'tipo-evento' and 'descripcion' in data:
             nuevo_registro.descripcion = data['descripcion']
+        elif tema == 'roles' and 'descripcion' in data:
+            nuevo_registro.descripcion = data['descripcion']
         
         # Guardar en base de datos
         db.session.add(nuevo_registro)
@@ -233,6 +238,8 @@ def actualizar_dato_dinamico(tema, id):
         if tema == 'eps' and 'codigo_eps' in data:
             registro.codigo_eps = data['codigo_eps']
         elif tema == 'tipo-evento' and 'descripcion' in data:
+            registro.descripcion = data['descripcion']
+        elif tema == 'roles' and 'descripcion' in data:
             registro.descripcion = data['descripcion']
         
         # Guardar cambios
