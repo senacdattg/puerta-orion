@@ -260,12 +260,12 @@ select:hover {
   .tabla-usuarios {
     font-size: 12px;
   }
-  
+
   .tabla-usuarios th,
   .tabla-usuarios td {
     padding: 12px 16px;
   }
-  
+
   select {
     min-width: 120px;
     font-size: 12px;
