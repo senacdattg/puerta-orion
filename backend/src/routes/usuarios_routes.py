@@ -26,7 +26,7 @@ logger = obtener_registrador('aplicacion')
 
 @usuarios_bp.route('/', methods=['GET'])
 @cross_origin()
-# @token_required()  # Temporalmente comentado para pruebas
+@token_required()  # Habilitar autenticación
 def listar_usuarios():
     """
     Endpoint para listar todos los usuarios con sus roles.
@@ -87,7 +87,7 @@ def listar_usuarios():
 
 @usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT'])
 @cross_origin()
-# @token_required()  # Temporalmente comentado para pruebas
+@token_required()  # Habilitar autenticación
 def cambiar_rol_usuario(id_usuario):
     """
     Endpoint para cambiar el rol de un usuario.

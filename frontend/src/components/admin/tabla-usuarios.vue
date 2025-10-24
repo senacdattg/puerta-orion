@@ -8,25 +8,37 @@
         </tr>
       </thead>
       <tbody>
+        <tr v-if="loading">
+          <td colspan="3" style="text-align: center; padding: 20px;">
+            Cargando usuarios...
+          </td>
+        </tr>
+        <tr v-else-if="error">
+          <td colspan="3" style="text-align: center; padding: 20px; color: red;">
+            Error: {{ error }}
+          </td>
+        </tr>
         <tr
-          v-for="(user, index) in users"
-          :key="user.id"
+          v-else
+          v-for="(user, index) in filteredUsers"
+          :key="user.id_usuario"
           :class="[
             'user-row',
             index % 2 === 0 ? 'user-row--even' : 'user-row--odd'
           ]"
         >
-          <td class="user-name">{{ user.name }}</td>
+          <td class="user-name">{{ user.usuario }}</td>
           <td class="user-role">
-            <span :class="['badge', roleColor(user.role)]">
-              {{ user.role }}
+            <span :class="['badge', roleColor(user.roles[0]?.nombre_rol)]">
+              {{ user.roles[0]?.nombre_rol || 'Sin rol' }}
             </span>
           </td>
           <td class="user-action">
             <select
-              v-model="user.role"
-              @change="updateRole(user, user.role)"
+              :value="user.roles[0]?.id_rol"
+              @change="updateRole(user, $event.target.value)"
               class="role-select"
+              :disabled="loading"
             >
               <option
                 v-for="rol in roles"
@@ -43,51 +55,132 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
+import usuariosService from '@/services/usuariosService';
+
 const props = defineProps({
   searchTerm: { type: String, default: '' },
   roleFilter: { type: String, default: 'todos' }
 });
 
-const roles = [
-  { value: 'user', label: 'Usuario' },
-  { value: 'moderator', label: 'Moderador' },
-  { value: 'admin', label: 'Administrador' }
-];
+const users = ref([]);
+const roles = ref([]);
+const loading = ref(false);
+const error = ref(null);
 
-const allUsers = [
-  { id: 1, name: "Kevin", role: "user" },
-  { id: 2, name: "Mario", role: "moderator" },
-  { id: 3, name: "Olarte", role: "admin" }
-];
+// Cargar datos al montar el componente
+onMounted(async () => {
+  await cargarDatos();
+});
 
-const users = ref(allUsers);
+// Cargar usuarios y roles
+async function cargarDatos() {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    // Cargar usuarios y roles en paralelo
+    const [usuariosResponse, rolesResponse] = await Promise.all([
+      usuariosService.listarUsuarios(),
+      usuariosService.listarRoles()
+    ]);
+
+    if (usuariosResponse.success) {
+      users.value = usuariosResponse.data;
+    } else {
+      throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
+    }
+
+    if (rolesResponse.success) {
+      roles.value = rolesResponse.data.map(rol => ({
+        value: rol.id_rol,
+        label: rol.nombre_rol
+      }));
+    } else {
+      throw new Error(rolesResponse.error || 'Error al cargar roles');
+    }
+  } catch (err) {
+    error.value = err.message;
+    console.error('Error al cargar datos:', err);
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Filtrar usuarios localmente
+const filteredUsers = ref([]);
 
 watch(
-  () => [props.searchTerm, props.roleFilter],
+  () => [props.searchTerm, props.roleFilter, users.value],
   () => {
     const text = props.searchTerm.trim().toLowerCase();
-    const role = props.roleFilter;
-    users.value = allUsers.filter(u => {
-      const matchesText = !text || u.name.toLowerCase().includes(text);
-      const matchesRole = role === 'todos' || u.role === role;
+    const roleFilter = props.roleFilter;
+
+    filteredUsers.value = users.value.filter(user => {
+      const matchesText = !text ||
+        user.usuario.toLowerCase().includes(text) ||
+        user.persona.nombre_completo.toLowerCase().includes(text);
+
+      const matchesRole = roleFilter === 'todos' ||
+        user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
+
       return matchesText && matchesRole;
     });
   },
   { immediate: true }
 );
 
-function updateRole(user, newRole) {
-  user.role = newRole;
-  console.log(`Rol actualizado: ${user.name} ahora es ${newRole}`);
+// Actualizar rol de usuario
+async function updateRole(user, newRoleId) {
+  try {
+    loading.value = true;
+    error.value = null; // Limpiar errores previos
+
+    const response = await usuariosService.cambiarRolUsuario(user.id_usuario, newRoleId);
+
+    if (response.success) {
+      // Actualizar el usuario localmente
+      const userIndex = users.value.findIndex(u => u.id_usuario === user.id_usuario);
+      if (userIndex !== -1) {
+        // Forzar la reactividad creando un nuevo array
+        const updatedUsers = [...users.value];
+        updatedUsers[userIndex] = {
+          ...updatedUsers[userIndex], // Mantener datos existentes
+          roles: response.data.roles  // Solo actualizar los roles
+        };
+        users.value = updatedUsers; // Asignar el nuevo array
+
+        // Debug: verificar que se actualizó
+        console.log('Usuario actualizado:', updatedUsers[userIndex]);
+      }
+
+      console.log(`Rol actualizado: ${user.usuario} ahora es ${response.data.roles[0]?.nombre_rol}`);
+
+      // Mostrar notificación de éxito
+      alert(`✅ Rol actualizado exitosamente!\nUsuario: ${user.usuario} ahora es ${response.data.roles[0]?.nombre_rol}`);
+    } else {
+      throw new Error(response.error || 'Error al actualizar rol');
+    }
+  } catch (err) {
+    error.value = err.message;
+    console.error('Error al actualizar rol:', err);
+  } finally {
+    loading.value = false;
+  }
 }
 
 function roleColor(role) {
   switch (role) {
-    case "admin":
+    case "SuperAdmin":
       return "badge-admin";
-    case "moderator":
+    case "Administrador":
+      return "badge-admin";
+    case "Entrenador":
       return "badge-moderator";
+    case "Deportista":
+      return "badge-user";
+    case "Acudiente":
+      return "badge-user";
     default:
       return "badge-user";
   }
@@ -118,6 +211,7 @@ function roleColor(role) {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #d1d5db;
+  text-align: left;
 }
 
 .tabla-usuarios tbody tr {
@@ -139,6 +233,7 @@ function roleColor(role) {
   padding: 16px 20px;
   font-size: 14px;
   color: #374151;
+  vertical-align: middle;
 }
 
 .tabla-usuarios td:first-child {
@@ -173,10 +268,12 @@ function roleColor(role) {
 
 .user-role {
   text-align: center;
+  vertical-align: middle;
 }
 
 .user-action {
   text-align: center;
+  vertical-align: middle;
 }
 
 .role-select {
