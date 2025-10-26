@@ -18,7 +18,26 @@ class Config:
     FLASK_RUN_RELOAD = os.environ.get('FLASK_RUN_RELOAD', 'True').lower() == 'true'
     
     # Configuración de la base de datos
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.join(os.path.dirname(__file__), "instance", "puerta_orion.db")}'
+    # Intentar DATABASE_URL primero, luego construir desde variables individuales
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        # Construir URL desde variables individuales
+        db_host = os.environ.get('DB_HOST', 'localhost')
+        db_port = os.environ.get('DB_PORT', '3306')
+        db_username = os.environ.get('DB_USERNAME', 'root')
+        db_password = os.environ.get('DB_PASSWORD', '')
+        db_name = os.environ.get('DB_NAME', 'puerta_orion')
+        
+        if db_password:
+            database_url = f'mysql+pymysql://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}'
+        else:
+            database_url = f'mysql+pymysql://{db_username}@{db_host}:{db_port}/{db_name}'
+    
+    # Si no hay configuración de MySQL, usar SQLite como fallback
+    if not database_url:
+        database_url = f'sqlite:///{os.path.join(os.path.dirname(__file__), "instance", "puerta_orion.db")}'
+    
+    SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de CORS
