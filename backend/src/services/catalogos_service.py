@@ -19,49 +19,49 @@ from ..utils.logger import obtener_registrador
 class CatalogosService:
     """
     Servicio para gestión de catálogos.
-    
+
     Encapsula toda la lógica de negocio relacionada con la obtención
     de datos de catálogos para formularios y consultas.
     """
-    
+
     def __init__(self):
         """Inicializa el servicio con el logger configurado."""
         self.logger = obtener_registrador('aplicacion')
-    
+
     def obtener_catalogos_completos(self) -> Dict[str, Any]:
         """
         Obtiene todos los catálogos necesarios para los formularios.
-        
+
         Returns:
             Dict: Diccionario con todos los catálogos
-            
+
         Raises:
             Exception: Si hay errores al consultar la base de datos
         """
         try:
             # Obtener tipos de documento
             tipos_documento = self._obtener_tipos_documento()
-            
+
             # Obtener sexos
             sexos = self._obtener_sexos()
-            
+
             # Obtener categorías
             categorias = self._obtener_categorias()
-            
+
             return {
                 'tipos_documento': tipos_documento,
                 'sexos': sexos,
                 'categorias': categorias
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error al obtener catálogos completos: {str(e)}")
             raise
-    
+
     def _obtener_tipos_documento(self) -> List[Dict[str, Any]]:
         """
         Obtiene todos los tipos de documento.
-        
+
         Returns:
             List[Dict]: Lista de tipos de documento
         """
@@ -70,7 +70,7 @@ class CatalogosService:
             self.logger.info(f"Tipos de documento encontrados: {len(tipos)}")
             for tipo in tipos:
                 self.logger.info(f"  - ID: {tipo.id_documento}, Nombre: {tipo.nombre_documento}")
-            
+
             return [
                 {
                     'id': tipo.id_documento,
@@ -82,11 +82,11 @@ class CatalogosService:
         except Exception as e:
             self.logger.error(f"Error al obtener tipos de documento: {str(e)}")
             return []
-    
+
     def _obtener_sexos(self) -> List[Dict[str, Any]]:
         """
         Obtiene todos los sexos.
-        
+
         Returns:
             List[Dict]: Lista de sexos
         """
@@ -95,7 +95,7 @@ class CatalogosService:
             self.logger.info(f"Sexos encontrados: {len(sexos)}")
             for sexo in sexos:
                 self.logger.info(f"  - ID: {sexo.id_sexo}, Nombre: {sexo.nombre}")
-            
+
             return [
                 {
                     'id': sexo.id_sexo,
@@ -107,11 +107,11 @@ class CatalogosService:
         except Exception as e:
             self.logger.error(f"Error al obtener sexos: {str(e)}")
             return []
-    
+
     def _obtener_categorias(self) -> List[Dict[str, Any]]:
         """
         Obtiene todas las categorías.
-        
+
         Returns:
             List[Dict]: Lista de categorías
         """
@@ -120,7 +120,7 @@ class CatalogosService:
             self.logger.info(f"Categorías encontradas: {len(categorias)}")
             for categoria in categorias:
                 self.logger.info(f"  - ID: {categoria.id_categoria}, Nombre: {categoria.nombre_categoria}, Estado: {categoria.estado}")
-            
+
             return [
                 {
                     'id': categoria.id_categoria,
