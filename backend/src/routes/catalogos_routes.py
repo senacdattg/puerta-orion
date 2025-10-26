@@ -13,6 +13,7 @@ from flask_cors import cross_origin
 from ..models.catalogos.tipo_documento import TipoDocumento
 from ..models.categorias.sexo import Sexo
 from ..models.categorias.categoria import Categoria
+from ..services.catalogos_service import catalogos_service
 from ..utils.logger import obtener_registrador
 
 # Crear Blueprint de catálogos
@@ -125,50 +126,14 @@ def obtener_catalogos_completos():
         JSON: Objeto con todos los catálogos
     """
     try:
-        # Mapeos manuales
-        mapeo_codigos_doc = {
-            'Cédula de Ciudadanía': 'cc',
-            'Cédula de Extranjería': 'ce',
-            'Tarjeta de Identidad': 'ti',
-            'Pasaporte': 'pasaporte'
-        }
-        
-        mapeo_valores_sexo = {
-            'Masculino': 'masculino',
-            'Femenino': 'femenino',
-            'Otro': 'otro'
-        }
-        
-        # Obtener tipos de documento
-        tipos_documento = TipoDocumento.query.all()
-        datos_tipos = []
-        for tipo in tipos_documento:
-            codigo = mapeo_codigos_doc.get(tipo.nombre_documento, tipo.nombre_documento.lower().replace(' ', '_'))
-            datos_tipos.append({
-                'id': tipo.id_documento,
-                'codigo': codigo,
-                'nombre': tipo.nombre_documento
-            })
-        
-        # Obtener sexos
-        sexos = Sexo.query.all()
-        datos_sexos = []
-        for sexo in sexos:
-            valor = mapeo_valores_sexo.get(sexo.nombre, sexo.nombre.lower())
-            datos_sexos.append({
-                'id': sexo.id_sexo,
-                'valor': valor,
-                'nombre': sexo.nombre
-            })
+        # Obtener catálogos desde la base de datos
+        catalogos = catalogos_service.obtener_catalogos_completos()
         
         # Respuesta exitosa
         return jsonify({
             'success': True,
             'message': 'Catálogos obtenidos exitosamente',
-            'data': {
-                'tipos_documento': datos_tipos,
-                'sexos': datos_sexos
-            },
+            'data': catalogos,
             'status_code': 200
         }), 200
         
@@ -177,6 +142,248 @@ def obtener_catalogos_completos():
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/fix-structure', methods=['POST', 'OPTIONS'])
+@cross_origin()
+def fix_catalogos_structure():
+    """
+    Endpoint para corregir la estructura de las tablas de catálogos.
+    """
+    try:
+        from ..models.base import db
+        from sqlalchemy import text
+        
+        # Verificar estructura actual de tabla sexos
+        result = db.session.execute(text("PRAGMA table_info(puerta_orion_sexo)"))
+        columnas = [row[1] for row in result.fetchall()]
+        
+        cambios_realizados = []
+        
+        # Agregar columna nombre si no existe
+        if 'nombre' not in columnas:
+            db.session.execute(text("ALTER TABLE puerta_orion_sexo ADD COLUMN nombre VARCHAR(150)"))
+            cambios_realizados.append("Agregada columna 'nombre' a tabla sexos")
+        
+        # Verificar datos existentes
+        result = db.session.execute(text("SELECT COUNT(*) FROM puerta_orion_tipo_documento"))
+        tipos_count = result.fetchone()[0]
+        
+        result = db.session.execute(text("SELECT COUNT(*) FROM puerta_orion_sexo"))
+        sexos_count = result.fetchone()[0]
+        
+        # Poblar tipos de documento si están vacíos
+        if tipos_count == 0:
+            tipos_sql = text("""
+            INSERT INTO puerta_orion_tipo_documento (id_documento, nombre_documento, created_at, updated_at) VALUES
+            (1, 'Cédula de Ciudadanía', datetime('now'), datetime('now')),
+            (2, 'Tarjeta de Identidad', datetime('now'), datetime('now')),
+            (3, 'Cédula de Extranjería', datetime('now'), datetime('now')),
+            (4, 'Pasaporte', datetime('now'), datetime('now')),
+            (5, 'Registro Civil', datetime('now'), datetime('now'))
+            """)
+            db.session.execute(tipos_sql)
+            cambios_realizados.append("Poblados tipos de documento")
+        
+        # Poblar sexos si están vacíos
+        if sexos_count == 0:
+            # Verificar estructura completa de la tabla
+            result = db.session.execute(text("PRAGMA table_info(puerta_orion_sexo)"))
+            columnas_info = result.fetchall()
+            nombres_columnas = [col[1] for col in columnas_info]
+            
+            # Construir SQL dinámicamente basado en las columnas existentes
+            if 'sexo' in nombres_columnas and 'nombre' in nombres_columnas:
+                sexos_sql = text("""
+                INSERT INTO puerta_orion_sexo (id_sexo, sexo, nombre, created_at, updated_at) VALUES
+                (1, 'M', 'Masculino', datetime('now'), datetime('now')),
+                (2, 'F', 'Femenino', datetime('now'), datetime('now')),
+                (3, 'O', 'Otro', datetime('now'), datetime('now'))
+                """)
+            elif 'nombre' in nombres_columnas:
+                sexos_sql = text("""
+                INSERT INTO puerta_orion_sexo (id_sexo, nombre, created_at, updated_at) VALUES
+                (1, 'Masculino', datetime('now'), datetime('now')),
+                (2, 'Femenino', datetime('now'), datetime('now')),
+                (3, 'Otro', datetime('now'), datetime('now'))
+                """)
+            else:
+                # Solo usar columnas básicas
+                sexos_sql = text("""
+                INSERT INTO puerta_orion_sexo (id_sexo, created_at, updated_at) VALUES
+                (1, datetime('now'), datetime('now')),
+                (2, datetime('now'), datetime('now')),
+                (3, datetime('now'), datetime('now'))
+                """)
+            
+            db.session.execute(sexos_sql)
+            cambios_realizados.append("Poblados sexos")
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Estructura de catálogos corregida exitosamente',
+            'cambios': cambios_realizados,
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error corrigiendo estructura de catálogos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error corrigiendo estructura: {str(e)}',
+            'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/debug', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def debug_catalogos():
+    """
+    Endpoint de depuración para verificar las consultas de catálogos.
+    """
+    try:
+        from ..models.catalogos.tipo_documento import TipoDocumento
+        from ..models.categorias.sexo import Sexo
+        from ..models.categorias.categoria import Categoria
+        
+        debug_info = {}
+        
+        # Verificar tipos de documento
+        try:
+            tipos_count = TipoDocumento.query.count()
+            tipos = TipoDocumento.query.all()
+            debug_info['tipos_documento'] = {
+                'count': tipos_count,
+                'tablename': TipoDocumento.__tablename__,
+                'data': [{'id': t.id_documento, 'nombre': t.nombre_documento} for t in tipos]
+            }
+        except Exception as e:
+            debug_info['tipos_documento'] = {'error': str(e)}
+        
+        # Verificar sexos
+        try:
+            sexos_count = Sexo.query.count()
+            sexos = Sexo.query.all()
+            debug_info['sexos'] = {
+                'count': sexos_count,
+                'tablename': Sexo.__tablename__,
+                'data': [{'id': s.id_sexo, 'nombre': s.nombre} for s in sexos]
+            }
+        except Exception as e:
+            debug_info['sexos'] = {'error': str(e)}
+        
+        # Verificar categorías
+        try:
+            categorias_count = Categoria.query.count()
+            categorias = Categoria.query.all()
+            debug_info['categorias'] = {
+                'count': categorias_count,
+                'tablename': Categoria.__tablename__,
+                'data': [{'id': c.id_categoria, 'nombre': c.nombre_categoria, 'estado': c.estado} for c in categorias]
+            }
+        except Exception as e:
+            debug_info['categorias'] = {'error': str(e)}
+        
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info,
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en debug de catálogos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error en debug: {str(e)}',
+            'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/poblar-categorias', methods=['POST'])
+def poblar_categorias():
+    """
+    Endpoint para poblar la tabla de categorías con datos iniciales.
+    """
+    try:
+        from ..models.base import db
+        from sqlalchemy import text
+        
+        # Verificar si ya hay categorías
+        categorias_existentes = db.session.execute(
+            text("SELECT COUNT(*) FROM puerta_orion_categoria")
+        ).scalar()
+        
+        if categorias_existentes > 0:
+            return jsonify({
+                'success': True,
+                'message': f'Ya existen {categorias_existentes} categorías en la base de datos',
+                'status_code': 200
+            }), 200
+        
+        # Datos iniciales de categorías
+        categorias_data = [
+            {
+                'nombre_categoria': 'Fútbol',
+                'codigo_categoria': 101,
+                'edad_minima': 6,
+                'edad_maxima': 18
+            },
+            {
+                'nombre_categoria': 'Básquetbol',
+                'codigo_categoria': 102,
+                'edad_minima': 8,
+                'edad_maxima': 18
+            },
+            {
+                'nombre_categoria': 'Voleibol',
+                'codigo_categoria': 103,
+                'edad_minima': 10,
+                'edad_maxima': 18
+            },
+            {
+                'nombre_categoria': 'Tenis',
+                'codigo_categoria': 104,
+                'edad_minima': 6,
+                'edad_maxima': 18
+            },
+            {
+                'nombre_categoria': 'Natación',
+                'codigo_categoria': 105,
+                'edad_minima': 4,
+                'edad_maxima': 18
+            }
+        ]
+        
+        # Insertar categorías
+        categorias_insertadas = []
+        for cat_data in categorias_data:
+            insert_sql = text("""
+                INSERT INTO puerta_orion_categoria 
+                (nombre_categoria, codigo_categoria, edad_minima, edad_maxima, estado, created_at, updated_at)
+                VALUES (:nombre_categoria, :codigo_categoria, :edad_minima, :edad_maxima, 1, datetime('now'), datetime('now'))
+            """)
+            
+            db.session.execute(insert_sql, cat_data)
+            categorias_insertadas.append(cat_data['nombre_categoria'])
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Categorías pobladas exitosamente: {len(categorias_insertadas)}',
+            'categorias_insertadas': categorias_insertadas,
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error poblando categorías: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error poblando categorías: {str(e)}',
             'status_code': 500
         }), 500
 

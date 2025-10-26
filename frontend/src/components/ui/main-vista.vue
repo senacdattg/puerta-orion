@@ -46,12 +46,20 @@
         </div>
       </div>
     </div>
+
+    <!-- Dashboard dinámico según rol -->
+    <DashboardHome />
   </section>
 </template>
 
 <script setup>
 import { useUserRole } from '@/composables/useUserRole'
+import DashboardHome from './DashboardHome.vue'
 
 // Usar el composable para obtener el mensaje de bienvenida personalizado
 const { welcomeMessage } = useUserRole()
 </script>
+
+<style scoped>
+/* Estilos existentes del hero section se mantienen */
+</style>

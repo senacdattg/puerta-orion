@@ -27,7 +27,14 @@ class CalendarioService {
       });
 
       if (!response.ok) {
-        throw new Error(`Error al cargar eventos: ${response.statusText}`);
+        // Manejar diferentes tipos de errores
+        if (response.status === 401) {
+          throw new Error('Error de autenticación: Token inválido o expirado');
+        } else if (response.status === 500) {
+          throw new Error('Error interno del servidor al cargar eventos');
+        } else {
+          throw new Error(`Error al cargar eventos: ${response.statusText}`);
+        }
       }
 
       const data = await response.json();
@@ -41,7 +48,9 @@ class CalendarioService {
       return [];
     } catch (error) {
       console.error('Error al cargar eventos:', error);
-      throw error;
+      // Retornar array vacío en lugar de lanzar error para evitar crashes
+      this.eventos = [];
+      return [];
     }
   }
 
@@ -66,9 +75,10 @@ class CalendarioService {
       if (this.eventos.length === 0) {
         await this.cargarEventos();
       }
-    return this.eventos;
+      return this.eventos;
     } catch (error) {
       console.error('Error al obtener todos los eventos:', error);
+      // Retornar array vacío para evitar crashes en el frontend
       return [];
     }
   }
@@ -255,31 +265,44 @@ class CalendarioService {
    */
   async cargarCategorias() {
     try {
+      console.log('🔄 Cargando categorías desde:', `${this.baseURL}/catalogos/categorias`);
+
       const response = await fetch(`${this.baseURL}/catalogos/categorias`, {
         method: 'GET',
-        headers: API_CONFIG.headers
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
+      console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error(`Error al cargar categorías: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Error del servidor:', errorText);
+        throw new Error(`Error al cargar categorías: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log('📦 Datos recibidos:', data);
 
       if (data.success && data.data) {
         this.categorias = data.data;
+        console.log('✅ Categorías cargadas exitosamente:', this.categorias.length);
         return this.categorias;
       }
 
+      console.warn('⚠️ Respuesta sin datos válidos');
       return [];
     } catch (error) {
-      console.warn('⚠️ Backend no disponible, usando categorías de ejemplo:', error.message);
+      console.error('❌ Error al cargar categorías:', error.message);
+      console.warn('⚠️ Usando categorías de ejemplo como fallback');
 
       // Fallback: categorías de ejemplo
       this.categorias = [
-        { id_categoria: 1, nombre: 'Fútbol', descripcion: 'Categoría de fútbol' },
-        { id_categoria: 2, nombre: 'Básquetbol', descripcion: 'Categoría de básquetbol' },
-        { id_categoria: 3, nombre: 'Voleibol', descripcion: 'Categoría de voleibol' }
+        { id_categoria: 1, nombre_categoria: 'Fútbol', codigo_categoria: 101, edad_minima: 6, edad_maxima: 18 },
+        { id_categoria: 2, nombre_categoria: 'Básquetbol', codigo_categoria: 102, edad_minima: 8, edad_maxima: 18 },
+        { id_categoria: 3, nombre_categoria: 'Voleibol', codigo_categoria: 103, edad_minima: 10, edad_maxima: 18 }
       ];
 
       return this.categorias;

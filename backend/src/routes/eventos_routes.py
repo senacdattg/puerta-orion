@@ -141,9 +141,15 @@ def listar_eventos():
         }), 200
         
     except Exception as e:
+        # Log del error para debugging
+        from src.utils.logger import obtener_registrador
+        logger = obtener_registrador('aplicacion')
+        logger.error(f'Error al listar eventos: {str(e)}')
+        
         return jsonify({
             'success': False,
-            'error': f'Error al listar eventos: {str(e)}'
+            'error': 'Error interno del servidor al cargar eventos',
+            'message': 'Por favor intenta nuevamente más tarde'
         }), 500
 
 
@@ -203,14 +209,29 @@ def crear_evento():
     try:
         data = request.get_json()
         
+        # Validar que se envió data
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No se enviaron datos',
+                'message': 'El cuerpo de la petición debe contener datos JSON'
+            }), 400
+        
         # Validaciones de campos requeridos
         campos_requeridos = ['nombre', 'fecha_evento', 'hora_inicio', 'hora_fin', 'lugar', 'id_categoria', 'id_tipo_evento', 'id_sesion']
+        campos_faltantes = []
+        
         for campo in campos_requeridos:
             if campo not in data or not data[campo]:
-                return jsonify({
-                    'success': False,
-                    'error': f'El campo {campo} es requerido'
-                }), 400
+                campos_faltantes.append(campo)
+        
+        if campos_faltantes:
+            return jsonify({
+                'success': False,
+                'error': 'Campos requeridos faltantes',
+                'message': f'Los siguientes campos son obligatorios: {", ".join(campos_faltantes)}',
+                'campos_faltantes': campos_faltantes
+            }), 400
         
         # Validar nombre
         nombre = data['nombre'].strip()

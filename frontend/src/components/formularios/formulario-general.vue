@@ -1,5 +1,5 @@
 <template>
-  <form class="formulario-datos" @submit.prevent="manejarSubmit">
+  <form class="formulario-datos" name="formulario-registro" @submit.prevent="manejarSubmit">
   <section class="seccion-formulario">
     <h3>{{  obtenerTitulo() }}</h3>
 
@@ -26,6 +26,8 @@
         <input
         v-model="form.nombre1"
         type="text"
+        name="primer_nombre"
+        autocomplete="given-name"
         placeholder="Primer nombre *"
         required
         :readonly="modo === 'ver'"
@@ -35,6 +37,8 @@
         <input
         v-model="form.nombre2"
         type="text"
+        name="segundo_nombre"
+        autocomplete="additional-name"
         placeholder="Segundo nombre"
         :readonly="modo === 'ver'"
         :disabled="cargando"
@@ -45,6 +49,8 @@
         <input
         v-model="form.apellido1"
         type="text"
+        name="primer_apellido"
+        autocomplete="family-name"
         placeholder="Primer apellido *"
         required
         :readonly="modo === 'ver'"
@@ -54,6 +60,8 @@
         <input
         v-model="form.apellido2"
         type="text"
+        name="segundo_apellido"
+        autocomplete="additional-name"
         placeholder="Segundo apellido"
         :readonly="modo === 'ver'"
         :disabled="cargando"
@@ -93,6 +101,8 @@
         <input
         type="text"
         v-model="form.numeroDocumento"
+        name="numero_documento"
+        autocomplete="off"
         placeholder="Número de documento *"
         required
         :readonly="modo === 'ver'"
@@ -108,6 +118,8 @@
         <input
         type="email"
         v-model="form.correo"
+        name="correo_electronico"
+        autocomplete="email"
         placeholder="Correo electrónico *"
         required
         :readonly="modo === 'ver'"
@@ -117,6 +129,8 @@
         <input
         type="tel"
         v-model="form.telefono"
+        name="telefono"
+        autocomplete="tel"
         placeholder="Número telefónico *"
         required
         :readonly="modo === 'ver'"
@@ -129,6 +143,8 @@
         <input
         type="text"
         v-model="form.direccion"
+        name="direccion"
+        autocomplete="address-line1"
         placeholder="Dirección *"
         required
         :readonly="modo === 'ver'"
@@ -144,6 +160,8 @@
         <input
         type="text"
         v-model="form.usuario"
+        name="usuario"
+        autocomplete="username"
         placeholder="Nombre de usuario *"
         required
         :readonly="modo === 'ver'"
@@ -156,6 +174,8 @@
         <input
         type="password"
         v-model="form.contrasena"
+        name="contrasena"
+        autocomplete="new-password"
         placeholder="Contraseña *"
         required
         :readonly="modo === 'ver'"
@@ -165,6 +185,8 @@
         <input
         type="password"
         v-model="form.confirmarContrasena"
+        name="confirmar_contrasena"
+        autocomplete="new-password"
         placeholder="Confirmar contraseña *"
         required
         :readonly="modo === 'ver'"

@@ -1,0 +1,275 @@
+/* ===== ESTILOS PARA DASHBOARDS POR ROL ===== */
+
+.dashboard-home {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--espaciado-xl) var(--espaciado-md);
+}
+
+/* ===== BANNER DE REGISTRO ===== */
+
+.registration-banner {
+  background: linear-gradient(135deg, var(--color-primario) 0%, #764ba2 100%);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  margin-bottom: var(--espaciado-xl);
+  box-shadow: var(--sombra-media);
+  color: var(--color-blanco);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-xl);
+  flex-wrap: wrap;
+}
+
+.banner-icon {
+  font-size: var(--tamano-fuente-xxxl);
+  opacity: 0.9;
+}
+
+.banner-text {
+  flex: 1;
+  min-width: 300px;
+}
+
+.banner-text h3 {
+  font-size: var(--tamano-fuente-xxl);
+  margin: 0 0 var(--espaciado-sm) 0;
+  font-weight: var(--peso-fuente-semibold);
+}
+
+.banner-text p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: var(--tamano-fuente-base);
+}
+
+.banner-actions {
+  display: flex;
+  gap: var(--espaciado-md);
+  flex-wrap: wrap;
+}
+
+/* ===== DASHBOARDS POR ROL ===== */
+
+.role-dashboard {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  box-shadow: var(--sombra-media);
+}
+
+.dashboard-header {
+  text-align: center;
+  margin-bottom: var(--espaciado-xl);
+  padding-bottom: var(--espaciado-md);
+  border-bottom: 2px solid var(--color-gris-claro);
+}
+
+.dashboard-title {
+  font-size: var(--tamano-fuente-xxxl);
+  font-weight: var(--peso-fuente-bold);
+  margin: 0 0 var(--espaciado-sm) 0;
+  color: var(--color-gris-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaciado-sm);
+}
+
+.dashboard-subtitle {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris);
+  margin: 0;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--espaciado-lg);
+}
+
+.dashboard-card {
+  background: var(--color-blanco);
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-lg);
+  cursor: pointer;
+  transition: var(--transicion);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--color-primario);
+  transition: width var(--transicion);
+}
+
+.dashboard-card:hover {
+  border-color: var(--color-primario);
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-media);
+}
+
+.dashboard-card:hover::before {
+  width: 8px;
+}
+
+.card-icon {
+  width: 3rem;
+  height: 3rem;
+  background: var(--color-gris-claro);
+  border-radius: var(--radio-borde-pequeno);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--tamano-fuente-xl);
+  color: var(--color-primario);
+  flex-shrink: 0;
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-content h3 {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-semibold);
+  margin: 0 0 var(--espaciado-xs) 0;
+  color: var(--color-gris-oscuro);
+}
+
+.card-content p {
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ===== COLORES ESPECÍFICOS POR ROL ===== */
+
+/* Acudiente Dashboard */
+.acudiente-dashboard .dashboard-title {
+  color: var(--color-exito);
+}
+
+.acudiente-dashboard .card-icon {
+  background: #e8f5e8;
+  color: var(--color-exito);
+}
+
+.acudiente-dashboard .dashboard-card::before {
+  background: var(--color-exito);
+}
+
+.acudiente-dashboard .dashboard-card:hover {
+  border-color: var(--color-exito);
+}
+
+/* Deportista Dashboard */
+.deportista-dashboard .dashboard-title {
+  color: var(--color-advertencia);
+}
+
+.deportista-dashboard .card-icon {
+  background: #fff3e0;
+  color: var(--color-advertencia);
+}
+
+.deportista-dashboard .dashboard-card::before {
+  background: var(--color-advertencia);
+}
+
+.deportista-dashboard .dashboard-card:hover {
+  border-color: var(--color-advertencia);
+}
+
+/* Admin Dashboard */
+.admin-dashboard .dashboard-title {
+  color: var(--color-peligro);
+}
+
+.admin-dashboard .card-icon {
+  background: #f8d7da;
+  color: var(--color-peligro);
+}
+
+.admin-dashboard .dashboard-card::before {
+  background: var(--color-peligro);
+}
+
+.admin-dashboard .dashboard-card:hover {
+  border-color: var(--color-peligro);
+}
+
+/* Basic Dashboard */
+.basic-dashboard .dashboard-title {
+  color: var(--color-gris);
+}
+
+.basic-dashboard .card-icon {
+  background: var(--color-gris-claro);
+  color: var(--color-gris);
+}
+
+.basic-dashboard .dashboard-card::before {
+  background: var(--color-gris);
+}
+
+.basic-dashboard .dashboard-card:hover {
+  border-color: var(--color-gris);
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .dashboard-home {
+    padding: var(--espaciado-md) var(--espaciado-sm);
+  }
+
+  .banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--espaciado-md);
+  }
+
+  .banner-actions {
+    justify-content: center;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .dashboard-card {
+    padding: var(--espaciado-md);
+  }
+
+  .dashboard-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

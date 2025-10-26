@@ -13,6 +13,7 @@ from flask import Blueprint, request, jsonify, current_app
 
 from ..services.Auth.usuario_service import usuario_service, UsuarioServiceError
 from ..services.Auth.auth_service import auth_service, AuthServiceError
+from ..services.Auth.profile_completion_service import profile_completion_service, ProfileCompletionError
 from ..middleware.auth_decorator import token_required, get_current_user
 from ..utils.logger import obtener_registrador
 
@@ -20,6 +21,195 @@ from ..utils.logger import obtener_registrador
 # Crear Blueprint de autenticación
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 logger = obtener_registrador('aplicacion')
+
+
+@auth_bp.route('/setup-roles', methods=['POST'])
+def setup_roles():
+    """
+    Endpoint para configurar los roles básicos del sistema.
+    """
+    try:
+        from ..models.roles_y_permisos.rol import Rol
+        from ..models.base import db
+        
+        # Verificar si ya existen roles
+        roles_existentes = Rol.query.count()
+        if roles_existentes > 0:
+            return jsonify({
+                'success': True,
+                'message': 'Los roles ya existen en el sistema',
+                'total_roles': roles_existentes
+            }), 200
+        
+        # Crear roles básicos
+        roles_basicos = [
+            {
+                'nombre_rol': 'SuperAdmin',
+                'descripcion': 'Super administrador del sistema con acceso completo'
+            },
+            {
+                'nombre_rol': 'Administrador',
+                'descripcion': 'Administrador del sistema'
+            },
+            {
+                'nombre_rol': 'Entrenador',
+                'descripcion': 'Entrenador deportivo'
+            },
+            {
+                'nombre_rol': 'Deportista',
+                'descripcion': 'Deportista registrado'
+            },
+            {
+                'nombre_rol': 'Acudiente',
+                'descripcion': 'Acudiente de deportistas'
+            },
+            {
+                'nombre_rol': 'usuario',
+                'descripcion': 'Rol por defecto para usuarios del sistema'
+            }
+        ]
+        
+        roles_creados = []
+        for rol_data in roles_basicos:
+            rol = Rol(**rol_data)
+            db.session.add(rol)
+            roles_creados.append(rol_data['nombre_rol'])
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Roles básicos creados exitosamente',
+            'roles_creados': roles_creados,
+            'total_roles': len(roles_creados)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error configurando roles: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error configurando roles: {str(e)}',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/asignar-rol', methods=['POST'])
+def asignar_rol():
+    """
+    Endpoint para asignar un rol específico a un usuario.
+    """
+    try:
+        from ..models.roles_y_permisos.rol import Rol
+        from ..models.roles_y_permisos.usuario_rol import UsuarioRol
+        from ..models.usuarios.usuario import Usuario
+        from ..models.base import db
+        
+        data = request.get_json()
+        if not data or 'id_usuario' not in data or 'nombre_rol' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Se requieren id_usuario y nombre_rol',
+                'status_code': 400
+            }), 400
+        
+        # Buscar usuario
+        usuario = Usuario.query.get(data['id_usuario'])
+        if not usuario:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado',
+                'status_code': 404
+            }), 404
+        
+        # Buscar rol
+        rol = Rol.query.filter_by(nombre_rol=data['nombre_rol']).first()
+        if not rol:
+            return jsonify({
+                'success': False,
+                'error': f'Rol {data["nombre_rol"]} no encontrado',
+                'status_code': 404
+            }), 404
+        
+        # Verificar si ya tiene el rol
+        usuario_rol_existente = UsuarioRol.query.filter_by(
+            id_usuario=data['id_usuario'],
+            id_rol=rol.id_rol
+        ).first()
+        
+        if usuario_rol_existente:
+            return jsonify({
+                'success': True,
+                'message': f'El usuario ya tiene el rol {data["nombre_rol"]}',
+                'status_code': 200
+            }), 200
+        
+        # Asignar rol
+        usuario_rol = UsuarioRol(
+            id_usuario=data['id_usuario'],
+            id_rol=rol.id_rol
+        )
+        
+        db.session.add(usuario_rol)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Rol {data["nombre_rol"]} asignado exitosamente',
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error asignando rol: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error asignando rol: {str(e)}',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/debug-roles', methods=['GET'])
+def debug_roles():
+    """
+    Endpoint de depuración para verificar el estado de los roles.
+    """
+    try:
+        from ..models.roles_y_permisos.rol import Rol
+        from ..models.roles_y_permisos.usuario_rol import UsuarioRol
+        
+        # Verificar roles existentes
+        roles = Rol.query.all()
+        roles_data = []
+        for rol in roles:
+            roles_data.append({
+                'id_rol': rol.id_rol,
+                'nombre_rol': rol.nombre_rol,
+                'descripcion': rol.descripcion
+            })
+        
+        # Verificar relaciones usuario-rol
+        usuario_roles = UsuarioRol.query.all()
+        usuario_roles_data = []
+        for ur in usuario_roles:
+            usuario_roles_data.append({
+                'id_usuario': ur.id_usuario,
+                'id_rol': ur.id_rol
+            })
+        
+        return jsonify({
+            'success': True,
+            'roles': roles_data,
+            'usuario_roles': usuario_roles_data,
+            'total_roles': len(roles_data),
+            'total_usuario_roles': len(usuario_roles_data)
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en debug de roles: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error en debug: {str(e)}',
+            'status_code': 500
+        }), 500
 
 
 @auth_bp.route('/register', methods=['POST'])
@@ -82,11 +272,49 @@ def registrar_usuario():
                 'status_code': 400
             }), 400
         
+        # Validaciones básicas
+        if not datos_persona.get('primer_nombre'):
+            return jsonify({
+                'success': False,
+                'error': 'El primer nombre es requerido',
+                'status_code': 400
+            }), 400
+        
+        if not datos_persona.get('primer_apellido'):
+            return jsonify({
+                'success': False,
+                'error': 'El primer apellido es requerido',
+                'status_code': 400
+            }), 400
+        
+        if not datos_persona.get('correo_electronico'):
+            return jsonify({
+                'success': False,
+                'error': 'El correo electrónico es requerido',
+                'status_code': 400
+            }), 400
+        
+        if not datos_usuario.get('usuario'):
+            return jsonify({
+                'success': False,
+                'error': 'El nombre de usuario es requerido',
+                'status_code': 400
+            }), 400
+        
+        if not datos_usuario.get('password'):
+            return jsonify({
+                'success': False,
+                'error': 'La contraseña es requerida',
+                'status_code': 400
+            }), 400
+        
         # Registrar usuario usando el servicio
+        logger.info(f"Intentando registrar usuario: {datos_usuario.get('usuario', 'N/A')}")
         usuario_creado = usuario_service.registrar_usuario_completo(
             datos_persona=datos_persona,
             datos_usuario=datos_usuario
         )
+        logger.info(f"Usuario registrado exitosamente: {usuario_creado.get('usuario', 'N/A')}")
         
         # Respuesta exitosa
         return jsonify({
@@ -97,7 +325,7 @@ def registrar_usuario():
         }), 201
         
     except UsuarioServiceError as e:
-        logger.warning(f"Error de validación en registro: {str(e)}")
+        logger.warning(f"Error en registro de usuario: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
@@ -157,6 +385,21 @@ def login_usuario():
             return jsonify({
                 'success': False,
                 'error': 'Username y password son requeridos',
+                'status_code': 400
+            }), 400
+        
+        # Validaciones básicas
+        if len(username.strip()) < 3:
+            return jsonify({
+                'success': False,
+                'error': 'El nombre de usuario debe tener al menos 3 caracteres',
+                'status_code': 400
+            }), 400
+        
+        if len(password.strip()) < 6:
+            return jsonify({
+                'success': False,
+                'error': 'La contraseña debe tener al menos 6 caracteres',
                 'status_code': 400
             }), 400
         
@@ -355,7 +598,7 @@ def verificar_token():
                 'success': True,
                 'message': 'Token válido',
                 'data': {
-                    'user_id': payload.get('user_id'),
+                    'usuario_id': payload.get('usuario_id'),
                     'username': payload.get('username'),
                     'roles': payload.get('roles'),
                     'expires_at': payload.get('exp'),
@@ -372,6 +615,232 @@ def verificar_token():
         
     except Exception as e:
         logger.error(f"Error inesperado al verificar token: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/perfil/estado', methods=['GET'])
+@token_required()
+def verificar_estado_perfil():
+    """
+    Endpoint para verificar el estado del perfil del usuario autenticado.
+
+    Verifica si el usuario ya completó su perfil como deportista o acudiente.
+
+    Headers requeridos:
+    Authorization: Bearer <token>
+
+    Returns:
+        JSON: Estado del perfil (es_deportista, es_acudiente, etc.)
+    """
+    try:
+        # Obtener usuario autenticado del contexto
+        user = get_current_user()
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado en el contexto',
+                'status_code': 401
+            }), 401
+
+        # Verificar estado del perfil usando el nuevo servicio
+        estado_perfil = profile_completion_service.check_profile_status(user['id_usuario'])
+
+        # Respuesta exitosa
+        return jsonify({
+            'success': True,
+            'message': 'Estado del perfil obtenido exitosamente',
+            'data': estado_perfil,
+            'status_code': 200
+        }), 200
+
+    except ProfileCompletionError as e:
+        logger.warning(f"Error al verificar estado del perfil: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'status_code': 400
+        }), 400
+
+    except Exception as e:
+        logger.error(f"Error inesperado al verificar estado del perfil: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/perfil/completar-deportista', methods=['POST'])
+@token_required()
+def completar_perfil_deportista():
+    """
+    Endpoint para completar el perfil del usuario como deportista.
+
+    Registra al usuario actual como deportista y le asigna el rol correspondiente.
+
+    Headers requeridos:
+    Authorization: Bearer <token>
+
+    Body JSON esperado:
+    {
+        "id_categoria": 1,
+        "peso": 70.5,
+        "altura": 1.75,
+        "fecha_nacimiento": 2000,
+        "id_tipo_sanguineo": 1,
+        "id_ciudad_recidencia": 1,
+        "id_eps": 1,
+        "alergias": "Ninguna",
+        "medicamentos": "Ninguno",
+        "condiciones_medicas": "Ninguna",
+        "institucion_educativa": "Colegio ABC",
+        "grado": "10",
+        "jornada": "Mañana"
+    }
+
+    Returns:
+        JSON: Información del deportista creado
+    """
+    try:
+        # Validar que la petición sea JSON
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type debe ser application/json',
+                'status_code': 400
+            }), 400
+
+        # Obtener usuario autenticado del contexto
+        user = get_current_user()
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado en el contexto',
+                'status_code': 401
+            }), 401
+
+        # Obtener datos del JSON
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Datos requeridos para completar perfil',
+                'status_code': 400
+            }), 400
+
+        # Completar perfil usando el nuevo servicio unificado
+        resultado = profile_completion_service.complete_profile(
+            usuario_id=user['id_usuario'],
+            profile_type='deportista',
+            profile_data=data
+        )
+
+        # Respuesta exitosa
+        return jsonify({
+            'success': True,
+            'message': resultado.message,
+            'data': resultado.data,
+            'status_code': 201
+        }), 201
+
+    except ProfileCompletionError as e:
+        logger.warning(f"Error al completar perfil como deportista: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'status_code': 400
+        }), 400
+
+    except Exception as e:
+        logger.error(f"Error inesperado al completar perfil como deportista: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/perfil/completar-acudiente', methods=['POST'])
+@token_required()
+def completar_perfil_acudiente():
+    """
+    Endpoint para completar el perfil del usuario como acudiente.
+
+    Registra al usuario actual como acudiente y le asigna el rol correspondiente.
+
+    Headers requeridos:
+    Authorization: Bearer <token>
+
+    Body JSON esperado (opcional):
+    {
+        "parentesco": "Padre",
+        "ocupacion": "Ingeniero",
+        "lugar_trabajo": "Empresa ABC",
+        "telefono_trabajo": "3001234567",
+        "telefono_emergencia": "3019876543",
+        "autorizacion_imagenes": true,
+        "autorizacion_salidas": true,
+        "autorizacion_medica": true,
+        "observaciones": "Observaciones adicionales"
+    }
+
+    Returns:
+        JSON: Información del acudiente creado
+    """
+    try:
+        # Validar que la petición sea JSON si hay body
+        if request.content_length and request.content_length > 0 and not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type debe ser application/json',
+                'status_code': 400
+            }), 400
+
+        # Obtener usuario autenticado del contexto
+        user = get_current_user()
+
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado en el contexto',
+                'status_code': 401
+            }), 401
+
+        # Obtener datos del JSON (puede ser vacío para acudientes)
+        data = request.get_json() if request.is_json else {}
+
+        # Completar perfil usando el nuevo servicio unificado
+        resultado = profile_completion_service.complete_profile(
+            usuario_id=user['id_usuario'],
+            profile_type='acudiente',
+            profile_data=data
+        )
+
+        # Respuesta exitosa
+        return jsonify({
+            'success': True,
+            'message': resultado.message,
+            'data': resultado.data,
+            'status_code': 201
+        }), 201
+
+    except ProfileCompletionError as e:
+        logger.warning(f"Error al completar perfil como acudiente: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'status_code': 400
+        }), 400
+
+    except Exception as e:
+        logger.error(f"Error inesperado al completar perfil como acudiente: {str(e)}")
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor',

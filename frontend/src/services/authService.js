@@ -125,6 +125,12 @@ class AuthService {
    */
   async verifyToken(token) {
     try {
+      // Validar que el token no esté vacío o sea inválido
+      if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
+        this.clearAuthData()
+        throw new Error('Token inválido o expirado')
+      }
+
       const response = await fetch(`${this.baseURL}/api/auth/verify-token`, {
         method: 'POST',
         headers: {
@@ -133,15 +139,32 @@ class AuthService {
         body: JSON.stringify({ token })
       })
 
-      const data = await response.json()
+      // Verificar si la respuesta es JSON válido
+      let data
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        console.error('Error al parsear respuesta del servidor:', parseError)
+        this.clearAuthData()
+        throw new Error('Respuesta del servidor inválida')
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Token inválido')
+        // Si el token es inválido o expirado, limpiar datos locales
+        if (response.status === 401) {
+          this.clearAuthData()
+          throw new Error('Token inválido o expirado')
+        }
+        throw new Error(data.error || 'Error al verificar token')
       }
 
       return data
     } catch (error) {
       console.error('Error al verificar token:', error)
+      // Solo limpiar datos si es un error de token, no de conexión
+      if (error.message.includes('Token inválido') || error.message.includes('expirado')) {
+        this.clearAuthData()
+      }
       throw error
     }
   }
@@ -167,6 +190,134 @@ class AuthService {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
   }
+
+  /**
+   * Verificar estado del perfil del usuario
+   */
+  async verificarEstadoPerfil() {
+    try {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/auth/perfil/estado`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al verificar estado del perfil')
+      }
+
+      return data
+    } catch (error) {
+      console.error('Error al verificar estado del perfil:', error)
+      throw error
+    }
+  }
+
+  /**
+    * Completar perfil como deportista
+    */
+   async completarPerfilDeportista(datosDeportista) {
+     try {
+       const token = localStorage.getItem('token')
+
+       if (!token) {
+         throw new Error('No hay token de autenticación')
+       }
+
+       // Asegurar que los campos opcionales estén presentes con valores por defecto
+       const datosCompletos = {
+         id_categoria: datosDeportista.id_categoria || datosDeportista.categoria,
+         peso: datosDeportista.peso ? parseFloat(datosDeportista.peso) : null,
+         altura: datosDeportista.altura ? parseFloat(datosDeportista.altura) : null,
+         fecha_nacimiento: datosDeportista.fecha_nacimiento || datosDeportista.fechaNacimiento,
+         id_tipo_sanguineo: datosDeportista.id_tipo_sanguineo || datosDeportista.tipoSangre,
+         id_ciudad_recidencia: datosDeportista.id_ciudad_recidencia || datosDeportista.ciudad,
+         id_eps: datosDeportista.id_eps || datosDeportista.eps,
+         alergias: datosDeportista.alergias || '',
+         medicamentos: datosDeportista.medicamentos || '',
+         condiciones_medicas: datosDeportista.condiciones_medicas || datosDeportista.condicionesMedicas || '',
+         institucion_educativa: datosDeportista.institucion_educativa || datosDeportista.institucionEducativa || '',
+         grado: datosDeportista.grado || '',
+         jornada: datosDeportista.jornada || ''
+       }
+
+       const response = await fetch(`${this.baseURL}/api/auth/perfil/completar-deportista`, {
+         method: 'POST',
+         headers: {
+           'Authorization': `Bearer ${token}`,
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify(datosCompletos)
+       })
+
+       const data = await response.json()
+
+       if (!response.ok) {
+         throw new Error(data.error || 'Error al completar perfil como deportista')
+       }
+
+       return { success: true, data: data.data, message: data.message }
+     } catch (error) {
+       console.error('Error al completar perfil como deportista:', error)
+       return { success: false, error: error.message || 'Error de conexión' }
+     }
+   }
+
+  /**
+    * Completar perfil como acudiente
+    */
+   async completarPerfilAcudiente(datosAcudiente = {}) {
+     try {
+       const token = localStorage.getItem('token')
+
+       if (!token) {
+         throw new Error('No hay token de autenticación')
+       }
+
+       // Preparar datos del acudiente con valores por defecto
+       const datosCompletos = {
+         parentesco: datosAcudiente.parentesco || '',
+         ocupacion: datosAcudiente.ocupacion || '',
+         lugar_trabajo: datosAcudiente.lugar_trabajo || datosAcudiente.lugarTrabajo || '',
+         telefono_trabajo: datosAcudiente.telefono_trabajo || datosAcudiente.telefonoTrabajo || '',
+         telefono_emergencia: datosAcudiente.telefono_emergencia || datosAcudiente.telefonoEmergencia || '',
+         autorizacion_imagenes: datosAcudiente.autorizacion_imagenes !== undefined ? datosAcudiente.autorizacion_imagenes : false,
+         autorizacion_salidas: datosAcudiente.autorizacion_salidas !== undefined ? datosAcudiente.autorizacion_salidas : false,
+         autorizacion_medica: datosAcudiente.autorizacion_medica !== undefined ? datosAcudiente.autorizacion_medica : false,
+         observaciones: datosAcudiente.observaciones || ''
+       }
+
+       const response = await fetch(`${this.baseURL}/api/auth/perfil/completar-acudiente`, {
+         method: 'POST',
+         headers: {
+           'Authorization': `Bearer ${token}`,
+           'Content-Type': 'application/json',
+         },
+         body: JSON.stringify(datosCompletos)
+       })
+
+       const data = await response.json()
+
+       if (!response.ok) {
+         throw new Error(data.error || 'Error al completar perfil como acudiente')
+       }
+
+       return { success: true, data: data.data, message: data.message }
+     } catch (error) {
+       console.error('Error al completar perfil como acudiente:', error)
+       return { success: false, error: error.message || 'Error de conexión' }
+     }
+   }
 }
 
 // Exportar instancia única

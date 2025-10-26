@@ -173,7 +173,7 @@ class TokenRequired:
                     return self._error_response("Sesión inactiva o expirada", 401)
                 
                 # Obtener usuario completo
-                usuario = self._obtener_usuario_completo(payload['user_id'])
+                usuario = self._obtener_usuario_completo(payload['usuario_id'])
                 if not usuario:
                     return self._error_response("Usuario no encontrado", 401)
                 
@@ -258,7 +258,7 @@ class TokenRequired:
             # Buscar sesión por token (asumiendo que el token de sesión está en el JWT)
             # En una implementación real, podrías tener un campo session_id en el JWT
             sesion = SesionAuth.query.filter_by(
-                id_usuario=payload['user_id'],
+                id_usuario=payload['usuario_id'],
                 estado=True
             ).filter(
                 SesionAuth.fecha_expiracion > datetime.utcnow()
@@ -275,19 +275,19 @@ class TokenRequired:
             self.logger.error(f"Error al verificar sesión activa: {str(e)}")
             return None
     
-    def _obtener_usuario_completo(self, user_id: int) -> Optional[Usuario]:
+    def _obtener_usuario_completo(self, usuario_id: int) -> Optional[Usuario]:
         """
         Obtiene el usuario completo con sus roles.
         
         Args:
-            user_id (int): ID del usuario
+            usuario_id (int): ID del usuario
             
         Returns:
             Usuario: Usuario completo o None
         """
         try:
             usuario = Usuario.query.filter_by(
-                id_usuario=user_id,
+                id_usuario=usuario_id,
                 estado=True
             ).first()
             
@@ -649,21 +649,6 @@ def get_token_payload() -> Optional[Dict[str, Any]]:
     return getattr(g, 'token_payload', None)
 
 
-def has_role(role_name: str) -> bool:
-    """
-    Verifica si el usuario actual tiene un rol específico.
-    
-    Args:
-        role_name (str): Nombre del rol a verificar
-        
-    Returns:
-        bool: True si tiene el rol
-    """
-    user = get_current_user()
-    if not user or 'roles' not in user:
-        return False
-    
-    return any(role['nombre_rol'] == role_name for role in user['roles'])
 
 
 def has_any_role(*role_names: str) -> bool:

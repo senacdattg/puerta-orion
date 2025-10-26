@@ -11,6 +11,30 @@ import { useAuthStore } from '@/stores/auth'
  */
 export const navigationConfig = [
   {
+    id: 'registro-deportista',
+    title: 'Registrar Deportista',
+    route: '/registrar-deportista-form',
+    icon: 'fas fa-user-plus',
+    colorClass: 'nav-card--green',
+    roles: ['Administrador', 'Entrenador']
+  },
+  {
+    id: 'registro-acudiente',
+    title: 'Registrar Acudiente',
+    route: '/registrar-acudiente',
+    icon: 'fas fa-user-friends',
+    colorClass: 'nav-card--teal',
+    roles: ['Administrador', 'Entrenador']
+  },
+  {
+    id: 'completar-perfil',
+    title: 'Completar Perfil',
+    route: '/completar-perfil',
+    icon: 'fas fa-user-edit',
+    colorClass: 'nav-card--orange',
+    roles: ['Deportista', 'Acudiente']
+  },
+  {
     id: 'calendario',
     title: 'Ver Calendario',
     route: '/calendario',
@@ -92,23 +116,58 @@ export function useUserRole() {
   })
 
   /**
+   * Verifica si el usuario es deportista
+   * @returns {boolean}
+   */
+  const isDeportista = computed(() => {
+    const userRoles = authStore.userRoles
+    return userRoles?.includes('Deportista')
+  })
+
+  /**
+   * Verifica si el usuario es acudiente
+   * @returns {boolean}
+   */
+  const isAcudiente = computed(() => {
+    const userRoles = authStore.userRoles
+    return userRoles?.includes('Acudiente')
+  })
+
+  /**
    * Filtra elementos de navegación según los roles del usuario
    * @returns {Array} Array de elementos de navegación permitidos
    */
   const filteredNavigation = computed(() => {
     const userRoles = authStore.userRoles
+    console.log('🔍 Debug filteredNavigation:')
+    console.log('- userRoles:', userRoles)
+    console.log('- authStore.user:', authStore.user)
 
     // Si no hay roles, mostrar solo calendario y galería
     if (!userRoles || userRoles.length === 0) {
+      console.log('- No hay roles, mostrando calendario y galería')
       return navigationConfig.filter(item =>
         item.id === 'calendario' || item.id === 'galeria'
       )
     }
 
-    // Filtrar elementos según los roles del usuario
-    return navigationConfig.filter(item => {
-      return item.roles.some(role => userRoles.includes(role))
+    // Extraer nombres de roles (en caso de que sean objetos)
+    const roleNames = userRoles.map(role => {
+      if (typeof role === 'string') return role
+      if (role.nombre_rol) return role.nombre_rol
+      if (role.rol) return role.rol
+      return role.toString()
     })
+
+    console.log('- roleNames extraídos:', roleNames)
+
+    // Filtrar elementos según los roles del usuario
+    const filtered = navigationConfig.filter(item => {
+      return item.roles.some(role => roleNames.includes(role))
+    })
+
+    console.log('- elementos filtrados:', filtered)
+    return filtered
   })
 
   /**
@@ -138,7 +197,10 @@ export function useUserRole() {
    */
   const hasRole = (roleName) => {
     const userRoles = authStore.userRoles
-    return userRoles?.includes(roleName) || false
+    if (!userRoles || userRoles.length === 0) return false
+
+    // Los roles ya están procesados como strings en el store
+    return userRoles.includes(roleName)
   }
 
   /**
@@ -153,6 +215,7 @@ export function useUserRole() {
     if (!navItem) return true // Si no está en la config, permitir acceso
     if (!userRoles || userRoles.length === 0) return false
 
+    // Los roles ya están procesados como strings en el store
     return navItem.roles.some(role => userRoles.includes(role))
   }
 
@@ -160,6 +223,8 @@ export function useUserRole() {
     // Propiedades computadas
     userRole,
     isAdminOrCoach,
+    isDeportista,
+    isAcudiente,
     filteredNavigation,
     welcomeMessage,
 

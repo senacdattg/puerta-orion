@@ -15,6 +15,7 @@ class Config:
     # Configuración del servidor
     HOST = os.environ.get('HOST', '0.0.0.0')
     PORT = int(os.environ.get('PORT', 5000))
+    FLASK_RUN_RELOAD = os.environ.get('FLASK_RUN_RELOAD', 'True').lower() == 'true'
     
     # Configuración de la base de datos
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.join(os.path.dirname(__file__), "instance", "puerta_orion.db")}'
@@ -22,10 +23,13 @@ class Config:
     
     # Configuración de CORS
     CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:4173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000').split(',')
+    CORS_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']
+    CORS_HEADERS = ['Content-Type', 'Authorization']
+    CORS_SUPPORTS_CREDENTIALS = True
     
     # Configuración de JWT
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or SECRET_KEY
-    JWT_ACCESS_TOKEN_EXPIRES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 1800))  # 30 minutos
+    JWT_ACCESS_TOKEN_EXPIRES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', 3600))  # 1 hora
     
     # Configuración de email
     MAIL_SERVER = os.environ.get('MAIL_SERVER')
@@ -73,3 +77,47 @@ config = {
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
+
+
+def get_config(env_name=None):
+    """
+    Obtiene la configuración según el entorno especificado.
+    
+    Args:
+        env_name (str, optional): Nombre del entorno ('development', 'production', 'testing').
+                                  Si no se especifica, usa el valor de FLASK_ENV.
+    
+    Returns:
+        class: Clase de configuración correspondiente al entorno
+    """
+    if not env_name:
+        env_name = os.environ.get('FLASK_ENV', 'development')
+    
+    return config.get(env_name, DevelopmentConfig)
+
+
+def validate_config():
+    """
+    Valida la configuración de la aplicación.
+    
+    Returns:
+        tuple: (is_valid, errors) donde is_valid es True si la configuración es válida
+               y errors es una lista de mensajes de error
+    """
+    errors = []
+    
+    # Validar variables de entorno críticas
+    if not os.environ.get('SECRET_KEY') and os.environ.get('FLASK_ENV') == 'production':
+        errors.append('SECRET_KEY no está configurada en producción')
+    
+    # Validar configuración de base de datos
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url and os.environ.get('FLASK_ENV') == 'production':
+        errors.append('DATABASE_URL no está configurada en producción')
+    
+    # Validar configuración de JWT
+    jwt_secret = os.environ.get('JWT_SECRET_KEY')
+    if not jwt_secret and os.environ.get('FLASK_ENV') == 'production':
+        errors.append('JWT_SECRET_KEY no está configurada en producción')
+    
+    return (len(errors) == 0, errors)

@@ -18,11 +18,11 @@
       <hr class="form-divider" />
 
       <div class="fila-texto">
-        <select v-model="form.tipoDocumento" required :disabled="modo === 'ver'">
+        <select v-model="form.tipoDocumento" required :disabled="modo === 'ver' || cargandoCatalogos">
           <option value="" disabled>¿Cuál es su tipo de documento?</option>
-          <option>Cédula</option>
-          <option>Tarjeta de identidad</option>
-          <option>Pasaporte</option>
+          <option v-for="tipo in tiposDocumento" :key="tipo.id" :value="tipo.id">
+            {{ tipo.nombre }}
+          </option>
         </select>
         <input v-model="form.numeroDocumento" type="text" placeholder="¿Cuál es su número de documento?" required
           :readonly="modo === 'ver'" />
@@ -32,10 +32,11 @@
 
       <div class="fila-texto">
         <input v-model="form.fechaNacimiento" type="date" :readonly="modo === 'ver'" />
-        <select v-model="form.genero" required :disabled="modo === 'ver'">
+        <select v-model="form.genero" required :disabled="modo === 'ver' || cargandoCatalogos">
           <option value="" disabled>¿Cuál es su género?</option>
-          <option value="masculino">Masculino</option>
-          <option value="femenino">Femenino</option>
+          <option v-for="sexo in sexos" :key="sexo.id" :value="sexo.valor">
+            {{ sexo.nombre }}
+          </option>
         </select>
       </div>
 
@@ -68,7 +69,7 @@
 
       <!-- Divider line below password fields -->
       <hr class="form-divider" />
-      
+
       <!-- Botones de navegación - SIEMPRE visibles para poder ver todas las secciones -->
       <div class="botones-formulario" style="justify-content: center; gap: 10px;">
         <button type="button" class="boton-formulario siguiente" style="width: 120px;" @click="siguienteSeccion">Siguiente</button>
@@ -213,7 +214,7 @@
             <span class="file-button">Hoja de Vida</span>
           </label>
         </div>
-        
+
         <div class="file-wrapper">
           <label class="file-label">
             <input @change="manejarArchivo('certificaciones', $event)" type="file" accept=".pdf,.doc,.docx"
@@ -280,6 +281,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
+import catalogosService from "@/services/catalogosService";
 
 // Props del componente
 const props = defineProps({
@@ -299,6 +301,11 @@ const emit = defineEmits(['submit', 'cancel']);
 
 const indiceActual = ref(0);
 const totalSecciones = 5;
+
+// Estado para catálogos
+const cargandoCatalogos = ref(false);
+const tiposDocumento = ref([]);
+const sexos = ref([]);
 
 const form = ref({
   // Básicos
@@ -376,6 +383,44 @@ function anteriorSeccion() {
   }
 }
 
+// Función para cargar catálogos desde la base de datos
+async function cargarCatalogos() {
+  cargandoCatalogos.value = true;
+  
+  try {
+    console.log('🔄 Cargando catálogos para formulario de entrenador...');
+    
+    // Usar el servicio de catálogos que ya está configurado
+    const catalogos = await catalogosService.cargarCatalogosFormulario();
+    
+    tiposDocumento.value = catalogos.tiposDocumento || [];
+    sexos.value = catalogos.sexos || [];
+    
+    console.log('✅ Tipos de documento cargados:', tiposDocumento.value.length);
+    console.log('✅ Sexos cargados:', sexos.value.length);
+    
+    console.log('✅ Catálogos cargados exitosamente');
+  } catch (error) {
+    console.error('❌ Error cargando catálogos:', error);
+    
+    // Datos de fallback
+    tiposDocumento.value = [
+      { id: 1, nombre: "Cédula de Ciudadanía" },
+      { id: 2, nombre: "Tarjeta de Identidad" },
+      { id: 3, nombre: "Cédula de Extranjería" },
+      { id: 4, nombre: "Pasaporte" }
+    ];
+    
+    sexos.value = [
+      { id: 1, valor: "masculino", nombre: "Masculino" },
+      { id: 2, valor: "femenino", nombre: "Femenino" },
+      { id: 3, valor: "otro", nombre: "Otro" }
+    ];
+  } finally {
+    cargandoCatalogos.value = false;
+  }
+}
+
 // Manejo del formulario
 function manejarSubmit() {
   // Validar contraseñas
@@ -409,7 +454,11 @@ function manejarArchivo(campo, event) {
 }
 
 // Cargar datos si se proporcionan
-onMounted(() => {
+onMounted(async () => {
+  // Cargar catálogos desde la base de datos
+  await cargarCatalogos();
+
+  // Cargar datos del formulario si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
     form.value = { ...form.value, ...props.datos };
   }

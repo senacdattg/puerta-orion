@@ -295,7 +295,7 @@
       <div class="fila-texto">
         <textarea
           v-model="form.observaciones_generales"
-          
+
           placeholder="Observaciones generales..."
           rows="4"
           :readonly="modo === 'ver'"
@@ -333,6 +333,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
+import catalogosService from "@/services/catalogosService";
 
 // Props del componente
 const props = defineProps({
@@ -467,19 +468,18 @@ function cancelar() {
 // Función para cargar datos de los selects
 async function cargarDatosSelects() {
   try {
-    // Aquí se harían las llamadas a la API para cargar los datos
-    // Por ahora se simulan con datos estáticos
-    tiposDocumento.value = [
-      { id_tipo_documento: 1, nombre_documento: "Cédula" },
-      { id_tipo_documento: 2, nombre_documento: "Tarjeta de identidad" },
-      { id_tipo_documento: 3, nombre_documento: "Pasaporte" }
-    ];
+    console.log('🔄 Cargando datos de catálogos desde la base de datos...');
 
-    sexos.value = [
-      { id_sexo: 1, sexo: true }, // Masculino
-      { id_sexo: 2, sexo: false }  // Femenino
-    ];
+    // Usar el servicio de catálogos que ya está configurado
+    const catalogos = await catalogosService.cargarCatalogosFormulario();
 
+    tiposDocumento.value = catalogos.tiposDocumento || [];
+    sexos.value = catalogos.sexos || [];
+
+    console.log('✅ Tipos de documento cargados:', tiposDocumento.value.length);
+    console.log('✅ Sexos cargados:', sexos.value.length);
+
+    // Datos estáticos para parentescos (no hay endpoint específico)
     parentescos.value = [
       { id_parentesco: 1, nombre: "Padre" },
       { id_parentesco: 2, nombre: "Madre" },
@@ -493,8 +493,24 @@ async function cargarDatosSelects() {
       // Ejemplo de estructura esperada
       // { id_deportista: 1, persona: { primer_nombre: "Juan", primer_apellido: "Pérez" } }
     ];
+
+    console.log('✅ Catálogos cargados exitosamente');
   } catch (error) {
-    console.error("Error cargando datos de selects:", error);
+    console.error("❌ Error cargando datos de selects:", error);
+
+    // Datos de fallback en caso de error
+    tiposDocumento.value = [
+      { id: 1, nombre: "Cédula de Ciudadanía" },
+      { id: 2, nombre: "Tarjeta de Identidad" },
+      { id: 3, nombre: "Cédula de Extranjería" },
+      { id: 4, nombre: "Pasaporte" }
+    ];
+
+    sexos.value = [
+      { id: 1, nombre: "Masculino" },
+      { id: 2, nombre: "Femenino" },
+      { id: 3, nombre: "Otro" }
+    ];
   }
 }
 
@@ -502,7 +518,7 @@ async function cargarDatosSelects() {
 onMounted(async () => {
   // Cargar datos de los selects
   await cargarDatosSelects();
-  
+
   // Cargar datos del formulario si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
     form.value = { ...form.value, ...props.datos };
@@ -512,9 +528,46 @@ onMounted(async () => {
 // Observar cambios en los datos
 watch(() => props.datos, (nuevosDatos) => {
   if (nuevosDatos && Object.keys(nuevosDatos).length > 0) {
-    form.value = { ...form.value, ...nuevosDatos };
+    console.log('Datos recibidos en formulario acudiente:', nuevosDatos);
+
+    // Mapear datos del usuario a campos del formulario
+    const mapeoDatos = {
+      // Información personal - mapeo desde estructura anidada del backend
+      'persona.primer_nombre': 'primer_nombre',
+      'persona.segundo_nombre': 'segundo_nombre',
+      'persona.primer_apellido': 'primer_apellido',
+      'persona.segundo_apellido': 'segundo_apellido',
+      'persona.documento': 'documento',
+      'persona.correo_electronico': 'correo_electronico',
+      'persona.telefono': 'telefono',
+      'persona.fecha_nacimiento': 'fecha_nacimiento',
+      'persona.direccion': 'direccion',
+
+      // Datos específicos del acudiente
+      parentesco: 'parentesco',
+      ocupacion: 'ocupacion',
+      lugar_trabajo: 'lugar_trabajo',
+      telefono_trabajo: 'telefono_trabajo',
+      telefono_emergencia: 'telefono_emergencia'
+    };
+
+    // Aplicar mapeo
+    Object.keys(mapeoDatos).forEach(datoKey => {
+      const formKey = mapeoDatos[datoKey];
+      if (nuevosDatos[datoKey] && form.value.hasOwnProperty(formKey)) {
+        form.value[formKey] = nuevosDatos[datoKey];
+        console.log(`Mapeado ${datoKey} -> ${formKey}: ${nuevosDatos[datoKey]}`);
+      }
+    });
+
+    // Mapear datos directos si existen
+    Object.keys(nuevosDatos).forEach(key => {
+      if (form.value.hasOwnProperty(key)) {
+        form.value[key] = nuevosDatos[key];
+      }
+    });
   }
-}, { deep: true });
+}, { deep: true, immediate: true });
 </script>
 
 <style scoped>

@@ -14,25 +14,15 @@ def init_database(app: Flask):
     """
     Inicializa la base de datos con la aplicación Flask.
     
+    NOTA: Esta función está deshabilitada porque la configuración
+    de la base de datos ahora se maneja en config.py para mayor
+    flexibilidad y consistencia.
+    
     Args:
         app (Flask): Instancia de la aplicación Flask
     """
-    # Configuración de la base de datos
-    app.config['SQLALCHEMY_DATABASE_URI'] = (
-        f"mysql+mysqlconnector://"
-        f"{os.environ.get('DB_USER', 'root')}:"
-        f"{os.environ.get('DB_PASSWORD', '')}@"
-        f"{os.environ.get('DB_HOST', 'localhost')}/"
-        f"{os.environ.get('DB_NAME', 'puerta_orion')}"
-    )
-    
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-    }
-    
-    # Inicializar la base de datos con la app
+    # La configuración de la base de datos ahora se maneja en config.py
+    # Solo inicializamos la base de datos con la app
     db.init_app(app)
     
     return db

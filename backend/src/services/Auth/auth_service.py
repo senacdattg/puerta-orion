@@ -156,8 +156,14 @@ class AuthService:
             if not secret_key:
                 raise AuthServiceError("JWT_SECRET_KEY no configurado")
             
+            # Convertir expires_in a segundos si es timedelta
+            if isinstance(expires_in, timedelta):
+                expires_seconds = int(expires_in.total_seconds())
+            else:
+                expires_seconds = int(expires_in)
+            
             # Calcular fecha de expiración
-            expiracion = datetime.utcnow() + timedelta(seconds=expires_in)
+            expiracion = datetime.utcnow() + timedelta(seconds=expires_seconds)
             
             # Obtener roles del usuario
             roles_usuario = []
@@ -166,7 +172,7 @@ class AuthService:
             
             # Payload del token
             payload = {
-                'user_id': usuario.id_usuario,
+                'usuario_id': usuario.id_usuario,
                 'username': usuario.usuario,
                 'persona_id': usuario.id_persona,
                 'roles': roles_usuario,
@@ -211,7 +217,11 @@ class AuthService:
         try:
             # Obtener configuración de expiración
             expires_in = current_app.config.get('JWT_ACCESS_TOKEN_EXPIRES', 3600)
-            fecha_expiracion = datetime.utcnow() + timedelta(seconds=expires_in)
+            if isinstance(expires_in, timedelta):
+                expires_seconds = int(expires_in.total_seconds())
+            else:
+                expires_seconds = int(expires_in)
+            fecha_expiracion = datetime.utcnow() + timedelta(seconds=expires_seconds)
             
             # Generar token único para la sesión
             token_sesion = self._generar_token_sesion()
@@ -345,18 +355,34 @@ class AuthService:
             Dict: Payload del token si es válido, None en caso contrario
         """
         try:
+            # Validar formato del token
+            if not token or len(token.split('.')) != 3:
+                self.logger.warning("Token JWT con formato inválido")
+                return None
+            
             secret_key = current_app.config.get('JWT_SECRET_KEY')
             if not secret_key:
+                self.logger.error("JWT_SECRET_KEY no configurado")
                 return None
             
             payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+            
+            # Verificar que el token no esté expirado
+            exp_timestamp = payload.get('exp')
+            import time
+            current_timestamp = int(time.time())
+            
+            if exp_timestamp and current_timestamp > exp_timestamp:
+                self.logger.warning("Token JWT expirado")
+                return None
+            
             return payload
             
         except jwt.ExpiredSignatureError:
             self.logger.warning("Token JWT expirado")
             return None
-        except jwt.InvalidTokenError:
-            self.logger.warning("Token JWT inválido")
+        except jwt.InvalidTokenError as e:
+            self.logger.warning(f"Token JWT inválido: {str(e)}")
             return None
         except Exception as e:
             self.logger.error(f"Error al verificar token JWT: {str(e)}")
@@ -373,20 +399,20 @@ class AuthService:
             bool: True si se cerró exitosamente, False en caso contrario
         """
         try:
-            # Verificar y decodificar el token JWT para obtener el user_id
+            # Verificar y decodificar el token JWT para obtener el usuario_id
             payload = self.verificar_token_jwt(token)
             if not payload:
                 self.logger.warning("Token JWT inválido o expirado para logout")
                 return False
             
-            user_id = payload.get('user_id')
-            if not user_id:
-                self.logger.warning("Token JWT no contiene user_id")
+            usuario_id = payload.get('usuario_id')
+            if not usuario_id:
+                self.logger.warning("Token JWT no contiene usuario_id")
                 return False
             
             # Buscar sesiones activas del usuario y cerrarlas
             sesiones_activas = SesionAuth.query.filter_by(
-                id_usuario=user_id,
+                id_usuario=usuario_id,
                 estado=True
             ).filter(
                 SesionAuth.fecha_expiracion > datetime.utcnow()
@@ -397,11 +423,11 @@ class AuthService:
                     sesion.estado = False
                 
                 db.session.commit()
-                self.logger.info(f"Sesión cerrada para usuario ID: {user_id}")
+                self.logger.info(f"Sesión cerrada para usuario ID: {usuario_id}")
                 return True
             
             # Si no hay sesiones activas, consideramos el logout exitoso
-            self.logger.info(f"No hay sesiones activas para usuario ID: {user_id}")
+            self.logger.info(f"No hay sesiones activas para usuario ID: {usuario_id}")
             return True
             
         except Exception as e:

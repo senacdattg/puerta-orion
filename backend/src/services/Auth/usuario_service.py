@@ -273,6 +273,12 @@ class UsuarioService:
             UsuarioServiceError: Si hay errores al asignar el rol
         """
         try:
+            # Verificar si el usuario ya tiene roles asignados
+            roles_existentes = UsuarioRol.query.filter_by(id_usuario=id_usuario).all()
+            if roles_existentes:
+                self.logger.info(f"Usuario {id_usuario} ya tiene roles asignados, omitiendo asignación de rol por defecto")
+                return
+            
             # Obtener o crear el rol por defecto
             rol_usuario = self._obtener_o_crear_rol_usuario()
             
