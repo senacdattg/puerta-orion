@@ -164,8 +164,10 @@
 }
 
 .content-grid {
+
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-column: span 1;
+    grid-template-columns: 1fr;
     gap: 30px;
 }
 
@@ -226,8 +228,8 @@
 }
 
 .panel-title {
-    font-size: 1.3rem;
-    font-weight: 600;
+    font-size: 1.9rem;
+    font-weight: 6px;
     color: #333;
     margin: 0;
     display: flex;
@@ -238,63 +240,6 @@
 .panel-actions {
     display: flex;
     gap: 10px;
-}
-
-/* Lista de Actividad */
-.activity-list {
-    padding: 20px;
-}
-
-.activity-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 15px;
-    padding: 15px 0;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.activity-item:last-child {
-    border-bottom: none;
-}
-
-.activity-icon {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9rem;
-    color: white;
-    flex-shrink: 0;
-}
-
-.activity-icon--success {
-    background-color: #28a745;
-}
-
-.activity-icon--info {
-    background-color: #17a2b8;
-}
-
-.activity-icon--warning {
-    background-color: #ffc107;
-}
-
-.activity-content {
-    flex: 1;
-}
-
-.activity-text {
-    font-size: 0.95rem;
-    color: #333;
-    margin: 0 0 5px 0;
-    line-height: 1.4;
-}
-
-.activity-time {
-    font-size: 0.8rem;
-    color: #666;
 }
 
 /* Responsive Design */

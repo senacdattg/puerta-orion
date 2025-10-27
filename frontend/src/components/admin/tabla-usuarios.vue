@@ -196,6 +196,7 @@ function roleColor(role) {
 <style scoped>
 .tabla-usuarios {
   width: 100%;
+  font-size: 18px;
   border-collapse: collapse;
   background-color: white;
   border-radius: 12px;
@@ -213,11 +214,11 @@ function roleColor(role) {
 
 .tabla-usuarios th {
   padding: 16px 20px;
-  font-size: 14px;
+  font-size: 22px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 2px solid #d1d5db;
-  text-align: left;
+  text-align: center;
 }
 
 .tabla-usuarios tbody tr {
@@ -240,6 +241,7 @@ function roleColor(role) {
   font-size: 14px;
   color: #374151;
   vertical-align: middle;
+  text-align: center;
 }
 
 .tabla-usuarios td:first-child {
