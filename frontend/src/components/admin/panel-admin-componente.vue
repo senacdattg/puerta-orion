@@ -102,10 +102,13 @@
                                 <div v-if="mostrarFiltros" class="control-item">
                                     <label class="control-label">Filtrar por rol</label>
                                     <select v-model="filtroRol" class="control-input">
-                                        <option value="todos">Todos</option>
-                                        <option value="admin">Administrador</option>
-                                        <option value="moderator">Moderador</option>
-                                        <option value="user">Usuario</option>
+                                        <option
+                                            v-for="opt in rolesOptions"
+                                            :key="opt.value"
+                                            :value="opt.value"
+                                        >
+                                            {{ opt.label }}
+                                        </option>
                                     </select>
                                 </div>
                             </div>
@@ -173,9 +176,10 @@
     </main>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
 import TablaUsuarios from '@/components/admin/tabla-usuarios.vue';
+import usuariosService from '@/services/usuariosService';
 
 // Estado del modal
 const mostrarModalRegistro = ref(false);
@@ -183,6 +187,24 @@ const mostrarFiltros = ref(false);
 const mostrarBusqueda = ref(false);
 const terminoBusqueda = ref('');
 const filtroRol = ref('todos');
+
+// Opciones de roles cargadas desde la API
+const rolesOptions = ref([{ value: 'todos', label: 'Todos' }]);
+
+// Cargar roles desde la API al montar el componente
+onMounted(async () => {
+    try {
+        const res = await usuariosService.listarRoles();
+        if (res?.success && Array.isArray(res.data)) {
+            rolesOptions.value = [
+                { value: 'todos', label: 'Todos' },
+                ...res.data.map(rol => ({ value: rol.nombre_rol, label: rol.nombre_rol }))
+            ];
+        }
+    } catch (e) {
+        console.error('Error cargando roles:', e);
+    }
+});
 
 // Funciones
 function abrirModalRegistro() {
