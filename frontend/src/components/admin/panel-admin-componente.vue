@@ -23,43 +23,17 @@
         <section class="stats-section">
             <div class="container">
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--users">
-                            <i class="fas fa-users"></i>
+                    <div
+                        v-for="tarjeta in tarjetasStats"
+                        :key="tarjeta.key"
+                        class="stat-card"
+                    >
+                        <div :class="['stat-icon', tarjeta.class]">
+                            <i :class="tarjeta.icon"></i>
                         </div>
                         <div class="stat-content">
-                            <span class="stat-number">156</span>
-                            <span class="stat-label">Usuarios Totales</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--admin">
-                            <i class="fas fa-user-shield"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-number">8</span>
-                            <span class="stat-label">Administradores</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--moderator">
-                            <i class="fas fa-user-tie"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-number">12</span>
-                            <span class="stat-label">Moderadores</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon stat-icon--pending">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <span class="stat-number">5</span>
-                            <span class="stat-label">Pendientes</span>
+                            <span class="stat-number">{{ tarjeta.count }}</span>
+                            <span class="stat-label">{{ tarjeta.label }}</span>
                         </div>
                     </div>
                 </div>
@@ -113,7 +87,12 @@
                                 </div>
                             </div>
                         </div>
-                        <TablaUsuarios :search-term="terminoBusqueda" :role-filter="filtroRol" />
+                        <TablaUsuarios
+                            :search-term="terminoBusqueda"
+                            :role-filter="filtroRol"
+                            @usuarios-cargados="setUsuarios"
+                            @usuario-actualizado="actualizarUsuario"
+                        />
                     </div>
 
                     <!-- Panel de Actividad Reciente -->
@@ -176,7 +155,7 @@
     </main>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
 import TablaUsuarios from '@/components/admin/tabla-usuarios.vue';
 import usuariosService from '@/services/usuariosService';
@@ -190,6 +169,95 @@ const filtroRol = ref('todos');
 
 // Opciones de roles cargadas desde la API
 const rolesOptions = ref([{ value: 'todos', label: 'Todos' }]);
+
+// Usuarios para conteos
+const usuariosPanel = ref([]);
+
+// Conteos computados
+const totalUsuarios = computed(() => usuariosPanel.value.length);
+
+// Contar usuarios por cada rol dinámicamente
+const conteosPorRol = computed(() => {
+    const conteos = {};
+    usuariosPanel.value.forEach(usuario => {
+        usuario.roles?.forEach(rol => {
+            if (!conteos[rol.nombre_rol]) {
+                conteos[rol.nombre_rol] = 0;
+            }
+            conteos[rol.nombre_rol]++;
+        });
+    });
+    return conteos;
+});
+
+// Generar tarjetas de estadísticas dinámicamente según los roles existentes
+const tarjetasStats = computed(() => {
+    const tarjetas = [
+        {
+            key: 'total',
+            label: 'Usuarios Totales',
+            count: totalUsuarios.value,
+            icon: 'fas fa-users',
+            class: 'stat-icon--users'
+        },
+        // Puedes agregar más tarjetas fijas aquí:
+        // {
+        //     key: 'ejemplo',
+        //     label: 'Mi Nueva Tarjeta',
+        //     count: 42, // El valor que quieras mostrar
+        //     icon: 'fas fa-star',
+        //     class: 'stat-icon--admin' // Clase CSS para el color
+        // }
+    ];
+
+    // Agregar una tarjeta por cada rol encontrado
+    Object.entries(conteosPorRol.value).forEach(([nombreRol, count]) => {
+        // Determinar icono según el rol
+        let iconClass = 'fas fa-user'; // Por defecto
+        let statClass = 'stat-icon--user'; // Por defecto (azul)
+
+        const rolLower = nombreRol.toLowerCase();
+
+        if (rolLower.includes('admin')) {
+            iconClass = 'fas fa-user-shield';
+            statClass = 'stat-icon--admin'; // Rojo
+        } else if (rolLower.includes('entrenador')) {
+            iconClass = 'fas fa-user-tie';
+            statClass = 'stat-icon--moderator'; // Amarillo
+        } else if (rolLower.includes('deportista')) {
+            iconClass = 'fas fa-running';
+            statClass = 'stat-icon--user'; // Azul
+        } else if (rolLower.includes('acudiente')) {
+            iconClass = 'fas fa-user-group';
+            statClass = 'stat-icon--user'; // Azul
+        } else if (rolLower.includes('usuario')) {
+          iconClass = 'fas fa-user';
+          statClass = 'stat-icon--moderator'; // Azul
+        }
+
+        tarjetas.push({
+            key: nombreRol.toLowerCase(),
+            label: nombreRol,
+            count: count,
+            icon: iconClass,
+            class: statClass
+        });
+    });
+
+    // Agregar pendientes (usuarios sin rol)
+    const sinRol = usuariosPanel.value.filter(u => !u.roles || u.roles.length === 0).length;
+    if (sinRol > 0) {
+        tarjetas.push({
+            key: 'pendientes',
+            label: 'Pendientes',
+            count: sinRol,
+            icon: 'fas fa-clock',
+            class: 'stat-icon--pending'
+        });
+    }
+
+    return tarjetas;
+});
 
 // Cargar roles desde la API al montar el componente
 onMounted(async () => {
@@ -221,5 +289,19 @@ function manejarUsuarioRegistrado(datosUsuario) {
     console.log('Usuario registrado desde admin-manager:', datosUsuario);
     // Aquí puedes agregar lógica adicional como actualizar la lista de usuarios
     // o mostrar notificaciones
+}
+
+// Handlers para eventos del hijo
+function setUsuarios(lista) {
+    usuariosPanel.value = Array.isArray(lista) ? lista : [];
+}
+
+function actualizarUsuario(usuarioActualizado) {
+    const idx = usuariosPanel.value.findIndex(u => u.id_usuario === usuarioActualizado?.id_usuario);
+    if (idx !== -1) {
+        const nuevaLista = [...usuariosPanel.value];
+        nuevaLista[idx] = { ...nuevaLista[idx], ...usuarioActualizado };
+        usuariosPanel.value = nuevaLista;
+    }
 }
 </script>

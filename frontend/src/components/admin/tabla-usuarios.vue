@@ -63,6 +63,8 @@ const props = defineProps({
   roleFilter: { type: String, default: 'todos' }
 });
 
+const emit = defineEmits(['usuarios-cargados', 'usuario-actualizado']);
+
 const users = ref([]);
 const roles = ref([]);
 const loading = ref(false);
@@ -87,6 +89,8 @@ async function cargarDatos() {
 
     if (usuariosResponse.success) {
       users.value = usuariosResponse.data;
+      // Emitir al padre la lista cargada
+      emit('usuarios-cargados', users.value);
     } else {
       throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
     }
@@ -152,6 +156,8 @@ async function updateRole(user, newRoleId) {
 
         // Debug: verificar que se actualizó
         console.log('Usuario actualizado:', updatedUsers[userIndex]);
+        // Notificar al padre el usuario actualizado
+        emit('usuario-actualizado', updatedUsers[userIndex]);
       }
 
       console.log(`Rol actualizado: ${user.usuario} ahora es ${response.data.roles[0]?.nombre_rol}`);
