@@ -10,7 +10,6 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
 from flask import Blueprint, request, jsonify
-from flask_cors import cross_origin
 
 from ..models.base import db
 from ..models.usuarios.usuario import Usuario
@@ -25,7 +24,6 @@ logger = obtener_registrador('aplicacion')
 
 
 @usuarios_bp.route('/', methods=['GET'])
-@cross_origin()
 @token_required()  # Habilitar autenticación
 def listar_usuarios():
     """
@@ -86,7 +84,6 @@ def listar_usuarios():
 
 
 @usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT'])
-@cross_origin()
 @token_required()  # Habilitar autenticación
 def cambiar_rol_usuario(id_usuario):
     """

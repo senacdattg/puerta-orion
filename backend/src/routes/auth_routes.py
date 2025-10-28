@@ -167,6 +167,115 @@ def asignar_rol():
         }), 500
 
 
+# @auth_bp.route('/setup-permissions', methods=['POST'])
+# def setup_permissions():
+#     """
+#     Endpoint para configurar los permisos básicos del sistema.
+#     """
+#     try:
+#         from ..models.roles_y_permisos.permiso import Permiso
+#         from ..models.base import db
+#         
+#         # Verificar si ya existen permisos
+#         permisos_existentes = Permiso.query.count()
+#         if permisos_existentes > 0:
+#             return jsonify({
+#                 'success': True,
+#                 'message': 'Los permisos ya existen en el sistema',
+#                 'total_permisos': permisos_existentes
+#             }), 200
+#         
+#         # Ejecutar seeder de permisos
+#         from ..seeders.seed_permisos import run as seed_permisos
+#         seed_permisos()
+#         
+#         # Contar permisos creados
+#         total_permisos = Permiso.query.count()
+#         
+#         return jsonify({
+#             'success': True,
+#             'message': 'Permisos creados exitosamente',
+#             'total_permisos': total_permisos
+#         }), 201
+#         
+#     except Exception as e:
+#         logger.error(f"Error configurando permisos: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'error': f'Error configurando permisos: {str(e)}',
+#             'status_code': 500
+#         }), 500
+
+
+@auth_bp.route('/user-permissions', methods=['GET'])
+@token_required()
+def obtener_permisos_usuario():
+    """
+    Endpoint para obtener los permisos específicos del usuario autenticado.
+    """
+    try:
+        # Obtener usuario actual
+        usuario_data = get_current_user()
+        if not usuario_data:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no autenticado',
+                'status_code': 401
+            }), 401
+        
+        # Obtener el objeto Usuario desde la base de datos
+        from ..models.usuarios.usuario import Usuario
+        usuario_actual = Usuario.query.get(usuario_data['id_usuario'])
+        if not usuario_actual:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado',
+                'status_code': 404
+            }), 404
+        
+        # Obtener todos los permisos del usuario a través de sus roles
+        permisos_usuario = set()
+        roles_info = []
+        
+        if hasattr(usuario_actual, 'roles') and usuario_actual.roles:
+            for rol in usuario_actual.roles:
+                roles_info.append({
+                    'id_rol': rol.id_rol,
+                    'nombre_rol': rol.nombre_rol,
+                    'descripcion': rol.descripcion
+                })
+                
+                # Obtener permisos del rol
+                if hasattr(rol, 'permisos') and rol.permisos:
+                    for permiso in rol.permisos:
+                        permisos_usuario.add(permiso.nombre)
+        
+        # Convertir set a lista ordenada
+        permisos_lista = sorted(list(permisos_usuario))
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'usuario': {
+                    'id_usuario': usuario_actual.id_usuario,
+                    'username': usuario_actual.usuario
+                },
+                'roles': roles_info,
+                'permisos': permisos_lista,
+                'total_permisos': len(permisos_lista)
+            },
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo permisos del usuario: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error obteniendo permisos: {str(e)}',
+            'status_code': 500
+        }), 500
+
+
 @auth_bp.route('/debug-roles', methods=['GET'])
 def debug_roles():
     """

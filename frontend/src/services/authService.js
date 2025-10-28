@@ -200,6 +200,37 @@ class AuthService {
   }
 
   /**
+   * Obtener permisos específicos del usuario autenticado
+   */
+  async getUserPermissions() {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/auth/user-permissions`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al obtener permisos')
+      }
+
+      return { success: true, ...data.data }
+    } catch (error) {
+      console.error('Error obteniendo permisos:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
+
+  /**
    * Verificar estado del perfil del usuario
    */
   async verificarEstadoPerfil() {

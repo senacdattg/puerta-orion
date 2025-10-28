@@ -30,7 +30,7 @@ class UsuariosService {
    */
   async listarUsuarios() {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios`, {
+      const response = await fetch(`${API_BASE_URL}/usuarios/`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
@@ -74,7 +74,7 @@ class UsuariosService {
    */
   async cambiarRolUsuario(idUsuario, idRol) {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/rol`, {
+      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/rol/`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ id_rol: idRol })

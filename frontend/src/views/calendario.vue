@@ -14,9 +14,34 @@ defineOptions({
 // Obtener el store de autenticación
 const authStore = useAuthStore();
 
-// Determinar el rol del usuario (Admin si es admin, Usuario en caso contrario)
+// Computed para obtener el rol del usuario desde la sesión (igual que en el menú)
 const rolUsuario = computed(() => {
-  return authStore.isAdmin ? 'Admin' : 'Usuario';
+  if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
+    return 'Usuario'
+  }
+
+  // Obtener el primer rol del usuario (o el más relevante)
+  const roles = authStore.user.roles
+  const roleNames = roles.map(role =>
+    typeof role === 'string' ? role : role.nombre_rol
+  )
+
+  // Priorizar roles en orden de importancia
+  if (roleNames.includes('SuperAdmin')) {
+    return 'SuperAdmin'
+  } else if (roleNames.includes('Administrador')) {
+    return 'Administrador'
+  } else if (roleNames.includes('Entrenador')) {
+    return 'Entrenador'
+  } else if (roleNames.includes('Deportista')) {
+    return 'Deportista'
+  } else if (roleNames.includes('Acudiente')) {
+    return 'Acudiente'
+  } else if (roleNames.includes('usuario')) {
+    return 'Usuario'
+  }
+
+  return 'Usuario'
 });
 </script>
 
