@@ -83,10 +83,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
