@@ -126,6 +126,11 @@ import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 
+// Definir nombre del componente para evitar error del linter
+defineOptions({
+  name: 'EventosView'
+})
+
 const router = useRouter()
 const filtroCategoria = ref('')
 const filtroEstado = ref('')
