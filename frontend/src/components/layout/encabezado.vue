@@ -28,8 +28,8 @@
         </li>
 
         <!-- Opción de cerrar sesión -->
-        <li v-if="authStore.estaAutenticado" class="logout-item">
-          <a @click="handleLogout" class="menu-link logout-link">
+        <li v-if="authStore.estaAutenticado">
+          <a @click="handleLogout" class="menu-link">
             <i class="fas fa-sign-out-alt icono-menu"></i> Cerrar Sesión
           </a>
         </li>
@@ -42,6 +42,11 @@
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+
+// Definir nombre del componente para evitar error del linter
+defineOptions({
+  name: 'EncabezadoComponent'
+})
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -80,7 +85,7 @@ const userRole = computed(() => {
   } else if (roleNames.includes('Acudiente')) {
     return 'Acudiente'
   } else if (roleNames.includes('usuario')) {
-    return 'Aspirante'
+    return 'Usuario'
   }
 
   return 'Usuario'
@@ -125,7 +130,7 @@ async function handleLogout() {
 
 function cargarOpciones() {
   const opcionesPorRol = {
-    Aspirante: [
+    Usuario: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
@@ -163,7 +168,7 @@ function cargarOpciones() {
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
       { texto: "Panel Admin", link: "/admin-manager", icono: "fas fa-cog" },
     ],
-    Usuario: [
+    UsuarioSinAuth: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
@@ -171,7 +176,7 @@ function cargarOpciones() {
   }
 
   const rolActual = userRole.value
-  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['Usuario']
+  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['UsuarioSinAuth']
 }
 
 // Watcher para recargar opciones cuando cambie el rol del usuario
@@ -210,7 +215,7 @@ onBeforeUnmount(() => {
 }
 
 .usuario-nombre {
-  color: #333;
+  color: #000000;
   font-size: 14px;
   font-weight: 500;
   display: flex;
@@ -223,33 +228,18 @@ onBeforeUnmount(() => {
   color: #007bff;
 }
 
-.menu-link {
+/* .menu-link {
   text-decoration: none;
   color: inherit;
   display: flex;
   align-items: center;
   padding: 10px 15px;
   transition: background-color 0.3s ease;
-}
+} */
 
-.menu-link:hover {
+/* .menu-link:hover {
   background-color: rgba(0, 123, 255, 0.1);
-}
-
-.logout-item {
-  border-top: 1px solid #e0e0e0;
-  margin-top: 8px;
-  padding-top: 8px;
-}
-
-.logout-link {
-  color: #dc3545 !important;
-  cursor: pointer;
-}
-
-.logout-link:hover {
-  background-color: rgba(220, 53, 69, 0.1) !important;
-}
+} */
 
 @media (max-width: 768px) {
   .usuario-info {
