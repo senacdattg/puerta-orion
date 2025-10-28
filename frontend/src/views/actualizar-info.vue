@@ -1,5 +1,7 @@
 <template>
-  <div class="actualizar-info-page">
+  <main class="actualizar-info-page">
+    <Encabezado />
+    <TituloClub />
     <div class="actualizar-container">
       <div class="actualizar-header">
         <h1 class="actualizar-title">
@@ -81,13 +83,17 @@
         </form>
       </div>
     </div>
-  </div>
+    <FooterEnhanced />
+  </main>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import Encabezado from '@/components/layout/encabezado.vue'
+import TituloClub from '@/components/ui/titulo-club.vue'
+import FooterEnhanced from '@/components/layout/pie.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
