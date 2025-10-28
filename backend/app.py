@@ -41,8 +41,6 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
 
     app = Flask(__name__)
-
-    CORS(app, origins=["http://localhost:5173"])
     
     # Cargar configuración
     app.config.from_object(config[config_name])
@@ -52,45 +50,13 @@ def create_app(config_name=None):
     if not is_valid:
         app.logger.warning(f"Configuración con problemas: {', '.join(errors)}")
     
-    # Configuración simple de CORS (mantener compatibilidad con el código actual)
-    @app.after_request
-    def after_request(response):
-        # Usar configuración de CORS desde config.py
-        origins = app.config.get('CORS_ORIGINS', ['*'])
-        if '*' in origins:
-            response.headers['Access-Control-Allow-Origin'] = '*'
-        else:
-            origin = request.headers.get('Origin')
-            if origin in origins:
-                response.headers['Access-Control-Allow-Origin'] = origin
-        
-        response.headers['Access-Control-Allow-Methods'] = ','.join(app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']))
-        response.headers['Access-Control-Allow-Headers'] = ','.join(app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']))
-        
-        if app.config.get('CORS_SUPPORTS_CREDENTIALS', True):
-            response.headers['Access-Control-Allow-Credentials'] = 'true'
-        
-        return response
-
-    @app.before_request
-    def handle_preflight():
-        if request.method == "OPTIONS":
-            response = make_response()
-            origins = app.config.get('CORS_ORIGINS', ['*'])
-            if '*' in origins:
-                response.headers['Access-Control-Allow-Origin'] = '*'
-            else:
-                origin = request.headers.get('Origin')
-                if origin in origins:
-                    response.headers['Access-Control-Allow-Origin'] = origin
-            
-            response.headers['Access-Control-Allow-Methods'] = ','.join(app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']))
-            response.headers['Access-Control-Allow-Headers'] = ','.join(app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']))
-            
-            if app.config.get('CORS_SUPPORTS_CREDENTIALS', True):
-                response.headers['Access-Control-Allow-Credentials'] = 'true'
-            
-            return response
+    # Configurar CORS usando flask-cors con configuración desde config.py
+    origins = app.config.get('CORS_ORIGINS', ['*'])
+    CORS(app, 
+         origins=origins,
+         methods=app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']),
+         allow_headers=app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
+         supports_credentials=app.config.get('CORS_SUPPORTS_CREDENTIALS', True))
 
     # Inicializar sistema de logs
     gestor_logs.inicializar_aplicacion(app)
