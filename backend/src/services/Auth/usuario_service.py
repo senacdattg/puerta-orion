@@ -21,6 +21,8 @@ from src.models.personas.persona import Persona
 from src.models.usuarios.usuario import Usuario
 from src.models.roles_y_permisos.rol import Rol
 from src.models.roles_y_permisos.usuario_rol import UsuarioRol
+from src.models.deportistas.deportista import Deportista
+from src.models.acudientes.acudiente import Acudiente
 from src.utils.logger import obtener_registrador
 
 
@@ -44,14 +46,19 @@ class UsuarioService:
     def registrar_usuario_completo(
         self, 
         datos_persona: Dict[str, Any], 
-        datos_usuario: Dict[str, Any]
+        datos_usuario: Dict[str, Any],
+        rol_opcional: str = None,
+        datos_rol: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
-        Registra una persona y crea su usuario asociado.
+        Registra una persona y crea su usuario asociado, opcionalmente creando
+        registro de Deportista o Acudiente si se especifica el rol.
         
         Args:
             datos_persona (Dict): Datos de la persona a registrar
             datos_usuario (Dict): Datos del usuario a crear
+            rol_opcional (str): Rol opcional ('deportista' o 'acudiente')
+            datos_rol (Dict): Datos adicionales para el rol (opcional)
             
         Returns:
             Dict: Información del usuario creado (sin password)
@@ -68,7 +75,12 @@ class UsuarioService:
             self._validar_unicidad(datos_persona, datos_usuario)
             
             # Crear persona y usuario en una transacción
-            usuario_creado = self._crear_persona_y_usuario(datos_persona, datos_usuario)
+            usuario_creado = self._crear_persona_y_usuario(
+                datos_persona, 
+                datos_usuario, 
+                rol_opcional,
+                datos_rol
+            )
             
             self.logger.info(f"Usuario registrado exitosamente: {usuario_creado['usuario']}")
             
@@ -169,13 +181,21 @@ class UsuarioService:
         if Usuario.query.filter_by(usuario=username).first():
             raise UsuarioServiceError(f"Ya existe un usuario con el nombre {username}")
     
-    def _crear_persona_y_usuario(self, datos_persona: Dict[str, Any], datos_usuario: Dict[str, Any]) -> Dict[str, Any]:
+    def _crear_persona_y_usuario(
+        self, 
+        datos_persona: Dict[str, Any], 
+        datos_usuario: Dict[str, Any],
+        rol_opcional: str = None,
+        datos_rol: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
         """
-        Crea la persona, el usuario y asigna el rol por defecto en una transacción atómica.
+        Crea la persona, el usuario y opcionalmente Deportista o Acudiente en una transacción atómica.
         
         Args:
             datos_persona (Dict): Datos de la persona
             datos_usuario (Dict): Datos del usuario
+            rol_opcional (str): Rol opcional ('deportista' o 'acudiente')
+            datos_rol (Dict): Datos adicionales para el rol
             
         Returns:
             Dict: Información del usuario creado
@@ -194,6 +214,26 @@ class UsuarioService:
             
             # Asignar rol por defecto
             self._asignar_rol_por_defecto(usuario.id_usuario)
+            
+            # Si se especifica un rol, crear el registro correspondiente
+            if rol_opcional and rol_opcional in ['deportista', 'acudiente']:
+                self._crear_registro_rol(usuario.id_persona, rol_opcional, datos_rol)
+                
+                # Asignar rol específico además del rol por defecto
+                rol_especifico = Rol.query.filter_by(nombre_rol=rol_opcional.capitalize()).first()
+                if rol_especifico:
+                    # Verificar si ya tiene el rol
+                    rol_existente = UsuarioRol.query.filter_by(
+                        id_usuario=usuario.id_usuario,
+                        id_rol=rol_especifico.id_rol
+                    ).first()
+                    
+                    if not rol_existente:
+                        usuario_rol = UsuarioRol(
+                            id_usuario=usuario.id_usuario,
+                            id_rol=rol_especifico.id_rol
+                        )
+                        db.session.add(usuario_rol)
             
             # Commit de la transacción
             db.session.commit()
@@ -261,6 +301,69 @@ class UsuarioService:
         
         db.session.add(usuario)
         return usuario
+    
+    def _crear_registro_rol(self, id_persona: int, rol: str, datos: Dict[str, Any]) -> None:
+        """
+        Crea un registro de Deportista o Acudiente según el rol especificado.
+        
+        Args:
+            id_persona (int): ID de la persona asociada
+            rol (str): Tipo de rol ('deportista' o 'acudiente')
+            datos (Dict): Datos adicionales para el rol (opcional)
+            
+        Raises:
+            UsuarioServiceError: Si hay errores en la creación
+        """
+        from datetime import date
+        
+        try:
+            if rol == 'deportista':
+                # Verificar que no exista ya un deportista para esta persona
+                deportista_existente = Deportista.query.filter_by(id_persona=id_persona).first()
+                if deportista_existente:
+                    raise UsuarioServiceError("Ya existe un registro de deportista para esta persona")
+                
+                # Validar que se proporcione id_categoria (obligatorio)
+                if not datos or not datos.get('id_categoria'):
+                    raise UsuarioServiceError("El campo 'id_categoria' es obligatorio para crear un deportista")
+                
+                deportista = Deportista(
+                    id_persona=id_persona,
+                    id_categoria=datos['id_categoria'],
+                    peso=datos.get('peso'),
+                    altura=datos.get('altura'),
+                    fecha_ingreso=datos.get('fecha_ingreso', date.today()),
+                    fecha_nacimiento=datos.get('fecha_nacimiento'),
+                    id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
+                    id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
+                    id_mensualidad=datos.get('id_mensualidad'),
+                    id_informacion_deportiva=datos.get('id_informacion_deportiva'),
+                    id_eps=datos.get('id_eps')
+                )
+                db.session.add(deportista)
+                self.logger.info(f"Registro de deportista creado para persona ID: {id_persona}")
+            
+            elif rol == 'acudiente':
+                # Verificar que no exista ya un acudiente para esta persona
+                acudiente_existente = Acudiente.query.filter_by(id_persona=id_persona).first()
+                if acudiente_existente:
+                    raise UsuarioServiceError("Ya existe un registro de acudiente para esta persona")
+                
+                acudiente = Acudiente(
+                    id_persona=id_persona,
+                    estado=datos.get('estado', True) if datos else True
+                )
+                db.session.add(acudiente)
+                self.logger.info(f"Registro de acudiente creado para persona ID: {id_persona}")
+            
+            else:
+                raise UsuarioServiceError(f"Rol inválido: {rol}")
+                
+        except UsuarioServiceError:
+            raise
+        except Exception as e:
+            self.logger.error(f"Error al crear registro de {rol}: {str(e)}")
+            raise UsuarioServiceError(f"Error al crear registro de {rol}: {str(e)}")
     
     def _asignar_rol_por_defecto(self, id_usuario: int) -> None:
         """

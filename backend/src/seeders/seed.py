@@ -31,6 +31,10 @@ from backend.src.seeders import (
     seed_parentesco,
     seed_tipo_enfermedad,
     seed_diagnostico,
+    seed_ciudad_residencia,
+    seed_escuela,
+    seed_institucion_registro,
+    seed_eps,
     seed_permisos,
     seed_roles,
     seed_superadmin
@@ -66,6 +70,10 @@ def run_all_seeders():
             seed_tipo_evento.run()
             seed_metodo_pago.run()
             seed_parentesco.run()
+            seed_ciudad_residencia.run()
+            seed_escuela.run()
+            seed_institucion_registro.run()
+            seed_eps.run()
             
             # PASO 2: Tablas con dependencias
             print(" PASO 2: Insertando tablas con dependencias...")

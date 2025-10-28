@@ -1,0 +1,611 @@
+"""
+Servicio para registro completo de deportistas.
+
+Responsabilidad:
+- Registrar deportista con toda su información relacionada
+- Gestionar información deportiva
+- Asociar diagnósticos al deportista
+- Coordinar transacciones de base de datos
+
+Este módulo sigue los principios SRP, KISS, DRY, POO y SOLID.
+"""
+
+from typing import Dict, Any, Optional, List
+from datetime import date, datetime
+from sqlalchemy.exc import IntegrityError
+
+from ..models.base import db
+from ..models.deportistas.deportista import Deportista
+from ..models.deportistas.informacion_deportiva import InformacionDeportiva
+from ..models.salud.diagnostico_deportista import DiagnosticoDeportista
+from ..models.salud.diagnostico import Diagnostico
+from ..models.salud.tipo_enfermedad import TipoEnfermedad
+from ..models.personas.persona import Persona
+from ..models.categorias.categoria import Categoria
+from ..utils.logger import obtener_registrador
+
+
+class RegistroDeportistaService:
+    """Servicio para registro completo de deportistas."""
+
+    @staticmethod
+    def _obtener_logger():
+        """Obtiene el logger configurado."""
+        return obtener_registrador('aplicacion')
+
+    @staticmethod
+    def _calcular_categoria_por_fecha_nacimiento(fecha_nacimiento: int) -> Optional[int]:
+        """
+        Calcula la categoría del deportista basándose en su fecha de nacimiento.
+        
+        Args:
+            fecha_nacimiento: Año de nacimiento del deportista
+            
+        Returns:
+            int: ID de la categoría correspondiente o None si no se encuentra
+        """
+        logger = RegistroDeportistaService._obtener_logger()
+        
+        try:
+            # Calcular la edad actual
+            from datetime import date
+            año_actual = date.today().year
+            edad = año_actual - fecha_nacimiento
+            
+            # Buscar la categoría que corresponde a esta edad
+            categoria = Categoria.query.filter(
+                Categoria.edad_minima <= edad,
+                Categoria.edad_maxima >= edad,
+                Categoria.estado == True
+            ).first()
+            
+            if categoria:
+                logger.info(f'Categoría calculada para edad {edad}: {categoria.nombre_categoria}')
+                return categoria.id_categoria
+            else:
+                logger.warning(f'No se encontró categoría para edad {edad}')
+                return None
+                
+        except Exception as e:
+            logger.error(f'Error al calcular categoría por fecha de nacimiento: {str(e)}')
+            return None
+
+    @staticmethod
+    def _validar_ids(datos: Dict[str, Any]) -> tuple[bool, Optional[str]]:
+        """
+        Valida que todos los IDs proporcionados existan en sus respectivas tablas.
+        
+        Args:
+            datos: Diccionario con los datos del deportista
+            
+        Returns:
+            tuple: (True, None) si todo es válido, (False, mensaje_error) si hay error
+        """
+        logger = RegistroDeportistaService._obtener_logger()
+        
+        # Importar modelos necesarios
+        from ..models.categorias.grupo_sanguineo import GrupoSanguineo
+        from ..models.categorias.ciudad_residencia import CiudadResidencia
+        from ..models.catalogos.eps import EPS
+        from ..models.categorias.escuela import Escuela
+        from ..models.categorias.deporte import Deporte
+        from ..models.categorias.institucion_registro import InstitucionRegistro
+        from ..models.salud.tipo_enfermedad import TipoEnfermedad
+        
+        datos_deportista = datos.get('datos_deportista', {})
+        informacion_deportiva = datos.get('informacion_deportiva', {})
+        
+        # Validar ID de persona
+        if datos_deportista.get('id_persona'):
+            persona = Persona.query.filter_by(id_persona=datos_deportista['id_persona']).first()
+            if not persona:
+                return False, 'La persona especificada no existe'
+        
+        # Validar tipo sanguíneo
+        if datos_deportista.get('id_tipo_sanguineo'):
+            tipo_sangre = GrupoSanguineo.query.filter_by(id_tipo_sangre=datos_deportista['id_tipo_sanguineo']).first()
+            if not tipo_sangre:
+                return False, 'El tipo sanguíneo especificado no existe'
+        
+        # Validar ciudad de residencia
+        if datos_deportista.get('id_ciudad_recidencia'):
+            ciudad = CiudadResidencia.query.filter_by(id_ciudad=datos_deportista['id_ciudad_recidencia']).first()
+            if not ciudad:
+                return False, 'La ciudad de residencia especificada no existe'
+        
+        # Validar EPS
+        if datos_deportista.get('id_eps'):
+            eps = EPS.query.filter_by(id_eps=datos_deportista['id_eps']).first()
+            if not eps:
+                return False, 'La EPS especificada no existe'
+        
+        # Validar escuela
+        if informacion_deportiva.get('id_escuela'):
+            escuela = Escuela.query.filter_by(id_escuela=informacion_deportiva['id_escuela']).first()
+            if not escuela:
+                return False, 'La escuela especificada no existe'
+        
+        # Validar deporte
+        if informacion_deportiva.get('id_deporte'):
+            deporte = Deporte.query.filter_by(id_deporte=informacion_deportiva['id_deporte']).first()
+            if not deporte:
+                return False, 'El deporte especificado no existe'
+        
+        # Validar institución de registro
+        if informacion_deportiva.get('id_institucion_registro'):
+            institucion = InstitucionRegistro.query.filter_by(id_institucion=informacion_deportiva['id_institucion_registro']).first()
+            if not institucion:
+                return False, 'La institución de registro especificada no existe'
+        
+        # Validar tipo de enfermedad
+        if datos.get('tipo_enfermedad'):
+            tipo_enfermedad = TipoEnfermedad.query.filter_by(id_tipo_enfermedad=datos['tipo_enfermedad']).first()
+            if not tipo_enfermedad:
+                return False, 'El tipo de enfermedad especificado no existe'
+        
+        # Validar diagnósticos
+        if datos.get('diagnostico'):
+            for id_diagnostico in datos['diagnostico']:
+                diagnostico = Diagnostico.query.filter_by(id_diagnostico=id_diagnostico).first()
+                if not diagnostico:
+                    return False, f'El diagnóstico con ID {id_diagnostico} no existe'
+        
+        return True, None
+
+    @staticmethod
+    def registrar_deportista_nuevo(datos: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Registra un nuevo deportista con validaciones completas y cálculo automático de categoría.
+        
+        Args:
+            datos: Diccionario con todos los datos del deportista
+                - datos_deportista (dict): Datos básicos del deportista
+                - informacion_deportiva (dict): Información deportiva
+                - tipo_enfermedad (int): ID del tipo de enfermedad seleccionado
+                - diagnostico (list): Lista de IDs de diagnósticos
+                
+        Returns:
+            Dict: Respuesta con el resultado de la operación
+        """
+        logger = RegistroDeportistaService._obtener_logger()
+        
+        try:
+            # Validar estructura de datos
+            if 'datos_deportista' not in datos:
+                return {
+                    'success': False,
+                    'message': 'Los datos del deportista son requeridos',
+                    'status_code': 400
+                }
+            
+            datos_deportista = datos['datos_deportista']
+            
+            # Validar campos obligatorios
+            campos_requeridos = ['id_persona', 'fecha_nacimiento']
+            campos_faltantes = [
+                campo for campo in campos_requeridos
+                if campo not in datos_deportista or datos_deportista[campo] is None
+            ]
+            
+            if campos_faltantes:
+                return {
+                    'success': False,
+                    'message': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}',
+                    'status_code': 400
+                }
+            
+            # Validar que todos los IDs existen
+            es_valido, mensaje_error = RegistroDeportistaService._validar_ids(datos)
+            if not es_valido:
+                return {
+                    'success': False,
+                    'message': mensaje_error,
+                    'status_code': 400
+                }
+            
+            # Validar persona existe
+            persona = Persona.query.filter_by(id_persona=datos_deportista['id_persona']).first()
+            if not persona:
+                return {
+                    'success': False,
+                    'message': 'La persona especificada no existe',
+                    'status_code': 404
+                }
+            
+            # Verificar que no existe ya un deportista
+            deportista_existente = Deportista.query.filter_by(id_persona=datos_deportista['id_persona']).first()
+            if deportista_existente:
+                return {
+                    'success': False,
+                    'message': 'Ya existe un deportista para esta persona',
+                    'status_code': 409
+                }
+            
+            # Validar tipo de enfermedad y diagnósticos
+            tipo_enfermedad_id = datos.get('tipo_enfermedad')
+            diagnosticos = datos.get('diagnostico', [])
+            
+            if tipo_enfermedad_id:
+                # Si se selecciona tipo de enfermedad, debe haber diagnósticos
+                if not diagnosticos or len(diagnosticos) == 0:
+                    return {
+                        'success': False,
+                        'message': 'Si selecciona un tipo de enfermedad, debe seleccionar al menos un diagnóstico',
+                        'status_code': 400
+                    }
+                
+                # Validar que los diagnósticos pertenecen al tipo de enfermedad seleccionado
+                for id_diagnostico in diagnosticos:
+                    diagnostico = Diagnostico.query.filter_by(id_diagnostico=id_diagnostico).first()
+                    if diagnostico and diagnostico.id_tipo_enfermedad != tipo_enfermedad_id:
+                        return {
+                            'success': False,
+                            'message': f'El diagnóstico con ID {id_diagnostico} no corresponde al tipo de enfermedad seleccionado',
+                            'status_code': 400
+                        }
+            
+            # Calcular categoría automáticamente
+            fecha_nacimiento = datos_deportista['fecha_nacimiento']
+            id_categoria = RegistroDeportistaService._calcular_categoria_por_fecha_nacimiento(fecha_nacimiento)
+            
+            if not id_categoria:
+                return {
+                    'success': False,
+                    'message': f'No se pudo determinar la categoría para el año de nacimiento {fecha_nacimiento}',
+                    'status_code': 400
+                }
+            
+            # Procesar información deportiva si existe
+            id_informacion_deportiva = None
+            if 'informacion_deportiva' in datos and datos['informacion_deportiva']:
+                info_deportiva = datos['informacion_deportiva']
+                
+                # Si recomendacion_medica es false, descripcion_recomendacion debe ser null
+                recomendacion_medica = info_deportiva.get('recomendacion_medica', False)
+                descripcion_recomendacion = None if not recomendacion_medica else info_deportiva.get('descripcion_recomendacion')
+                
+                informacion = InformacionDeportiva(
+                    id_persona=datos_deportista['id_persona'],
+                    practica_otro_deporte=info_deportiva.get('practica_otro_deporte', False),
+                    participa_escuela=info_deportiva.get('participa_escuela', False),
+                    recomendacion_medica=recomendacion_medica,
+                    descripcion_recomendacion=descripcion_recomendacion,
+                    id_escuela=info_deportiva.get('id_escuela'),
+                    id_deporte=info_deportiva.get('id_deporte'),
+                    id_institucion_registro=info_deportiva.get('id_institucion_registro')
+                )
+                
+                db.session.add(informacion)
+                db.session.flush()
+                id_informacion_deportiva = informacion.id_informacion_deportiva
+                logger.info(f'Información deportiva creada: ID {id_informacion_deportiva}')
+            
+            # Crear el deportista
+            deportista = Deportista(
+                id_persona=datos_deportista['id_persona'],
+                id_categoria=id_categoria,
+                fecha_ingreso=date.today(),
+                fecha_nacimiento=fecha_nacimiento,
+                id_tipo_sanguineo=datos_deportista.get('id_tipo_sanguineo'),
+                id_ciudad_recidencia=datos_deportista.get('id_ciudad_recidencia'),
+                id_informacion_deportiva=id_informacion_deportiva,
+                id_eps=datos_deportista.get('id_eps')
+            )
+            
+            db.session.add(deportista)
+            db.session.flush()
+            
+            # Asociar diagnósticos si existen
+            if diagnosticos and len(diagnosticos) > 0:
+                for id_diagnostico in diagnosticos:
+                    diagnostico_deportista = DiagnosticoDeportista(
+                        id_deportista=deportista.id_deportista,
+                        id_diagnostico=id_diagnostico,
+                        fecha=date.today()
+                    )
+                    db.session.add(diagnostico_deportista)
+                logger.info(f'{len(diagnosticos)} diagnóstico(s) asociados al deportista {deportista.id_deportista}')
+            
+            # Commit de toda la transacción
+            db.session.commit()
+            
+            # Obtener el deportista completo con relaciones
+            deportista_completo = Deportista.query.filter_by(id_deportista=deportista.id_deportista).first()
+            categoria_info = deportista_completo.categoria
+            
+            logger.info(f'Deportista registrado exitosamente: ID {deportista.id_deportista}')
+            
+            return {
+                'status': 'success',
+                'message': 'Deportista registrado correctamente',
+                'data': {
+                    'id_deportista': deportista.id_deportista,
+                    'categoria': categoria_info.nombre_categoria if categoria_info else 'Desconocida',
+                    'nombre_persona': persona.nombre_completo
+                },
+                'status_code': 201
+            }
+            
+        except IntegrityError as e:
+            db.session.rollback()
+            logger.error(f'Error de integridad al registrar deportista: {str(e)}')
+            return {
+                'status': 'error',
+                'message': 'Error de duplicación de datos',
+                'status_code': 409
+            }
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f'Error inesperado al registrar deportista: {str(e)}')
+            return {
+                'status': 'error',
+                'message': f'Error al registrar deportista: {str(e)}',
+                'status_code': 500
+            }
+
+    @staticmethod
+    def obtener_diagnosticos_por_tipo_enfermedad(id_tipo_enfermedad: int) -> Dict[str, Any]:
+        """
+        Obtiene los diagnósticos filtrados por tipo de enfermedad.
+        
+        Args:
+            id_tipo_enfermedad: ID del tipo de enfermedad
+            
+        Returns:
+            Dict: Respuesta con los diagnósticos
+        """
+        logger = RegistroDeportistaService._obtener_logger()
+        
+        try:
+            # Verificar que el tipo de enfermedad existe
+            tipo_enfermedad = TipoEnfermedad.query.filter_by(id_tipo_enfermedad=id_tipo_enfermedad).first()
+            if not tipo_enfermedad:
+                return {
+                    'success': False,
+                    'message': 'Tipo de enfermedad no encontrado',
+                    'status_code': 404
+                }
+            
+            # Obtener diagnósticos por tipo de enfermedad
+            diagnosticos = Diagnostico.query.filter_by(id_tipo_enfermedad=id_tipo_enfermedad).all()
+            
+            return {
+                'success': True,
+                'data': [diagnostico.to_dict() for diagnostico in diagnosticos],
+                'status_code': 200
+            }
+            
+        except Exception as e:
+            logger.error(f'Error al obtener diagnósticos por tipo de enfermedad: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error al obtener diagnósticos: {str(e)}',
+                'status_code': 500
+            }
+
+    @staticmethod
+    def obtener_informacion_completa_deportista(id_deportista: int) -> Dict[str, Any]:
+        """
+        Obtiene la información completa de un deportista por su ID.
+        
+        Incluye:
+        - Datos personales (nombre, documento, tipo sanguíneo, ciudad, EPS)
+        - Información deportiva (deporte, escuela, institución, categoría)
+        - Diagnósticos médicos asociados
+        
+        Args:
+            id_deportista: ID del deportista
+            
+        Returns:
+            Dict: Respuesta con toda la información del deportista
+        """
+        logger = RegistroDeportistaService._obtener_logger()
+        
+        try:
+            # Validar que el ID es numérico
+            if not isinstance(id_deportista, int) or id_deportista <= 0:
+                return {
+                    'status': 'error',
+                    'message': 'El ID del deportista debe ser un número entero positivo',
+                    'status_code': 400
+                }
+            
+            # Buscar el deportista con todas sus relaciones
+            deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
+            
+            if not deportista:
+                return {
+                    'status': 'error',
+                    'message': 'El deportista con el ID especificado no existe',
+                    'status_code': 404
+                }
+            
+            # Construir datos de persona
+            persona_data = {}
+            if deportista.persona:
+                persona = deportista.persona
+                persona_data = {
+                    'id_persona': persona.id_persona,
+                    'nombre_completo': persona.nombre_completo,
+                    'primer_nombre': persona.primer_nombre,
+                    'segundo_nombre': persona.segundo_nombre,
+                    'primer_apellido': persona.primer_apellido,
+                    'segundo_apellido': persona.segundo_apellido,
+                    'documento': persona.documento,
+                    'correo_electronico': persona.correo_electronico,
+                    'telefono': persona.telefono,
+                    'direccion': persona.direccion
+                }
+                
+                # Agregar fecha de nacimiento si existe
+                if deportista.fecha_nacimiento:
+                    persona_data['fecha_nacimiento'] = deportista.fecha_nacimiento
+                    # Calcular edad aproximada
+                    from datetime import date
+                    año_actual = date.today().year
+                    persona_data['edad_aproximada'] = año_actual - deportista.fecha_nacimiento
+                
+                # Tipo sanguíneo (con información completa)
+                if deportista.tipo_sanguineo:
+                    persona_data['tipo_sanguineo'] = {
+                        'id': deportista.tipo_sanguineo.id_tipo_sangre,
+                        'tipo': deportista.tipo_sanguineo.tipo_sangre
+                    }
+                
+                # Ciudad de residencia (con información completa)
+                if deportista.ciudad_residencia:
+                    persona_data['ciudad_recidencia'] = {
+                        'id': deportista.ciudad_residencia.id_ciudad,
+                        'nombre': deportista.ciudad_residencia.nombre_ciudad,
+                        'codigo_dane': deportista.ciudad_residencia.codigo_dane
+                    }
+                
+                # EPS (con información completa)
+                if deportista.eps:
+                    persona_data['eps'] = {
+                        'id': deportista.eps.id_eps,
+                        'nombre': deportista.eps.nombre_eps,
+                        'codigo': deportista.eps.codigo_eps
+                    }
+            
+            # Construir información deportiva
+            info_deportiva = {}
+            if deportista.informacion_deportiva:
+                info = deportista.informacion_deportiva
+                info_deportiva = {
+                    'id_informacion_deportiva': info.id_informacion_deportiva,
+                    'practica_otro_deporte': info.practica_otro_deporte,
+                    'participa_escuela': info.participa_escuela,
+                    'recomendacion_medica': info.recomendacion_medica,
+                    'descripcion_recomendacion': info.descripcion_recomendacion
+                }
+                
+                # Deporte (con información completa)
+                if info.deporte:
+                    info_deportiva['deporte'] = {
+                        'id': info.deporte.id_deporte,
+                        'nombre': info.deporte.nombre,
+                        'descripcion': info.deporte.descripcion
+                    }
+                else:
+                    info_deportiva['deporte'] = None
+                
+                # Escuela (con información completa)
+                if info.escuela:
+                    info_deportiva['escuela'] = {
+                        'id': info.escuela.id_escuela,
+                        'nombre': info.escuela.nombre
+                    }
+                else:
+                    info_deportiva['escuela'] = None
+                
+                # Institución de registro (con información completa)
+                if info.institucion_registro:
+                    info_deportiva['institucion'] = {
+                        'id': info.institucion_registro.id_institucion,
+                        'nombre': info.institucion_registro.nombre_institucion
+                    }
+                else:
+                    info_deportiva['institucion'] = None
+                
+                # Categoría (está en el deportista, no en info_deportiva)
+                if deportista.categoria:
+                    info_deportiva['categoria'] = deportista.categoria.nombre_categoria
+            else:
+                info_deportiva = {
+                    'mensaje': 'No hay información deportiva registrada'
+                }
+            
+            # Construir información de salud (diagnósticos)
+            salud_data = {}
+            diagnósticos_deportista = DiagnosticoDeportista.query.filter_by(id_deportista=id_deportista).all()
+            
+            if diagnósticos_deportista:
+                diagnosticos_list = []
+                tipos_enfermedad_encontrados = set()
+                
+                for diagnostico_deportista in diagnósticos_deportista:
+                    if diagnostico_deportista.diagnostico:
+                        diagnostico_info = {
+                            'id_diagnostico': diagnostico_deportista.id_diagnostico,
+                            'nombre': diagnostico_deportista.diagnostico.nombre,
+                            'fecha': diagnostico_deportista.fecha.isoformat() if diagnostico_deportista.fecha else None
+                        }
+                        
+                        # Agregar tipo de enfermedad si existe
+                        if diagnostico_deportista.diagnostico.tipo_enfermedad:
+                            tipo_enfermedad_nombre = diagnostico_deportista.diagnostico.tipo_enfermedad.nombre
+                            tipo_enfermedad_id = diagnostico_deportista.diagnostico.tipo_enfermedad.id_tipo_enfermedad
+                            
+                            diagnostico_info['tipo_enfermedad'] = {
+                                'id': tipo_enfermedad_id,
+                                'nombre': tipo_enfermedad_nombre
+                            }
+                            
+                            diagnosticos_list.append(diagnostico_info)
+                            
+                            if tipo_enfermedad_nombre not in tipos_enfermedad_encontrados:
+                                tipos_enfermedad_encontrados.add(tipo_enfermedad_nombre)
+                
+                if diagnosticos_list:
+                    salud_data['diagnosticos_completos'] = diagnosticos_list
+                    salud_data['diagnosticos'] = [d['nombre'] for d in diagnosticos_list]
+                    salud_data['cantidad_diagnosticos'] = len(diagnosticos_list)
+                    
+                    # Lista de tipos de enfermedad encontrados
+                    if tipos_enfermedad_encontrados:
+                        salud_data['tipos_enfermedad'] = list(tipos_enfermedad_encontrados)
+            
+            # Agregar información adicional del deportista
+            datos_deportista_adicionales = {}
+            if deportista.peso:
+                datos_deportista_adicionales['peso'] = deportista.peso
+            if deportista.altura:
+                datos_deportista_adicionales['altura'] = deportista.altura
+            if deportista.imc:
+                datos_deportista_adicionales['imc'] = deportista.imc
+            if deportista.fecha_ingreso:
+                datos_deportista_adicionales['fecha_ingreso'] = deportista.fecha_ingreso.isoformat()
+            
+            # Información de mensualidad
+            if deportista.mensualidad:
+                datos_deportista_adicionales['mensualidad'] = {
+                    'monto': float(deportista.mensualidad.monto_pago) if deportista.mensualidad.monto_pago else None,
+                    'fecha_pago': deportista.mensualidad.fecha_pago.isoformat() if deportista.mensualidad.fecha_pago else None,
+                    'estado': deportista.mensualidad.estado
+                }
+            
+            # Información detallada de categoría
+            if deportista.categoria:
+                datos_deportista_adicionales['categoria_detallada'] = {
+                    'id_categoria': deportista.categoria.id_categoria,
+                    'nombre': deportista.categoria.nombre_categoria,
+                    'codigo': deportista.categoria.codigo_categoria,
+                    'edad_minima': deportista.categoria.edad_minima,
+                    'edad_maxima': deportista.categoria.edad_maxima
+                }
+            
+            logger.info(f'Información completa obtenida para deportista ID {id_deportista}')
+            
+            return {
+                'status': 'success',
+                'data': {
+                    'id': deportista.id_deportista,
+                    'persona': persona_data,
+                    'informacion_deportiva': info_deportiva,
+                    'salud': salud_data,
+                    'datos_deportista': datos_deportista_adicionales,
+                    'fecha_registro': deportista.created_at.isoformat() if deportista.created_at else None,
+                    'ultima_actualizacion': deportista.updated_at.isoformat() if deportista.updated_at else None
+                },
+                'status_code': 200
+            }
+            
+        except Exception as e:
+            logger.error(f'Error al obtener información completa del deportista {id_deportista}: {str(e)}')
+            return {
+                'status': 'error',
+                'message': f'Error al obtener información del deportista: {str(e)}',
+                'status_code': 500
+            }
+

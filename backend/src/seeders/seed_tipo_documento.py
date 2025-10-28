@@ -26,15 +26,25 @@ def run():
     existentes = 0
     
     for tipo_data in tipos_documento:
+        # Verificar si existe por ID o por nombre (para evitar duplicados)
         tipo_existente = TipoDocumento.query.filter_by(
             id_documento=tipo_data['id_documento']
         ).first()
         
         if not tipo_existente:
-            tipo = TipoDocumento(**tipo_data)
-            db.session.add(tipo)
-            insertados += 1
-            print(f"  ✅ Insertado: {tipo_data['nombre_documento']}")
+            # También verificar por nombre
+            tipo_por_nombre = TipoDocumento.query.filter_by(
+                nombre_documento=tipo_data['nombre_documento']
+            ).first()
+            
+            if not tipo_por_nombre:
+                tipo = TipoDocumento(**tipo_data)
+                db.session.add(tipo)
+                insertados += 1
+                print(f"  ✅ Insertado: {tipo_data['nombre_documento']}")
+            else:
+                existentes += 1
+                print(f"  ⏭️  Ya existe: {tipo_data['nombre_documento']}")
         else:
             existentes += 1
             print(f"  ⏭️  Ya existe: {tipo_data['nombre_documento']}")

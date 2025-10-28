@@ -8,7 +8,7 @@ Responsabilidad:
 Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify, current_app, request
 from flask_cors import cross_origin
 from ..models.catalogos.tipo_documento import TipoDocumento
 from ..models.categorias.sexo import Sexo
@@ -235,6 +235,78 @@ def fix_catalogos_structure():
         return jsonify({
             'success': False,
             'error': f'Error corrigiendo estructura: {str(e)}',
+            'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/tipos-enfermedad', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_tipos_enfermedad():
+    """
+    Endpoint para obtener todos los tipos de enfermedad disponibles.
+    
+    Query params:
+        incluir_diagnosticos (bool, opcional): Si es 'true', incluye los diagnósticos relacionados.
+    
+    Returns:
+        JSON: Lista de tipos de enfermedad con opción de incluir sus diagnósticos
+    """
+    try:
+        # Obtener parámetro opcional para incluir diagnósticos
+        incluir_diagnosticos = request.args.get('incluir_diagnosticos', 'false').lower() == 'true'
+        
+        # Obtener tipos de enfermedad
+        result = catalogos_service.obtener_tipos_enfermedad(incluir_diagnosticos=incluir_diagnosticos)
+        
+        # Respuesta exitosa
+        return jsonify({
+            'success': True,
+            'message': 'Tipos de enfermedad obtenidos exitosamente',
+            'data': result.get('data', []),
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener tipos de enfermedad: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/diagnosticos', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_diagnosticos():
+    """
+    Endpoint para obtener todos los diagnósticos disponibles o filtrados por tipo de enfermedad.
+    
+    Query params:
+        id_tipo_enfermedad (int, opcional): Filtra diagnósticos por tipo de enfermedad.
+    
+    Returns:
+        JSON: Lista de diagnósticos (filtrados o no)
+    """
+    try:
+        # Obtener parámetro opcional de filtro
+        id_tipo_enfermedad = request.args.get('id_tipo_enfermedad', type=int)
+        
+        # Obtener diagnósticos
+        result = catalogos_service.obtener_diagnosticos(id_tipo_enfermedad=id_tipo_enfermedad)
+        
+        # Respuesta exitosa
+        return jsonify({
+            'success': True,
+            'message': 'Diagnósticos obtenidos exitosamente',
+            'data': result.get('data', []),
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener diagnósticos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
             'status_code': 500
         }), 500
 

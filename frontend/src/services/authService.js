@@ -78,12 +78,18 @@ class AuthService {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al cerrar sesión')
+        // Silenciar errores 401 (token inválido/expirado)
+        if (response.status !== 401) {
+          throw new Error(data.error || 'Error al cerrar sesión')
+        }
       }
 
       return data
     } catch (error) {
-      console.error('Error en logout:', error)
+      // Silenciar errores relacionados con tokens inválidos
+      if (!error.message.includes('Token inválido') && !error.message.includes('expirado') && !error.message.includes('401')) {
+        console.error('Error en logout:', error)
+      }
       throw error
     }
   }
@@ -128,7 +134,7 @@ class AuthService {
       // Validar que el token no esté vacío o sea inválido
       if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
         this.clearAuthData()
-        throw new Error('Token inválido o expirado')
+        return { success: false, message: 'No hay token' }
       }
 
       const response = await fetch(`${this.baseURL}/api/auth/verify-token`, {
@@ -144,28 +150,30 @@ class AuthService {
       try {
         data = await response.json()
       } catch (parseError) {
-        console.error('Error al parsear respuesta del servidor:', parseError)
+        // Silenciar errores de parse cuando es un 401 esperado
+        if (response.status === 401) {
+          return { success: false, message: 'Token inválido o expirado' }
+        }
         this.clearAuthData()
-        throw new Error('Respuesta del servidor inválida')
+        return { success: false, message: 'Respuesta del servidor inválida' }
       }
 
       if (!response.ok) {
-        // Si el token es inválido o expirado, limpiar datos locales
+        // Si el token es inválido o expirado, limpiar datos locales sin hacer throw
         if (response.status === 401) {
           this.clearAuthData()
-          throw new Error('Token inválido o expirado')
+          return { success: false, message: 'Token inválido o expirado' }
         }
-        throw new Error(data.error || 'Error al verificar token')
+        return { success: false, message: data.error || 'Error al verificar token' }
       }
 
       return data
     } catch (error) {
-      console.error('Error al verificar token:', error)
-      // Solo limpiar datos si es un error de token, no de conexión
-      if (error.message.includes('Token inválido') || error.message.includes('expirado')) {
-        this.clearAuthData()
+      // Silenciar errores de conexión durante verificación de token
+      if (!error.message.includes('Failed to fetch')) {
+        console.warn('Error al verificar token:', error.message)
       }
-      throw error
+      return { success: false, message: 'Error al verificar token' }
     }
   }
 

@@ -17,6 +17,20 @@ onMounted(async () => {
     const perfil = await authService.getProfile();
     datosUsuario.value = perfil.data || {};
     console.log('Datos del usuario cargados:', datosUsuario.value);
+
+    // Verificar si el usuario ya tiene el rol de acudiente
+    if (datosUsuario.value.roles && Array.isArray(datosUsuario.value.roles)) {
+      const rolesNombre = datosUsuario.value.roles.map(r => r.nombre_rol || r);
+      const esAcudiente = rolesNombre.some(rol =>
+        rol.toLowerCase().includes('acudiente') || rol.toLowerCase() === 'acudiente'
+      );
+
+      if (esAcudiente) {
+        console.log('Usuario ya tiene rol de acudiente, redirigiendo al home...');
+        router.push('/home');
+        return;
+      }
+    }
   } catch (error) {
     console.error('Error al cargar datos del usuario:', error);
     alert('Error al cargar los datos del usuario');

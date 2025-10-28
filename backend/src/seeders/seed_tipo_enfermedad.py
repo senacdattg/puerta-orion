@@ -15,11 +15,16 @@ def run():
     print("🔄 Ejecutando seeder: TipoEnfermedad...")
     
     tipos_enfermedad = [
-        {'id_tipo_enfermedad': 1, 'nombre': 'Crónica'},
-        {'id_tipo_enfermedad': 2, 'nombre': 'Aguda'},
-        {'id_tipo_enfermedad': 3, 'nombre': 'Congénita'},
-        {'id_tipo_enfermedad': 4, 'nombre': 'Infecciosa'},
-        {'id_tipo_enfermedad': 5, 'nombre': 'Mental'},
+        {'id_tipo_enfermedad': 1, 'nombre': 'Lesión Muscular'},
+        {'id_tipo_enfermedad': 2, 'nombre': 'Lesión Ósea'},
+        {'id_tipo_enfermedad': 3, 'nombre': 'Lesión Articular'},
+        {'id_tipo_enfermedad': 4, 'nombre': 'Enfermedad Respiratoria'},
+        {'id_tipo_enfermedad': 5, 'nombre': 'Enfermedad Cardiovascular'},
+        {'id_tipo_enfermedad': 6, 'nombre': 'Condición Crónica'},
+        {'id_tipo_enfermedad': 7, 'nombre': 'Enfermedad Infecciosa'},
+        {'id_tipo_enfermedad': 8, 'nombre': 'Trastorno Mental'},
+        {'id_tipo_enfermedad': 9, 'nombre': 'Alergia'},
+        {'id_tipo_enfermedad': 10, 'nombre': 'Otro'},
     ]
     
     insertados = 0

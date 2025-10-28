@@ -103,7 +103,6 @@ class Deportista(BaseModel):
             'id_persona': self.id_persona,
             'id_categoria': self.id_categoria,
             'id_tipo_sanguineo': self.id_tipo_sanguineo,
-            'id_diagnostico_deportista': self.id_diagnostico_deportista,
             'id_ciudad_recidencia': self.id_ciudad_recidencia,
             'id_mensualidad': self.id_mensualidad,
             'id_informacion_deportiva': self.id_informacion_deportiva,
@@ -112,5 +111,7 @@ class Deportista(BaseModel):
             'altura': self.altura,
             'fecha_ingreso': self.fecha_ingreso.isoformat() if self.fecha_ingreso else None,
             'fecha_nacimiento': self.fecha_nacimiento,
-            'imc': self.imc
+            'imc': self.imc,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

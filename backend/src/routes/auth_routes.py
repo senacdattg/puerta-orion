@@ -218,9 +218,10 @@ def registrar_usuario():
     Endpoint para registrar un nuevo usuario.
     
     Recibe datos de persona y usuario, crea el registro completo
-    con asignación automática del rol por defecto.
+    con asignación automática del rol por defecto. Opcionalmente,
+    puede crear un registro de Deportista o Acudiente si se especifica el rol.
     
-    Body JSON esperado:
+    Body JSON esperado (registro básico):
     {
         "persona": {
             "primer_nombre": "Juan",
@@ -235,6 +236,34 @@ def registrar_usuario():
         "usuario": {
             "usuario": "juan.perez",
             "password": "mi_contraseña_segura"
+        }
+    }
+    
+    Body JSON esperado (registro como Deportista):
+    {
+        "persona": { ... },
+        "usuario": { ... },
+        "rol": "deportista",
+        "datos_rol": {
+            "id_categoria": 1,  // OBLIGATORIO
+            "peso": 70.5,  // opcional
+            "altura": 1.75,  // opcional
+            "fecha_nacimiento": 2000,  // opcional (año)
+            "id_tipo_sanguineo": 1,  // opcional
+            "id_ciudad_recidencia": 1,  // opcional
+            "id_mensualidad": 1,  // opcional
+            "id_informacion_deportiva": 1,  // opcional
+            "id_eps": 1  // opcional
+        }
+    }
+    
+    Body JSON esperado (registro como Acudiente):
+    {
+        "persona": { ... },
+        "usuario": { ... },
+        "rol": "acudiente",
+        "datos_rol": {
+            "estado": true  // opcional (por defecto true)
         }
     }
     
@@ -264,6 +293,8 @@ def registrar_usuario():
         # Extraer datos de persona y usuario
         datos_persona = data.get('persona')
         datos_usuario = data.get('usuario')
+        rol_opcional = data.get('rol')  # 'deportista' o 'acudiente' (opcional)
+        datos_rol = data.get('datos_rol', {})  # Datos adicionales para el rol
         
         if not datos_persona or not datos_usuario:
             return jsonify({
@@ -312,7 +343,9 @@ def registrar_usuario():
         logger.info(f"Intentando registrar usuario: {datos_usuario.get('usuario', 'N/A')}")
         usuario_creado = usuario_service.registrar_usuario_completo(
             datos_persona=datos_persona,
-            datos_usuario=datos_usuario
+            datos_usuario=datos_usuario,
+            rol_opcional=rol_opcional,
+            datos_rol=datos_rol
         )
         logger.info(f"Usuario registrado exitosamente: {usuario_creado.get('usuario', 'N/A')}")
         

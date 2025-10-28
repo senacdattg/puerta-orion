@@ -18,6 +18,20 @@ onMounted(async () => {
     datosUsuario.value = perfil.data || {};
     console.log('Datos del usuario cargados:', datosUsuario.value);
     console.log('Estructura de datos:', Object.keys(datosUsuario.value));
+
+    // Verificar si el usuario ya tiene el rol de deportista
+    if (datosUsuario.value.roles && Array.isArray(datosUsuario.value.roles)) {
+      const rolesNombre = datosUsuario.value.roles.map(r => r.nombre_rol || r);
+      const esDeportista = rolesNombre.some(rol =>
+        rol.toLowerCase().includes('deportista') || rol.toLowerCase() === 'deportista'
+      );
+
+      if (esDeportista) {
+        console.log('Usuario ya tiene rol de deportista, redirigiendo al home...');
+        router.push('/home');
+        return;
+      }
+    }
   } catch (error) {
     console.error('Error al cargar datos del usuario:', error);
     alert('Error al cargar los datos del usuario');
