@@ -1,23 +1,27 @@
 <template>
   <main class="admin-page">
 
-    <!-- Header del Panel -->
-    <div class="admin-header">
-      <div class="container">
-        <div class="header-content">
-          <div class="header-text">
-            <h1 class="page-title">Panel de Administración</h1>
-            <p class="page-subtitle">Gestiona usuarios, roles y configuraciones del club deportivo</p>
-          </div>
-          <div class="header-actions">
-            <button class="btn btn-nuevo" @click="abrirModalRegistro">
-              <i class="fas fa-plus"></i>
-              Nuevo Usuario
-            </button>
-          </div>
+        <!-- Header del Panel -->
+        <div class="admin-header">
+            <div class="container">
+                <div class="header-content">
+                    <div class="header-text">
+                        <h1 class="page-title">Panel de Administración</h1>
+                        <p class="page-subtitle">Gestiona usuarios, roles y configuraciones del club deportivo</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-nuevo" @click="abrirModalRegistro">
+                            <i class="fas fa-plus"></i>
+                            Nuevo Usuario
+                        </button>
+                        <button class="btn btn-datos" @click="abrirModalDatos">
+                            <i class="fas fa-database"></i>
+                            Añadir Datos
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
     <!-- Dashboard Stats -->
     <section class="stats-section">
