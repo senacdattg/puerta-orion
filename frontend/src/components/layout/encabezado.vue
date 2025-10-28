@@ -266,7 +266,7 @@ function cargarOpciones() {
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
       { texto: "Panel Admin", link: "/admin-manager", icono: "fas fa-cog" },
     ],
-    Usuario: [
+    UsuarioSinAuth: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
@@ -274,7 +274,7 @@ function cargarOpciones() {
   }
 
   const rolActual = userRole.value
-  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['Usuario']
+  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['UsuarioSinAuth']
 }
 
 function checkMobile() {
@@ -318,6 +318,7 @@ async function cerrarSesion() {
   if (confirmar) {
     await authStore.logout()
     router.replace('/login')
+  }
 }
 
 // Ciclo de vida
