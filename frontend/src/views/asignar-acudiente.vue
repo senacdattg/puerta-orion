@@ -1,5 +1,7 @@
 <template>
-  <div class="asignar-acudiente-page">
+  <main class="asignar-acudiente-page">
+    <Encabezado />
+    <TituloClub />
     <div class="asignar-acudiente-container">
       <div class="asignar-acudiente-header">
         <h1 class="asignar-acudiente-title">
@@ -126,12 +128,16 @@
         </div>
       </div>
     </div>
-  </div>
+    <FooterEnhanced />
+  </main>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import Encabezado from '@/components/layout/encabezado.vue'
+import TituloClub from '@/components/ui/titulo-club.vue'
+import FooterEnhanced from '@/components/layout/pie.vue'
 
 const router = useRouter()
 const searchTerm = ref('')
