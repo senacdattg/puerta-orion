@@ -17,6 +17,7 @@ from flask_migrate import Migrate
 from config import config, get_config, validate_config
 from src.models.base import db
 from src.utils.logger import gestor_logs
+from flask_cors import CORS
 import os
 
 # Configurar PyMySQL como reemplazo de MySQLdb, si está disponible
@@ -40,6 +41,8 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
 
     app = Flask(__name__)
+
+    CORS(app, origins=["http://localhost:5173"])
     
     # Cargar configuración
     app.config.from_object(config[config_name])
