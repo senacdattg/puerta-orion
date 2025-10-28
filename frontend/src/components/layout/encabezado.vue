@@ -173,14 +173,11 @@ function cargarOpciones() {
 
   const rolActual = userRole.value
   opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['Usuario']
-
-  console.log(`🔍 Menú cargado para rol: ${rolActual}`, opciones.value)
 }
 
 // Watcher para recargar opciones cuando cambie el rol del usuario
 watch(userRole, (newRole, oldRole) => {
   if (newRole !== oldRole) {
-    console.log(`🔄 Rol cambiado de ${oldRole} a ${newRole}`)
     cargarOpciones()
   }
 })
@@ -188,7 +185,6 @@ watch(userRole, (newRole, oldRole) => {
 // Watcher para recargar opciones cuando cambie el estado de autenticación
 watch(() => authStore.user, (newUser, oldUser) => {
   if (newUser !== oldUser) {
-    console.log('🔄 Usuario cambiado, recargando menú')
     cargarOpciones()
   }
 }, { deep: true })
