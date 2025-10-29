@@ -18,6 +18,8 @@ import panelAdmin from '@/views/admin-manager.vue'
 import CompletarPerfil from '@/views/completar-perfil.vue'
 import RegistrarAcudiente from '@/views/registrar-acudiente.vue'
 import RegistrarDeportistaForm from '@/views/registrar-deportista-form.vue'
+import DeportistaDashboard from '@/views/DeportistaDashboard.vue'
+import AcudienteDashboard from '@/views/AcudienteDashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -173,6 +175,44 @@ const router = createRouter({
       name: 'eventos',
       component: () => import('@/views/eventos.vue'),
       meta: { requiresAuth: true, requiresRole: ['Deportista', 'Acudiente'] }
+    },
+    // Rutas del panel de deportista
+    {
+      path: '/deportista/dashboard',
+      name: 'deportista-dashboard',
+      component: DeportistaDashboard,
+      meta: { requiresAuth: true, requiresRole: ['Deportista'] }
+    },
+    {
+      path: '/deportista/mensualidades',
+      name: 'deportista-mensualidades',
+      component: TablaMensualidades,
+      meta: { requiresAuth: true, requiresRole: ['Deportista'] }
+    },
+    {
+      path: '/deportista/eventos',
+      name: 'deportista-eventos',
+      component: () => import('@/views/eventos.vue'),
+      meta: { requiresAuth: true, requiresRole: ['Deportista'] }
+    },
+    {
+      path: '/deportista/calendario',
+      name: 'deportista-calendario',
+      component: Calendario,
+      meta: { requiresAuth: true, requiresRole: ['Deportista'] }
+    },
+    {
+      path: '/deportista/galeria',
+      name: 'deportista-galeria',
+      component: Galeria,
+      meta: { requiresAuth: true, requiresRole: ['Deportista'] }
+    },
+    // Rutas del panel de acudiente
+    {
+      path: '/acudiente/dashboard',
+      name: 'acudiente-dashboard',
+      component: AcudienteDashboard,
+      meta: { requiresAuth: true, requiresRole: ['Acudiente'] }
     }
   ],
 })
@@ -194,9 +234,9 @@ function getDefaultRouteForRole(userRoles) {
   } else if (roleNames.includes('Entrenador')) {
     return '/home'
   } else if (roleNames.includes('Deportista')) {
-    return '/home'
+    return '/deportista/dashboard'
   } else if (roleNames.includes('Acudiente')) {
-    return '/home'
+    return '/acudiente/dashboard'
   }
 
   return '/home'
@@ -247,6 +287,10 @@ router.beforeEach(async (to, from, next) => {
     // Verificar si el usuario tiene el rol requerido
     const requiredRoles = to.meta.requiresRole
     const userRoles = authStore.user?.roles || []
+
+    console.log('🔍 Verificando rol para:', to.path)
+    console.log('🔍 Roles requeridos:', requiredRoles)
+    console.log('🔍 Roles del usuario:', userRoles)
 
     if (!hasRequiredRole(userRoles, requiredRoles)) {
       console.log('🚫 Acceso denegado: rol insuficiente. Requerido:', requiredRoles, 'Usuario:', userRoles)

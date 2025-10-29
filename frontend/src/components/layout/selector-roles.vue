@@ -16,6 +16,7 @@
           v-for="rol in rolesDisponibles"
           :key="getNombreRolSimple(rol)"
           :value="getNombreRolSimple(rol)"
+          :disabled="getNombreRolSimple(rol) === 'Usuario' || getNombreRolSimple(rol) === 'usuario'"
         >
           {{ getNombreRol(rol) }}
         </option>
@@ -54,8 +55,9 @@ function obtenerRolPrincipal(roles) {
   if (nombresRoles.includes('Administrador')) return 'Administrador'
   if (nombresRoles.includes('Entrenador')) return 'Entrenador'
 
-  // Retornar el primer rol disponible
-  return nombresRoles[0] || 'usuario'
+  // Retornar el primer rol disponible (excluyendo Usuario)
+  const rolSinUsuario = nombresRoles.find(r => r !== 'Usuario' && r !== 'usuario')
+  return rolSinUsuario || nombresRoles[0] || 'usuario'
 }
 
 const rolesDisponibles = computed(() => {
@@ -63,21 +65,53 @@ const rolesDisponibles = computed(() => {
   return authStore.user.roles
 })
 
+// Lista de roles válidos para validación
+const ROLES_VALIDOS = ['Deportista', 'Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin', 'Usuario', 'usuario']
+
+// Función para validar y limpiar el rol guardado
+function validarRol(rol) {
+  if (!rol || typeof rol !== 'string') return null
+  const rolLimpio = rol.trim()
+  // Validar que el rol sea uno de los válidos o esté en la lista de roles válidos
+  if (ROLES_VALIDOS.includes(rolLimpio)) {
+    return rolLimpio
+  }
+  // Si el rol contiene caracteres corruptos o no es válido, retornar null
+  return null
+}
+
 // Función para inicializar el rol activo
 function inicializarRolActivo() {
-  const rolGuardado = localStorage.getItem('rolActivo')
+  const rolGuardadoRaw = localStorage.getItem('rolActivo')
+  const rolGuardado = validarRol(rolGuardadoRaw)
   const roles = authStore.user?.roles || []
 
-  // Si hay un rol guardado y está disponible, usarlo
+  // Si hay un rol guardado corrupto o inválido, limpiarlo
+  if (rolGuardadoRaw && !rolGuardado) {
+    console.warn('🧹 Limpiando rol corrupto de localStorage:', rolGuardadoRaw)
+    localStorage.removeItem('rolActivo')
+  }
+
+  // Si hay un rol guardado válido y está disponible y no es Usuario, usarlo
   if (rolGuardado && roles.some(r => getNombreRolSimple(r) === rolGuardado)) {
+    // Si el rol guardado es Usuario, buscar otro rol disponible
+    if (rolGuardado === 'Usuario' || rolGuardado === 'usuario') {
+      const rolPrincipal = obtenerRolPrincipal(roles)
+      if (rolPrincipal && rolPrincipal !== 'Usuario' && rolPrincipal !== 'usuario') {
+        localStorage.setItem('rolActivo', rolPrincipal)
+        return rolPrincipal
+      }
+    }
     return rolGuardado
   }
 
   // Si no, usar el rol principal (prioridad: Acudiente > Deportista > otros)
   if (roles.length > 0) {
     const rolPrincipal = obtenerRolPrincipal(roles)
-    localStorage.setItem('rolActivo', rolPrincipal)
-    return rolPrincipal
+    if (rolPrincipal && rolPrincipal !== 'Usuario' && rolPrincipal !== 'usuario') {
+      localStorage.setItem('rolActivo', rolPrincipal)
+      return rolPrincipal
+    }
   }
 
   return 'usuario'
@@ -120,25 +154,54 @@ function getNombreRol(rol) {
   return JSON.stringify(rol)
 }
 
-function cambiarRol() {
-  localStorage.setItem('rolActivo', rolActivo.value)
+function cambiarRol(event) {
+  // Obtener el valor seleccionado
+  const nuevoRol = event?.target?.value || rolActivo.value
 
-  // Redirigir según el rol activo
-  const rutasPorRol = {
-    'Deportista': '/home',
-    'Acudiente': '/home',
-    'Entrenador': '/home',
-    'Administrador': '/admin-manager',
-    'SuperAdmin': '/admin-manager',
-    'Usuario': '/home',
-    'usuario': '/home'
+  // Normalizar el valor del rol
+  const rolNormalizado = nuevoRol.trim()
+
+  // Validar el rol antes de procesarlo
+  const rolValidado = validarRol(rolNormalizado)
+  if (!rolValidado) {
+    console.warn('⚠️ Rol inválido detectado, usando rol actual:', rolNormalizado)
+    if (event?.target) {
+      event.target.value = rolActivo.value
+    }
+    return
   }
 
-  const ruta = rutasPorRol[rolActivo.value] || '/home'
+  // Si el rol es "Usuario", no hacer nada y mantener el rol anterior
+  if (rolValidado === 'Usuario' || rolValidado === 'usuario') {
+    // Restaurar el valor anterior del select
+    if (event?.target) {
+      event.target.value = rolActivo.value
+    }
+    return
+  }
 
-  // Solo redirigir si no estamos ya en esa ruta
-  if (router.currentRoute.value.path !== ruta) {
-    router.push(ruta)
+  // Actualizar el estado con el rol validado
+  rolActivo.value = rolValidado
+  localStorage.setItem('rolActivo', rolValidado)
+
+  // Redirigir según el rol activo a los paneles específicos
+  const rutasPorRol = {
+    'Deportista': '/deportista/dashboard',
+    'Acudiente': '/acudiente/dashboard',
+    'Entrenador': '/home',
+    'Administrador': '/admin-manager',
+    'SuperAdmin': '/admin-manager'
+  }
+
+  const ruta = rutasPorRol[rolValidado] || rutasPorRol[rolValidado.toLowerCase()] || '/home'
+
+  // Redirigir siempre al cambiar de rol para asegurar que se muestre el panel correcto
+  if (ruta && router.currentRoute.value.path !== ruta) {
+    router.push(ruta).catch((err) => {
+      // Si hay un error de navegación, forzar navegación
+      console.error('Error de navegación:', err)
+      window.location.href = ruta
+    })
   }
 }
 
@@ -151,11 +214,13 @@ watch(() => authStore.user?.roles, (nuevosRoles) => {
     // Si el rol activo no está en los nuevos roles, usar el rol principal
     if (!nombresRoles.includes(rolActivo.value)) {
       const nuevoRolPrincipal = obtenerRolPrincipal(nuevosRoles)
-      rolActivo.value = nuevoRolPrincipal
-      localStorage.setItem('rolActivo', nuevoRolPrincipal)
+      if (nuevoRolPrincipal && nuevoRolPrincipal !== 'Usuario' && nuevoRolPrincipal !== 'usuario') {
+        rolActivo.value = nuevoRolPrincipal
+        localStorage.setItem('rolActivo', nuevoRolPrincipal)
 
-      // Redirigir solo si es necesario
-      cambiarRol()
+        // Redirigir solo si es necesario
+        cambiarRol({ target: { value: nuevoRolPrincipal } })
+      }
     }
   }
 }, { immediate: true })
@@ -217,6 +282,12 @@ watch(() => authStore.user?.roles, (nuevosRoles) => {
 .select-rol option {
   padding: 8px;
   font-weight: 600;
+}
+
+.select-rol option:disabled {
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Responsive */
