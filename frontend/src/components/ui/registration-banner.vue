@@ -41,7 +41,9 @@ const router = useRouter()
 // Función para navegar a registro
 const navigateToRegister = (type) => {
   if (type === 'acudiente') {
-    router.push('/registrar-acudiente')
+    // Si el usuario ya está autenticado, debe completar su perfil
+    // Usar el formulario de completar perfil que requiere asociación con deportista
+    router.push('/formulario-acudiente-completo')
   } else if (type === 'deportista') {
     router.push('/registrar-deportista-form')
   }

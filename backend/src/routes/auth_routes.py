@@ -608,27 +608,40 @@ def obtener_perfil():
                 'status_code': 401
             }), 401
         
+        # Validar que exista persona en el usuario
+        if not user.get('persona'):
+            logger.error(f"Usuario {user.get('id_usuario')} no tiene persona asociada")
+            return jsonify({
+                'success': False,
+                'error': 'El usuario no tiene una persona asociada',
+                'status_code': 400
+            }), 400
+        
+        persona = user['persona']
+        
         # Preparar respuesta del perfil
         perfil_data = {
-            'id_usuario': user['id_usuario'],
-            'username': user['username'],
-            'estado': user['estado'],
-            'roles': user['roles'],
+            'id_usuario': user.get('id_usuario'),
+            'username': user.get('username'),
+            'estado': user.get('estado'),
+            'roles': user.get('roles', []),
             'persona': {
-                'id_persona': user['persona']['id_persona'],
-                'nombre_completo': user['persona']['nombre_completo'],
-                'primer_nombre': user['persona'].get('primer_nombre'),
-                'primer_apellido': user['persona'].get('primer_apellido'),
-                'correo_electronico': user['persona']['correo_electronico'],
-                'documento': user['persona']['documento'],
-                'telefono': user['persona']['telefono'],
-                'direccion': user['persona'].get('direccion')
+                'id_persona': persona.get('id_persona'),
+                'nombre_completo': persona.get('nombre_completo', ''),
+                'primer_nombre': persona.get('primer_nombre'),
+                'primer_apellido': persona.get('primer_apellido'),
+                'correo_electronico': persona.get('correo_electronico'),
+                'documento': persona.get('documento'),
+                'telefono': persona.get('telefono'),
+                'direccion': persona.get('direccion')
             }
         }
         
         # Buscar si el usuario tiene un perfil de acudiente
-        from ..models.acudientes.acudiente import Acudiente
-        acudiente = Acudiente.query.filter_by(id_persona=user['persona']['id_persona'], estado=True).first()
+        acudiente = None
+        if persona.get('id_persona'):
+            from ..models.acudientes.acudiente import Acudiente
+            acudiente = Acudiente.query.filter_by(id_persona=persona['id_persona'], estado=True).first()
         if acudiente:
             perfil_data['acudiente'] = {
                 'id_acudiente': acudiente.id_acudiente,
@@ -643,8 +656,19 @@ def obtener_perfil():
             'status_code': 200
         }), 200
         
+    except KeyError as e:
+        logger.error(f"Error de clave faltante al obtener perfil: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error en los datos del usuario: {str(e)}',
+            'status_code': 500
+        }), 500
     except Exception as e:
         logger.error(f"Error inesperado al obtener perfil: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor',
@@ -925,25 +949,20 @@ def completar_perfil_acudiente():
     Endpoint para completar el perfil del usuario como acudiente.
 
     Registra al usuario actual como acudiente y le asigna el rol correspondiente.
+    REQUIERE asociarse con un deportista para completar el registro.
 
     Headers requeridos:
     Authorization: Bearer <token>
 
-    Body JSON esperado (opcional):
+    Body JSON requerido:
     {
-        "parentesco": "Padre",
-        "ocupacion": "Ingeniero",
-        "lugar_trabajo": "Empresa ABC",
-        "telefono_trabajo": "3001234567",
-        "telefono_emergencia": "3019876543",
-        "autorizacion_imagenes": true,
-        "autorizacion_salidas": true,
-        "autorizacion_medica": true,
-        "observaciones": "Observaciones adicionales"
+        "id_deportista": 123,              // OBLIGATORIO: ID del deportista
+        "id_parentesco": 1,                // OBLIGATORIO: ID del tipo de parentesco
+        "es_responsable": true             // OBLIGATORIO: Si es responsable legal (bool)
     }
 
     Returns:
-        JSON: Información del acudiente creado
+        JSON: Información del acudiente creado y la relación establecida
     """
     try:
         # Validar que la petición sea JSON si hay body
