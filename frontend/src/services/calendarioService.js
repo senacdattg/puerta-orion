@@ -7,9 +7,19 @@ class CalendarioService {
   constructor() {
     this.baseURL = `${API_CONFIG.baseURL}/api`;
     this.eventos = [];
-    this.sesiones = [];
     this.tiposEvento = [];
     this.categorias = [];
+  }
+
+  /**
+   * Obtiene los headers con autenticación
+   */
+  getAuthHeaders() {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
   }
 
   // ============================================================================
@@ -21,9 +31,9 @@ class CalendarioService {
    */
   async cargarEventos() {
     try {
-      const response = await fetch(`${this.baseURL}/eventos?per_page=1000`, {
+      const response = await fetch(`${this.baseURL}/calendario?per_page=1000`, {
         method: 'GET',
-        headers: API_CONFIG.headers
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -91,9 +101,9 @@ class CalendarioService {
       // Mapear evento de frontend a backend
       const eventoBackend = this.mapearEventoFrontendABackend(evento);
 
-      const response = await fetch(`${this.baseURL}/eventos`, {
+      const response = await fetch(`${this.baseURL}/calendario`, {
         method: 'POST',
-        headers: API_CONFIG.headers,
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(eventoBackend)
       });
 
@@ -125,9 +135,9 @@ class CalendarioService {
       // Mapear datos de frontend a backend
       const datosBackend = this.mapearEventoFrontendABackend(datosActualizados, true);
 
-      const response = await fetch(`${this.baseURL}/eventos/${id}`, {
+      const response = await fetch(`${this.baseURL}/calendario/${id}`, {
         method: 'PUT',
-        headers: API_CONFIG.headers,
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(datosBackend)
       });
 
@@ -159,9 +169,9 @@ class CalendarioService {
    */
   async eliminarEvento(id) {
     try {
-      const response = await fetch(`${this.baseURL}/eventos/${id}`, {
+      const response = await fetch(`${this.baseURL}/calendario/${id}`, {
         method: 'DELETE',
-        headers: API_CONFIG.headers
+        headers: this.getAuthHeaders()
       });
 
       const data = await response.json();
@@ -187,41 +197,6 @@ class CalendarioService {
   // MÉTODOS DE API - CATÁLOGOS (Sesiones, Tipos de Evento, Categorías)
   // ============================================================================
 
-  /**
-   * Cargar sesiones disponibles
-   */
-  async cargarSesiones() {
-    try {
-      const response = await fetch(`${this.baseURL}/sesiones?per_page=100`, {
-        method: 'GET',
-        headers: API_CONFIG.headers
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error al cargar sesiones: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        this.sesiones = data.data;
-        return this.sesiones;
-      }
-
-      return [];
-    } catch (error) {
-      console.warn('⚠️ Backend no disponible, usando sesiones de ejemplo:', error.message);
-
-      // Fallback: sesiones de ejemplo
-      this.sesiones = [
-        { id_sesion: 1, nombre: 'Mañana', descripcion: 'Sesión matutina 8:00 AM - 12:00 PM' },
-        { id_sesion: 2, nombre: 'Tarde', descripcion: 'Sesión vespertina 2:00 PM - 6:00 PM' },
-        { id_sesion: 3, nombre: 'Noche', descripcion: 'Sesión nocturna 6:00 PM - 10:00 PM' }
-      ];
-
-      return this.sesiones;
-    }
-  }
 
   /**
    * Cargar tipos de evento disponibles
@@ -230,7 +205,7 @@ class CalendarioService {
     try {
       const response = await fetch(`${this.baseURL}/tipos-evento?per_page=100`, {
         method: 'GET',
-        headers: API_CONFIG.headers
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -315,13 +290,11 @@ class CalendarioService {
   async cargarCatalogos() {
     try {
       await Promise.all([
-        this.cargarSesiones(),
         this.cargarTiposEvento(),
         this.cargarCategorias()
       ]);
 
       const result = {
-        sesiones: this.sesiones,
         tiposEvento: this.tiposEvento,
         categorias: this.categorias
       };
@@ -401,9 +374,6 @@ class CalendarioService {
       eventoBackend.id_categoria = eventoFrontend.idCategoria;
     }
 
-    if (eventoFrontend.idSesion !== undefined) {
-      eventoBackend.id_sesion = eventoFrontend.idSesion;
-    }
 
     // Si no es actualización, agregar valores por defecto para campos requeridos
     if (!esActualizacion) {
@@ -417,7 +387,6 @@ class CalendarioService {
       // Valores por defecto si no existen
       if (!eventoBackend.id_categoria) eventoBackend.id_categoria = 1;
       if (!eventoBackend.id_tipo_evento) eventoBackend.id_tipo_evento = 1;
-      if (!eventoBackend.id_sesion) eventoBackend.id_sesion = 1;
     }
 
     return eventoBackend;
@@ -497,21 +466,12 @@ class CalendarioService {
     );
   }
 
-  /**
-   * Obtener sesión por nombre
-   */
-  obtenerSesionPorNombre(nombreSesion) {
-    return this.sesiones.find(sesion =>
-      sesion.nombre.toLowerCase() === nombreSesion.toLowerCase()
-    );
-  }
 
   /**
    * Limpiar cache local
    */
   limpiarCache() {
     this.eventos = [];
-    this.sesiones = [];
     this.tiposEvento = [];
     this.categorias = [];
   }

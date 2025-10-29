@@ -47,7 +47,7 @@ def validar_lugar(lugar_str):
 # CRUD DE EVENTOS
 # ============================================================================
 
-@eventos_bp.route('/eventos', methods=['GET'])
+@eventos_bp.route('/calendario', methods=['GET'])
 def listar_eventos():
     """
     Listar todos los eventos con filtros opcionales.
@@ -113,12 +113,6 @@ def listar_eventos():
                     'nombre_categoria': evento.categoria.nombre_categoria
                 }
             
-            if evento.sesion:
-                evento_dict['sesion'] = {
-                    'id_sesion': evento.sesion.id_sesion,
-                    'nombre': evento.sesion.nombre
-                }
-            
             # Obtener tipo de evento
             tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
             if tipo_evento:
@@ -153,7 +147,7 @@ def listar_eventos():
         }), 500
 
 
-@eventos_bp.route('/eventos/<int:id>', methods=['GET'])
+@eventos_bp.route('/calendario/<int:id>', methods=['GET'])
 def obtener_evento(id):
     """Obtener un evento específico por ID"""
     try:
@@ -190,7 +184,7 @@ def obtener_evento(id):
         }), 500
 
 
-@eventos_bp.route('/eventos', methods=['POST'])
+@eventos_bp.route('/calendario', methods=['POST'])
 def crear_evento():
     """
     Crear un nuevo evento.
@@ -204,7 +198,6 @@ def crear_evento():
         - descripcion: descripción del evento (opcional)
         - id_categoria: ID de la categoría (requerido)
         - id_tipo_evento: ID del tipo de evento (requerido)
-        - id_sesion: ID de la sesión (requerido)
     """
     try:
         data = request.get_json()
@@ -218,7 +211,7 @@ def crear_evento():
             }), 400
         
         # Validaciones de campos requeridos
-        campos_requeridos = ['nombre', 'fecha_evento', 'hora_inicio', 'hora_fin', 'lugar', 'id_categoria', 'id_tipo_evento', 'id_sesion']
+        campos_requeridos = ['nombre', 'fecha_evento', 'hora_inicio', 'hora_fin', 'lugar', 'id_categoria', 'id_tipo_evento']
         campos_faltantes = []
         
         for campo in campos_requeridos:
@@ -294,13 +287,6 @@ def crear_evento():
                 'error': f'Tipo de evento con ID {data["id_tipo_evento"]} no encontrado'
             }), 404
         
-        sesion = Sesion.query.get(data['id_sesion'])
-        if not sesion:
-            return jsonify({
-                'success': False,
-                'error': f'Sesión con ID {data["id_sesion"]} no encontrada'
-            }), 404
-        
         # Crear nuevo evento
         nuevo_evento = Evento(
             nombre=nombre,
@@ -310,8 +296,7 @@ def crear_evento():
             lugar=data['lugar'].strip(),
             descripcion=data.get('descripcion', '').strip() if data.get('descripcion') else None,
             id_categoria=data['id_categoria'],
-            id_tipo_evento=data['id_tipo_evento'],
-            id_sesion=data['id_sesion']
+            id_tipo_evento=data['id_tipo_evento']
         )
         
         db.session.add(nuevo_evento)
@@ -331,7 +316,7 @@ def crear_evento():
         }), 500
 
 
-@eventos_bp.route('/eventos/<int:id>', methods=['PUT'])
+@eventos_bp.route('/calendario/<int:id>', methods=['PUT'])
 def actualizar_evento(id):
     """
     Actualizar un evento existente.
@@ -464,7 +449,7 @@ def actualizar_evento(id):
         }), 500
 
 
-@eventos_bp.route('/eventos/<int:id>', methods=['DELETE'])
+@eventos_bp.route('/calendario/<int:id>', methods=['DELETE'])
 def eliminar_evento(id):
     """Eliminar un evento"""
     try:

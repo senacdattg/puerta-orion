@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   // Estado reactivo
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || null)
+  const permissions = ref([]) // Nuevo: permisos específicos del usuario
   const isLoading = ref(false)
   const error = ref(null)
 
@@ -35,6 +36,19 @@ export const useAuthStore = defineStore('auth', () => {
   const isAcudiente = computed(() => hasRole.value('Acudiente'))
   const isEntrenador = computed(() => hasRole.value('Entrenador'))
 
+  // Nuevos getters basados en permisos específicos de la BD
+  const puedeCrearEventos = computed(() => permissions.value.includes('crear_evento'))
+  const puedeEditarEventos = computed(() => permissions.value.includes('editar_evento'))
+  const puedeEliminarEventos = computed(() => permissions.value.includes('eliminar_evento'))
+  const puedeVerEventos = computed(() => permissions.value.includes('ver_evento') || permissions.value.includes('ver_calendario'))
+  const puedeGestionarUsuarios = computed(() => permissions.value.includes('gestionar_usuarios'))
+  const puedeAccederPanelAdmin = computed(() => permissions.value.includes('acceso_panel_admin'))
+
+  // Método para verificar permisos específicos
+  const hasPermission = (permissionName) => {
+    return permissions.value.includes(permissionName)
+  }
+
   // Acciones
   const login = async (credentials) => {
     try {
@@ -50,6 +64,9 @@ export const useAuthStore = defineStore('auth', () => {
         // Guardar en localStorage
         localStorage.setItem('token', token.value)
         localStorage.setItem('user', JSON.stringify(user.value))
+
+        // Cargar permisos específicos del usuario
+        await loadUserPermissions()
 
         return { success: true, user: response.user, token: response.token }
       } else {
@@ -96,6 +113,7 @@ export const useAuthStore = defineStore('auth', () => {
       // Limpiar estado local independientemente del resultado del servidor
       token.value = null
       user.value = null
+      permissions.value = [] // Limpiar permisos
       error.value = null
 
       // Limpiar localStorage
@@ -134,6 +152,57 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const loadUserPermissions = async () => {
+    try {
+      const response = await authService.getUserPermissions()
+      if (response.success) {
+        permissions.value = response.permisos || []
+        console.log('🔍 Permisos cargados desde BD:', permissions.value)
+      } else {
+        console.warn('⚠️ No se pudieron cargar permisos específicos, usando permisos por rol')
+        // Fallback a permisos basados en roles si no se pueden cargar permisos específicos
+        setPermissionsByRole()
+      }
+    } catch (error) {
+      console.warn('⚠️ Error cargando permisos específicos:', error.message)
+      // Fallback a permisos basados en roles
+      setPermissionsByRole()
+    }
+  }
+
+  const setPermissionsByRole = () => {
+    // Fallback: establecer permisos basados en roles si no hay permisos específicos
+    if (!user.value || !user.value.roles) {
+      permissions.value = []
+      return
+    }
+
+    const roles = user.value.roles.map(role =>
+      typeof role === 'string' ? role : role.nombre_rol
+    )
+
+    const permisos = []
+
+    // SuperAdmin y Administrador tienen todos los permisos
+    if (roles.includes('SuperAdmin') || roles.includes('Administrador')) {
+      permisos.push(
+        'crear_evento', 'editar_evento', 'eliminar_evento', 'ver_evento', 'ver_calendario',
+        'gestionar_usuarios', 'acceso_panel_admin'
+      )
+    }
+    // Entrenador puede crear y editar eventos
+    else if (roles.includes('Entrenador')) {
+      permisos.push('crear_evento', 'editar_evento', 'ver_evento', 'ver_calendario')
+    }
+    // Otros roles solo pueden ver eventos
+    else {
+      permisos.push('ver_evento', 'ver_calendario')
+    }
+
+    permissions.value = permisos
+    console.log('🔍 Permisos establecidos por rol:', permissions.value)
+  }
+
   const loadUserProfile = async () => {
     try {
       if (!token.value) return false
@@ -143,6 +212,10 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.success) {
         user.value = response.data
         localStorage.setItem('user', JSON.stringify(user.value))
+
+        // Cargar permisos después de cargar el perfil
+        await loadUserPermissions()
+
         return true
       } else {
         await logout()
@@ -182,6 +255,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('user')
       token.value = null
       user.value = null
+      permissions.value = [] // Limpiar permisos
     }
   }
 
@@ -198,6 +272,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Estado
     user,
     token,
+    permissions, // Nuevo: permisos específicos
     isLoading,
     error,
 
@@ -211,12 +286,25 @@ export const useAuthStore = defineStore('auth', () => {
     isAcudiente,
     isEntrenador,
 
+    // Nuevos getters de permisos
+    puedeCrearEventos,
+    puedeEditarEventos,
+    puedeEliminarEventos,
+    puedeVerEventos,
+    puedeGestionarUsuarios,
+    puedeAccederPanelAdmin,
+
+    // Métodos
+    hasPermission,
+
     // Acciones
     login,
     register,
     logout,
     verifyToken,
     loadUserProfile,
+    loadUserPermissions, // Nueva acción
+    setPermissionsByRole, // Nueva acción
     inicializar,
     clearError,
     updateUser

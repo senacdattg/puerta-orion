@@ -52,7 +52,7 @@ def run():
                 # Catálogos
                 "gestionar_catalogos", "ver_catalogos",
                 # Galería
-                "ver_galeria", "subir_foto", "eliminar_foto", "gestionar_galeria",
+                "ver_galeria", "crear_foto", "editar_foto", "eliminar_foto", "subir_foto", "gestionar_galeria",
                 # Calendario
                 "ver_calendario", "gestionar_calendario",
                 # Admin
@@ -73,7 +73,7 @@ def run():
                 # Catálogos
                 "ver_catalogos",
                 # Galería
-                "ver_galeria", "subir_foto",
+                "ver_galeria", "crear_foto", "editar_foto", "subir_foto",
                 # Calendario
                 "ver_calendario",
                 # Reportes básicos

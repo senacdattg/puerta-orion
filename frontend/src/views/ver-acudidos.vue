@@ -1,9 +1,8 @@
 <template>
-  <main>
+  <main class="ver-acudidos-page">
     <Encabezado />
-
-    <div class="ver-acudidos-page">
-      <div class="ver-acudidos-container">
+    <TituloClub />
+    <div class="ver-acudidos-container">
       <div class="ver-acudidos-header">
         <h1 class="ver-acudidos-title">
           <i class="fas fa-users"></i>
@@ -77,9 +76,7 @@
         </button>
       </div>
     </div>
-    </div>
-
-    <Pie />
+    <FooterEnhanced />
   </main>
 </template>
 
@@ -88,7 +85,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Encabezado from '@/components/layout/encabezado.vue'
-import Pie from '@/components/layout/pie.vue'
+import TituloClub from '@/components/ui/titulo-club.vue'
+import FooterEnhanced from '@/components/layout/pie.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

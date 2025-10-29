@@ -60,7 +60,7 @@
         <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
             <div class="modal-content" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ modoEdicion ? 'Editar Evento' : (esAdmin ? 'Agregar Evento' : 'Ver Evento') }}</h3>
+                    <h3>{{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}</h3>
                     <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
                         <i class="fas fa-times"></i>
                     </button>
@@ -74,7 +74,7 @@
                         </label>
                         <input id="titulo" v-model="nuevoEvento.titulo" type="text"
                             placeholder="Ej: Entrenamiento de fuerza" required class="input-evento"
-                            :disabled="!esAdmin" />
+                            :disabled="!puedeCrear && !modoEdicion" />
                     </div>
 
                     <div class="campo-formulario">
@@ -83,7 +83,7 @@
                             Tipo de evento *
                         </label>
                         <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento"
-                            :disabled="!esAdmin">
+                            :disabled="!puedeCrear && !modoEdicion">
                             <option value="">Seleccionar tipo</option>
                             <option v-for="tipo in tiposEvento" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">
                                 {{ tipo.nombre }}
@@ -97,7 +97,7 @@
                             Fecha *
                         </label>
                         <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
-                            :disabled="!esAdmin" />
+                            :disabled="!puedeCrear && !modoEdicion" />
                     </div>
 
                     <div class="fila-dos-columnas">
@@ -107,7 +107,7 @@
                                 Hora Inicio *
                             </label>
                             <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento"
-                                :disabled="!esAdmin" />
+                                :disabled="!puedeCrear && !modoEdicion" />
                         </div>
                         <div class="campo-formulario">
                             <label for="horaFin">
@@ -115,7 +115,7 @@
                                 Hora Fin *
                             </label>
                             <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento"
-                                :disabled="!esAdmin" />
+                                :disabled="!puedeCrear && !modoEdicion" />
                         </div>
                     </div>
 
@@ -125,7 +125,7 @@
                             Categoría *
                         </label>
                         <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento"
-                            :disabled="!esAdmin">
+                            :disabled="!puedeCrear && !modoEdicion">
                             <option value="">Seleccionar categoría</option>
                             <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">
                                 {{ categoria.nombre_categoria }}
@@ -140,7 +140,7 @@
                             Lugar *
                         </label>
                         <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
-                            required class="input-evento" :disabled="!esAdmin" />
+                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" />
                     </div>
 
                     <div class="campo-formulario">
@@ -150,7 +150,7 @@
                         </label>
                         <textarea id="descripcion" v-model="nuevoEvento.descripcion"
                             placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento"
-                            :disabled="!esAdmin"></textarea>
+                            :disabled="!puedeCrear && !modoEdicion"></textarea>
                     </div>
 
                     <div class="botones-modal">
@@ -158,12 +158,12 @@
                             <i class="fas fa-times"></i>
                             Cerrar
                         </button>
-                        <button v-if="esAdmin && modoEdicion" type="button" @click="eliminarEvento"
+                        <button v-if="puedeEliminar && modoEdicion" type="button" @click="eliminarEvento"
                             class="btn-eliminar">
                             <i class="fas fa-trash"></i>
                             Eliminar
                         </button>
-                        <button v-if="esAdmin" type="submit" class="btn-principal">
+                        <button v-if="puedeCrear || (puedeEditar && modoEdicion)" type="submit" class="btn-principal">
                             <i :class="modoEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
                             {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
                         </button>
@@ -176,7 +176,7 @@
         <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
             <div class="modal-content selector-eventos" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ esAdmin ? 'Seleccionar Evento' : 'Eventos del Día' }}</h3>
+                    <h3>{{ puedeEditar ? 'Seleccionar Evento' : 'Eventos del Día' }}</h3>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
                         <i class="fas fa-times"></i>
                     </button>
@@ -184,8 +184,8 @@
 
                 <div class="lista-eventos">
                     <div v-for="evento in eventosDelDia" :key="evento.id"
-                        @click="esAdmin ? editarEvento(evento) : verEvento(evento)" class="evento-item"
-                        :class="{ 'evento-item-usuario': !esAdmin }">
+                        @click="puedeEditar ? editarEvento(evento) : verEvento(evento)" class="evento-item"
+                        :class="{ 'evento-item-usuario': !puedeEditar }">
                         <div class="evento-info">
                             <div class="evento-titulo">{{ evento.titulo }}</div>
                             <div class="evento-detalles">
@@ -201,20 +201,20 @@
                                     {{ evento.lugar }}
                                 </span>
                             </div>
-                            <div v-if="!esAdmin" class="evento-descripcion">
+                            <div v-if="!puedeEditar" class="evento-descripcion">
                                 <i class="fas fa-align-left"></i>
                                 {{ evento.descripcion || 'Sin descripción' }}
                             </div>
                         </div>
-                        <i :class="esAdmin ? 'fas fa-edit' : 'fas fa-eye'"
-                            :title="esAdmin ? 'Editar evento' : 'Ver detalles'"></i>
+                        <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
+                            :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Botón flotante para agregar evento (solo admin) -->
-        <button v-if="esAdmin" @click="abrirModal" class="btn-flotante" title="Agregar evento">
+        <!-- Botón flotante para agregar evento (solo para roles con permisos de creación) -->
+        <button v-if="puedeCrear" @click="abrirModal" class="btn-flotante" title="Agregar evento">
             <i class="fas fa-plus"></i>
         </button>
     </div>
@@ -222,6 +222,7 @@
 
 <script>
 import calendarioService from '@/services/calendarioService.js';
+import { useAuthStore } from '@/stores/auth';
 
 export default {
     name: 'CalendarioComponent',
@@ -230,6 +231,10 @@ export default {
             type: String,
             default: 'Usuario'
         }
+    },
+    setup() {
+        const authStore = useAuthStore();
+        return { authStore };
     },
     data() {
         return {
@@ -256,18 +261,50 @@ export default {
             cargando: false,
             error: null,
             tiposEvento: [],
-            sesiones: [],
             categorias: []
         };
     },
 
     computed: {
         esAdmin() {
-            return this.rol === 'Admin';
+            return this.rol === 'SuperAdmin' || this.rol === 'Administrador';
+        },
+
+        // Permisos específicos basados en los permisos de la BD
+        puedeCrear() {
+            return this.authStore.puedeCrearEventos || this.authStore.permissions.includes('crear_evento');
+        },
+
+        puedeEditar() {
+            return this.authStore.puedeEditarEventos || this.authStore.permissions.includes('editar_evento');
+        },
+
+        puedeEliminar() {
+            return this.authStore.puedeEliminarEventos || this.authStore.permissions.includes('eliminar_evento');
+        },
+
+        puedeVer() {
+            return this.authStore.puedeVerEventos || this.authStore.permissions.includes('ver_evento') || this.authStore.permissions.includes('ver_calendario');
         }
     },
 
     async mounted() {
+        console.log('🔍 Calendario montado con rol:', this.rol);
+
+        // Cargar permisos del usuario desde el backend
+        try {
+            await this.authStore.loadUserPermissions();
+            console.log('✅ Permisos cargados desde el backend:', this.authStore.permissions);
+        } catch (error) {
+            console.error('❌ Error cargando permisos:', error);
+        }
+
+        console.log('🔍 Permisos del usuario:', {
+            puedeCrear: this.puedeCrear,
+            puedeEditar: this.puedeEditar,
+            puedeEliminar: this.puedeEliminar,
+            puedeVer: this.puedeVer
+        });
         await this.inicializarComponente();
     },
 
@@ -287,7 +324,6 @@ export default {
 
                     // Guardar catálogos en variables locales
                     this.tiposEvento = catalogos.tiposEvento || [];
-                    this.sesiones = catalogos.sesiones || [];
                     this.categorias = catalogos.categorias || [];
 
 
@@ -430,22 +466,22 @@ export default {
                     this.mostrarSelectorEventos();
                 } else {
                     // Si hay un solo evento
-                    if (this.esAdmin) {
+                    if (this.puedeEditar) {
                         this.editarEvento(dia.eventos[0]);
                     } else {
                         this.verEvento(dia.eventos[0]);
                     }
                 }
-            } else if (this.esAdmin) {
-                // Solo el admin puede crear eventos en días vacíos
+            } else if (this.puedeCrear) {
+                // Solo roles con permisos de creación pueden crear eventos en días vacíos
                 this.nuevoEvento.fecha = dia.fecha;
                 this.abrirModal();
             }
-            // Si no es admin y no hay eventos, no hace nada (no puede crear)
+            // Si no tiene permisos de creación y no hay eventos, no hace nada
         },
 
         abrirModal() {
-            if (!this.esAdmin) return; // Solo admin puede abrir modal para crear
+            if (!this.puedeCrear) return; // Solo roles con permisos de creación pueden abrir modal
 
             this.modalVisible = true;
             this.modoEdicion = false;
@@ -497,7 +533,7 @@ export default {
         },
 
         async guardarEvento() {
-            if (!this.esAdmin) return; // Solo admin puede guardar
+            if (!this.puedeCrear && !this.puedeEditar) return; // Verificar permisos
 
             // Validar datos del evento
             const errores = calendarioService.validarEvento(this.nuevoEvento);
@@ -510,9 +546,17 @@ export default {
                 this.cargando = true;
 
                 if (this.modoEdicion) {
+                    if (!this.puedeEditar) {
+                        alert('No tienes permisos para editar eventos');
+                        return;
+                    }
                     await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
                     this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
                 } else {
+                    if (!this.puedeCrear) {
+                        alert('No tienes permisos para crear eventos');
+                        return;
+                    }
                     await calendarioService.crearEvento(this.nuevoEvento);
                     this.mostrarNotificacion('Evento creado exitosamente', 'success');
                 }
@@ -528,7 +572,7 @@ export default {
         },
 
         async eliminarEvento() {
-            if (!this.esAdmin) return; // Solo admin puede eliminar
+            if (!this.puedeEliminar) return; // Solo roles con permisos de eliminación pueden eliminar
 
             if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
                 try {

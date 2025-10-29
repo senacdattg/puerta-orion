@@ -4,7 +4,6 @@ Modelo para sesiones de entrenamiento.
 
 from ..base import BaseModel
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
 
 
 class Sesion(BaseModel):
@@ -14,9 +13,6 @@ class Sesion(BaseModel):
     id_sesion = Column(Integer, primary_key=True)
     nombre = Column(String(250), nullable=False)
     descripcion = Column(String(250))
-    
-    # Relaciones
-    eventos = relationship('Evento', lazy=True)
     
     def __repr__(self):
         """

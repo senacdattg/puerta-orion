@@ -135,8 +135,8 @@ const rolSeleccionado = ref(null);
 // Roles disponibles para registro
 const rolesDisponibles = ref([
   {
-    id: 'aspirante',
-    nombre: 'Aspirante',
+    id: 'usuario',
+    nombre: 'Usuario',
     tipo: 'general',
     icono: 'fas fa-user-plus',
     descripcion: 'Usuario nuevo que desea ingresar al club deportivo'

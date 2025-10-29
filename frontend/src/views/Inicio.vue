@@ -3,10 +3,6 @@ import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import DashboardHome from '@/components/layout/DashboardHome.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
-import { useUserRole } from '@/composables/useUserRole'
-
-// Usar el composable para obtener el rol del usuario
-const { userRole } = useUserRole()
 
 // Definir nombre del componente para el linter
 defineOptions({
@@ -16,7 +12,7 @@ defineOptions({
 
 <template>
   <main class="inicio-page">
-    <Encabezado :rol="userRole" />
+    <Encabezado />
     <TituloClub />
     <DashboardHome />
     <FooterEnhanced />

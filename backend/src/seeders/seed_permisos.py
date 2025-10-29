@@ -82,8 +82,10 @@ def run():
         
         # Permisos de galería
         {"nombre": "ver_galeria", "descripcion": "Permite ver galería de fotos"},
-        {"nombre": "subir_foto", "descripcion": "Permite subir fotos a la galería"},
+        {"nombre": "crear_foto", "descripcion": "Permite crear fotos en la galería"},
+        {"nombre": "editar_foto", "descripcion": "Permite editar fotos de la galería"},
         {"nombre": "eliminar_foto", "descripcion": "Permite eliminar fotos de la galería"},
+        {"nombre": "subir_foto", "descripcion": "Permite subir fotos a la galería"},
         {"nombre": "gestionar_galeria", "descripcion": "Permite gestión completa de la galería"},
         
         # Permisos de calendario

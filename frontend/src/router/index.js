@@ -118,7 +118,7 @@ const router = createRouter({
       path: '/admin-manager',
       name: 'admin-manager',
       component: panelAdmin,
-      meta: { requiresAuth: true, requiresRole: ['Administrador', 'Entrenador'] }
+      meta: { requiresAuth: true, requiresRole: ['SuperAdmin', 'Administrador', 'Entrenador'] }
     },
     {
       path: '/completar-perfil',

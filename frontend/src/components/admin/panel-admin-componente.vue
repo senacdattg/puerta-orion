@@ -23,7 +23,7 @@
     <section class="stats-section">
       <div class="container">
         <div class="stats-grid">
-          <div v-for="tarjeta in tarjetasStats" :key="tarjeta.key" class="stat-card">
+          <div v-for="tarjeta in tarjetasStats" :key="tarjeta.key" class="stat-card" :data-role="tarjeta.key">
             <div :class="['stat-icon', tarjeta.class]">
               <i :class="tarjeta.icon"></i>
             </div>
@@ -144,27 +144,30 @@ const tarjetasStats = computed(() => {
 
   // Agregar una tarjeta por cada rol encontrado
   Object.entries(conteosPorRol.value).forEach(([nombreRol, count]) => {
-    // Determinar icono según el rol
+    // Determinar icono y clase según el rol específico
     let iconClass = 'fas fa-user'; // Por defecto
-    let statClass = 'stat-icon--user'; // Por defecto (azul)
+    let statClass = 'stat-icon--user'; // Por defecto
 
     const rolLower = nombreRol.toLowerCase();
 
-    if (rolLower.includes('admin')) {
+    if (rolLower.includes('superadmin')) {
+      iconClass = 'fas fa-crown';
+      statClass = 'stat-icon--superadmin';
+    } else if (rolLower.includes('administrador')) {
       iconClass = 'fas fa-user-shield';
-      statClass = 'stat-icon--admin'; // Rojo
+      statClass = 'stat-icon--administrador';
     } else if (rolLower.includes('entrenador')) {
-      iconClass = 'fas fa-user-tie';
-      statClass = 'stat-icon--moderator'; // Amarillo
+      iconClass = 'fa-solid fa-chalkboard-user';
+      statClass = 'stat-icon--entrenador';
     } else if (rolLower.includes('deportista')) {
       iconClass = 'fas fa-running';
-      statClass = 'stat-icon--user'; // Azul
+      statClass = 'stat-icon--deportista';
     } else if (rolLower.includes('acudiente')) {
-      iconClass = 'fas fa-user-group';
-      statClass = 'stat-icon--user'; // Azul
+      iconClass = 'fas fa-user-friends';
+      statClass = 'stat-icon--acudiente';
     } else if (rolLower.includes('usuario')) {
       iconClass = 'fas fa-user';
-      statClass = 'stat-icon--moderator'; // Azul
+      statClass = 'stat-icon--usuario';
     }
 
     tarjetas.push({

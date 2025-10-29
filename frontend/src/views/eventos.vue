@@ -1,5 +1,7 @@
 <template>
-  <div class="eventos-page">
+  <main class="eventos-page">
+    <Encabezado />
+    <TituloClub />
     <div class="eventos-container">
       <div class="eventos-header">
         <h1 class="eventos-title">
@@ -113,12 +115,21 @@
         </div>
       </div>
     </div>
-  </div>
+    <FooterEnhanced />
+  </main>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import Encabezado from '@/components/layout/encabezado.vue'
+import TituloClub from '@/components/ui/titulo-club.vue'
+import FooterEnhanced from '@/components/layout/pie.vue'
+
+// Definir nombre del componente para evitar error del linter
+defineOptions({
+  name: 'EventosView'
+})
 
 const router = useRouter()
 const filtroCategoria = ref('')

@@ -1,5 +1,7 @@
 <template>
-  <div class="asignar-acudido-page">
+  <main class="asignar-acudido-page">
+    <Encabezado />
+    <TituloClub />
     <div class="asignar-acudido-container">
       <div class="asignar-acudido-header">
         <h1 class="asignar-acudido-title">
@@ -108,13 +110,17 @@
         </div>
       </div>
     </div>
-  </div>
+    <FooterEnhanced />
+  </main>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import Encabezado from '@/components/layout/encabezado.vue'
+import TituloClub from '@/components/ui/titulo-club.vue'
+import FooterEnhanced from '@/components/layout/pie.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
