@@ -218,7 +218,7 @@ class AuthService {
       })
 
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Error al obtener permisos')
       }

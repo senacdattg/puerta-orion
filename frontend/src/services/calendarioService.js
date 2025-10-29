@@ -11,6 +11,17 @@ class CalendarioService {
     this.categorias = [];
   }
 
+  /**
+   * Obtiene los headers con autenticación
+   */
+  getAuthHeaders() {
+    const token = localStorage.getItem('token')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : ''
+    }
+  }
+
   // ============================================================================
   // MÉTODOS DE API - EVENTOS
   // ============================================================================
@@ -20,9 +31,9 @@ class CalendarioService {
    */
   async cargarEventos() {
     try {
-      const response = await fetch(`${this.baseURL}/eventos?per_page=1000`, {
+      const response = await fetch(`${this.baseURL}/calendario?per_page=1000`, {
         method: 'GET',
-        headers: API_CONFIG.headers
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -90,9 +101,9 @@ class CalendarioService {
       // Mapear evento de frontend a backend
       const eventoBackend = this.mapearEventoFrontendABackend(evento);
 
-      const response = await fetch(`${this.baseURL}/eventos`, {
+      const response = await fetch(`${this.baseURL}/calendario`, {
         method: 'POST',
-        headers: API_CONFIG.headers,
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(eventoBackend)
       });
 
@@ -124,9 +135,9 @@ class CalendarioService {
       // Mapear datos de frontend a backend
       const datosBackend = this.mapearEventoFrontendABackend(datosActualizados, true);
 
-      const response = await fetch(`${this.baseURL}/eventos/${id}`, {
+      const response = await fetch(`${this.baseURL}/calendario/${id}`, {
         method: 'PUT',
-        headers: API_CONFIG.headers,
+        headers: this.getAuthHeaders(),
         body: JSON.stringify(datosBackend)
       });
 
@@ -158,9 +169,9 @@ class CalendarioService {
    */
   async eliminarEvento(id) {
     try {
-      const response = await fetch(`${this.baseURL}/eventos/${id}`, {
+      const response = await fetch(`${this.baseURL}/calendario/${id}`, {
         method: 'DELETE',
-        headers: API_CONFIG.headers
+        headers: this.getAuthHeaders()
       });
 
       const data = await response.json();
@@ -194,7 +205,7 @@ class CalendarioService {
     try {
       const response = await fetch(`${this.baseURL}/tipos-evento?per_page=100`, {
         method: 'GET',
-        headers: API_CONFIG.headers
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
@@ -376,7 +387,6 @@ class CalendarioService {
       // Valores por defecto si no existen
       if (!eventoBackend.id_categoria) eventoBackend.id_categoria = 1;
       if (!eventoBackend.id_tipo_evento) eventoBackend.id_tipo_evento = 1;
-      if (!eventoBackend.id_sesion) eventoBackend.id_sesion = 1;
     }
 
     return eventoBackend;
