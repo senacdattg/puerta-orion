@@ -22,14 +22,12 @@ class Evento(BaseModel):
         descripcion (str): Descripción detallada del evento (opcional).
         id_categoria (int): Clave foránea a la categoría.
         id_tipo_evento (int): Clave foránea al tipo de evento.
-        id_sesion (int): Clave foránea a la sesión.
     """
-    __tablename__ = 'puerta_orion_evento'
+    __tablename__ = 'puerta_orion_calendario'
     
     id_evento = Column(Integer, primary_key=True)
     id_categoria = Column(Integer, ForeignKey('puerta_orion_categoria.id_categoria'), nullable=False)
     id_tipo_evento = Column(Integer, ForeignKey('puerta_orion_tipo_evento.id_tipo_evento'), nullable=False)
-    id_sesion = Column(Integer, ForeignKey('puerta_orion_sesiones.id_sesion'), nullable=False)
     nombre = Column(String(250), nullable=False)
     fecha_evento = Column(Date, nullable=False)
     hora_inicio = Column(Time, nullable=False)
@@ -39,7 +37,6 @@ class Evento(BaseModel):
     
     # Relaciones
     categoria = relationship('Categoria', lazy=True)
-    sesion = relationship('Sesion', lazy=True)
     
     def __repr__(self):
         """
@@ -53,7 +50,6 @@ class Evento(BaseModel):
             'id_evento': self.id_evento,
             'id_categoria': self.id_categoria,
             'id_tipo_evento': self.id_tipo_evento,
-            'id_sesion': self.id_sesion,
             'nombre': self.nombre,
             'fecha_evento': self.fecha_evento.isoformat() if self.fecha_evento else None,
             'hora_inicio': self.hora_inicio.isoformat() if self.hora_inicio else None,

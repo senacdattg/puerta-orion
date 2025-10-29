@@ -15,6 +15,7 @@ from . import salud
 from . import acudientes
 from . import deportistas
 from . import catalogos
+from . import galeria
 
 # Importar modelos específicos para acceso directo 
 from .personas.persona import Persona
@@ -54,6 +55,7 @@ from .roles_y_permisos.personas_rol import PersonasRol
 from .eventos.sesionAuth import SesionAuth
 from .salud.diagnostico import Diagnostico
 from .salud.diagnostico_deportista import DiagnosticoDeportista
+from .galeria.galeria import Galeria
 
 __all__ = [
     # Base y utilidades
@@ -71,6 +73,7 @@ __all__ = [
     'acudientes',
     'deportistas',
     'catalogos',
+    'galeria',
     
     # Modelos principales
     'Persona',
@@ -119,4 +122,5 @@ __all__ = [
     
     # Nuevas tablas agregadas
     'PersonasRol',
+    'Galeria',
 ]
