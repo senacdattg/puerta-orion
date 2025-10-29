@@ -107,23 +107,45 @@ class AcudienteValidator(ProfileValidator):
         """
         Valida datos para acudiente.
         
-        Valida que el usuario tenga al menos 18 años para ser acudiente.
+        Requiere que se proporcione información de asociación con deportista:
+        - id_deportista (obligatorio)
+        - id_parentesco (obligatorio)
+        - es_responsable (obligatorio, bool)
         """
-        # Obtener la edad del usuario desde la persona
-        from ..models.usuarios.usuario import Usuario
-        from ..models.deportistas.deportista import Deportista
-        from ..models.personas.persona import Persona
+        required_fields = ['id_deportista', 'id_parentesco']
         
-        # Como se llama desde completar_perfil, necesitamos el usuario_id del contexto
-        # Por ahora no tenemos acceso directo, así que validamos de otra forma
+        missing_fields = [
+            field for field in required_fields
+            if field not in data or data[field] is None or data[field] == ''
+        ]
         
-        # Validar si existe fecha_nacimiento en el deportista (si es deportista)
-        # o buscar en otra fuente de datos
+        if missing_fields:
+            raise ProfileCompletionError(
+                f"Para completar el perfil como acudiente, debe asociarse con un deportista. "
+                f"Campos requeridos faltantes: {', '.join(missing_fields)}"
+            )
         
-        # Por ahora, la validación básica es que no se requieren campos específicos
-        # La validación de edad se hará en el endpoint o en el frontend
+        # Validar que es_responsable esté definido (puede ser False, pero debe estar)
+        if 'es_responsable' not in data:
+            raise ProfileCompletionError(
+                "Debe especificar si es responsable legal del deportista"
+            )
         
-        pass  # Los acudientes requieren ser mayores de edad
+        # Validar que el parentesco sea un número válido
+        try:
+            id_parentesco = int(data['id_parentesco'])
+            if id_parentesco <= 0:
+                raise ProfileCompletionError("El ID de parentesco debe ser un número positivo")
+        except (ValueError, TypeError):
+            raise ProfileCompletionError("El ID de parentesco debe ser un número válido")
+        
+        # Validar que el deportista sea un número válido
+        try:
+            id_deportista = int(data['id_deportista'])
+            if id_deportista <= 0:
+                raise ProfileCompletionError("El ID de deportista debe ser un número positivo")
+        except (ValueError, TypeError):
+            raise ProfileCompletionError("El ID de deportista debe ser un número válido")
 
 
 class ProfileCreator(ABC):
@@ -186,27 +208,72 @@ class AcudienteCreator(ProfileCreator):
         return "acudiente"
 
     def create(self, usuario_id: int, data: Dict[str, Any]) -> Acudiente:
-        """Crea un acudiente con los datos proporcionados."""
+        """
+        Crea un acudiente con los datos proporcionados.
+        También crea la relación inicial con el deportista automáticamente.
+        """
+        from datetime import date
+        from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+        from src.models.deportistas.deportista import Deportista
+        from src.models.acudientes.parentesco import Parentesco
+        
         # Obtener usuario para acceder a id_persona
         usuario = Usuario.query.filter_by(id_usuario=usuario_id).first()
         if not usuario:
             raise ProfileCompletionError("Usuario no encontrado")
-
+        
+        # Crear el registro de acudiente (solo id_persona y estado)
         acudiente = Acudiente(
             id_persona=usuario.id_persona,
-            estado=True,
-            parentesco=data.get('parentesco', ''),
-            ocupacion=data.get('ocupacion', ''),
-            lugar_trabajo=data.get('lugar_trabajo', ''),
-            telefono_trabajo=data.get('telefono_trabajo', ''),
-            telefono_emergencia=data.get('telefono_emergencia', ''),
-            autorizacion_imagenes=data.get('autorizacion_imagenes', False),
-            autorizacion_salidas=data.get('autorizacion_salidas', False),
-            autorizacion_medica=data.get('autorizacion_medica', False),
-            observaciones=data.get('observaciones', '')
+            estado=True
         )
-
+        
         db.session.add(acudiente)
+        db.session.flush()  # Para obtener el id_acudiente
+        
+        # Validar y crear relación con deportista (OBLIGATORIO)
+        id_deportista = data.get('id_deportista')
+        id_parentesco = data.get('id_parentesco')
+        es_responsable = data.get('es_responsable', False)
+        
+        if not id_deportista or not id_parentesco:
+            raise ProfileCompletionError(
+                "Para completar el perfil como acudiente, debe asociarse con un deportista, "
+                "indicar el parentesco y si es responsable"
+            )
+        
+        # Validar que el deportista existe
+        deportista = Deportista.query.filter_by(id_deportista=int(id_deportista)).first()
+        if not deportista:
+            raise ProfileCompletionError(f"El deportista con ID {id_deportista} no existe")
+        
+        # Validar que el parentesco existe
+        parentesco = Parentesco.query.filter_by(id_parentesco=int(id_parentesco)).first()
+        if not parentesco:
+            raise ProfileCompletionError(f"El parentesco con ID {id_parentesco} no existe")
+        
+        # Validar que no exista ya esta relación
+        relacion_existente = DeportistaAcudiente.query.filter_by(
+            id_deportista=int(id_deportista),
+            id_acudiente=acudiente.id_acudiente
+        ).first()
+        
+        if relacion_existente:
+            raise ProfileCompletionError(
+                "Ya existe una relación entre este acudiente y este deportista"
+            )
+        
+        # Crear la relación DeportistaAcudiente
+        deportista_acudiente = DeportistaAcudiente(
+            id_deportista=int(id_deportista),
+            id_acudiente=acudiente.id_acudiente,
+            id_parentesco=int(id_parentesco),
+            es_responsable=bool(es_responsable),
+            fecha_registro=date.today()
+        )
+        
+        db.session.add(deportista_acudiente)
+        
         return acudiente
 
 

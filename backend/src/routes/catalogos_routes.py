@@ -635,6 +635,107 @@ def obtener_acudientes():
         }), 500
 
 
+@catalogos_bp.route('/deportistas', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_deportistas():
+    """Obtener todos los deportistas disponibles o buscar por cédula/documento"""
+    try:
+        from ..models.deportistas.deportista import Deportista
+        from ..models.personas.persona import Persona
+        
+        # Obtener parámetro de búsqueda por cédula
+        cedula = request.args.get('cedula', '').strip()
+        
+        if cedula:
+            # Buscar deportista por cédula de la persona asociada
+            persona = Persona.query.filter_by(documento=cedula).first()
+            
+            if not persona:
+                return jsonify({
+                    'success': False,
+                    'data': None,
+                    'message': 'No se encontró ninguna persona con ese documento',
+                    'sugerencia': 'El deportista debe registrarse primero en el sistema'
+                }), 404
+            
+            # Buscar si esta persona es deportista
+            deportista = Deportista.query.filter_by(id_persona=persona.id_persona).first()
+            
+            if not deportista:
+                return jsonify({
+                    'success': False,
+                    'data': None,
+                    'message': 'La persona encontrada no está registrada como deportista',
+                    'sugerencia': 'El deportista debe completar su registro en el sistema'
+                }), 404
+            
+            # Retornar deportista encontrado
+            deportista_dict = {
+                'id_deportista': deportista.id_deportista,
+                'id_persona': deportista.id_persona
+            }
+            
+            if persona:
+                deportista_dict['persona'] = {
+                    'id_persona': persona.id_persona,
+                    'nombre_completo': persona.nombre_completo,
+                    'primer_nombre': persona.primer_nombre,
+                    'primer_apellido': persona.primer_apellido,
+                    'segundo_nombre': persona.segundo_nombre,
+                    'segundo_apellido': persona.segundo_apellido,
+                    'documento': persona.documento,
+                    'correo_electronico': persona.correo_electronico,
+                    'telefono': persona.telefono
+                }
+            
+            return jsonify({
+                'success': True,
+                'data': deportista_dict,
+                'message': 'Deportista encontrado exitosamente'
+            }), 200
+        else:
+            # Retornar todos los deportistas (limitado a los activos)
+            logger.info("Solicitando lista de deportistas...")
+            deportistas = Deportista.query.all()
+            logger.info(f"Deportistas encontrados: {len(deportistas)}")
+
+            deportistas_data = []
+            for deportista in deportistas:
+                deportista_dict = {
+                    'id_deportista': deportista.id_deportista,
+                    'id_persona': deportista.id_persona
+                }
+                # Agregar datos de la persona si existe la relación
+                if hasattr(deportista, 'persona') and deportista.persona:
+                    deportista_dict['persona'] = {
+                        'id_persona': deportista.persona.id_persona,
+                        'nombre_completo': deportista.persona.nombre_completo,
+                        'primer_nombre': deportista.persona.primer_nombre,
+                        'primer_apellido': deportista.persona.primer_apellido,
+                        'segundo_nombre': deportista.persona.segundo_nombre,
+                        'segundo_apellido': deportista.persona.segundo_apellido,
+                        'documento': deportista.persona.documento,
+                        'correo_electronico': deportista.persona.correo_electronico,
+                        'telefono': deportista.persona.telefono
+                    }
+                deportistas_data.append(deportista_dict)
+
+            return jsonify({
+                'success': True,
+                'data': deportistas_data,
+                'message': 'Deportistas obtenidos exitosamente'
+            }), 200
+
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener deportistas: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al obtener deportistas: {str(e)}'
+        }), 500
+
+
 # Manejadores de errores específicos del Blueprint
 @catalogos_bp.errorhandler(400)
 def bad_request(error):

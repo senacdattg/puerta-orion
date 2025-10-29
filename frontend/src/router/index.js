@@ -17,6 +17,7 @@ import Login from '@/views/login.vue'
 import panelAdmin from '@/views/admin-manager.vue'
 import CompletarPerfil from '@/views/completar-perfil.vue'
 import RegistrarAcudiente from '@/views/registrar-acudiente.vue'
+import FormularioAcudienteCompleto from '@/views/formulario-acudiente-completo.vue'
 import RegistrarDeportistaForm from '@/views/registrar-deportista-form.vue'
 import DeportistaDashboard from '@/views/DeportistaDashboard.vue'
 import AcudienteDashboard from '@/views/AcudienteDashboard.vue'
@@ -132,6 +133,12 @@ const router = createRouter({
       path: '/registrar-acudiente',
       name: 'registrar-acudiente',
       component: RegistrarAcudiente,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/formulario-acudiente-completo',
+      name: 'formulario-acudiente-completo',
+      component: FormularioAcudienteCompleto,
       meta: { requiresAuth: true }
     },
     {
