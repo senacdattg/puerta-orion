@@ -3,12 +3,14 @@ Rutas para la gestión de la galería de imágenes.
 """
 
 from flask import Blueprint, request, jsonify
-from src.database.database import db
+from src.models.base import db
 from src.models.galeria.galeria import Galeria
 from src.models.eventos.tipo_evento import TipoEvento
 from src.models.categorias.categoria import Categoria
-from src.middleware.auth_decorator import token_required
+from ..middleware.auth_decorator import token_required
 from src.utils.logger import logger
+import os
+import urllib.parse
 
 galeria_bp = Blueprint('galeria', __name__, url_prefix='/api/galeria')
 
@@ -263,7 +265,7 @@ def actualizar_imagen(id_galeria):
 @token_required()
 def eliminar_imagen(id_galeria):
     """
-    Eliminar una imagen de la galería.
+    Eliminar una imagen de la galería y su archivo físico.
     """
     try:
         imagen = Galeria.query.get(id_galeria)
@@ -276,7 +278,32 @@ def eliminar_imagen(id_galeria):
             }), 404
         
         titulo_imagen = imagen.titulo
+        url_imagen = imagen.url_imagen
         
+        # Eliminar archivo físico si existe
+        if url_imagen:
+            try:
+                # Extraer el nombre del archivo de la URL
+                # Ejemplo: http://localhost:5000/static/uploads/galeria/archivo.jpg
+                # Necesitamos obtener: archivo.jpg
+                parsed_url = urllib.parse.urlparse(url_imagen)
+                filename = os.path.basename(parsed_url.path)
+                
+                # Construir la ruta completa del archivo
+                file_path = os.path.join('static', 'uploads', 'galeria', filename)
+                
+                # Verificar si el archivo existe y eliminarlo
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Archivo físico eliminado: {file_path}")
+                else:
+                    logger.warning(f"Archivo físico no encontrado: {file_path}")
+                    
+            except Exception as file_error:
+                logger.error(f"Error eliminando archivo físico {url_imagen}: {str(file_error)}")
+                # No fallar la eliminación si hay error con el archivo
+        
+        # Eliminar registro de la base de datos
         db.session.delete(imagen)
         db.session.commit()
         
@@ -284,7 +311,7 @@ def eliminar_imagen(id_galeria):
         
         return jsonify({
             'success': True,
-            'message': 'Imagen eliminada exitosamente',
+            'message': 'Imagen y archivo eliminados exitosamente',
             'status_code': 200
         }), 200
         

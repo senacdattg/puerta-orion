@@ -40,7 +40,7 @@ def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get('FLASK_ENV', 'development')
 
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='static', static_url_path='/static')
     
     # Cargar configuración
     app.config.from_object(config[config_name])
@@ -79,6 +79,7 @@ def create_app(config_name=None):
     from src.routes.usuarios_routes import usuarios_bp
     from src.routes.deportistas_routes import deportistas_bp
     from src.routes.galeria_routes import galeria_bp
+    from src.routes.archivos_routes import archivos_bp
     
     app.register_blueprint(pagos_bp, url_prefix='/api')
     app.register_blueprint(catalogos_bp)
@@ -88,6 +89,7 @@ def create_app(config_name=None):
     app.register_blueprint(usuarios_bp)  # Ya tiene url_prefix='/api/usuarios'
     app.register_blueprint(deportistas_bp, url_prefix='/api')
     app.register_blueprint(galeria_bp)  # Ya tiene url_prefix='/api/galeria'
+    app.register_blueprint(archivos_bp)  # Ya tiene url_prefix='/api/archivos'
 
     @app.route('/')
     def index():

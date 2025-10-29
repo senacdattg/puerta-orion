@@ -16,7 +16,7 @@ class Galeria(BaseModel):
     titulo = Column(String(250), nullable=False)
     url_imagen = Column(String(500), nullable=False)
     descripcion = Column(Text, nullable=True)
-    fecha_subida = Column(DateTime, nullable=False, default=datetime.utcnow)
+    fecha_subida = Column(DateTime, nullable=False, default=datetime.now)
     
     # Foreign Keys
     id_tipo_evento = Column(Integer, ForeignKey('puerta_orion_tipo_evento.id_tipo_evento'), nullable=True)
