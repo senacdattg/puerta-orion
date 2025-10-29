@@ -33,6 +33,11 @@ export const useAuthStore = defineStore('auth', () => {
   const puedeGestionarUsuarios = computed(() => permissions.value.includes('gestionar_usuarios'))
   const puedeAccederPanelAdmin = computed(() => permissions.value.includes('acceso_panel_admin'))
 
+  // Método para verificar permisos específicos
+  const hasPermission = (permissionName) => {
+    return permissions.value.includes(permissionName)
+  }
+
   // Acciones
   const login = async (credentials) => {
     try {
@@ -277,6 +282,9 @@ export const useAuthStore = defineStore('auth', () => {
     puedeVerEventos,
     puedeGestionarUsuarios,
     puedeAccederPanelAdmin,
+
+    // Métodos
+    hasPermission,
 
     // Acciones
     login,

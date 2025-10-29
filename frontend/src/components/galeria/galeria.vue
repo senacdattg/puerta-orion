@@ -18,12 +18,9 @@
           <div class="filtros">
             <select v-model="filtroEvento" class="filtro-select">
               <option value="">Filtrar por eventos</option>
-              <option v-for="tipo in tipos" :key="tipo" :value="tipo">{{ tipo }}</option>
+              <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.nombre">{{ tipo.nombre }}</option>
             </select>
-            <select v-model="filtroMes" class="filtro-select">
-              <option value="">Filtrar por mes</option>
-              <option v-for="mes in meses" :key="mes" :value="mes">{{ mes }}</option>
-            </select>
+            <button @click="limpiarFiltros" class="btn-limpiar-filtros">Limpiar filtros</button>
           </div>
         </div>
       </div>
@@ -31,22 +28,24 @@
 
       <div class="cuadricula-tarjetas">
         <div v-for="(evento, index) in eventosFiltrados" :key="index" class="tarjeta evento"
-          @click="esAdmin && editarEvento(index)">
-          <div v-if="!evento.imagen" class="imagen-placeholder">
+          @click="verDetalleEvento(index)">
+          <div v-if="!evento.url_imagen" class="imagen-placeholder">
             <i :class="evento.icono"></i>
             <span>Imagen del evento</span>
           </div>
-          <img v-else :src="evento.imagen" :alt="evento.nombre" class="foto-evento" />
+          <img v-else :src="evento.url_imagen" :alt="evento.nombre" class="foto-evento" />
 
-          <div class="nombre-evento">{{ evento.nombre }}</div>
-          <div class="fecha-evento">{{ evento.fecha }}</div>
-          <div class="descripcion-evento">{{ evento.descripcion }}</div>
-          <div class="tipo" :class="claseTipo(evento.tipo)">
-            {{ evento.tipo }}
+          <div class="contenido-tarjeta">
+            <div class="nombre-evento">{{ evento.nombre }}</div>
+            <div class="fecha-evento">{{ evento.fecha }}</div>
+            <div class="descripcion-evento">{{ evento.descripcion }}</div>
+            <div class="tipo" :class="claseTipo(evento.tipo)">
+              {{ evento.tipo }}
+            </div>
           </div>
         </div>
 
-        <div v-if="esAdmin" class="boton-agregar" @click="abrirFormulario">
+        <div v-if="puedeCrearFoto" class="boton-agregar" @click="abrirFormulario">
           +
         </div>
       </div>
@@ -57,7 +56,7 @@
     <div v-if="mostrarFormulario" class="modal-overlay">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>{{ editando !== null ? 'Editar Evento' : 'Agregar Evento' }}</h3>
+          <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
           <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
             <i class="fas fa-times"></i>
           </button>
@@ -65,48 +64,79 @@
 
         <form @submit.prevent="guardarEvento" class="formulario-evento">
           <div class="campo-formulario">
-            <label for="nombre">
+            <label for="titulo">
               <i class="fas fa-heading"></i>
               Título del evento *
             </label>
-            <input id="nombre" v-model="form.nombre" type="text" placeholder="Ej: Megaweekend" class="input-evento" />
+            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento" :readonly="!puedeEditarFoto" />
           </div>
           <div class="campo-formulario">
-            <label for="fecha">
-              <i class="fas fa-calendar"></i>
-              Fecha *
-            </label>
-            <input id="fecha" v-model="form.fecha" type="date" class="input-evento" />
-          </div>
-          <div class="campo-formulario">
-            <label for="tipo">
-              <i class="fas fa-tag"></i>
-              Tipo de evento *
-            </label>
-            <select v-model="form.tipo" class="select-evento">
-              <option disabled value="">Selecciona categoría</option>
-              <option v-for="tipo in tipos" :key="tipo" :value="tipo">{{ tipo }}</option>
-            </select>
-          </div>
-          <div class="campo-formulario">
-            <label for="imagen">
+            <label for="archivo_imagen">
               <i class="fas fa-camera"></i>
               Imagen *
             </label>
-            <input id="imagen" v-model="form.imagen" type="url" placeholder="URL de imagen" class="input-evento" />
+
+            <!-- Mostrar imagen actual cuando se está editando -->
+            <div v-if="editando !== null && !cambiandoImagen && eventos[editando]" class="imagen-actual">
+              <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre" class="imagen-preview" />
+              <p class="texto-imagen-actual">Imagen actual</p>
+              <button type="button" @click="cambiarImagen" class="btn-cambiar-imagen" v-if="puedeEditarFoto">
+                <i class="fas fa-edit"></i> Cambiar imagen
+              </button>
+            </div>
+
+            <!-- Input de archivo -->
+            <div v-if="(editando === null || cambiandoImagen) && puedeEditarFoto">
+              <input
+                id="archivo_imagen"
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                @change="manejarSeleccionArchivo"
+                class="input-evento"
+              />
+              <div v-if="archivoSeleccionado" class="archivo-info">
+                <i class="fas fa-file-image"></i>
+                {{ archivoSeleccionado.name }}
+                <button type="button" @click="limpiarArchivo" class="btn-limpiar">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="campo-formulario">
+            <label for="id_tipo_evento">
+              <i class="fas fa-tag"></i>
+              Tipo de evento
+            </label>
+            <select v-model="form.id_tipo_evento" class="select-evento" :disabled="!puedeEditarFoto">
+              <option value="">Selecciona tipo de evento</option>
+              <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">{{ tipo.nombre }}</option>
+            </select>
+          </div>
+          <div class="campo-formulario">
+            <label for="id_categoria">
+              <i class="fas fa-list"></i>
+              Categoría
+            </label>
+            <select v-model="form.id_categoria" class="select-evento" :disabled="!puedeEditarFoto">
+              <option value="">Selecciona categoría</option>
+              <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">{{ categoria.nombre_categoria }}</option>
+            </select>
           </div>
           <div class="campo-formulario">
             <label for="descripcion">
               <i class="fas fa-align-left"></i>
               Descripción
             </label>
-            <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción"
-              class="input-evento"></textarea>
+            <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
+              class="input-evento" :readonly="!puedeEditarFoto"></textarea>
           </div>
 
           <div class="acciones centrado">
-            <button class="btn-principal" @click="guardarEvento">Aceptar</button>
-            <button class="btn-secundario" v-if="editando !== null" @click="eliminarEvento">Eliminar</button>
+            <button type="submit" class="btn-principal" v-if="puedeEditarFoto">{{ editando !== null ? 'Actualizar' : 'Crear' }}</button>
+            <button type="button" class="btn-principal" v-if="!puedeEditarFoto" @click="cerrarFormulario">Cerrar</button>
+            <button type="button" class="btn-secundario" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
           </div>
         </form>
 
@@ -121,104 +151,36 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/auth'
+import galeriaService from '@/services/galeriaService'
 
 export default {
   name: "EventosClub",
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
   data() {
     return {
-      esAdmin: true,
       busqueda: "",
-      filtroMes: "",
       filtroEvento: "",
-      tipos: ["🏆 Competencias", "🏋️ Entrenamientos", "🎉 Eventos"],
-      meses: [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-      ],
-
-      eventos: [
-        {
-          nombre: "Torneo Nacional de Voleibol",
-          tipo: "🏆 Competencias",
-          fecha: "15 de Noviembre, 2023",
-          descripcion:
-            "Competición nacional con los mejores equipos juveniles de voleibol del país.",
-          imagen: null
-        },
-        {
-          nombre: "Clínica de Voleo y Bloqueo",
-          tipo: "🏋️ Entrenamientos",
-          fecha: "5 de Diciembre, 2023",
-          descripcion:
-            "Entrenamiento especializado en técnicas de ataque y defensa en la red.",
-          icono: "fas fa-volleyball-ball",
-          imagen: null
-        },
-        {
-          nombre: "Cena de Navidad del Club",
-          tipo: "🎉 Eventos",
-          fecha: "20 de Diciembre, 2023",
-          descripcion:
-            "Celebración navideña para deportistas, entrenadores y familias del club.",
-          icono: "fas fa-utensils",
-          imagen: null
-        },
-        {
-          nombre: "Campeonato Regional Sub-18",
-          tipo: "🏆 Competencias",
-          fecha: "10 de Enero, 2024",
-          descripcion:
-            "Participación de nuestro equipo juvenil en el campeonato regional.",
-          icono: "fas fa-trophy",
-          imagen: null
-        },
-        {
-          nombre: "Escuela de Verano Vóley Playa",
-          tipo: "🏋️ Entrenamientos",
-          fecha: "15 de Julio, 2023",
-          descripcion:
-            "Programa intensivo de vóley playa para todas las edades.",
-          icono: "fas fa-umbrella-beach",
-          imagen: null
-        },
-        {
-          nombre: "Torneo de Invierno",
-          tipo: "🏆 Competencias",
-          fecha: "20 de Marzo, 2023",
-          descripcion:
-            "Competición indoor para mantener el ritmo en temporada baja.",
-          imagen:
-            "https://images.unsplash.com/photo-1565998129-8f5d5a9c8c1b?auto=format&fit=crop&w=800&q=80"
-        },
-        {
-          nombre: "Día del Deporte Familiar",
-          tipo: "🎉 Eventos",
-          fecha: "15 de Mayo, 2023",
-          descripcion:
-            "Jornada de integración familiar con mini-torneos y actividades.",
-          imagen:
-            "https://images.unsplash.com/photo-1517649763962-0c2a4163f8b7?auto=format&fit=crop&w=800&q=80"
-        },
-        {
-          nombre: "Clínica de Saque y Recepción",
-          tipo: "🏋️ Entrenamientos",
-          fecha: "5 de Septiembre, 2023",
-          descripcion:
-            "Mejora tus fundamentos con nuestra clínica especializada.",
-          imagen:
-            "https://images.unsplash.com/photo-1571019614234-f95f8d9d1bca?auto=format&fit=crop&w=800&q=80"
-        }
-      ],
+      tipos: [],
+      categorias: [],
+      eventos: [],
+      cargando: false,
 
       // Nuevo estado para formulario
       mostrarFormulario: false,
-      editando: false, // índice del evento que se edita o null
+      editando: null, // índice del evento que se edita o null
+      archivoSeleccionado: null,
+      cambiandoImagen: false, // controla si se está cambiando la imagen
       form: {
-        nombre: "",
+        titulo: "",
         tipo: "",
         fecha: "",
         descripcion: "",
-        imagen: ""
+        id_tipo_evento: "",
+        id_categoria: ""
       }
     };
   },
@@ -232,64 +194,324 @@ export default {
           !this.busqueda ||
           evento.nombre.toLowerCase().includes(this.busqueda.toLowerCase());
 
-        const coincideMes =
-          !this.filtroMes ||
-          evento.fecha.toLowerCase().includes(this.filtroMes.toLowerCase());
-
-        return coincideTipo && coincideNombre && coincideMes;
+        return coincideTipo && coincideNombre;
       });
+    },
+
+    // Permisos de galería
+    puedeVerGaleria() {
+      return this.authStore.hasPermission('ver_galeria');
+    },
+
+    puedeCrearFoto() {
+      return this.authStore.hasPermission('crear_foto');
+    },
+
+    puedeEditarFoto() {
+      return this.authStore.hasPermission('editar_foto');
+    },
+
+    puedeEliminarFoto() {
+      return this.authStore.hasPermission('eliminar_foto');
+    },
+
+    puedeSubirFoto() {
+      return this.authStore.hasPermission('subir_foto');
+    },
+
+    puedeGestionarGaleria() {
+      return this.authStore.hasPermission('gestionar_galeria');
     }
   },
   methods: {
+    async cargarDatos() {
+      this.cargando = true
+      try {
+        await Promise.all([
+          this.cargarEventos(),
+          this.cargarCatalogos()
+        ])
+      } catch (error) {
+        console.error('Error cargando datos:', error)
+      } finally {
+        this.cargando = false
+      }
+    },
+
+    async cargarEventos() {
+      try {
+        const imagenes = await galeriaService.cargarImagenes()
+        // Convertir imágenes de galería al formato de eventos
+        this.eventos = imagenes.map(imagen => ({
+          id: imagen.id_galeria,
+          nombre: imagen.titulo,
+          tipo: imagen.tipo_evento ? imagen.tipo_evento.nombre : 'Sin tipo',
+          fecha: this.formatearFecha(imagen.fecha_subida),
+          descripcion: imagen.descripcion || '',
+          url_imagen: imagen.url_imagen,
+          categoria: imagen.categoria ? imagen.categoria.nombre_categoria : 'Sin categoría',
+          id_tipo_evento: imagen.id_tipo_evento,
+          id_categoria: imagen.id_categoria
+        }))
+      } catch (error) {
+        console.error('Error cargando eventos:', error)
+        this.eventos = []
+      }
+    },
+
+    async cargarCatalogos() {
+      try {
+        const catalogos = await galeriaService.cargarCatalogos()
+        this.tipos = catalogos.tiposEvento
+        this.categorias = catalogos.categorias
+      } catch (error) {
+        console.error('Error cargando catálogos:', error)
+        this.tipos = []
+        this.categorias = []
+      }
+    },
+
+    formatearFecha(fecha) {
+      if (!fecha) return ''
+      return new Date(fecha).toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    },
+
     abrirFormulario() {
       this.editando = null;
-      this.form = { nombre: "", fecha: "", descripcion: "", tipo: "", imagen: "" };
+      this.archivoSeleccionado = null;
+      this.cambiandoImagen = false;
+      this.form = {
+        titulo: "",
+        fecha: "",
+        descripcion: "",
+        tipo: "",
+        id_tipo_evento: "",
+        id_categoria: ""
+      };
       this.mostrarFormulario = true;
     },
     cerrarFormulario() {
       this.mostrarFormulario = false;
       this.limpiarFormulario();
     },
-    editarEvento(index) {
+
+    verDetalleEvento(index) {
+      // Si tiene permisos de edición, abre el formulario de edición
+      if (this.puedeEditarFoto) {
+        this.editarEvento(index);
+      } else {
+        // Si no tiene permisos, solo muestra la información (solo lectura)
+        this.mostrarInformacion(index);
+      }
+    },
+
+    mostrarInformacion(index) {
+      const evento = this.eventos[index];
       this.editando = index;
-      this.form = { ...this.eventos[index] };
+
+      // Cargar datos en el formulario pero en modo solo lectura
+      this.form = {
+        titulo: evento.nombre,
+        fecha: evento.fecha,
+        descripcion: evento.descripcion,
+        tipo: evento.tipo,
+        id_tipo_evento: evento.id_tipo_evento || "",
+        id_categoria: evento.id_categoria || ""
+      };
+
+      this.archivoSeleccionado = null;
+      this.cambiandoImagen = false;
       this.mostrarFormulario = true;
     },
-    guardarEvento() {
-      if (this.editando !== null) {
-        this.eventos[this.editando] = { ...this.form };
-      } else {
-        this.eventos.push({ ...this.form });
-      }
-      this.mostrarFormulario = false;
+    editarEvento(index) {
+      this.editando = index;
+      const evento = this.eventos[index];
+
+      this.form = {
+        titulo: evento.nombre,
+        fecha: evento.fecha,
+        descripcion: evento.descripcion,
+        tipo: evento.tipo,
+        id_tipo_evento: evento.id_tipo_evento || "",
+        id_categoria: evento.id_categoria || ""
+      };
+      this.archivoSeleccionado = null;
+      this.cambiandoImagen = false;
+      this.mostrarFormulario = true;
     },
+    manejarSeleccionArchivo(event) {
+      const file = event.target.files[0];
+      if (file) {
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+          alert('Por favor selecciona un archivo de imagen válido');
+          event.target.value = '';
+          return;
+        }
+
+        // Validar tamaño (16MB máximo)
+        if (file.size > 16 * 1024 * 1024) {
+          alert('El archivo es demasiado grande. Tamaño máximo: 16MB');
+          event.target.value = '';
+          return;
+        }
+
+        this.archivoSeleccionado = file;
+      }
+    },
+    cambiarImagen() {
+      this.cambiandoImagen = true;
+      this.archivoSeleccionado = null;
+    },
+    limpiarArchivo() {
+      this.archivoSeleccionado = null;
+      // Limpiar el input si existe
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.value = '';
+      }
+    },
+    async guardarEvento() {
+      try {
+        // Validar campos requeridos
+        if (!this.form.titulo) {
+          alert('El título es obligatorio');
+          return;
+        }
+
+        if (this.editando === null && !this.archivoSeleccionado) {
+          alert('Debes seleccionar una imagen');
+          return;
+        }
+
+        if (this.editando !== null) {
+          // Actualizar evento existente
+          if (this.archivoSeleccionado) {
+            // Si se seleccionó una nueva imagen, usar el endpoint de archivos
+            const formData = new FormData();
+            formData.append('file', this.archivoSeleccionado);
+            formData.append('titulo', this.form.titulo);
+            formData.append('descripcion', this.form.descripcion || '');
+            if (this.form.id_tipo_evento) {
+              formData.append('id_tipo_evento', this.form.id_tipo_evento);
+            }
+            if (this.form.id_categoria) {
+              formData.append('id_categoria', this.form.id_categoria);
+            }
+
+            // Primero eliminar la imagen actual
+            await galeriaService.eliminarImagen(this.eventos[this.editando].id);
+            // Luego crear la nueva
+            await galeriaService.crearImagenConArchivo(formData);
+          } else {
+            // Solo actualizar datos sin cambiar imagen
+            const datosImagen = {
+              titulo: this.form.titulo,
+              descripcion: this.form.descripcion,
+              id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
+              id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
+            }
+            await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen);
+          }
+        } else {
+          // Crear nuevo evento con archivo
+          const formData = new FormData();
+          formData.append('file', this.archivoSeleccionado);
+          formData.append('titulo', this.form.titulo);
+          formData.append('descripcion', this.form.descripcion || '');
+          if (this.form.id_tipo_evento) {
+            formData.append('id_tipo_evento', this.form.id_tipo_evento);
+          }
+          if (this.form.id_categoria) {
+            formData.append('id_categoria', this.form.id_categoria);
+          }
+
+          await galeriaService.crearImagenConArchivo(formData);
+        }
+
+        await this.cargarEventos(); // Recargar la lista
+        this.mostrarFormulario = false;
+      } catch (error) {
+        console.error('Error guardando evento:', error);
+        alert('Error al guardar el evento: ' + error.message);
+      }
+    },
+
+    async eliminarEvento() {
+      if (this.editando === null) {
+        return;
+      }
+
+      if (!this.puedeEliminarFoto) {
+        return;
+      }
+
+      const evento = this.eventos[this.editando];
+      if (!evento || !evento.id) {
+        return;
+      }
+
+      try {
+        await galeriaService.eliminarImagen(evento.id);
+        await this.cargarEventos(); // Recargar la lista
+
+        // Cerrar formulario y resetear estado
+        this.mostrarFormulario = false;
+        this.editando = null;
+        this.limpiarFormulario();
+      } catch (error) {
+        console.error('Error eliminando evento:', error);
+        alert('Error al eliminar el evento: ' + error.message);
+      }
+    },
+
     cancelarFormulario() {
       this.mostrarFormulario = false;
     },
     limpiarFormulario() {
       this.form = {
-        nombre: "",
+        titulo: "",
         fecha: "",
         descripcion: "",
         tipo: "",
-        imagen: ""
+        id_tipo_evento: "",
+        id_categoria: ""
       };
+      this.archivoSeleccionado = null;
       this.editando = null;
+      this.cambiandoImagen = false;
     },
-    eliminarEvento() {
-      if (this.editando !== null) {
-        this.eventos.splice(this.editando, 1);
-      }
-      this.mostrarFormulario = false;
+    limpiarFiltros() {
+      this.busqueda = '';
+      this.filtroEvento = '';
     },
     claseTipo(tipo) {
+      if (!tipo) return '';
+
       return tipo
         // elimina todos los emojis conocidos
         .replace(/[\p{Emoji_Presentation}\p{Emoji}\uFE0F]/gu, '')
         .trim()
         .toLowerCase()
-        .replace(/\s+/g, '-');
+        .replace(/\s+/g, '-')
+        .replace(/[áàäâ]/g, 'a')
+        .replace(/[éèëê]/g, 'e')
+        .replace(/[íìïî]/g, 'i')
+        .replace(/[óòöô]/g, 'o')
+        .replace(/[úùüû]/g, 'u')
+        .replace(/ñ/g, 'n')
+        .replace(/[^a-z0-9-]/g, '');
     }
+  },
+  async mounted() {
+    // Cargar permisos del usuario primero
+    await this.authStore.loadUserPermissions();
+
+    // Luego cargar los datos de la galería
+    await this.cargarDatos();
   }
 };
 </script>
@@ -306,5 +528,434 @@ export default {
   /* centra todos los botones horizontalmente */
   gap: 10px;
   /* opcional: separa los botones un poco */
+}
+
+.archivo-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.archivo-info i {
+  color: #28a745;
+}
+
+.btn-limpiar {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  margin-left: auto;
+}
+
+.btn-limpiar:hover {
+  background: #c82333;
+}
+
+.acciones-tarjeta {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tarjeta:hover .acciones-tarjeta {
+  opacity: 1;
+}
+
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 350px; /* Altura mínima para uniformidad */
+}
+
+.contenido-tarjeta {
+  padding: 0 16px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.foto-evento {
+  width: 100%;
+  height: 200px; /* Aumentado de 120px a 200px */
+  object-fit: contain;
+  border-radius: 8px 8px 0 0;
+  margin-bottom: 12px;
+  display: block;
+  max-width: 100%;
+  background: #f8f9fa; /* Fondo sutil para cuando la imagen no llena todo el espacio */
+}
+
+.imagen-placeholder {
+  width: 100%;
+  height: 200px; /* Aumentado para coincidir con la altura de las imágenes */
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.imagen-placeholder i {
+  font-size: 2rem;
+  color: #6c757d;
+  margin-bottom: 8px;
+}
+
+.imagen-placeholder span {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.nombre-evento {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.fecha-evento {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.descripcion-evento {
+  font-size: 0.85rem;
+  color: #495057;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tipo {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: auto;
+  align-self: center;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.tipo:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Colores específicos para cada tipo de evento */
+.tipo.entrenamiento {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+  border-color: #28a745;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.tipo.competencia {
+  background: linear-gradient(135deg, #dc3545, #e83e8c);
+  color: white;
+  border-color: #dc3545;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+}
+
+.tipo.exhibición {
+  background: linear-gradient(135deg, #ffc107, #fd7e14);
+  color: white;
+  border-color: #ffc107;
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.tipo.torneo {
+  background: linear-gradient(135deg, #17a2b8, #6f42c1);
+  color: white;
+  border-color: #17a2b8;
+  box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
+}
+
+.tipo.evaluación-médica {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border-color: #6c757d;
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+/* Color por defecto para tipos no definidos */
+.tipo:not(.entrenamiento):not(.competencia):not(.exhibición):not(.torneo):not(.evaluación-médica) {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border-color: #6c757d;
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+.btn-editar, .btn-eliminar {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.btn-editar {
+  background: #007bff;
+  color: white;
+}
+
+.btn-editar:hover {
+  background: #0056b3;
+}
+
+.btn-eliminar {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-eliminar:hover {
+  background: #c82333;
+}
+
+.imagen-actual {
+  margin-top: 8px;
+  width: 100%;
+}
+
+.imagen-actual img {
+  width: 100%;
+  max-height: 400px;
+  min-height: 200px;
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+  object-fit: contain;
+  display: block;
+  background: #f8f9fa;
+}
+
+.imagen-preview {
+  width: 100%;
+  max-height: 400px;
+  min-height: 200px;
+  border-radius: 8px;
+  border: 2px solid #dee2e6;
+  object-fit: contain;
+  display: block;
+  background: #f8f9fa;
+}
+
+.texto-imagen-actual {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+}
+
+.btn-cambiar-imagen {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.btn-cambiar-imagen:hover {
+  background: #0056b3;
+}
+
+.btn-cambiar-imagen i {
+  margin-right: 4px;
+}
+
+/* Mejorar estilos del formulario */
+.campo-formulario {
+  margin-bottom: 20px;
+}
+
+.campo-formulario label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.campo-formulario label i {
+  color: #007bff;
+  width: 16px;
+}
+
+.input-evento, .select-evento {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.input-evento:focus, .select-evento:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.input-evento::placeholder {
+  color: #6c757d;
+}
+
+/* Estilos para el modal */
+.modal-content {
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.btn-cerrar {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.formulario-evento {
+  padding: 20px;
+}
+
+.btn-principal {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.btn-principal:hover {
+  background: #218838;
+}
+
+.btn-secundario {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.btn-secundario:hover {
+  background: #c82333;
+}
+
+.btn-limpiar-filtros {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s ease;
+  margin-left: 10px;
+}
+
+.btn-limpiar-filtros:hover {
+  background: #5a6268;
+}
+
+/* Estilos para campos de solo lectura */
+.input-evento[readonly] {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.select-evento[disabled] {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+textarea[readonly] {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
 }
 </style>
