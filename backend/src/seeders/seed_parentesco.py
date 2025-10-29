@@ -45,3 +45,8 @@ def run():
     print(f"✅ Seeder Parentesco completado: {insertados} insertados, {existentes} ya existían.\n")
 
 
+if __name__ == '__main__':
+    from backend.app import create_app
+    app = create_app()
+    with app.app_context():
+        run()

@@ -13,6 +13,8 @@ from flask_cors import cross_origin
 from ..models.catalogos.tipo_documento import TipoDocumento
 from ..models.categorias.sexo import Sexo
 from ..models.categorias.categoria import Categoria
+from ..models.acudientes.parentesco import Parentesco
+from ..models.acudientes.acudiente import Acudiente
 from ..services.catalogos_service import catalogos_service
 from ..utils.logger import obtener_registrador
 
@@ -488,6 +490,148 @@ def obtener_categorias():
         return jsonify({
             'success': False,
             'error': f'Error al obtener categorías: {str(e)}'
+        }), 500
+
+
+@catalogos_bp.route('/parentescos', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_parentescos():
+    """Obtener todos los parentescos disponibles"""
+    try:
+        logger.info("Solicitando lista de parentescos...")
+        
+        # Verificar si la tabla existe
+        from ..models.base import db
+        try:
+            parentescos = Parentesco.query.all()
+            logger.info(f"Parentescos encontrados: {len(parentescos)}")
+            
+            for p in parentescos:
+                logger.info(f"  - ID: {p.id_parentesco}, Nombre: {p.nombre}")
+
+            parentescos_data = [p.to_dict() for p in parentescos]
+            
+            # Si no hay parentescos, retornar lista vacía
+            if not parentescos_data:
+                logger.warning("No hay parentescos en la base de datos")
+                return jsonify({
+                    'success': True,
+                    'data': [],
+                    'message': 'No hay parentescos registrados'
+                }), 200
+
+            return jsonify({
+                'success': True,
+                'data': parentescos_data,
+                'message': 'Parentescos obtenidos exitosamente'
+            }), 200
+        except Exception as db_error:
+            logger.error(f"Error al consultar parentescos: {str(db_error)}")
+            return jsonify({
+                'success': False,
+                'data': [],
+                'error': f'Error al consultar parentescos: {str(db_error)}'
+            }), 500
+
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener parentescos: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al obtener parentescos: {str(e)}'
+        }), 500
+
+
+@catalogos_bp.route('/acudientes', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_acudientes():
+    """Obtener todos los acudientes disponibles o buscar por cédula"""
+    try:
+        # Obtener parámetro de búsqueda por cédula
+        cedula = request.args.get('cedula', '').strip()
+        
+        if cedula:
+            # Buscar acudiente por cédula de la persona asociada
+            from ..models.personas.persona import Persona
+            
+            persona = Persona.query.filter_by(documento=cedula).first()
+            
+            if not persona:
+                return jsonify({
+                    'success': False,
+                    'data': None,
+                    'message': 'No se encontró ninguna persona con ese documento',
+                    'sugerencia': 'El acudiente debe registrarse primero en el sistema'
+                }), 404
+            
+            # Buscar si esta persona es acudiente
+            acudiente = Acudiente.query.filter_by(id_persona=persona.id_persona, estado=True).first()
+            
+            if not acudiente:
+                return jsonify({
+                    'success': False,
+                    'data': None,
+                    'message': 'La persona encontrada no está registrada como acudiente',
+                    'sugerencia': 'El acudiente debe completar su registro en el sistema'
+                }), 404
+            
+            # Retornar acudiente encontrado
+            acudiente_dict = {
+                'id_acudiente': acudiente.id_acudiente,
+                'id_persona': acudiente.id_persona,
+                'estado': acudiente.estado
+            }
+            
+            if persona:
+                acudiente_dict['persona'] = {
+                    'id_persona': persona.id_persona,
+                    'nombre_completo': persona.nombre_completo,
+                    'documento': persona.documento,
+                    'correo_electronico': persona.correo_electronico
+                }
+            
+            return jsonify({
+                'success': True,
+                'data': acudiente_dict,
+                'message': 'Acudiente encontrado exitosamente'
+            }), 200
+        else:
+            # Retornar todos los acudientes
+            logger.info("Solicitando lista de acudientes...")
+            acudientes = Acudiente.query.filter_by(estado=True).all()
+            logger.info(f"Acudientes encontrados: {len(acudientes)}")
+
+            acudientes_data = []
+            for acudiente in acudientes:
+                acudiente_dict = {
+                    'id_acudiente': acudiente.id_acudiente,
+                    'id_persona': acudiente.id_persona,
+                    'estado': acudiente.estado
+                }
+                # Agregar datos de la persona si existe la relación
+                if hasattr(acudiente, 'persona') and acudiente.persona:
+                    acudiente_dict['persona'] = {
+                        'id_persona': acudiente.persona.id_persona,
+                        'nombre_completo': acudiente.persona.nombre_completo,
+                        'documento': acudiente.persona.documento,
+                        'correo_electronico': acudiente.persona.correo_electronico
+                    }
+                acudientes_data.append(acudiente_dict)
+
+            return jsonify({
+                'success': True,
+                'data': acudientes_data,
+                'message': 'Acudientes obtenidos exitosamente'
+            }), 200
+
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener acudientes: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Error al obtener acudientes: {str(e)}'
         }), 500
 
 

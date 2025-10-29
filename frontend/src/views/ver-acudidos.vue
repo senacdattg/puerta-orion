@@ -1,110 +1,153 @@
 <template>
-  <div class="ver-acudidos-page">
-    <div class="ver-acudidos-container">
+  <main>
+    <Encabezado />
+
+    <div class="ver-acudidos-page">
+      <div class="ver-acudidos-container">
       <div class="ver-acudidos-header">
         <h1 class="ver-acudidos-title">
           <i class="fas fa-users"></i>
-          Mis Acudidos
+          Gestión de Acudidos
         </h1>
-        <p class="ver-acudidos-subtitle">Gestiona la información de tus deportistas</p>
+        <p class="ver-acudidos-subtitle">Gestiona y asigna deportistas a tu cuenta</p>
       </div>
 
-      <div class="ver-acudidos-content">
-        <div class="acudidos-grid">
-          <div
-            v-for="acudido in acudidos"
-            :key="acudido.id"
-            class="acudido-card"
-          >
-            <div class="card-header">
-              <div class="acudido-avatar">
-                <i class="fas fa-user"></i>
-              </div>
-              <div class="acudido-info">
-                <h3>{{ acudido.nombre_completo }}</h3>
-                <p>{{ acudido.categoria }}</p>
-              </div>
-            </div>
+      <!-- Botón de crear nuevo deportista -->
+      <div class="action-header">
+        <button class="btn-create-new" @click="crearNuevoDeportista">
+          <i class="fas fa-plus-circle"></i>
+          Crear Nuevo Deportista
+        </button>
+      </div>
 
-            <div class="card-content">
-              <div class="info-item">
-                <i class="fas fa-calendar"></i>
-                <span>Edad: {{ acudido.edad }} años</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-envelope"></i>
-                <span>{{ acudido.correo_electronico }}</span>
-              </div>
-              <div class="info-item">
-                <i class="fas fa-phone"></i>
-                <span>{{ acudido.telefono }}</span>
-              </div>
+      <!-- Lista de acudidos o estado vacío -->
+      <div v-if="acudidos.length > 0" class="acudidos-grid">
+        <div
+          v-for="acudido in acudidos"
+          :key="acudido.id"
+          class="acudido-card"
+        >
+          <div class="card-header">
+            <div class="acudido-avatar">
+              <i class="fas fa-user"></i>
             </div>
-
-            <div class="card-actions">
-              <button class="btn-action btn-view" @click="verDetalle(acudido)">
-                <i class="fas fa-eye"></i>
-                Ver Detalle
-              </button>
-              <button class="btn-action btn-edit" @click="editarAcudido(acudido)">
-                <i class="fas fa-edit"></i>
-                Editar
-              </button>
+            <div class="acudido-info">
+              <h3>{{ acudido.nombre_completo }}</h3>
+              <p>{{ acudido.categoria }}</p>
             </div>
           </div>
-        </div>
 
-        <div v-if="acudidos.length === 0" class="empty-state">
-          <div class="empty-icon">
-            <i class="fas fa-user-friends"></i>
+          <div class="card-content">
+            <div class="info-item">
+              <i class="fas fa-calendar"></i>
+              <span>Edad: {{ acudido.edad }} años</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-envelope"></i>
+              <span>{{ acudido.correo_electronico }}</span>
+            </div>
+            <div class="info-item">
+              <i class="fas fa-phone"></i>
+              <span>{{ acudido.telefono }}</span>
+            </div>
           </div>
-          <h3>No tienes acudidos registrados</h3>
-          <p>Asigna deportistas a tu cuenta para gestionar su información</p>
-          <button class="btn-primary" @click="asignarAcudido">
-            <i class="fas fa-user-plus"></i>
-            Asignar Acudido
-          </button>
+
+          <div class="card-actions">
+            <button class="btn-action btn-view" @click="verDetalle(acudido)">
+              <i class="fas fa-eye"></i>
+              Ver Detalle
+            </button>
+            <button class="btn-action btn-edit" @click="editarAcudido(acudido)">
+              <i class="fas fa-edit"></i>
+              Editar
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div v-else class="empty-state">
+        <div class="empty-icon">
+          <i class="fas fa-user-friends"></i>
+        </div>
+        <h3>No tienes acudidos registrados</h3>
+        <p>Asigna deportistas a tu cuenta para gestionar su información</p>
+        <button class="btn-primary" @click="crearNuevoDeportista">
+          <i class="fas fa-user-plus"></i>
+          Crear Nuevo Deportista
+        </button>
       </div>
     </div>
-  </div>
+    </div>
+
+    <Pie />
+  </main>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import Encabezado from '@/components/layout/encabezado.vue'
+import Pie from '@/components/layout/pie.vue'
 
 const router = useRouter()
+const authStore = useAuthStore()
+
 const acudidos = ref([])
 
-onMounted(() => {
-  cargarAcudidos()
+onMounted(async () => {
+  // Recargar el perfil del usuario para obtener información actualizada
+  console.log('🔄 Recargando perfil del usuario...')
+  await authStore.loadUserProfile()
+
+  // Esperar un momento para que se actualice el perfil
+  setTimeout(() => {
+    cargarAcudidos()
+  }, 500)
 })
 
 const cargarAcudidos = async () => {
   try {
-    // Aquí se implementaría la llamada al backend
-    // Por ahora usamos datos de ejemplo
-    acudidos.value = [
-      {
-        id: 1,
-        nombre_completo: 'Juan Pérez',
-        categoria: 'Fútbol Sub-15',
-        edad: 14,
-        correo_electronico: 'juan.perez@email.com',
-        telefono: '3001234567'
-      },
-      {
-        id: 2,
-        nombre_completo: 'María García',
-        categoria: 'Voleibol Sub-18',
-        edad: 16,
-        correo_electronico: 'maria.garcia@email.com',
-        telefono: '3007654321'
+    console.log('🔍 Usuario autenticado:', authStore.user)
+    console.log('🔍 Token:', authStore.token ? 'Token existe' : 'No hay token')
+
+    // Obtener el ID del acudiente desde el usuario autenticado
+    const acudienteId = authStore.user?.acudiente?.id_acudiente
+    console.log('🔍 ID del acudiente:', acudienteId)
+
+    if (!acudienteId) {
+      console.error('❌ No se encontró ID del acudiente en el usuario autenticado')
+      console.log('💡 Info del usuario:', JSON.stringify(authStore.user, null, 2))
+      acudidos.value = []
+      return
+    }
+
+    console.log(`🌐 Llamando al endpoint: http://localhost:5000/api/deportistas/acudiente/${acudienteId}`)
+
+    // Llamar al backend para obtener los deportistas asociados
+    const response = await fetch(`http://localhost:5000/api/deportistas/acudiente/${acudienteId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authStore.token}`
       }
-    ]
+    })
+
+    console.log('📡 Estado de la respuesta:', response.status)
+    const result = await response.json()
+    console.log('📦 Datos recibidos:', result)
+
+    if (response.ok && result.success) {
+      acudidos.value = result.data || []
+      console.log(`✅ ${acudidos.value.length} deportista(s) cargado(s)`)
+      console.log('📋 Deportistas:', acudidos.value)
+    } else {
+      console.error('❌ Error al cargar deportistas:', result.message)
+      acudidos.value = []
+    }
   } catch (error) {
-    console.error('Error cargando acudidos:', error)
+    console.error('❌ Error cargando acudidos:', error)
+    acudidos.value = []
   }
 }
 
@@ -116,15 +159,18 @@ const editarAcudido = (acudido) => {
   router.push(`/actualizar-deportista/${acudido.id}`)
 }
 
-const asignarAcudido = () => {
-  router.push('/asignar-acudido')
+const crearNuevoDeportista = () => {
+  router.push({
+    path: '/registrar-deportista-form',
+    query: { asignarAcudiente: 'true', idAcudiente: authStore.user?.id_usuario }
+  })
 }
 </script>
 
 <style scoped>
 .ver-acudidos-page {
-  min-height: 100vh;
-  background-color: #f8f9fa;
+  min-height: calc(100vh - 300px);
+  background: linear-gradient(to bottom, #f0f8ff 0%, #e3f2fd 100%);
   padding: 2rem 1rem;
 }
 
@@ -155,6 +201,39 @@ const asignarAcudido = () => {
   margin: 0;
 }
 
+/* Action Header */
+.action-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.btn-create-new {
+  background: #f7d600;
+  color: #0047ab;
+  border: 2px solid #0047ab;
+  padding: 1.2rem 3rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(247, 214, 0, 0.3);
+}
+
+.btn-create-new:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(247, 214, 0, 0.4);
+  background: #ffc107;
+}
+
+.btn-create-new i {
+  font-size: 1.3rem;
+}
+
 .acudidos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -174,8 +253,9 @@ const asignarAcudido = () => {
 }
 
 .card-header {
-  background: linear-gradient(135deg, #20c997, #17a2b8);
+  background: #0047ab;
   color: white;
+  border-bottom: 3px solid #f7d600;
   padding: 1.5rem;
   display: flex;
   align-items: center;
@@ -191,17 +271,19 @@ const asignarAcudido = () => {
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
+  color: white;
 }
 
 .acudido-info h3 {
   margin: 0 0 0.25rem 0;
   font-size: 1.25rem;
   font-weight: 600;
+  color: white;
 }
 
 .acudido-info p {
   margin: 0;
-  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
 }
 
@@ -223,7 +305,7 @@ const asignarAcudido = () => {
 
 .info-item i {
   width: 1rem;
-  color: #20c997;
+  color: #0047ab;
 }
 
 .card-actions {
@@ -249,21 +331,23 @@ const asignarAcudido = () => {
 }
 
 .btn-view {
-  background: #007bff;
+  background: #0047ab;
   color: white;
 }
 
 .btn-view:hover {
-  background: #0056b3;
+  background: #003d8f;
 }
 
 .btn-edit {
-  background: #28a745;
-  color: white;
+  background: #f7d600;
+  color: #0047ab;
+  font-weight: 700;
 }
 
 .btn-edit:hover {
-  background: #218838;
+  background: #ffc107;
+  color: #003d8f;
 }
 
 .empty-state {
@@ -292,21 +376,24 @@ const asignarAcudido = () => {
 }
 
 .btn-primary {
-  background: #20c997;
-  color: white;
-  border: none;
+  background: #f7d600;
+  color: #0047ab;
+  border: 2px solid #0047ab;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  transition: background 0.3s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(247, 214, 0, 0.3);
 }
 
 .btn-primary:hover {
-  background: #1ba085;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(247, 214, 0, 0.4);
+  background: #ffc107;
 }
 
 @media (max-width: 768px) {
@@ -316,6 +403,12 @@ const asignarAcudido = () => {
 
   .ver-acudidos-title {
     font-size: 2rem;
+  }
+
+  .btn-create-new {
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 1rem;
   }
 
   .acudidos-grid {

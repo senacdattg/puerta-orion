@@ -75,6 +75,19 @@
 <!-- INFORMACIÓN DEPORTIVA DEL DEPORTISTA -->
       <div class="seccion-titulo">Información Deportiva</div>
 
+      <!-- Campo de deporte principal -->
+      <div class="fila-texto">
+        <select
+          v-model="form.id_deporte"
+          required
+          :disabled="modo === 'ver'"
+        >
+          <option value="" disabled>Deporte principal *</option>
+          <option v-for="deporte in catalogos.deportes" :key="deporte.id_deporte" :value="deporte.id_deporte">
+            {{ deporte.nombre }}
+          </option>
+        </select>
+      </div>
 
       <div class="bloque-radio">
         <label>¿Practica otro deporte además del principal?</label>
@@ -107,7 +120,7 @@
         >
           <option value="" disabled>Seleccione el otro deporte</option>
           <option v-for="deporte in catalogos.deportes" :key="deporte.id_deporte" :value="deporte.id_deporte">
-            {{ deporte.nombre_deporte }}
+            {{ deporte.nombre }}
           </option>
         </select>
       </div>
@@ -145,7 +158,7 @@
         >
           <option value="" disabled>Seleccione la escuela de formación</option>
           <option v-for="escuela in catalogos.escuelas" :key="escuela.id_escuela" :value="escuela.id_escuela">
-            {{ escuela.nombre_escuela }}
+            {{ escuela.nombre }}
           </option>
         </select>
       </div>
@@ -255,6 +268,95 @@
 
       <hr class="form-divider" />
 
+      <!-- Sección de Acudientes (Obligatorio) -->
+      <div class="seccion-titulo">Información de Acudiente *</div>
+
+      <div class="campo-busqueda-acudiente">
+        <label for="buscar-cedula">Buscar acudiente por número de cédula:</label>
+        <div class="busqueda-row">
+          <input
+            id="buscar-cedula"
+            v-model="cedulaBuscada"
+            type="text"
+            placeholder="Ingrese número de cédula (ej: 1234567890)"
+            :disabled="modo === 'ver' || isSearchingAcudiente"
+            @keyup.enter="buscarAcudientePorCedula"
+          />
+          <button
+            type="button"
+            @click="buscarAcudientePorCedula"
+            :disabled="modo === 'ver' || isSearchingAcudiente || !cedulaBuscada"
+            class="boton-buscar"
+          >
+            {{ isSearchingAcudiente ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+
+        <!-- Mensaje de resultado de búsqueda -->
+        <div v-if="mensajeBusquedaAcudiente"
+             :class="['mensaje-busqueda', mensajeBusquedaAcudiente.tipo]">
+          <p><strong>{{ mensajeBusquedaAcudiente.titulo }}</strong></p>
+          <p>{{ mensajeBusquedaAcudiente.mensaje }}</p>
+          <p v-if="mensajeBusquedaAcudiente.sugerencia" class="sugerencia">
+            {{ mensajeBusquedaAcudiente.sugerencia }}
+          </p>
+        </div>
+
+        <!-- Información del acudiente encontrado -->
+        <div v-if="acudienteEncontrado" class="info-acudiente-encontrado">
+          <div class="acudiente-card">
+            <h4>✓ Acudiente encontrado:</h4>
+            <p><strong>Nombre:</strong> {{ acudienteEncontrado.persona?.nombre_completo }}</p>
+            <p><strong>Cédula:</strong> {{ acudienteEncontrado.persona?.documento }}</p>
+            <p><strong>Email:</strong> {{ acudienteEncontrado.persona?.correo_electronico }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campos de parentesco y responsabilidad -->
+      <div v-if="acudienteEncontrado" class="campo-condicional">
+        <div class="fila-texto">
+          <select
+            v-model="form.id_parentesco"
+            required
+            :disabled="modo === 'ver'"
+          >
+            <option value="" disabled>Seleccione el parentesco *</option>
+            <option v-for="parentesco in catalogos.parentescos" :key="parentesco.id_parentesco" :value="parentesco.id_parentesco">
+              {{ parentesco.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="bloque-radio">
+          <label>¿Es el acudiente responsable? *</label>
+          <div class="opciones">
+            <input
+              type="radio"
+              id="es-responsable-si"
+              name="es-responsable"
+              :value="true"
+              v-model="form.es_responsable"
+              :disabled="modo === 'ver'"
+              required
+            />
+            <label for="es-responsable-si">Sí</label>
+            <input
+              type="radio"
+              id="es-responsable-no"
+              name="es-responsable"
+              :value="false"
+              v-model="form.es_responsable"
+              :disabled="modo === 'ver'"
+              required
+            />
+            <label for="es-responsable-no">No</label>
+          </div>
+        </div>
+      </div>
+
+      <hr class="form-divider" />
+
       <!-- Botones de acción -->
       <div v-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
         <button type="submit" class="boton-formulario" :disabled="isSubmitting" style="width: 150px;">
@@ -274,18 +376,24 @@
   </form>
 
   <!-- Modal de éxito/error -->
-  <div v-if="showModal" class="modal-overlay" @click="showModal = false">
-    <div class="modal-content" @click.stop>
+  <div v-if="showModal" class="modal-overlay" @click="cerrarModal">
+    <div class="modal-content" :class="modalTitle === 'Éxito' ? 'success-modal' : 'error-modal'" @click.stop>
       <h3>{{ modalTitle }}</h3>
       <p>{{ modalMessage }}</p>
-      <button @click="showModal = false">Cerrar</button>
+      <button @click="cerrarModal">{{ modalTitle === 'Éxito' ? 'Continuar' : 'Cerrar' }}</button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import catalogosService from '@/services/catalogosService';
+
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
 
 const props = defineProps({
   modo: {
@@ -305,6 +413,10 @@ const isSubmitting = ref(false);
 const showModal = ref(false);
 const modalTitle = ref('');
 const modalMessage = ref('');
+const isSearchingAcudiente = ref(false);
+const cedulaBuscada = ref('');
+const acudienteEncontrado = ref(null);
+const mensajeBusquedaAcudiente = ref(null);
 
 const catalogos = ref({
   tiposDocumento: [],
@@ -316,7 +428,9 @@ const catalogos = ref({
   escuelas: [],
   institucionesRegistro: [],
   tiposEnfermedad: [],
-  diagnosticos: []
+  diagnosticos: [],
+  acudientes: [],
+  parentescos: []
 });
 
 const form = ref({
@@ -327,6 +441,7 @@ const form = ref({
   id_eps: "",
 
   // Información deportiva
+  id_deporte: "", // Deporte principal (requerido)
   id_deporte_secundario: "",
   id_escuela: "",
   id_institucion_registro: "",
@@ -338,7 +453,12 @@ const form = ref({
   // Información médica
   tiene_enfermedades: null, // null = no seleccionado, true = sí, false = no
   tipo_enfermedad: null,
-  diagnostico: []
+  diagnostico: [],
+
+  // Información de acudiente
+  id_acudiente: "",
+  id_parentesco: "",
+  es_responsable: null  // null = no seleccionado, true = sí, false = no
 });
 
 const diagnosticosDisponibles = computed(() => {
@@ -389,7 +509,9 @@ async function cargarCatalogos() {
       '/api/catalogos/escuelas',
       '/api/catalogos/instituciones-registro',
       '/api/catalogos/tipos-enfermedad',
-      '/api/catalogos/diagnosticos'
+      '/api/catalogos/diagnosticos',
+      '/api/catalogos/acudientes',
+      '/api/catalogos/parentescos'
     ];
 
     const responses = await Promise.all(
@@ -397,27 +519,54 @@ async function cargarCatalogos() {
     );
 
     // Procesar respuestas con validación
-    const processResponse = async (res) => {
-      if (!res.ok) {
-        console.error(`Error: ${res.status} ${res.statusText}`);
+    const processResponse = async (res, index) => {
+      try {
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error(`❌ Error en endpoint ${index} (${res.status}):`, data);
+          return [];
+        }
+
+        console.log(`✅ Endpoint ${index} respondió:`, data);
+        return data.data || [];
+      } catch (e) {
+        console.error(`❌ Error al procesar respuesta ${index}:`, e);
         return [];
       }
-      const data = await res.json();
-      return data.data || [];
     };
 
-    catalogos.value.tiposSanguineos = await processResponse(responses[0]);
-    catalogos.value.ciudades = await processResponse(responses[1]);
-    catalogos.value.eps = await processResponse(responses[2]);
-    catalogos.value.deportes = await processResponse(responses[3]);
-    catalogos.value.escuelas = await processResponse(responses[4]);
-    catalogos.value.institucionesRegistro = await processResponse(responses[5]);
-    catalogos.value.tiposEnfermedad = await processResponse(responses[6]);
-    catalogos.value.diagnosticos = await processResponse(responses[7]);
+    const resultados = await Promise.all([
+      processResponse(responses[0], 0),
+      processResponse(responses[1], 1),
+      processResponse(responses[2], 2),
+      processResponse(responses[3], 3),
+      processResponse(responses[4], 4),
+      processResponse(responses[5], 5),
+      processResponse(responses[6], 6),
+      processResponse(responses[7], 7),
+      processResponse(responses[8], 8),
+      processResponse(responses[9], 9)
+    ]);
+
+    catalogos.value.tiposSanguineos = resultados[0];
+    catalogos.value.ciudades = resultados[1];
+    catalogos.value.eps = resultados[2];
+    catalogos.value.deportes = resultados[3];
+    catalogos.value.escuelas = resultados[4];
+    catalogos.value.institucionesRegistro = resultados[5];
+    catalogos.value.tiposEnfermedad = resultados[6];
+    catalogos.value.diagnosticos = resultados[7];
+    catalogos.value.acudientes = resultados[8];
+    catalogos.value.parentescos = resultados[9];
 
     console.log('✅ Catálogos cargados exitosamente');
-    console.log('📋 Tipos de enfermedad cargados:', catalogos.value.tiposEnfermedad);
-    console.log('📋 Diagnosticos cargados:', catalogos.value.diagnosticos);
+    console.log('📋 Deportes cargados:', catalogos.value.deportes.length);
+    console.log('📋 Escuelas cargadas:', catalogos.value.escuelas.length);
+    console.log('📋 Tipos de enfermedad cargados:', catalogos.value.tiposEnfermedad.length);
+    console.log('📋 Diagnosticos cargados:', catalogos.value.diagnosticos.length);
+    console.log('📋 Parentescos cargados:', catalogos.value.parentescos.length);
+    console.log('📋 Parentescos datos:', catalogos.value.parentescos);
   } catch (error) {
     console.error('❌ Error cargando catálogos:', error);
     mostrarModal('Error', 'No se pudieron cargar los catálogos. Por favor, recargue la página.');
@@ -436,10 +585,68 @@ function seleccionarEnfermedades(tiene) {
   }
 }
 
+async function buscarAcudientePorCedula() {
+  if (!cedulaBuscada.value || !cedulaBuscada.value.trim()) {
+    mensajeBusquedaAcudiente.value = {
+      tipo: 'error',
+      titulo: 'Error',
+      mensaje: 'Por favor ingrese un número de cédula'
+    };
+    return;
+  }
+
+  isSearchingAcudiente.value = true;
+  mensajeBusquedaAcudiente.value = null;
+  acudienteEncontrado.value = null;
+
+  try {
+    const baseURL = 'http://localhost:5000';
+    const response = await fetch(`${baseURL}/api/catalogos/acudientes?cedula=${cedulaBuscada.value}`);
+    const result = await response.json();
+
+    if (response.ok && result.success) {
+      // Acudiente encontrado
+      acudienteEncontrado.value = result.data;
+      form.value.id_acudiente = result.data.id_acudiente;
+
+      mensajeBusquedaAcudiente.value = {
+        tipo: 'success',
+        titulo: '✓ Éxito',
+        mensaje: 'Acudiente encontrado exitosamente'
+      };
+    } else {
+      // Acudiente no encontrado
+      mensajeBusquedaAcudiente.value = {
+        tipo: 'warning',
+        titulo: '⚠ Acudiente no encontrado',
+        mensaje: result.message || 'No se encontró un acudiente con ese documento',
+        sugerencia: result.sugerencia || 'El acudiente debe registrarse primero en el sistema'
+      };
+      acudienteEncontrado.value = null;
+      form.value.id_acudiente = "";
+      form.value.id_parentesco = "";
+      form.value.es_responsable = null;
+    }
+  } catch (error) {
+    console.error('Error al buscar acudiente:', error);
+    mensajeBusquedaAcudiente.value = {
+      tipo: 'error',
+      titulo: 'Error',
+      mensaje: 'Error al buscar acudiente. Por favor, intente de nuevo.'
+    };
+  } finally {
+    isSearchingAcudiente.value = false;
+  }
+}
+
 function mostrarModal(titulo, mensaje) {
   modalTitle.value = titulo;
   modalMessage.value = mensaje;
   showModal.value = true;
+}
+
+function cerrarModal() {
+  showModal.value = false;
 }
 
 async function manejarSubmit() {
@@ -454,21 +661,80 @@ async function manejarSubmit() {
       return;
     }
 
+    // Validaciones básicas
+    if (!form.value.fecha_nacimiento) {
+      mostrarModal('Error', 'El año de nacimiento es obligatorio.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!form.value.id_deporte) {
+      mostrarModal('Error', 'Debe seleccionar un deporte principal.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!form.value.id_institucion_registro) {
+      mostrarModal('Error', 'Debe seleccionar una institución de registro.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    // Validaciones de campos condicionales
+    if (form.value.participa_escuela && !form.value.id_escuela) {
+      mostrarModal('Error', 'Si participa en escuela de formación, debe seleccionar una escuela.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (form.value.tiene_enfermedades === true && form.value.tipo_enfermedad && form.value.diagnostico.length === 0) {
+      mostrarModal('Error', 'Si selecciona un tipo de enfermedad, debe seleccionar al menos un diagnóstico.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (form.value.recomendacion_medica && !form.value.descripcion_recomendacion) {
+      mostrarModal('Error', 'Si existe recomendación médica, debe describirla.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    // Validación de acudiente (OBLIGATORIO)
+    if (!acudienteEncontrado.value || !form.value.id_acudiente) {
+      mostrarModal('Error', 'Debe buscar y encontrar un acudiente por número de cédula para continuar.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!form.value.id_parentesco) {
+      mostrarModal('Error', 'Debe especificar el parentesco con el acudiente.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    // Validar que se haya seleccionado si es responsable o no
+    if (form.value.es_responsable === null || form.value.es_responsable === undefined || form.value.es_responsable === '') {
+      mostrarModal('Error', 'Debe indicar si el acudiente es responsable o no.');
+      isSubmitting.value = false;
+      return;
+    }
+
     // 2. Estructurar datos según el endpoint
     const datosEnvio = {
       datos_deportista: {
         fecha_nacimiento: parseInt(form.value.fecha_nacimiento),
-        id_tipo_sanguineo: parseInt(form.value.id_tipo_sanguineo),
-        id_ciudad_recidencia: parseInt(form.value.id_ciudad_residencia),
-        id_eps: parseInt(form.value.id_eps)
+        id_tipo_sanguineo: parseInt(form.value.id_tipo_sanguineo) || null,
+        id_ciudad_recidencia: parseInt(form.value.id_ciudad_residencia) || null,
+        id_eps: parseInt(form.value.id_eps) || null
       },
       informacion_deportiva: {
-        practica_otro_deporte: form.value.practica_otro_deporte,
-        participa_escuela: form.value.participa_escuela,
-        recomendacion_medica: form.value.tiene_enfermedades === false ? false : form.value.recomendacion_medica,
-        descripcion_recomendacion: form.value.tiene_enfermedades === false ? null : (form.value.recomendacion_medica ? form.value.descripcion_recomendacion : null),
-        id_escuela: form.value.participa_escuela ? parseInt(form.value.id_escuela) : null,
-        id_institucion_registro: parseInt(form.value.id_institucion_registro)
+        practica_otro_deporte: form.value.practica_otro_deporte || false,
+        participa_escuela: form.value.participa_escuela || false,
+        recomendacion_medica: form.value.tiene_enfermedades === true ? form.value.recomendacion_medica : false,
+        descripcion_recomendacion: form.value.tiene_enfermedades === true && form.value.recomendacion_medica ? form.value.descripcion_recomendacion : null,
+        id_escuela: form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null,
+        id_deporte: parseInt(form.value.id_deporte) || null,
+        id_institucion_registro: parseInt(form.value.id_institucion_registro) || null
       }
     };
 
@@ -479,6 +745,23 @@ async function manejarSubmit() {
     } else {
       // Si marcó "No", no enviar campos de diagnóstico
       datosEnvio.diagnostico = [];
+    }
+
+    // Agregar información de acudiente (OBLIGATORIO)
+    // Si viene de "Asignar Acudido", el acudiente será el usuario actual
+    const acudienteData = {
+      id_acudiente: parseInt(form.value.id_acudiente),
+      id_parentesco: parseInt(form.value.id_parentesco),
+      es_responsable: form.value.es_responsable
+    };
+
+    datosEnvio.acudientes = [acudienteData];
+
+    // Agregar metadata para identificar contexto
+    if (route.query.asignarAcudiente === 'true') {
+      datosEnvio._metadata = {
+        desde_asignar_acudido: true
+      };
     }
 
     console.log('Datos a enviar:', datosEnvio);
@@ -496,28 +779,38 @@ async function manejarSubmit() {
     const result = await response.json();
 
     if (response.ok && result.status === 'success') {
-      mostrarModal('Éxito', `Deportista registrado exitosamente. ID: ${result.data.id_deportista}`);
+      mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
       emit('submit', result);
 
-      // Limpiar formulario después de 2 segundos
+      // Limpiar formulario después de 3 segundos
       setTimeout(() => {
         showModal.value = false;
         // Resetear formulario
         Object.keys(form.value).forEach(key => {
-          if (key !== 'diagnostico') {
-            form.value[key] = typeof form.value[key] === 'boolean' ? false : '';
-          } else {
+          if (key === 'diagnostico') {
             form.value[key] = [];
+          } else if (key === 'tiene_enfermedades' || key === 'es_responsable') {
+            form.value[key] = null;
+          } else if (typeof form.value[key] === 'boolean') {
+            form.value[key] = false;
+          } else {
+            form.value[key] = '';
           }
         });
-      }, 2000);
+        acudienteEncontrado.value = null;
+        cedulaBuscada.value = '';
+        mensajeBusquedaAcudiente.value = null;
+      }, 3000);
     } else {
-      throw new Error(result.message || 'Error al registrar deportista');
+      // Manejo de errores del backend
+      const mensajeError = result.message || result.error || 'Error al registrar deportista';
+      throw new Error(mensajeError);
     }
 
   } catch (error) {
     console.error('Error:', error);
-    mostrarModal('Error', error.message || 'Error al procesar el registro');
+    const mensajeError = error.message || 'Error al procesar el registro. Por favor, intente de nuevo.';
+    mostrarModal('Error', mensajeError);
   } finally {
     isSubmitting.value = false;
   }
@@ -529,6 +822,28 @@ function cancelar() {
 
 onMounted(async () => {
   await cargarCatalogos();
+
+  // Si viene de "Asignar Acudido", pre-cargar el acudiente del usuario actual
+  if (route.query.asignarAcudiente === 'true' && authStore.user?.id_usuario) {
+    try {
+      // Obtener el acudiente del usuario actual
+      const response = await fetch(`http://localhost:5000/api/catalogos/acudientes?cedula=${authStore.user?.persona?.documento || ''}`);
+      const result = await response.json();
+
+      if (response.ok && result.success && result.data) {
+        acudienteEncontrado.value = result.data;
+        form.value.id_acudiente = result.data.id_acudiente;
+
+        mensajeBusquedaAcudiente.value = {
+          tipo: 'success',
+          titulo: '✓ Tu información como acudiente',
+          mensaje: 'Se pre-cargó tu información como acudiente. Puedes editar el parentesco si es necesario.'
+        };
+      }
+    } catch (error) {
+      console.error('Error pre-cargando acudiente:', error);
+    }
+  }
 
   if (props.datos && Object.keys(props.datos).length > 0) {
     Object.keys(props.datos).forEach(key => {
@@ -589,6 +904,7 @@ onMounted(async () => {
 .modal-content p {
   margin-bottom: 1.5rem;
   color: #666;
+  white-space: pre-line;
 }
 
 .modal-content button {
@@ -602,6 +918,21 @@ onMounted(async () => {
 
 .modal-content button:hover {
   background: #0056b3;
+}
+
+/* Estilo para el modal de éxito */
+.modal-content h3 {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Estilo para mensajes de error en modal */
+.modal-content.error-modal h3 {
+  color: #dc3545;
+}
+
+.modal-content.success-modal h3 {
+  color: #28a745;
 }
 
 .campo-condicional {
@@ -736,5 +1067,114 @@ onMounted(async () => {
 .panel-recomendacion-contenido .campo-condicional textarea:focus {
   outline: none;
   border-color: #007bff;
+}
+
+/* Estilos para búsqueda de acudiente */
+.campo-busqueda-acudiente {
+  margin: 20px 0;
+}
+
+.campo-busqueda-acudiente label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.busqueda-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.busqueda-row input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.busqueda-row input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.boton-buscar {
+  padding: 0.75rem 1.5rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.boton-buscar:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.boton-buscar:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Mensajes de búsqueda */
+.mensaje-busqueda {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.mensaje-busqueda.success {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.mensaje-busqueda.warning {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.mensaje-busqueda.error {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.mensaje-busqueda p {
+  margin: 5px 0;
+}
+
+.mensaje-busqueda .sugerencia {
+  font-style: italic;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+/* Info de acudiente encontrado */
+.info-acudiente-encontrado {
+  margin-top: 20px;
+}
+
+.acudiente-card {
+  background-color: #f8f9fa;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.acudiente-card h4 {
+  color: #28a745;
+  margin-bottom: 10px;
+}
+
+.acudiente-card p {
+  margin: 5px 0;
+  color: #333;
 }
 </style>

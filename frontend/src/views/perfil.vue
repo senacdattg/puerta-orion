@@ -50,22 +50,41 @@
           </div>
         </div>
 
-        <div class="perfil-card" v-if="usuario?.roles">
+        <div class="perfil-card" v-if="usuario?.roles && usuario.roles.length > 1">
           <div class="card-header">
-            <h3>Roles Asignados</h3>
+            <h3>Gestión de Roles</h3>
+            <p class="card-subtitle">Cambia entre tus diferentes paneles de acceso</p>
           </div>
 
           <div class="card-content">
-            <div class="roles-list">
-              <div
-                v-for="rol in usuario.roles"
-                :key="rol.id_rol"
-                class="role-badge"
-                :class="getRoleClass(rol.nombre_rol)"
-              >
-                <i :class="getRoleIcon(rol.nombre_rol)"></i>
-                {{ rol.nombre_rol }}
+            <SelectorRoles />
+
+            <div class="roles-info">
+              <h4>Roles asignados:</h4>
+              <div class="roles-list">
+                <div
+                  v-for="rol in usuario.roles"
+                  :key="getRolId(rol)"
+                  class="role-badge"
+                  :class="getRoleClass(getNombreRol(rol))"
+                >
+                  <i :class="getRoleIcon(getNombreRol(rol))"></i>
+                  {{ getNombreRolCompleto(rol) }}
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="perfil-card" v-else-if="usuario?.roles && usuario.roles.length === 1">
+          <div class="card-header">
+            <h3>Rol Asignado</h3>
+          </div>
+
+          <div class="card-content">
+            <div class="role-badge single" :class="getRoleClass(getNombreRol(usuario.roles[0]))">
+              <i :class="getRoleIcon(getNombreRol(usuario.roles[0]))"></i>
+              {{ getNombreRolCompleto(usuario.roles[0]) }}
             </div>
           </div>
         </div>
@@ -84,6 +103,7 @@ import { useUserRole } from '@/composables/useUserRole'
 import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import SelectorRoles from '@/components/layout/selector-roles.vue'
 
 // Definir nombre del componente para el linter
 defineOptions({
@@ -120,9 +140,38 @@ const getRoleIcon = (rol) => {
     'Entrenador': 'fas fa-whistle',
     'Deportista': 'fas fa-running',
     'Acudiente': 'fas fa-user-friends',
-    'usuario': 'fas fa-user'
+    'usuario': 'fas fa-user',
+    'Usuario': 'fas fa-user'
   }
   return icons[rol] || 'fas fa-user'
+}
+
+const getNombreRol = (rol) => {
+  if (typeof rol === 'string') return rol
+  if (typeof rol === 'object' && rol !== null && rol.nombre_rol) {
+    return rol.nombre_rol
+  }
+  return 'usuario'
+}
+
+const getNombreRolCompleto = (rol) => {
+  const nombres = {
+    'Deportista': '🏃 Deportista',
+    'Acudiente': '👨‍👩‍👧 Acudiente',
+    'Entrenador': '⚽ Entrenador',
+    'Administrador': '👤 Administrador',
+    'SuperAdmin': '👑 Super Admin',
+    'Usuario': '👤 Usuario',
+    'usuario': '👤 Usuario'
+  }
+  return nombres[getNombreRol(rol)] || getNombreRol(rol)
+}
+
+const getRolId = (rol) => {
+  if (typeof rol === 'object' && rol !== null && rol.id_rol) {
+    return rol.id_rol
+  }
+  return getNombreRol(rol)
 }
 </script>
 

@@ -22,6 +22,12 @@ from ..models.salud.diagnostico import Diagnostico
 from ..models.salud.tipo_enfermedad import TipoEnfermedad
 from ..models.personas.persona import Persona
 from ..models.categorias.categoria import Categoria
+from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
+from ..models.acudientes.acudiente import Acudiente
+from ..models.acudientes.parentesco import Parentesco
+from ..models.roles_y_permisos.usuario_rol import UsuarioRol
+from ..models.roles_y_permisos.rol import Rol
+from ..models.usuarios.usuario import Usuario
 from ..utils.logger import obtener_registrador
 
 
@@ -305,6 +311,53 @@ class RegistroDeportistaService:
                     )
                     db.session.add(diagnostico_deportista)
                 logger.info(f'{len(diagnosticos)} diagnóstico(s) asociados al deportista {deportista.id_deportista}')
+            
+            # Asociar acudientes si se proporcionan
+            acudientes_data = datos.get('acudientes', [])
+            if acudientes_data and len(acudientes_data) > 0:
+                for acudiente_data in acudientes_data:
+                    id_acudiente = acudiente_data.get('id_acudiente')
+                    id_parentesco = acudiente_data.get('id_parentesco')
+                    es_responsable = acudiente_data.get('es_responsable', False)
+                    
+                    # Validar que el acudiente existe
+                    acudiente = Acudiente.query.filter_by(id_acudiente=id_acudiente).first()
+                    if not acudiente:
+                        continue
+                    
+                    # Validar que el parentesco existe
+                    parentesco = Parentesco.query.filter_by(id_parentesco=id_parentesco).first()
+                    if not parentesco:
+                        continue
+                    
+                    deportista_acudiente = DeportistaAcudiente(
+                        id_deportista=deportista.id_deportista,
+                        id_acudiente=id_acudiente,
+                        id_parentesco=id_parentesco,
+                        es_responsable=es_responsable,
+                        fecha_registro=date.today()
+                    )
+                    db.session.add(deportista_acudiente)
+                logger.info(f'{len(acudientes_data)} acudiente(s) asociados al deportista {deportista.id_deportista}')
+            
+            # Asignar rol de deportista al usuario
+            usuario = Usuario.query.filter_by(id_persona=datos_deportista['id_persona']).first()
+            if usuario:
+                rol_deportista = Rol.query.filter_by(nombre_rol='Deportista').first()
+                if rol_deportista:
+                    # Verificar si ya tiene el rol
+                    rol_existente = UsuarioRol.query.filter_by(
+                        id_usuario=usuario.id_usuario,
+                        id_rol=rol_deportista.id_rol
+                    ).first()
+                    
+                    if not rol_existente:
+                        usuario_rol = UsuarioRol(
+                            id_usuario=usuario.id_usuario,
+                            id_rol=rol_deportista.id_rol
+                        )
+                        db.session.add(usuario_rol)
+                        logger.info(f'Rol de Deportista asignado al usuario ID: {usuario.id_usuario}')
             
             # Commit de toda la transacción
             db.session.commit()
