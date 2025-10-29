@@ -42,7 +42,6 @@
 import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import SelectorRoles from './selector-roles.vue'
 
 // Definir nombre del componente para evitar error del linter
 defineOptions({
