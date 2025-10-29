@@ -94,25 +94,48 @@ export function useUserRole() {
       return 'Usuario'
     }
 
-    // Priorizar roles en orden jerárquico
-    const rolePriority = ['Administrador', 'Entrenador', 'Deportista', 'Acudiente']
+    // Extraer nombres de roles (pueden ser objetos o strings)
+    const roleNames = userRoles.map(role => {
+      if (typeof role === 'string') return role
+      if (role.nombre_rol) return role.nombre_rol
+      if (role.rol) return role.rol
+      return role.toString()
+    })
+
+    // Priorizar roles en orden jerárquico (Acudiente > Deportista)
+    const rolePriority = ['Administrador', 'Entrenador', 'Acudiente', 'Deportista']
 
     for (const role of rolePriority) {
-      if (userRoles.includes(role)) {
+      if (roleNames.includes(role)) {
         return role
       }
     }
 
-    return 'Usuario'
+    return roleNames[0] || 'Usuario'
   })
+
+  /**
+   * Función helper para extraer nombres de roles
+   */
+  const getRoleNames = () => {
+    const userRoles = authStore.userRoles
+    if (!userRoles || userRoles.length === 0) return []
+
+    return userRoles.map(role => {
+      if (typeof role === 'string') return role
+      if (role.nombre_rol) return role.nombre_rol
+      if (role.rol) return role.rol
+      return role.toString()
+    })
+  }
 
   /**
    * Verifica si el usuario es administrador o entrenador
    * @returns {boolean}
    */
   const isAdminOrCoach = computed(() => {
-    const userRoles = authStore.userRoles
-    return userRoles?.includes('Administrador') || userRoles?.includes('Entrenador')
+    const roleNames = getRoleNames()
+    return roleNames.includes('Administrador') || roleNames.includes('Entrenador')
   })
 
   /**
@@ -120,8 +143,8 @@ export function useUserRole() {
    * @returns {boolean}
    */
   const isDeportista = computed(() => {
-    const userRoles = authStore.userRoles
-    return userRoles?.includes('Deportista')
+    const roleNames = getRoleNames()
+    return roleNames.includes('Deportista')
   })
 
   /**
@@ -129,8 +152,8 @@ export function useUserRole() {
    * @returns {boolean}
    */
   const isAcudiente = computed(() => {
-    const userRoles = authStore.userRoles
-    return userRoles?.includes('Acudiente')
+    const roleNames = getRoleNames()
+    return roleNames.includes('Acudiente')
   })
 
   /**

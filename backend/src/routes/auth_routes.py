@@ -517,6 +517,15 @@ def obtener_perfil():
             }
         }
         
+        # Buscar si el usuario tiene un perfil de acudiente
+        from ..models.acudientes.acudiente import Acudiente
+        acudiente = Acudiente.query.filter_by(id_persona=user['persona']['id_persona'], estado=True).first()
+        if acudiente:
+            perfil_data['acudiente'] = {
+                'id_acudiente': acudiente.id_acudiente,
+                'estado': acudiente.estado
+            }
+        
         # Respuesta exitosa
         return jsonify({
             'success': True,
@@ -848,6 +857,20 @@ def completar_perfil_acudiente():
 
         # Obtener datos del JSON (puede ser vacío para acudientes)
         data = request.get_json() if request.is_json else {}
+        
+        # Validar edad mínima para acudientes (18 años)
+        from src.models.deportistas.deportista import Deportista
+        from datetime import date
+        
+        deportista = Deportista.query.filter_by(id_persona=user.get('persona', {}).get('id_persona')).first()
+        if deportista and deportista.fecha_nacimiento:
+            edad = date.today().year - deportista.fecha_nacimiento
+            if edad < 18:
+                return jsonify({
+                    'success': False,
+                    'error': f'Para ser acudiente debe ser mayor de edad. Su edad actual es {edad} años.',
+                    'status_code': 400
+                }), 400
 
         # Completar perfil usando el nuevo servicio unificado
         resultado = profile_completion_service.complete_profile(

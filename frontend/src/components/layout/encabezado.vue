@@ -6,27 +6,27 @@
     ></i>
 
     <img src="@/assets/imgs/logo.png" alt="Logo">
-    
+
     <!-- Info del usuario autenticado -->
     <div v-if="!sinMenu && authStore.estaAutenticado" class="usuario-info">
-      <span class="usuario-nombre">
+      <router-link to="/perfil" class="usuario-nombre usuario-link">
         <i class="fas fa-user-circle"></i>
         {{ authStore.nombreUsuario || 'Usuario' }}
-      </span>
+      </router-link>
     </div>
 
     <div class="menu-categorias" id="menu" v-show="menuVisible">
       <ul id="menu-opciones">
         <li v-for="(op, index) in opciones" :key="index">
-          <router-link 
-            :to="op.link" 
+          <router-link
+            :to="op.link"
             @click="closeMenu"
             class="menu-link"
           >
             <i :class="op.icono + ' icono-menu'"></i> {{ op.texto }}
           </router-link>
         </li>
-        
+
         <!-- Opción de cerrar sesión -->
         <li v-if="authStore.estaAutenticado" class="logout-item">
           <a @click="handleLogout" class="menu-link logout-link">
@@ -42,6 +42,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import SelectorRoles from './selector-roles.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -80,7 +81,7 @@ function handleOutsideClick(e) {
 
 async function handleLogout() {
   const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
-  
+
   if (confirmar) {
     closeMenu()
     await authStore.logout()
@@ -121,7 +122,7 @@ function cargarOpciones() {
       { texto: "Panel Admin", link: "/admin-manager", icono: "fas fa-cog" },
     ]
   }
-  
+
   opciones.value = opcionesPorRol[props.rol] || [
     { texto: "Inicio", link: "/home", icono: "fas fa-home" }
   ]
@@ -160,6 +161,21 @@ onBeforeUnmount(() => {
 .usuario-nombre i {
   font-size: 20px;
   color: #007bff;
+}
+
+.usuario-link {
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+.usuario-link:hover {
+  color: #007bff;
+  transform: scale(1.05);
+}
+
+.usuario-link:hover i {
+  color: #0056b3;
 }
 
 .menu-link {

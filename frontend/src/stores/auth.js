@@ -17,7 +17,18 @@ export const useAuthStore = defineStore('auth', () => {
   // Getters computados
   const isAuthenticated = computed(() => !!token.value)
   const estaAutenticado = computed(() => !!token.value) // Alias para compatibilidad
-  const userRoles = computed(() => user.value?.roles || [])
+
+  // Extraer nombres de roles (manejar objetos o strings)
+  const userRoles = computed(() => {
+    const roles = user.value?.roles || []
+    return roles.map(role => {
+      if (typeof role === 'string') return role
+      if (role.nombre_rol) return role.nombre_rol
+      if (role.rol) return role.rol
+      return role.toString()
+    })
+  })
+
   const hasRole = computed(() => (roleName) => userRoles.value.includes(roleName))
   const isAdmin = computed(() => hasRole.value('Administrador'))
   const isDeportista = computed(() => hasRole.value('Deportista'))

@@ -180,6 +180,103 @@ def get_lista_deportistas():
         logger.error(f"Error inesperado al listar deportistas: {str(e)}")
         return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
 
+@deportistas_bp.route('/deportistas/acudiente/<int:id_acudiente>', methods=['GET'])
+@token_required()
+def obtener_deportistas_por_acudiente(id_acudiente):
+    """
+    Obtiene todos los deportistas asociados a un acudiente específico.
+    
+    Args:
+        id_acudiente: ID del acudiente
+        
+    Returns:
+        JSON con lista de deportistas asociados al acudiente
+    """
+    try:
+        from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
+        from ..models.deportistas.deportista import Deportista
+        from ..models.personas.persona import Persona
+        from ..models.categorias.categoria import Categoria
+        from datetime import date
+        
+        logger.info(f"🔍 Buscando deportistas para acudiente ID: {id_acudiente}")
+        
+        # Validar que el ID sea positivo
+        if not isinstance(id_acudiente, int) or id_acudiente <= 0:
+            logger.warning(f"⚠️ ID de acudiente inválido: {id_acudiente}")
+            return jsonify({
+                'success': False,
+                'message': 'El ID del acudiente debe ser un número entero positivo',
+                'data': []
+            }), 400
+        
+        # Obtener todas las relaciones deportista-acudiente para este acudiente
+        relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=id_acudiente).all()
+        logger.info(f"📊 Relaciones encontradas: {len(relaciones)}")
+        
+        if not relaciones:
+            logger.warning(f"⚠️ No se encontraron relaciones para acudiente {id_acudiente}")
+            return jsonify({
+                'success': True,
+                'message': 'No se encontraron deportistas asociados a este acudiente',
+                'data': []
+            }), 200
+        
+        # Construir lista de deportistas con información completa
+        deportistas_data = []
+        for relacion in relaciones:
+            logger.info(f"🔍 Procesando relación - Deportista ID: {relacion.id_deportista}, Acudiente ID: {relacion.id_acudiente}")
+            
+            deportista = Deportista.query.filter_by(id_deportista=relacion.id_deportista).first()
+            
+            if not deportista:
+                logger.warning(f"⚠️ Deportista {relacion.id_deportista} no encontrado")
+                continue
+            
+            if not deportista.persona:
+                logger.warning(f"⚠️ Deportista {relacion.id_deportista} no tiene persona asociada")
+                continue
+            
+            logger.info(f"✅ Deportista encontrado: {deportista.persona.nombre_completo}")
+            
+            # Calcular edad
+            edad = None
+            if deportista.fecha_nacimiento:
+                año_actual = date.today().year
+                edad = año_actual - deportista.fecha_nacimiento
+            
+            deportista_dict = {
+                'id': deportista.id_deportista,
+                'nombre_completo': deportista.persona.nombre_completo,
+                'documento': deportista.persona.documento,
+                'correo_electronico': deportista.persona.correo_electronico,
+                'telefono': deportista.persona.telefono,
+                'categoria': deportista.categoria.nombre_categoria if deportista.categoria else 'Sin categoría',
+                'edad': edad,
+                'es_responsable': relacion.es_responsable if relacion.es_responsable is not None else False,
+                'parentesco': relacion.parentesco.nombre if relacion.parentesco else 'No especificado'
+            }
+            logger.info(f"📝 Datos del deportista: {deportista_dict}")
+            deportistas_data.append(deportista_dict)
+        
+        logger.info(f"✅ Total deportistas procesados: {len(deportistas_data)}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Se encontraron {len(deportistas_data)} deportista(s) asociado(s)',
+            'data': deportistas_data
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener deportistas por acudiente: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'message': 'Error interno del servidor',
+            'data': []
+        }), 500
+
 @deportistas_bp.route('/deportistas/<int:id_deportista>', methods=['PATCH', 'PUT'])
 def actualizar_deportista(id_deportista):
     try:

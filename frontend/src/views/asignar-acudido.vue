@@ -6,11 +6,23 @@
           <i class="fas fa-user-plus"></i>
           Asignar Acudido
         </h1>
-        <p class="asignar-acudido-subtitle">Vincula un deportista a tu cuenta</p>
+        <p class="asignar-acudido-subtitle">Vincula un deportista a tu cuenta o crea uno nuevo</p>
       </div>
 
       <div class="asignar-acudido-content">
-        <div class="search-section">
+        <!-- Botón para crear nuevo deportista -->
+        <div class="action-buttons">
+          <button class="btn-create" @click="crearNuevoDeportista">
+            <i class="fas fa-plus-circle"></i>
+            Crear Nuevo Deportista
+          </button>
+          <button class="btn-search-existing" @click="mostrarBusqueda = !mostrarBusqueda">
+            <i class="fas fa-search"></i>
+            {{ mostrarBusqueda ? 'Ocultar Búsqueda' : 'Buscar Deportista Existente' }}
+          </button>
+        </div>
+
+        <div v-if="mostrarBusqueda" class="search-section">
           <div class="search-box">
             <i class="fas fa-search"></i>
             <input
@@ -102,10 +114,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const searchTerm = ref('')
 const asignando = ref(false)
+const mostrarBusqueda = ref(false)
 const deportistas = ref([])
 
 onMounted(() => {
@@ -206,6 +221,15 @@ const desasignarDeportista = async (deportista) => {
       alert('Error al desasignar el deportista')
     }
   }
+}
+
+const crearNuevoDeportista = () => {
+  // Redirigir al formulario de registro de deportista
+  // con un parámetro para indicar que se asignará automáticamente al acudiente
+  router.push({
+    path: '/registrar-deportista-form',
+    query: { asignarAcudiente: 'true', idAcudiente: authStore.user?.id_usuario }
+  })
 }
 </script>
 
@@ -443,6 +467,55 @@ const desasignarDeportista = async (deportista) => {
 .empty-state p {
   color: #6c757d;
   margin: 0;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-create,
+.btn-search-existing {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-create {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-create:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-search-existing {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-search-existing:hover {
+  background: #f0f4ff;
+  transform: translateY(-2px);
+}
+
+.btn-create i,
+.btn-search-existing i {
+  font-size: 1.3rem;
 }
 
 @media (max-width: 768px) {

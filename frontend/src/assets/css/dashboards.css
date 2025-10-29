@@ -161,20 +161,20 @@
 
 /* Acudiente Dashboard */
 .acudiente-dashboard .dashboard-title {
-  color: var(--color-exito);
+  color: #0047ab;
 }
 
 .acudiente-dashboard .card-icon {
-  background: #e8f5e8;
-  color: var(--color-exito);
+  background: #e3f2fd;
+  color: #0047ab;
 }
 
 .acudiente-dashboard .dashboard-card::before {
-  background: var(--color-exito);
+  background: #0047ab;
 }
 
 .acudiente-dashboard .dashboard-card:hover {
-  border-color: var(--color-exito);
+  border-color: #0047ab;
 }
 
 /* Deportista Dashboard */
