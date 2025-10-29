@@ -84,8 +84,9 @@ export function useUserRole() {
   const authStore = useAuthStore()
 
   /**
-   * Obtiene el rol principal del usuario basado en una jerarquía de prioridades
-   * @returns {string} Nombre del rol principal
+   * Obtiene el rol activo del usuario (respecta el rol seleccionado en localStorage)
+   * Si no hay rol activo, usa el rol principal basado en jerarquía de prioridades
+   * @returns {string} Nombre del rol activo
    */
   const userRole = computed(() => {
     const userRoles = authStore.userRoles
@@ -102,16 +103,54 @@ export function useUserRole() {
       return role.toString()
     })
 
-    // Priorizar roles en orden jerárquico (Acudiente > Deportista)
+    // Lista de roles válidos para validación
+    const ROLES_VALIDOS = ['Deportista', 'Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin', 'Usuario', 'usuario']
+
+    // Función para validar y limpiar el rol guardado
+    function validarRolGuardado(rol) {
+      if (!rol || typeof rol !== 'string') return null
+      const rolLimpio = rol.trim()
+      if (ROLES_VALIDOS.includes(rolLimpio)) {
+        return rolLimpio
+      }
+      return null
+    }
+
+    // Verificar si hay un rol activo guardado en localStorage
+    const rolActivoGuardadoRaw = localStorage.getItem('rolActivo')
+    const rolActivoGuardado = validarRolGuardado(rolActivoGuardadoRaw)
+
+    // Si hay un valor corrupto, limpiarlo
+    if (rolActivoGuardadoRaw && !rolActivoGuardado) {
+      console.warn('🧹 Limpiando rol corrupto de localStorage:', rolActivoGuardadoRaw)
+      localStorage.removeItem('rolActivo')
+    }
+
+    // Si hay un rol activo guardado válido y está disponible en los roles del usuario, usarlo
+    if (rolActivoGuardado && roleNames.includes(rolActivoGuardado)) {
+      return rolActivoGuardado
+    }
+
+    // Si no hay rol activo o no está disponible, usar jerarquía de prioridades
     const rolePriority = ['Administrador', 'Entrenador', 'Acudiente', 'Deportista']
 
     for (const role of rolePriority) {
       if (roleNames.includes(role)) {
+        // Guardar el rol principal como activo si no había uno guardado válido
+        if (!rolActivoGuardado) {
+          localStorage.setItem('rolActivo', role)
+        }
         return role
       }
     }
 
-    return roleNames[0] || 'Usuario'
+    const rolPorDefecto = roleNames[0] || 'Usuario'
+    // Guardar el rol por defecto si no había uno guardado válido
+    if (!rolActivoGuardado && rolPorDefecto !== 'Usuario') {
+      localStorage.setItem('rolActivo', rolPorDefecto)
+    }
+
+    return rolPorDefecto
   })
 
   /**
@@ -130,30 +169,29 @@ export function useUserRole() {
   }
 
   /**
-   * Verifica si el usuario es administrador o entrenador
+   * Verifica si el usuario es administrador o entrenador (basado en el rol activo)
    * @returns {boolean}
    */
   const isAdminOrCoach = computed(() => {
-    const roleNames = getRoleNames()
-    return roleNames.includes('Administrador') || roleNames.includes('Entrenador')
+    return userRole.value === 'Administrador' ||
+           userRole.value === 'SuperAdmin' ||
+           userRole.value === 'Entrenador'
   })
 
   /**
-   * Verifica si el usuario es deportista
+   * Verifica si el usuario es deportista (basado en el rol activo)
    * @returns {boolean}
    */
   const isDeportista = computed(() => {
-    const roleNames = getRoleNames()
-    return roleNames.includes('Deportista')
+    return userRole.value === 'Deportista'
   })
 
   /**
-   * Verifica si el usuario es acudiente
+   * Verifica si el usuario es acudiente (basado en el rol activo)
    * @returns {boolean}
    */
   const isAcudiente = computed(() => {
-    const roleNames = getRoleNames()
-    return roleNames.includes('Acudiente')
+    return userRole.value === 'Acudiente'
   })
 
   /**

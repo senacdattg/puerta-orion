@@ -8,24 +8,21 @@
       <!-- Panel para Acudiente -->
       <AcudienteDashboard v-if="isAcudiente" />
 
-      <!-- Panel para Deportista -->
-      <DeportistaDashboard v-else-if="isDeportista" />
-
-      <!-- Panel para Administrador/Entrenador -->
-      <AdminDashboard v-else-if="isAdminOrCoach" />
+      <!-- Panel para Entrenador (no para Administradores) -->
+      <AdminDashboard v-if="userRole === 'Entrenador'" />
 
       <!-- Panel básico para usuarios sin rol específico -->
-      <BasicDashboard v-else />
+      <BasicDashboard v-if="!isAcudiente && userRole !== 'Entrenador' && !isDeportista" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserRole } from '@/composables/useUserRole'
 import RegistrationBanner from '@/components/ui/registration-banner.vue'
-import AcudienteDashboard from '@/components/acudientes/acudiente-dashboard.vue'
-import DeportistaDashboard from '@/components/deportistas/deportista-dashboard.vue'
+import AcudienteDashboard from '@/views/AcudienteDashboard.vue'
 import AdminDashboard from '@/components/admin/admin-dashboard.vue'
 import BasicDashboard from '@/components/ui/basic-dashboard.vue'
 
@@ -34,11 +31,23 @@ defineOptions({
   name: 'DashboardHome'
 })
 
-const { userRole, isAdminOrCoach, isDeportista, isAcudiente } = useUserRole()
+const router = useRouter()
+const { userRole, isDeportista, isAcudiente } = useUserRole()
 
 // Determinar si mostrar el banner de registro
 const showRegistrationBanner = computed(() => {
   return userRole.value === 'Usuario' || userRole.value === 'usuario'
+})
+
+// Redirigir usuarios a sus paneles específicos
+onMounted(() => {
+  if (isDeportista.value) {
+    router.replace('/deportista/dashboard')
+  } else if (isAcudiente.value) {
+    router.replace('/acudiente/dashboard')
+  } else if (userRole.value === 'Administrador' || userRole.value === 'SuperAdmin') {
+    router.replace('/admin-manager')
+  }
 })
 </script>
 

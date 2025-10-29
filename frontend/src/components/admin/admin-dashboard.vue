@@ -48,16 +48,6 @@
           <p>Gestiona los pagos del club</p>
         </div>
       </div>
-
-      <div class="dashboard-card" @click="navigateTo('/admin-manager')">
-        <div class="card-icon">
-          <i class="fas fa-cogs"></i>
-        </div>
-        <div class="card-content">
-          <h3>Panel Admin</h3>
-          <p>Configuración avanzada del sistema</p>
-        </div>
-      </div>
     </div>
   </div>
 </template>
