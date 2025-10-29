@@ -323,17 +323,11 @@ class AuthService {
          throw new Error('No hay token de autenticación')
        }
 
-       // Preparar datos del acudiente con valores por defecto
+       // Preparar datos del acudiente (ahora solo se requieren: id_deportista, id_parentesco, es_responsable)
        const datosCompletos = {
-         parentesco: datosAcudiente.parentesco || '',
-         ocupacion: datosAcudiente.ocupacion || '',
-         lugar_trabajo: datosAcudiente.lugar_trabajo || datosAcudiente.lugarTrabajo || '',
-         telefono_trabajo: datosAcudiente.telefono_trabajo || datosAcudiente.telefonoTrabajo || '',
-         telefono_emergencia: datosAcudiente.telefono_emergencia || datosAcudiente.telefonoEmergencia || '',
-         autorizacion_imagenes: datosAcudiente.autorizacion_imagenes !== undefined ? datosAcudiente.autorizacion_imagenes : false,
-         autorizacion_salidas: datosAcudiente.autorizacion_salidas !== undefined ? datosAcudiente.autorizacion_salidas : false,
-         autorizacion_medica: datosAcudiente.autorizacion_medica !== undefined ? datosAcudiente.autorizacion_medica : false,
-         observaciones: datosAcudiente.observaciones || ''
+         id_deportista: datosAcudiente.id_deportista,
+         id_parentesco: datosAcudiente.id_parentesco,
+         es_responsable: datosAcudiente.es_responsable !== undefined ? datosAcudiente.es_responsable : false
        }
 
        const response = await fetch(`${this.baseURL}/api/auth/perfil/completar-acudiente`, {

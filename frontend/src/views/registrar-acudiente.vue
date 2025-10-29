@@ -1,35 +1,25 @@
 <script setup>
-import Encabezado from '../components/layout/encabezado.vue';
-import Pie from '../components/layout/pie.vue';
-import FormularioAcudiente from '../components/formularios/formulario-acudiente.vue';
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 
-// Función para manejar el registro de acudiente
-function manejarRegistroAcudiente(datos) {
-  console.log("Datos del nuevo acudiente:", datos);
-  // Aquí iría la lógica para enviar a la API
-  alert("Acudiente registrado exitosamente!");
-}
+const router = useRouter();
+const authStore = useAuthStore();
 
-// Función para manejar la cancelación
-function manejarCancelacion() {
-  if (confirm("¿Está seguro de que desea cancelar el registro?")) {
-    // Aquí podrías redirigir o limpiar el formulario
-    console.log("Registro cancelado");
+// Redirigir al formulario correcto para usuarios autenticados que completan su perfil
+onMounted(() => {
+  // Si el usuario está autenticado, redirigir al formulario de completar perfil
+  if (authStore.token) {
+    router.replace('/formulario-acudiente-completo');
   }
-}
+});
 </script>
 
 <template>
   <main>
-    <Encabezado :sinMenu="true"/>
-    <div class="contenido-principal-tarjetas">
-      <FormularioAcudiente
-        :modo="'registrar'"
-        @submit="manejarRegistroAcudiente"
-        @cancel="manejarCancelacion"
-      />
+    <div style="text-align: center; padding: 2rem;">
+      <p>Redirigiendo...</p>
     </div>
-    <Pie />
   </main>
 </template>
 

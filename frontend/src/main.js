@@ -17,6 +17,7 @@ import '@/assets/css/mensualidades.css'
 import '@/assets/css/panel-admin.css'
 import '@/assets/css/perfiles.css'
 import '@/assets/css/dashboards.css'
+import '@/assets/css/deportista-dashboard.css'
 
 // Librerías externas
 import '@fortawesome/fontawesome-free/css/all.min.css'
