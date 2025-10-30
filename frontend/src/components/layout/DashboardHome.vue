@@ -1,4 +1,4 @@
-<template>
+lll<template>
   <div class="dashboard-home">
     <!-- Banner de registro incompleto para usuarios base -->
     <RegistrationBanner v-if="showRegistrationBanner" />

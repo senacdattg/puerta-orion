@@ -288,7 +288,9 @@ class MercadoPagoService:
             
             # Preparar datos para la preferencia
             datos_pago = {
-                "titulo": f"Pago Mensualidad - Categoría {mensualidad.categoria_obj.nombre if hasattr(mensualidad, 'categoria_obj') else 'Deportiva'}",
+                "titulo": (
+                    f"Pago Mensualidad - {getattr(getattr(mensualidad, 'persona', None), 'nombre', None) or 'Persona'}"
+                ),
                 "monto": float(mensualidad.monto_pago),
                 "tipo_pago": "mensualidad",
                 "id_mensualidad": id_mensualidad,
