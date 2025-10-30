@@ -91,7 +91,7 @@ const router = createRouter({
       path: '/mensualidades',
       name: 'mensualidades',
       component: TablaMensualidades,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, requiresPermission: 'ver_mensualidad' }
     },
     {
       path: '/deportistas',
@@ -273,6 +273,7 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
   const requiresRole = to.matched.some(record => record.meta.requiresRole)
+  const requiredPermission = to.matched.find(r => r.meta && r.meta.requiresPermission)?.meta?.requiresPermission
 
   // Verificar si el token es válido (no solo si existe)
   let isAuthenticated = false
@@ -308,7 +309,15 @@ router.beforeEach(async (to, from, next) => {
       next()
     }
   } else {
-    // Permitir navegación
+    // Si requiere permiso específico, validar permisos del usuario
+    if (requiresAuth && isAuthenticated && requiredPermission) {
+      const permisos = authStore.permisos || []
+      if (!permisos.includes(requiredPermission)) {
+        console.log('🚫 Acceso denegado: permiso insuficiente. Requerido:', requiredPermission)
+        next('/home')
+        return
+      }
+    }
     next()
   }
 })

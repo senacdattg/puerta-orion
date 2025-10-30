@@ -80,6 +80,7 @@ def create_app(config_name=None):
     from src.routes.deportistas_routes import deportistas_bp
     from src.routes.galeria_routes import galeria_bp
     from src.routes.archivos_routes import archivos_bp
+    from src.routes.mensualidades_routes import mensualidades_bp
     
     app.register_blueprint(pagos_bp, url_prefix='/api')
     app.register_blueprint(catalogos_bp)
@@ -90,6 +91,7 @@ def create_app(config_name=None):
     app.register_blueprint(deportistas_bp, url_prefix='/api')
     app.register_blueprint(galeria_bp)  # Ya tiene url_prefix='/api/galeria'
     app.register_blueprint(archivos_bp)  # Ya tiene url_prefix='/api/archivos'
+    app.register_blueprint(mensualidades_bp)  # url_prefix en el blueprint
 
     @app.route('/')
     def index():

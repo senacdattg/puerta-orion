@@ -10,6 +10,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 
 from ..models.base import db
 from ..models.usuarios.usuario import Usuario
@@ -83,7 +84,8 @@ def listar_usuarios():
         }), 500
 
 
-@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT'])
+@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])
+@cross_origin(methods=['PUT', 'OPTIONS'])
 @token_required()  # Habilitar autenticación
 def cambiar_rol_usuario(id_usuario):
     """
@@ -188,6 +190,14 @@ def cambiar_rol_usuario(id_usuario):
             'error': 'Error interno del servidor',
             'status_code': 500
         }), 500
+
+
+# Espejo con barra final para evitar redirecciones en preflight
+@usuarios_bp.route('/<int:id_usuario>/rol/', methods=['PUT', 'OPTIONS'])
+@cross_origin(methods=['PUT', 'OPTIONS'])
+@token_required()
+def cambiar_rol_usuario_con_slash(id_usuario):
+    return cambiar_rol_usuario(id_usuario)
 
 
 # Manejadores de errores específicos del Blueprint

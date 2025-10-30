@@ -41,8 +41,10 @@ def run():
                 "ver_rol", "asignar_roles",
                 # Eventos
                 "crear_evento", "ver_evento", "editar_evento", "eliminar_evento", "listar_eventos", "gestionar_eventos",
-                # Pagos
-                "crear_pago", "ver_pago", "editar_pago", "listar_pagos", "gestionar_pagos", "procesar_pago",
+                # Mensualidades
+                "crear_mensualidad", "ver_mensualidad", "editar_mensualidad", "abonar_mensualidad",
+                "editar_abono_mensualidad", "eliminar_abono_mensualidad",
+                "desactivar_mensualidad", "reactivar_mensualidad",
                 # Acudientes
                 "crear_acudiente", "ver_acudiente", "editar_acudiente", "listar_acudientes",
                 # Salud
@@ -77,7 +79,9 @@ def run():
                 # Calendario
                 "ver_calendario",
                 # Reportes básicos
-                "ver_reportes"
+                "ver_reportes",
+                # Mensualidades (solo lectura)
+                "ver_mensualidad"
             ]
         },
         "Deportista": {
@@ -87,7 +91,8 @@ def run():
                 "ver_deportista",
                 "ver_evento",
                 "listar_eventos",
-                "ver_pago",
+                # Mensualidades (solo lectura)
+                "ver_mensualidad",
                 "ver_galeria",
                 "ver_calendario"
             ]
@@ -99,7 +104,8 @@ def run():
                 "ver_deportista",
                 "ver_evento",
                 "listar_eventos",
-                "ver_pago",
+                # Mensualidades (solo lectura)
+                "ver_mensualidad",
                 "ver_diagnostico",
                 "ver_galeria",
                 "ver_calendario"
@@ -183,6 +189,22 @@ def run():
             
             if contador_permisos_rol > 0:
                 print(f"        🔑 {contador_permisos_rol} permisos asignados a '{nombre_rol}'")
+
+            # Sincronizar: remover permisos que el rol ya tenía pero no están en la configuración (excepto SuperAdmin)
+            try:
+                if nombre_rol != "SuperAdmin":
+                    permisos_config = set(config['permisos'])
+                    permisos_actuales = RolPermiso.query.filter_by(id_rol=rol.id_rol).all()
+                    removidos = 0
+                    for rp in permisos_actuales:
+                        permiso_obj = Permiso.query.get(rp.id_permiso)
+                        if permiso_obj and permiso_obj.nombre not in permisos_config:
+                            db.session.delete(rp)
+                            removidos += 1
+                    if removidos:
+                        print(f"        🧹 {removidos} permisos removidos de '{nombre_rol}' para sincronizar")
+            except Exception as e:
+                print(f"        ⚠️  No se pudo sincronizar permisos de '{nombre_rol}': {str(e)}")
     
     # Guardar cambios
     try:

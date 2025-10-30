@@ -28,7 +28,7 @@
         <div class="detalle-item">
           <span class="detalle-label">Saldo Pendiente:</span>
           <span class="detalle-valor saldo" :class="getClaseSaldo()">
-            {{ calcularSaldoPendiente() }}
+            {{ saldoPendienteTexto() }}
           </span>
         </div>
         <div class="detalle-item">
@@ -60,11 +60,11 @@
           <span class="icono-accion">⚙️</span>
         </button>
         <button
-          class="boton-accion boton-secundario reporte"
-          @click.stop="generarReporte"
-          title="Generar reporte"
+          class="boton-accion boton-secundario eliminar"
+          @click.stop="eliminarMensualidad"
+          :title="props.mensualidad.activo ? 'Desactivar mensualidad' : 'Reactivar mensualidad'"
         >
-          <span class="icono-accion">📊</span>
+          <span class="icono-accion">{{ props.mensualidad.activo ? '🗑️' : '♻️' }}</span>
         </button>
       </div>
     </div>
@@ -100,117 +100,70 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['ver-detalle', 'gestionar', 'reporte', 'ver-detalle-completo']);
+const emit = defineEmits(['ver-detalle', 'gestionar', 'eliminar', 'ver-detalle-completo']);
+
+// Helpers
+function parseISODateLocal(iso) {
+  if (!iso) return null;
+  if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [y, m, d] = iso.split('-').map(n => parseInt(n));
+    return new Date(y, m - 1, d);
+  }
+  const d = new Date(iso);
+  return isNaN(d) ? null : d;
+}
 
 // Computed properties
 const esVencida = computed(() => {
-  // Si no hay fechas de pago, no está vencida (no ha pagado)
-  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
-    return false;
+  // Preferir fecha de vencimiento cruda del backend
+  const fvRaw = props.mensualidad.fecha_vencimiento_raw || props.mensualidad.fecha_vencimiento;
+  if (fvRaw) {
+    const fv = parseISODateLocal(fvRaw);
+    if (!fv) return false;
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const fv0 = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate());
+    return fv0 < hoy;
   }
-
-  // Obtener la fecha de pago (puede ser string o objeto)
-  let fechaPago;
-  if (typeof props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1] === 'object') {
-    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1].fecha;
-  } else {
-    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
-  }
-
-  if (!fechaPago) return false;
-
-  try {
-    // Crear fecha de pago evitando problemas de zona horaria
-    let fechaPagoObj;
-    if (typeof fechaPago === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaPago)) {
-      // Si es formato YYYY-MM-DD, crear fecha localmente
-      const [año, mes, dia] = fechaPago.split('-');
-      fechaPagoObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
-    } else {
-      fechaPagoObj = new Date(fechaPago + 'T00:00:00');
-    }
-
-    if (isNaN(fechaPagoObj.getTime())) return false;
-
-    // Determinar el mes de esta mensualidad
-    const mesActual = props.mensualidad.mes;
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const indiceMesActual = meses.indexOf(mesActual);
-    
-    if (indiceMesActual === -1) return false;
-
-    // Calcular la fecha de vencimiento basada en el mes de la mensualidad
-    const fechaVencimiento = new Date(fechaPagoObj.getFullYear(), indiceMesActual + 1, fechaPagoObj.getDate());
-
-    // Verificar si está vencida
-    const hoy = new Date();
-    return fechaVencimiento < hoy;
-  } catch (error) {
-    console.error('Error verificando si está vencida:', error);
-    return false;
-  }
+  // Fallback anterior basado en fechasPago
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) return false;
+  const ultimo = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
+  const fechaPago = typeof ultimo === 'object' ? ultimo.fecha : ultimo;
+  const fp = parseISODateLocal(fechaPago);
+  if (!fp) return false;
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const idx = meses.indexOf(props.mensualidad.mes);
+  if (idx === -1) return false;
+  const fv = new Date(fp.getFullYear(), idx + 1, fp.getDate());
+  return fv < new Date();
 });
 
 const diasParaVencimiento = computed(() => {
-  // Si no hay fechas de pago, no hay vencimiento calculado
-  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
-    return null;
+  const fvRaw = props.mensualidad.fecha_vencimiento_raw || props.mensualidad.fecha_vencimiento;
+  if (fvRaw) {
+    const fv = parseISODateLocal(fvRaw);
+    if (!fv) return null;
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const ms = new Date(fv.getFullYear(), fv.getMonth(), fv.getDate()).getTime() - hoy.getTime();
+    return Math.ceil(ms / (1000 * 60 * 60 * 24));
   }
-
-  // Obtener la fecha de pago (puede ser string o objeto)
-  let fechaPago;
-  if (typeof props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1] === 'object') {
-    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1].fecha;
-  } else {
-    fechaPago = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
-  }
-
-  if (!fechaPago) return null;
-
-  try {
-    // Crear fecha de pago evitando problemas de zona horaria
-    let fechaPagoObj;
-    if (typeof fechaPago === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaPago)) {
-      // Si es formato YYYY-MM-DD, crear fecha localmente
-      const [año, mes, dia] = fechaPago.split('-');
-      fechaPagoObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
-    } else {
-      fechaPagoObj = new Date(fechaPago + 'T00:00:00');
-    }
-
-    if (isNaN(fechaPagoObj.getTime())) return null;
-
-    // Determinar el mes de esta mensualidad
-    const mesActual = props.mensualidad.mes;
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const indiceMesActual = meses.indexOf(mesActual);
-    
-    if (indiceMesActual === -1) return null;
-
-    // Calcular la fecha de vencimiento basada en el mes de la mensualidad
-    // Si es octubre, vence en noviembre; si es noviembre, vence en diciembre
-    const fechaVencimiento = new Date(fechaPagoObj.getFullYear(), indiceMesActual + 1, fechaPagoObj.getDate());
-
-    // Calcular días restantes
-    const hoy = new Date();
-    const diffTime = fechaVencimiento - hoy;
-    const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    return diasRestantes;
-  } catch (error) {
-    console.error('Error calculando días para vencimiento:', error);
-    return null;
-  }
+  // Fallback basado en fechasPago y mes
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) return null;
+  const ultimo = props.mensualidad.fechasPago[props.mensualidad.fechasPago.length - 1];
+  const fechaPago = typeof ultimo === 'object' ? ultimo.fecha : ultimo;
+  const fp = parseISODateLocal(fechaPago);
+  if (!fp) return null;
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const idx = meses.indexOf(props.mensualidad.mes);
+  if (idx === -1) return null;
+  const fv = new Date(fp.getFullYear(), idx + 1, fp.getDate());
+  const diff = fv.getTime() - new Date().getTime();
+  return Math.ceil(diff / (1000*60*60*24));
 });
 
 // Computed para la clase del indicador de vencimiento
 const claseVencimiento = computed(() => {
-  // Si no hay fechas de pago, no hay vencimiento
-  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
-    return 'sin-pagos';
-  }
+  // Si no hay fecha, no mostramos estados de vence
+  if (diasParaVencimiento.value === null) return 'sin-fecha';
 
   if (esVencida.value) {
     return 'vencido';
@@ -218,9 +171,7 @@ const claseVencimiento = computed(() => {
   
   const dias = diasParaVencimiento.value;
   
-  if (dias === null) {
-    return 'sin-fecha';
-  }
+  if (dias === 0) return 'proximo-vencer';
   if (dias <= 3) {
     return 'proximo-vencer';
   }
@@ -232,10 +183,8 @@ const claseVencimiento = computed(() => {
 
 // Computed para el texto del indicador de vencimiento
 const textoVencimiento = computed(() => {
-  // Si no hay fechas de pago, no hay vencimiento
-  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) {
-    return 'Sin pagos';
-  }
+  // Si no hay fecha, no mostramos
+  if (diasParaVencimiento.value === null) return 'Sin fecha';
 
   if (esVencida.value) {
     return 'Vencido';
@@ -243,9 +192,7 @@ const textoVencimiento = computed(() => {
 
   const dias = diasParaVencimiento.value;
   
-  if (dias === null) {
-    return 'Sin fecha';
-  }
+  if (dias === 0) return 'Vence hoy';
   if (dias <= 3) {
     return `Vence en ${dias} día${dias !== 1 ? 's' : ''}`;
   }
@@ -268,8 +215,8 @@ function gestionarMensualidad() {
   emit('gestionar', props.mensualidad);
 }
 
-function generarReporte() {
-  emit('reporte', props.mensualidad);
+function eliminarMensualidad() {
+  emit('eliminar', props.mensualidad);
 }
 
 function imagenPorDefecto(event) {
@@ -287,48 +234,22 @@ function getIconoEstado() {
 }
 
 function getClaseSaldo() {
-  const totalMensualidad = 150000;
-  const numPagos = props.mensualidad.fechasPago ? props.mensualidad.fechasPago.length : 0;
-  
-  if (numPagos === 0) return 'saldo-alto'; // Sin pagos
-  
-  // Calcular saldo pendiente
-  let totalPagado = 0;
-  if (numPagos === 1) {
-    totalPagado = totalMensualidad; // Pago completo
-  } else {
-    const montoPorPago = Math.floor(totalMensualidad / numPagos);
-    totalPagado = numPagos * montoPorPago;
-  }
-  
-  const saldoPendiente = totalMensualidad - totalPagado;
-  
-  if (saldoPendiente === 0) return 'saldo-completo';
-  if (saldoPendiente <= totalMensualidad * 0.3) return 'saldo-bajo';
-  if (saldoPendiente <= totalMensualidad * 0.7) return 'saldo-medio';
+  const monto = Number(props.mensualidad.monto_pago_raw || 0);
+  const saldo = Number(props.mensualidad.saldo_pendiente_raw ?? (monto || 0));
+  if (saldo <= 0) return 'saldo-completo';
+  if (monto <= 0) return 'saldo-alto';
+  const ratio = saldo / monto;
+  if (ratio <= 0.3) return 'saldo-bajo';
+  if (ratio <= 0.7) return 'saldo-medio';
   return 'saldo-alto';
 }
 
-function calcularSaldoPendiente() {
-  const totalMensualidad = 150000;
-  const numPagos = props.mensualidad.fechasPago ? props.mensualidad.fechasPago.length : 0;
-  
-  if (numPagos === 0) {
-    return `$${totalMensualidad.toLocaleString('es-CO')}`;
-  }
-  
-  // Calcular total pagado
-  let totalPagado = 0;
-  if (numPagos === 1) {
-    totalPagado = totalMensualidad; // Si hay solo un pago, es el total completo
-  } else {
-    // Si hay múltiples pagos, dividir equitativamente
-    const montoPorPago = Math.floor(totalMensualidad / numPagos);
-    totalPagado = numPagos * montoPorPago;
-  }
-  
-  const saldoPendiente = totalMensualidad - totalPagado;
-  return `$${Math.max(0, saldoPendiente).toLocaleString('es-CO')}`;
+function saldoPendienteTexto() {
+  const saldo = Number(props.mensualidad.saldo_pendiente_raw);
+  if (!isNaN(saldo)) return `$${Math.max(0, saldo).toLocaleString('es-CO')}`;
+  // Fallback si no viene del backend
+  const monto = Number(props.mensualidad.monto_pago_raw || 0);
+  return `$${monto.toLocaleString('es-CO')}`;
 }
 
 </script>
