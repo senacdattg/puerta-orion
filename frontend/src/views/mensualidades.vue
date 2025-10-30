@@ -1,194 +1,147 @@
 <script setup>
+import { defineOptions } from 'vue';
 import Encabezado from '../components/layout/encabezado.vue';
 import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
 import Pie from '../components/layout/pie.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import mensualidadesService from '@/services/mensualidadesService';
 
-// Datos de ejemplo para demostrar la funcionalidad
-const mensualidades = ref([
-  {
-    id: 1,
-    nombre: 'Carlos Rodríguez',
-    mes: 'Agosto',
-    valor: '$150,000',
-    estado: 'Pagado',
-    fecha: '2024-08-15',
-    fechasPago: ['2024-08-15'],
-    vencimiento: '31/08/2024',
-    avatar: null,
-    observaciones: 'Pago completo realizado'
-  },
-  {
-    id: 2,
-    nombre: 'Ana Martínez',
-    mes: 'Agosto',
-    valor: '$150,000',
-    estado: 'Pagado',
-    fecha: '2024-08-20',
-    fechasPago: ['2024-08-20'],
-    vencimiento: '31/08/2024',
-    avatar: null,
-    observaciones: 'Pago puntual'
-  },
-  {
-    id: 3,
-    nombre: 'Luis García',
-    mes: 'Agosto',
-    valor: '$150,000',
-    estado: 'Pendiente',
-    fecha: 'Pendiente',
-    fechasPago: [],
-    vencimiento: '31/08/2024',
-    avatar: null,
-    observaciones: 'Pendiente de pago'
-  },
-  {
-    id: 4,
-    nombre: 'María López',
-    mes: 'Septiembre',
-    valor: '$150,000',
-    estado: 'Pendiente',
-    fecha: 'Pendiente',
-    fechasPago: [],
-    vencimiento: '30/09/2024',
-    avatar: null,
-    observaciones: 'Por pagar'
-  },
-  {
-    id: 5,
-    nombre: 'Juan Pérez',
-    mes: 'Septiembre',
-    valor: '$150,000',
-    estado: 'Pagado',
-    fecha: '2024-09-01',
-    fechasPago: ['2024-09-01'],
-    vencimiento: '30/09/2024',
-    avatar: null,
-    observaciones: 'Pago anticipado'
-  },
-  {
-    id: 6,
-    nombre: 'Sofia Torres',
-    mes: 'Septiembre',
-    valor: '$150,000',
-    estado: 'Pendiente',
-    fecha: 'Pendiente',
-    fechasPago: [],
-    vencimiento: '30/09/2024',
-    avatar: null,
-    observaciones: 'En proceso de pago'
-  },
-  {
-    id: 7,
-    nombre: 'Pedro Ramírez',
-    mes: 'Agosto',
-    valor: '$150,000',
-    estado: 'Pagado',
-    fecha: '2024-08-10',
-    fechasPago: ['2024-08-10'],
-    vencimiento: '31/08/2024',
-    avatar: null,
-    observaciones: 'Pago completo'
-  },
-  {
-    id: 8,
-    nombre: 'Carmen Vega',
-    mes: 'Septiembre',
-    valor: '$150,000',
-    estado: 'Vencido',
-    fecha: 'Pendiente',
-    fechasPago: [],
-    vencimiento: '30/09/2024',
-    avatar: null,
-    observaciones: 'Vencido - requiere seguimiento'
-  },
-  {
-    id: 9,
-    nombre: 'Roberto Silva',
-    mes: 'Agosto',
-    valor: '$150,000',
-    estado: 'Pendiente',
-    fecha: '2024-08-25',
-    fechasPago: ['2024-08-25'],
-    vencimiento: '31/08/2024',
-    avatar: null,
-    observaciones: 'Pago parcial - falta $75,000'
-  },
-  {
-    id: 10,
-    nombre: 'Elena Morales',
-    mes: 'Septiembre',
-    valor: '$150,000',
-    estado: 'Pendiente',
-    fecha: '2024-09-15',
-    fechasPago: ['2024-09-15'],
-    vencimiento: '30/09/2024',
-    avatar: null,
-    observaciones: 'Primera cuota pagada'
-  }
-]);
+defineOptions({ name: 'MensualidadesView' });
 
-// Funciones para manejar eventos
+const mensualidades = ref([]);
+const loading = ref(false);
+const errorMsg = ref('');
 
-function editarMensualidad(mensualidadActualizada) {
-  console.log('Editar mensualidad:', mensualidadActualizada);
-  
-  // Encontrar la mensualidad en el array y actualizarla
-  const index = mensualidades.value.findIndex(m => m.id === mensualidadActualizada.id);
-  if (index !== -1) {
-    // Actualizar la mensualidad con los nuevos datos
-    Object.assign(mensualidades.value[index], mensualidadActualizada);
-    console.log('Mensualidad actualizada:', mensualidades.value[index]);
+function formatoCOP(valor) {
+  try { return new Intl.NumberFormat('es-CO').format(Number(valor)); } catch { return String(valor); }
+}
+
+function nombreMes(fechaISO) {
+  if (!fechaISO) return '';
+  const d = new Date(fechaISO);
+  return d.toLocaleDateString('es-CO', { month: 'long' }).replace(/^./, m => m.toUpperCase());
+}
+
+function obtenerNombrePersonaDesdeObjeto(persona, fallbackId) {
+  if (!persona) return `Persona #${fallbackId}`;
+  // Intentar múltiples convenciones de nombre
+  const posibles = [
+    persona.nombre,
+    persona.nombres,
+    persona.nombre_persona,
+    persona.nombre_completo,
+    persona.full_name,
+    persona.display_name
+  ].filter(Boolean);
+  if (posibles.length > 0) return String(posibles[0]);
+  // Combinar nombre + apellido si existen
+  const nombre = persona.primer_nombre || persona.nombre1 || persona.nombre;
+  const apellido = persona.primer_apellido || persona.apellido1 || persona.apellidos || persona.apellido;
+  if (nombre && apellido) return `${nombre} ${apellido}`;
+  if (nombre) return String(nombre);
+  return `Persona #${fallbackId}`;
+}
+
+function mapMensualidadToCard(m) {
+  const estadoTxt = m.estado_texto || (m.estado ? 'Pagado' : 'Pendiente');
+  const vencRaw = m.fecha_vencimiento || m.vencimiento;
+  const venc = vencRaw ? new Date(vencRaw).toLocaleDateString('es-CO') : '';
+  return {
+    id: m.id_mensualidad,
+    nombre: m.persona_nombre || obtenerNombrePersonaDesdeObjeto(m.persona, m.id_persona),
+    mes: nombreMes(vencRaw),
+    valor: `$${formatoCOP(m.monto_pago)}`,
+    estado: estadoTxt,
+    fecha: m.fecha_pago || 'Pendiente',
+    fechasPago: m.fecha_pago ? [m.fecha_pago] : [],
+    vencimiento: venc,
+    avatar: null,
+    observaciones: '',
+    activo: m.activo === undefined ? true : !!m.activo,
+    // datos crudos del backend para el modal
+    monto_pago_raw: m.monto_pago,
+    saldo_pendiente_raw: m.saldo_pendiente,
+    estado_bool: m.estado,
+    fecha_vencimiento_raw: vencRaw
+  };
+}
+
+async function cargarMensualidades() {
+  loading.value = true; errorMsg.value = '';
+  try {
+    const res = await mensualidadesService.list();
+    const items = res.data || [];
+    mensualidades.value = items.map(mapMensualidadToCard);
+  } catch (e) {
+    errorMsg.value = e?.message || 'Error cargando mensualidades';
+  } finally {
+    loading.value = false;
   }
 }
 
-function eliminarMensualidad(mensualidad) {
-  console.log('Eliminar mensualidad:', mensualidad);
-  
-  const confirmacion = confirm(
-    `¿Estás seguro de eliminar la mensualidad de ${mensualidad.nombre}?\n\nEsta acción no se puede deshacer.`
-  );
-  
-  if (confirmacion) {
-    const index = mensualidades.value.findIndex(m => m.id === mensualidad.id);
-    if (index !== -1) {
-      mensualidades.value.splice(index, 1);
-      console.log('Mensualidad eliminada');
+async function iniciarPago(m) {
+  try {
+    const resp = await mensualidadesService.crearPreferenciaMensualidad({
+      id_mensualidad: m.id,
+      nombre_pagador: 'Tester',
+      email_pagador: 'test_user_xxx@testuser.com',
+      numero_documento: '12345678',
+      tipo_documento: 'CC'
+    });
+    const url = resp.init_point || resp.sandbox_init_point;
+    if (url) window.location.href = url; else alert('No se obtuvo link de pago');
+  } catch (e) {
+    alert(e?.message || 'Error iniciando pago');
+  }
+}
+
+async function editarMensualidad(mActualizada) {
+  const payload = {};
+  if (mActualizada.id_metodo_pago !== undefined) payload.id_metodo_pago = mActualizada.id_metodo_pago;
+  if (mActualizada.monto_pago !== undefined) payload.monto_pago = mActualizada.monto_pago;
+  if (mActualizada.fecha_vencimiento !== undefined) payload.fecha_vencimiento = mActualizada.fecha_vencimiento;
+  if (mActualizada.saldo_pendiente !== undefined) payload.saldo_pendiente = mActualizada.saldo_pendiente;
+  if (mActualizada.activo !== undefined) payload.activo = mActualizada.activo;
+  try {
+    await mensualidadesService.update(mActualizada.id, payload);
+    await cargarMensualidades();
+  } catch (e) {
+    console.error(e);
+    alert(e?.message || 'Error actualizando mensualidad');
+  }
+}
+
+async function eliminarMensualidad(m) {
+  try {
+    if (m.activo) {
+      await mensualidadesService.desactivar(m.id);
+    } else {
+      await mensualidadesService.reactivar(m.id);
     }
+    await cargarMensualidades();
+  } catch (e) {
+    alert(e?.message || 'Error eliminando mensualidad');
   }
 }
 
-function marcarComoPagado(mensualidad) {
-  console.log('Marcar como pagado:', mensualidad);
-  
-  const confirmacion = confirm(
-    `¿Marcar como pagado la mensualidad de ${mensualidad.nombre}?`
-  );
-  
-  if (confirmacion) {
-    mensualidad.estado = 'Pagado';
-    mensualidad.fecha = new Date().toISOString().split('T')[0];
-    if (!mensualidad.fechasPago) {
-      mensualidad.fechasPago = [];
-    }
-    // Solo agregar fecha si no existe ya
-    const fechaActual = new Date().toISOString().split('T')[0];
-    if (!mensualidad.fechasPago.includes(fechaActual)) {
-      mensualidad.fechasPago.push(fechaActual);
-    }
-    console.log('Mensualidad marcada como pagada');
+async function nuevaMensualidad(payload) {
+  try {
+    await mensualidadesService.create({
+      id_persona: payload.id_persona,
+      id_metodo_pago: payload.id_metodo_pago,
+      monto_pago: payload.monto_pago,
+      fecha_vencimiento: payload.fecha_vencimiento,
+      activo: payload.activo,
+      estado_ui: payload.estado_ui,
+      saldo_pendiente: payload.saldo_pendiente
+    });
+    await cargarMensualidades();
+  } catch (e) {
+    alert(e?.message || 'Error creando mensualidad');
   }
 }
 
-function nuevaMensualidad(nuevaMensualidad) {
-  console.log('Nueva mensualidad recibida:', nuevaMensualidad);
-  
-  // Agregar la nueva mensualidad al array
-  mensualidades.value.push(nuevaMensualidad);
-  
-  console.log('Total de mensualidades:', mensualidades.value.length);
-  console.log('Array actualizado:', mensualidades.value);
-}
+onMounted(cargarMensualidades);
 </script>
 
 <template>
@@ -198,7 +151,7 @@ function nuevaMensualidad(nuevaMensualidad) {
       :mensualidades="mensualidades"
       @editar="editarMensualidad"
       @eliminar="eliminarMensualidad"
-      @pagar="marcarComoPagado"
+      @pagar="iniciarPago"
       @nueva="nuevaMensualidad"
     />
     <Pie />

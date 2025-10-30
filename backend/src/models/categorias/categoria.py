@@ -13,18 +13,8 @@ class Categoria(BaseModel):
 
     Define las diferentes categorías en las que se agrupan los deportistas,
     basado en criterios como la edad mínima y máxima. También maneja el estado
-    de la categoría (activa/inactiva) y sus relaciones con eventos y mensualidades.
+    de la categoría (activa/inactiva) y sus relaciones con eventos y deportistas.
     Hereda de BaseModel para incluir campos de auditoría.
-
-    Attributes:
-        id_categoria (int): Identificador único de la categoría (clave primaria).
-        codigo_categoria (int): Código único de la categoría.
-        nombre_categoria (str): Nombre descriptivo de la categoría.
-        edad_minima (int): Edad mínima para pertenecer a esta categoría.
-        edad_maxima (int): Edad máxima para pertenecer a esta categoría.
-        estado (bool): Indica si la categoría está activa o inactiva.
-        eventos (list): Relación uno a muchos con el modelo Evento.
-        mensualidades (list): Relación uno a muchos con el modelo Mensualidad.
     """
     __tablename__ = 'puerta_orion_categoria'
     
@@ -37,15 +27,11 @@ class Categoria(BaseModel):
     
     # Relaciones
     eventos = relationship('Evento', lazy=True)
-    mensualidades = relationship('Mensualidad', lazy=True)
     deportistas = relationship('Deportista', lazy=True)
     
     def __repr__(self):
         """
-        Representación de cadena de la instancia de Categoría.
-
-        Returns:
-            str: Una cadena que representa la instancia de Categoría.
+        Representación de cadena de la instancia de Categoria.
         """
         return f'<Categoria {self.nombre_categoria}>'
     

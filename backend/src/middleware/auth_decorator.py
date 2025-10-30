@@ -416,7 +416,7 @@ class TokenRequired:
 
 
 # Función helper para crear el decorador
-def token_required(required_roles: Optional[list] = None):
+def token_required(required_roles: Optional[list] = None, required_permissions: Optional[list] = None):
     """
     Decorador para validar tokens JWT y sesiones activas.
     
@@ -435,7 +435,7 @@ def token_required(required_roles: Optional[list] = None):
         def admin_route():
             return jsonify({'message': 'Solo para administradores'})
     """
-    return TokenRequired(required_roles)
+    return TokenRequired(required_roles, required_permissions)
 
 
 # Decoradores específicos para roles comunes

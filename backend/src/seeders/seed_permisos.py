@@ -49,14 +49,15 @@ def run():
         {"nombre": "listar_eventos", "descripcion": "Permite listar todos los eventos"},
         {"nombre": "gestionar_eventos", "descripcion": "Permite gestión completa de eventos"},
         
-        # Permisos de pagos
-        {"nombre": "crear_pago", "descripcion": "Permite crear pagos"},
-        {"nombre": "ver_pago", "descripcion": "Permite ver información de pagos"},
-        {"nombre": "editar_pago", "descripcion": "Permite editar pagos"},
-        {"nombre": "eliminar_pago", "descripcion": "Permite eliminar pagos"},
-        {"nombre": "listar_pagos", "descripcion": "Permite listar todos los pagos"},
-        {"nombre": "gestionar_pagos", "descripcion": "Permite gestión completa de pagos"},
-        {"nombre": "procesar_pago", "descripcion": "Permite procesar pagos"},
+        # Permisos de mensualidades (reemplaza permisos de pagos)
+        {"nombre": "crear_mensualidad", "descripcion": "Permite crear mensualidades"},
+        {"nombre": "ver_mensualidad", "descripcion": "Permite ver/listar mensualidades"},
+        {"nombre": "abonar_mensualidad", "descripcion": "Permite registrar abonos en mensualidades"},
+        {"nombre": "editar_mensualidad", "descripcion": "Permite editar mensualidades"},
+        {"nombre": "editar_abono_mensualidad", "descripcion": "Permite editar abonos de mensualidades"},
+        {"nombre": "eliminar_abono_mensualidad", "descripcion": "Permite eliminar abonos de mensualidades"},
+        {"nombre": "desactivar_mensualidad", "descripcion": "Permite desactivar mensualidades"},
+        {"nombre": "reactivar_mensualidad", "descripcion": "Permite reactivar mensualidades"},
         
         # Permisos de acudientes
         {"nombre": "crear_acudiente", "descripcion": "Permite crear acudientes"},

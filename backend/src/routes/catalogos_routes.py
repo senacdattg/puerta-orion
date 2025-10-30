@@ -13,6 +13,7 @@ from flask_cors import cross_origin
 from ..models.catalogos.tipo_documento import TipoDocumento
 from ..models.categorias.sexo import Sexo
 from ..models.categorias.categoria import Categoria
+from ..models.pagos.metodo_pago import MetodoPago
 from ..models.acudientes.parentesco import Parentesco
 from ..models.acudientes.acudiente import Acudiente
 from ..services.catalogos_service import catalogos_service
@@ -111,6 +112,37 @@ def obtener_sexos():
 
     except Exception as e:
         logger.error(f"Error inesperado al obtener sexos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@catalogos_bp.route('/metodos-pago', methods=['GET', 'OPTIONS'])
+@cross_origin()
+def obtener_metodos_pago():
+    """
+    Endpoint para obtener los métodos de pago activos.
+    """
+    try:
+        metodos = MetodoPago.query.filter_by(estado=True).all()
+        datos = [
+            {
+                'id_metodo_pago': m.id_metodo_pago,
+                'nombre': m.nombre_metodo,
+                'estado': m.estado
+            }
+            for m in metodos
+        ]
+        return jsonify({
+            'success': True,
+            'message': 'Métodos de pago obtenidos exitosamente',
+            'data': datos,
+            'status_code': 200
+        }), 200
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener métodos de pago: {str(e)}")
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor',

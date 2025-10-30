@@ -10,7 +10,7 @@
 
       <div class="modal-body">
         <!-- Información del deportista -->
-        <div class="seccion-principal">
+        <div class="seccion-principal" v-if="!editando">
           <div class="deportista-info">
             <div class="avatar-deportista">
               <img
@@ -30,128 +30,198 @@
         <!-- Información general -->
         <div class="seccion-detalles">
           <h5>📋 Información General</h5>
-          
+
           <!-- Modo vista -->
           <div v-if="!editando" class="grid-detalles">
             <div class="detalle-item">
               <span class="detalle-label">Mes</span>
-              <span class="detalle-valor">{{ mensualidad.mes }}</span>
+              <span class="detalle-valor">{{ mesDesdeVencimiento() }}</span>
             </div>
             <div class="detalle-item">
               <span class="detalle-label">Valor Total</span>
-              <span class="detalle-valor precio">{{ mensualidad.valor }}</span>
+              <span class="detalle-valor precio">{{ formatCOP(mensualidad.monto_pago_raw ?? mensualidad.monto_pago ?? 0) }}</span>
             </div>
             <div class="detalle-item">
-              <span class="detalle-label">Fecha</span>
-              <span class="detalle-valor">{{ mensualidad.fecha }}</span>
+              <span class="detalle-label">Estado</span>
+              <span class="detalle-valor">{{ (mensualidad.estado_bool ?? (mensualidad.estado === 'Pagado')) ? 'Pagado' : 'Pendiente' }}</span>
             </div>
-            <div v-if="mensualidad.vencimiento" class="detalle-item" style="grid-column: 1 / 4;">
+            <div class="detalle-item" style="grid-column: 1 / 4;">
               <span class="detalle-label">Vencimiento</span>
-              <span class="detalle-valor vencimiento">{{ mensualidad.vencimiento }}</span>
+              <span class="detalle-valor vencimiento">{{ mostrarVencimiento() }}</span>
             </div>
           </div>
 
           <!-- Modo edición -->
           <div v-else class="formulario-edicion">
-            <div class="campo-formulario">
-              <label for="estado-edicion">
-                <i class="fas fa-info-circle"></i>
-                Estado *
-              </label>
-              <select id="estado-edicion" v-model="formEdicion.estado" class="select-edicion" required>
-                <option value="Pagado">Pagado</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Vencido">Vencido</option>
-              </select>
+            <!-- Tabs Edición / Abonos -->
+            <div class="tabs-edicion">
+              <button type="button" class="tab-btn" :class="{ active: activeTab==='editar' }" @click="activeTab='editar'">Editar</button>
+              <button type="button" class="tab-btn" :class="{ active: activeTab==='abonos' }" @click="activeTab='abonos'">Abonos</button>
             </div>
-
-            <div class="campo-formulario">
-              <label for="valor-edicion">
-                <i class="fas fa-dollar-sign"></i>
-                Valor Total *
-              </label>
-              <div class="input-with-symbol">
-                <span class="dollar-symbol">$</span>
-                <input id="valor-edicion" v-model="formEdicion.valorSinSimbolo" type="number" placeholder="80000"
-                  class="input-edicion" required @input="actualizarValorConSimbolo" />
+            <!-- Encabezado contextual (oculto en edición para mostrar solo campos) -->
+            <div class="seccion-form" v-if="false">
+              <h6>Resumen rápido</h6>
+              <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-items:center;text-align:center;">
+                <div class="detalle-item" style="text-align:center;">
+                  <span class="detalle-label">Deportista</span>
+                  <span class="detalle-valor">{{ mensualidad.nombre }}</span>
+                </div>
+                <div class="detalle-item" style="text-align:center;">
+                  <span class="detalle-label">Estado actual</span>
+                  <span class="detalle-valor" :class="`estado-${mensualidad.estado.toLowerCase()}`">{{ mensualidad.estado }}</span>
+                </div>
+                <div class="detalle-item" style="text-align:center;">
+                  <span class="detalle-label">Valor total</span>
+                  <span class="detalle-valor precio">{{ mensualidad.valor }}</span>
+                </div>
+                <div class="detalle-item" style="text-align:center;">
+                  <span class="detalle-label">Vence</span>
+                  <span class="detalle-valor vencimiento">{{ mostrarVencimiento() }}</span>
+                </div>
+                <div class="detalle-item" style="text-align:center; grid-column: 1 / -1;">
+                  <span class="detalle-label">Saldo pendiente</span>
+                  <span class="detalle-valor saldo">{{ mostrarSaldoPendiente() }}</span>
+                </div>
               </div>
             </div>
+            <div class="linea-abajo" style="margin:12px 0;" v-if="false"></div>
 
-            <div class="campo-formulario">
-              <label for="fechas-pago">
-                <i class="fas fa-calendar"></i>
-                Fechas de Pago
-              </label>
-              <div class="fechas-pago-container">
-                <div v-for="(pago, index) in formEdicion.fechasPago" :key="index" class="fecha-pago-item">
-                  <input v-model="pago.fecha" type="date" class="input-fecha" placeholder="Fecha" />
+            <!-- Sección: Datos de pago -->
+            <div class="seccion-form" v-if="activeTab==='editar'">
+              <h6>Datos de pago</h6>
+              <p class="descripcion-seccion">Configura el método, el estado deseado y los importes.</p>
+              <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;">
+                <div class="campo-formulario">
+                  <label for="metodo-edicion">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Método de Pago *
+                  </label>
+                  <select id="metodo-edicion" v-model.number="formEdicion.id_metodo_pago" class="select-edicion" required>
+                    <option disabled value="">Selecciona un método</option>
+                    <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                  </select>
+                  <small class="hint">Usa el método por defecto de esta mensualidad.</small>
+                </div>
+
+                <div class="campo-formulario">
+                  <label for="estado-edicion">
+                    <i class="fas fa-info-circle"></i>
+                    Estado (visual)
+                  </label>
+                  <select id="estado-edicion" v-model="formEdicion.estado_ui" class="select-edicion">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pagado">Pagado</option>
+                  </select>
+                  <small class="hint">El estado real lo fija el saldo pendiente (0 = Pagado).</small>
+                </div>
+
+                <div class="campo-formulario">
+                  <label for="valor-edicion">
+                    <i class="fas fa-dollar-sign"></i>
+                    Valor Total *
+                  </label>
                   <div class="input-with-symbol">
                     <span class="dollar-symbol">$</span>
-                    <input v-model="pago.monto" type="number" class="input-edicion" placeholder="Monto" />
+                    <input id="valor-edicion" v-model="formEdicion.valorSinSimbolo" type="number" placeholder="80000"
+                      class="input-edicion" required @input="actualizarValorConSimbolo" />
                   </div>
-                  <button type="button" @click="eliminarFechaPago(index)" class="btn-eliminar-fecha">×</button>
+                  <small class="hint">Es el valor base de cada mensualidad.</small>
                 </div>
-                <button type="button" @click="agregarFechaPago" class="btn-agregar-fecha">
-                  + Agregar fecha de pago
-                </button>
+
+                <div class="campo-formulario" style="grid-column:1 / -1;max-width:360px;margin:0 auto;">
+                  <label for="saldo-edicion">
+                    <i class="fas fa-balance-scale"></i>
+                    Saldo Pendiente
+                  </label>
+                  <input id="saldo-edicion" v-model.number="formEdicion.saldo_pendiente" type="number" class="input-edicion" placeholder="0" />
+                  <small class="hint">Si eliges “Pagado”, se guardará con saldo 0 automáticamente.</small>
+                </div>
               </div>
             </div>
+            <div class="linea-abajo" style="margin:12px 0;"></div>
 
-            <div class="campo-formulario">
-              <label for="vencimiento-edicion">
-                <i class="fas fa-clock"></i>
-                Fecha de Vencimiento
-              </label>
-              <input id="vencimiento-edicion" v-model="formEdicion.vencimiento" type="text" placeholder="DD/MM/AAAA"
-                class="input-edicion" />
-            </div>
+            <!-- Sección: Fechas y estado -->
+            <div class="seccion-form" v-if="activeTab==='editar'">
+              <h6>Fechas y vigencia</h6>
+              <p class="descripcion-seccion">Controla vigencia y confirma cuándo quedó pago.</p>
+              <div class="grid-detalles">
+                <div class="campo-formulario">
+                  <label for="vencimiento-edicion">
+                    <i class="fas fa-clock"></i>
+                    Fecha de Vencimiento
+                  </label>
+                  <input id="vencimiento-edicion" v-model="formEdicion.fecha_vencimiento" type="date"
+                    class="input-edicion" />
+                </div>
 
-            <div class="campo-formulario">
-              <label for="observaciones-edicion">
-                <i class="fas fa-comment"></i>
-                Observaciones
-              </label>
-              <textarea id="observaciones-edicion" v-model="formEdicion.observaciones" 
-                placeholder="Observaciones adicionales..." class="input-edicion"></textarea>
-            </div>
+                <div class="campo-formulario">
+                  <label>
+                    <i class="fas fa-calendar-check"></i>
+                    Fecha de Pago
+                  </label>
+                  <input type="date" :value="formEdicion.fecha_pago" class="input-edicion" disabled />
+                  <small class="hint">Se llena sola cuando el saldo llega a 0.</small>
+                </div>
 
-            <!-- Acciones rápidas -->
-            <div class="acciones-rapidas">
-              <h6>Acciones Rápidas</h6>
-              <div class="botones-rapidos">
-                <button type="button" @click="marcarComoPagado" class="btn-rapido btn-pagado">
-                  ✓ Marcar como Pagado
-                </button>
-                <button type="button" @click="marcarComoPendiente" class="btn-rapido btn-pendiente">
-                  ⏳ Marcar como Pendiente
-                </button>
-                <button type="button" @click="marcarComoVencido" class="btn-rapido btn-vencido">
-                  ⚠️ Marcar como Vencido
-                </button>
+                <div class="campo-formulario">
+                  <label>
+                    <i class="fas fa-toggle-on"></i>
+                    Activo
+                  </label>
+                  <button type="button"
+                          class="btn-toggle-activo"
+                          :class="{ on: formEdicion.activo }"
+                          @click="formEdicion.activo = !formEdicion.activo">
+                    {{ formEdicion.activo ? 'Activo' : 'Inactivo' }}
+                  </button>
+                  <small class="hint">Click para activar/desactivar.</small>
+                </div>
               </div>
             </div>
+            <div class="linea-abajo" style="margin:12px 0;"></div>
+
+            <!-- Sección: Registrar abono -->
+            <div class="seccion-form seccion-abono" v-if="activeTab==='abonos'">
+              <h6>Registrar abono</h6>
+              <p class="descripcion-seccion">Añade un abono con su fecha para mantener el historial al día.</p>
+              <div class="grid-detalles">
+                <div class="campo-formulario">
+                  <label for="abono-fecha">
+                    <i class="fas fa-calendar-plus"></i>
+                    Fecha del abono
+                  </label>
+                  <input id="abono-fecha" v-model="nuevoAbono.fecha" type="date" class="input-edicion" />
+                </div>
+                <div class="campo-formulario">
+                  <label for="abono-monto">
+                    <i class="fas fa-dollar-sign"></i>
+                    Monto del abono
+                  </label>
+                  <input id="abono-monto" v-model.number="nuevoAbono.monto" type="number" class="input-edicion" placeholder="0" />
+                </div>
+                <div class="campo-formulario">
+                  <label for="abono-metodo">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Método de pago
+                  </label>
+                  <select id="abono-metodo" v-model.number="nuevoAbono.id_metodo_pago" class="select-edicion">
+                    <option :value="undefined">—</option>
+                    <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                  </select>
+                </div>
+                <div class="campo-formulario" style="align-self:end;">
+                  <button type="button" class="btn btn-primary" @click="registrarAbono">Registrar Abono</button>
+                </div>
+              </div>
+            </div>
+            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='abonos'"></div>
           </div>
         </div>
 
-        <!-- Resumen financiero -->
-        <div class="seccion-financiera">
-          <h5>💰 Resumen Financiero</h5>
-          <div class="resumen-grid">
-            <div class="resumen-item">
-              <span class="resumen-label">Valor Total</span>
-              <span class="resumen-valor">{{ mensualidad.valor }}</span>
-            </div>
-            <div class="resumen-item">
-              <span class="resumen-label">Saldo Pendiente</span>
-              <span class="resumen-valor saldo" :class="getClaseSaldo()">
-                {{ calcularSaldoPendiente() }}
-              </span>
-            </div>
-          </div>
-        </div>
+       
 
         <!-- Historial de pagos -->
-        <div class="seccion-historial">
+        <div class="seccion-historial" v-if="!editando">
           <h5>📊 Historial de Pagos</h5>
           <div class="historial-pagos-container">
             <div class="resumen-pagos">
@@ -172,17 +242,71 @@
                 <span class="resumen-valor estado" :class="getClaseEstado()">{{ getEstadoPago() }}</span>
               </div>
             </div>
-            
+
             <div class="lista-pagos">
-              <h6>Fechas de Pago</h6>
-              <div v-if="mensualidad.fechasPago && mensualidad.fechasPago.length > 0" class="pagos-list">
-                <div v-for="(pago, index) in mensualidad.fechasPago" :key="index" class="pago-item">
-                  <span class="fecha-pago">{{ formatearFecha(pago.fecha || pago) }}</span>
-                  <span class="monto-pago">${{ obtenerMontoPago(pago).toLocaleString('es-CO') }}</span>
-                </div>
+              <h6>Fechas de pago y abonos</h6>
+              <div v-if="listaPagosYAbonos().length > 0" class="pagos-list">
+                <table class="tabla-historial" style="width:100%; border-collapse:collapse;">
+                  <thead>
+                    <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
+                      <th style="padding:8px;">Fecha</th>
+                      <th style="padding:8px;">Monto</th>
+                      <th style="padding:8px;">Método</th>
+                      <th style="padding:8px;">Tipo</th>
+                      <th style="padding:8px; text-align:right;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(item, index) in listaPagosYAbonos()" :key="index" style="border-bottom:1px solid #f3f4f6;">
+                      <td style="padding:8px;">
+                        <template v-if="abonoEditIndex===index">
+                          <input type="date" v-model="abonoEdit.fecha" class="input-edicion" />
+                        </template>
+                        <template v-else>
+                          {{ formatearFecha(item.fecha) }}
+                        </template>
+                      </td>
+                      <td style="padding:8px;">
+                        <template v-if="abonoEditIndex===index">
+                          <input type="number" v-model.number="abonoEdit.monto" class="input-edicion" style="max-width:120px;" />
+                        </template>
+                        <template v-else>
+                          {{ item.monto !== undefined ? `$${Number(item.monto).toLocaleString('es-CO')}` : '—' }}
+                        </template>
+                      </td>
+                      <td style="padding:8px;">
+                        <template v-if="abonoEditIndex===index">
+                          <select v-model.number="abonoEdit.id_metodo_pago" class="select-edicion" style="max-width:140px;">
+                            <option :value="undefined">—</option>
+                            <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                          </select>
+                        </template>
+                        <template v-else>
+                          {{ item.metodo || '—' }}
+                        </template>
+                      </td>
+                      <td style="padding:8px; color:#6b7280;">{{ item.tipo }}</td>
+                      <td style="padding:8px; text-align:right;">
+                        <template v-if="item.tipo==='Abono'">
+                          <template v-if="abonoEditIndex===index">
+                            <button class="btn btn-primary" style="margin-right:6px;" @click="guardarEdicionAbono()">Guardar</button>
+                            <button class="btn btn-secondary" @click="abonoEditIndex=null">Cancelar</button>
+                          </template>
+                          <template v-else>
+                            <button class="btn btn-secondary" style="margin-right:6px;" @click="iniciarEdicionAbono(index)">Editar</button>
+                            <button class="btn btn-danger" @click="eliminarAbono(index)">Eliminar</button>
+                          </template>
+                        </template>
+                        <template v-else>
+                          —
+                        </template>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
               <div v-else class="sin-pagos">
-                <p>No hay fechas de pago registradas</p>
+                <p>No hay pagos ni abonos registrados</p>
               </div>
             </div>
           </div>
@@ -194,9 +318,6 @@
         <template v-if="!editando">
           <button @click="toggleEdicion" class="btn btn-edit">
             ✏️ Editar
-          </button>
-          <button @click="$emit('reporte', mensualidad)" class="btn btn-reporte">
-            📊 Reporte
           </button>
           <button @click="$emit('cerrar')" class="btn btn-secondary">
             Cerrar
@@ -218,8 +339,9 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
-import HistorialPagos from './historial-pagos.vue';
+import { ref, onMounted } from 'vue';
+import { API_CONFIG } from '@/config/environment';
+import mensualidadesService from '@/services/mensualidadesService';
 
 // Props
 const props = defineProps({
@@ -235,21 +357,64 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['cerrar', 'gestionar', 'reporte', 'guardar-cambios']);
+const emit = defineEmits(['cerrar', 'gestionar', 'guardar-cambios']);
 
 // Estado reactivo
 const editando = ref(props.modoEdicion);
+const activeTab = ref('editar');
+const metodosPago = ref([]);
 const formEdicion = ref({
-  estado: props.mensualidad.estado || '',
+  id_metodo_pago: undefined,
   valor: props.mensualidad.valor || '',
   valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
-  fechasPago: convertirFechasPagoAObjetos(props.mensualidad.fechasPago || (props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? [props.mensualidad.fecha] : [])),
-  vencimiento: props.mensualidad.vencimiento || '',
-  observaciones: props.mensualidad.observaciones || ''
+  fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
+  saldo_pendiente: undefined,
+  estado_ui: props.mensualidad.estado || 'Pendiente',
+  activo: true,
+  fecha_pago: ''
+});
+const nuevoAbono = ref({ fecha: '', monto: undefined });
+const abonos = ref([]);
+const abonoEditIndex = ref(null);
+const abonoEdit = ref({ fecha: '', monto: undefined, id_metodo_pago: undefined });
+
+onMounted(async () => {
+  try {
+    const base = API_CONFIG.baseURL || '';
+    const resp = await fetch(`${base}/api/catalogos/metodos-pago`, { headers: { 'Accept': 'application/json' } });
+    if (resp.ok) {
+      const json = await resp.json();
+      metodosPago.value = (json.data || []).map(m => ({ id: m.id_metodo_pago || m.id, nombre: m.nombre || m.nombre_metodo }));
+    } else {
+      metodosPago.value = [];
+    }
+  } catch {
+    metodosPago.value = [];
+  }
+  // Inicializar campos derivados del objeto mensualidad
+  formEdicion.value = {
+    id_metodo_pago: undefined,
+    valor: props.mensualidad.valor || '',
+    valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
+    fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
+    saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
+    estado_ui: props.mensualidad.estado || 'Pendiente',
+    activo: props.mensualidad.activo !== undefined ? !!props.mensualidad.activo : true,
+    fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
+  };
+
+  // Cargar abonos para totales
+  try {
+    const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
+    abonos.value = (respAb.data || []).map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+  } catch {
+    abonos.value = [];
+  }
 });
 
-// Computed properties
-const getClaseSaldo = () => {
+// Computed/Helpers
+// eslint-disable-next-line no-unused-vars
+function getClaseSaldo() {
   if (props.mensualidad.estado === 'Pagado') return 'saldo-completo';
 
   const valorTotal = parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
@@ -259,7 +424,7 @@ const getClaseSaldo = () => {
   if (saldoPendiente <= valorTotal * 0.3) return 'saldo-bajo';
   if (saldoPendiente <= valorTotal * 0.7) return 'saldo-medio';
   return 'saldo-alto';
-};
+}
 
 const calcularSaldoPendiente = () => {
   if (props.mensualidad.estado === 'Pagado') return '$0';
@@ -276,45 +441,68 @@ function extraerNumeroDeValor(valor) {
   return valor.replace(/[^0-9.-]+/g, '');
 }
 
-function convertirFechasPagoAObjetos(fechasPago) {
-  if (!fechasPago || !Array.isArray(fechasPago)) return [];
-  
-  return fechasPago.map(fecha => {
-    // Si ya es un objeto con fecha y monto, devolverlo tal como está
-    if (typeof fecha === 'object' && fecha.fecha !== undefined) {
-      return {
-        fecha: fecha.fecha,
-        monto: fecha.monto || ''
-      };
-    }
-    // Si es solo una fecha string, convertir a objeto con monto vacío
-    return {
-      fecha: fecha,
-      monto: ''
-    };
-  });
-}
-
-function convertirObjetosAFechasPago(objetosPago) {
-  if (!objetosPago || !Array.isArray(objetosPago)) return [];
-  
-  return objetosPago.map(pago => {
-    if (typeof pago === 'object' && pago.fecha) {
-      return {
-        fecha: pago.fecha,
-        monto: parseFloat(pago.monto) || 0
-      };
-    }
-    return pago;
-  });
-}
-
-function obtenerMontoPago(pago) {
-  if (typeof pago === 'object' && pago.monto !== undefined) {
-    return parseFloat(pago.monto) || 0;
+function formatearAInputDate(valor) {
+  // acepta DD/MM/YYYY o YYYY-MM-DD → devuelve YYYY-MM-DD
+  if (!valor) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(valor)) {
+    const [d, m, y] = valor.split('/').map(x => parseInt(x));
+    const mm = String(m).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
   }
-  // Si es solo una fecha string, no hay monto especificado
-  return 0;
+  return '';
+}
+
+function formatCOP(n) {
+  const num = Number(n) || 0;
+  return `$${num.toLocaleString('es-CO')}`;
+}
+
+function mesDesdeVencimiento() {
+  const raw = props.mensualidad.fecha_vencimiento_raw || props.mensualidad.fecha_vencimiento || props.mensualidad.vencimiento;
+  if (!raw) return props.mensualidad.mes || '';
+  const match = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const y = Number(match[1]);
+    const m = Number(match[2]);
+    const date = new Date(y, m - 1, 1); // local first day of month
+    return date.toLocaleDateString('es-CO', { month: 'long' }).replace(/^./, x => x.toUpperCase());
+  }
+  const d = new Date(raw);
+  return d.toLocaleDateString('es-CO', { month: 'long' }).replace(/^./, m => m.toUpperCase());
+}
+
+function mostrarVencimiento() {
+  // Prioriza valor crudo
+  const raw = props.mensualidad.fecha_vencimiento_raw || props.mensualidad.fecha_vencimiento || props.mensualidad.fechaVencimiento;
+  if (raw) {
+    const match = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      const y = match[1];
+      const m = match[2];
+      const d = match[3];
+      return `${Number(d).toString().padStart(2, '0')}/${Number(m).toString().padStart(2, '0')}/${y}`;
+    }
+    try {
+      const d = new Date(raw);
+      if (!isNaN(d)) return d.toLocaleDateString('es-CO');
+    } catch {
+      // ignorar formato inválido y caer al fallback
+    }
+  }
+  return props.mensualidad.vencimiento || '—';
+}
+
+function mostrarSaldoPendiente() {
+  // Usa el valor del backend si existe
+  const sp = props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
+  if (sp !== undefined && sp !== null) {
+    const n = Number(sp);
+    if (!isNaN(n)) return `$${n.toLocaleString('es-CO')}`;
+  }
+  // Fallback al cálculo local
+  return calcularSaldoPendiente();
 }
 
 function actualizarValorConSimbolo() {
@@ -328,114 +516,157 @@ function actualizarValorConSimbolo() {
   }
 }
 
-function agregarFechaPago() {
-  formEdicion.value.fechasPago.push({
-    fecha: '',
-    monto: ''
-  });
-}
-
-function eliminarFechaPago(index) {
-  formEdicion.value.fechasPago.splice(index, 1);
-}
-
 function toggleEdicion() {
   editando.value = !editando.value;
   if (!editando.value) {
-    // Si se cancela la edición, restaurar valores originales
+    // Restaurar
     formEdicion.value = {
-      estado: props.mensualidad.estado || '',
+      id_metodo_pago: undefined,
       valor: props.mensualidad.valor || '',
       valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
-      fechasPago: convertirFechasPagoAObjetos(props.mensualidad.fechasPago || (props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? [props.mensualidad.fecha] : [])),
-      vencimiento: props.mensualidad.vencimiento || '',
-      observaciones: props.mensualidad.observaciones || ''
+      fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
+      saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
+      estado_ui: props.mensualidad.estado || 'Pendiente',
+      activo: props.mensualidad.activo !== undefined ? !!props.mensualidad.activo : true,
+      fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
     };
   }
 }
 
 function guardarCambios() {
-  // Validar formulario
-  if (!formEdicion.value.estado || !formEdicion.value.valor) {
-    alert('Por favor, completa todos los campos obligatorios');
+  if (!formEdicion.value.valorSinSimbolo) {
+    alert('Ingresa el valor total');
     return;
   }
 
-  // Determinar fecha principal basada en fechas de pago
-  let fechaPrincipal = 'Pendiente';
-  if (formEdicion.value.fechasPago && formEdicion.value.fechasPago.length > 0) {
-    const fechasValidas = formEdicion.value.fechasPago.filter(pago => pago.fecha);
-    if (fechasValidas.length > 0) {
-      fechaPrincipal = fechasValidas[fechasValidas.length - 1].fecha; // Última fecha de pago
-    }
-  }
-
-  // Crear objeto con los cambios
-  const mensualidadActualizada = {
-    ...props.mensualidad,
-    estado: formEdicion.value.estado,
-    valor: formEdicion.value.valor,
-    fecha: fechaPrincipal,
-    fechasPago: convertirObjetosAFechasPago(formEdicion.value.fechasPago.filter(pago => pago.fecha)), // Solo fechas válidas
-    vencimiento: formEdicion.value.vencimiento,
-    observaciones: formEdicion.value.observaciones
+  const payloadUpdate = {
+    id_metodo_pago: formEdicion.value.id_metodo_pago,
+    monto_pago: Number(formEdicion.value.valorSinSimbolo),
+    fecha_vencimiento: formEdicion.value.fecha_vencimiento || null,
+    activo: formEdicion.value.activo
   };
 
-  // Emitir evento con los cambios
+  if (formEdicion.value.estado_ui === 'Pagado') {
+    payloadUpdate.saldo_pendiente = 0;
+  } else if (formEdicion.value.saldo_pendiente !== undefined && formEdicion.value.saldo_pendiente !== null && formEdicion.value.saldo_pendiente !== '') {
+    payloadUpdate.saldo_pendiente = Number(formEdicion.value.saldo_pendiente);
+  }
+
+  const mensualidadActualizada = {
+    ...props.mensualidad,
+    ...payloadUpdate,
+    valor: formEdicion.value.valor
+  };
+
   emit('guardar-cambios', mensualidadActualizada);
-  
-  // Salir del modo edición
   editando.value = false;
 }
 
-function marcarComoPagado() {
-  formEdicion.value.estado = 'Pagado';
-  // Si marca como pagado y no hay fechas, agregar fecha actual
-  if (!formEdicion.value.fechasPago || formEdicion.value.fechasPago.length === 0) {
-    formEdicion.value.fechasPago = [{
-      fecha: new Date().toISOString().split('T')[0],
-      monto: ''
-    }];
+async function registrarAbono() {
+  if (!nuevoAbono.value.monto || nuevoAbono.value.monto <= 0) {
+    alert('Ingresa el monto del abono');
+    return;
+  }
+  try {
+    await mensualidadesService.abonar(props.mensualidad.id, {
+      monto_abonado: Number(nuevoAbono.value.monto),
+      fecha_abono: nuevoAbono.value.fecha || undefined,
+      id_metodo_pago: nuevoAbono.value.id_metodo_pago
+    })
+    alert('Abono registrado correctamente');
+    // Sugerir al padre refrescar datos
+    emit('guardar-cambios', { ...props.mensualidad });
+    // Recargar abonos en el modal
+    try {
+      const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
+      abonos.value = (respAb.data || []).map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+    } catch {
+      // Ignorar error de refresco de abonos en UI
+    }
+  } catch (e) {
+    alert(e?.message || 'Error registrando abono');
   }
 }
 
-function marcarComoPendiente() {
-  formEdicion.value.estado = 'Pendiente';
-  // Si marca como pendiente, limpiar fechas de pago
-  formEdicion.value.fechasPago = [];
+function iniciarEdicionAbono(index) {
+  const lista = listaPagosYAbonos();
+  const item = lista[index];
+  // Buscar por id_abono, únicamente en abonos editables
+  const original = (abonos.value || []).find(a => a.id_abono === item.id_abono);
+  if (!original) return;
+  abonoEditIndex.value = index;
+  abonoEdit.value = {
+    id_abono: original.id_abono || original.id,
+    fecha: original.fecha_abono || original.fecha,
+    monto: Number(original.monto) || 0,
+    id_metodo_pago: original.id_metodo_pago
+  };
 }
 
-function marcarComoVencido() {
-  formEdicion.value.estado = 'Vencido';
-  // Mantener fechas existentes si las hay
+async function guardarEdicionAbono() {
+  const ed = abonoEdit.value;
+  if (!ed || !ed.id_abono) return;
+  try {
+    await mensualidadesService.updateAbono(props.mensualidad.id, ed.id_abono, {
+      fecha_abono: ed.fecha,
+      monto: Number(ed.monto),
+      id_metodo_pago: ed.id_metodo_pago
+    });
+    const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
+    abonos.value = (respAb.data || []).map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+    abonoEditIndex.value = null;
+  } catch (e) {
+    alert(e?.message || 'Error guardando abono');
+  }
 }
 
-// Funciones para el historial de pagos
+async function eliminarAbono(index) {
+  const lista = listaPagosYAbonos();
+  const item = lista[index];
+  const original = (abonos.value || []).find(a => a.id_abono === item.id_abono);
+  if (!original || !original.id_abono) return;
+  if (!confirm('¿Eliminar este abono?')) return;
+  try {
+    await mensualidadesService.deleteAbono(props.mensualidad.id, original.id_abono);
+    const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
+    abonos.value = (respAb.data || []).map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+  } catch (e) {
+    alert(e?.message || 'Error eliminando abono');
+  }
+}
+
+function calcularTotalPagado() {
+  if (abonos.value && abonos.value.length > 0) {
+    return abonos.value.reduce((total, a) => total + (a.monto || 0), 0);
+  }
+  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) return 0;
+  return props.mensualidad.fechasPago.reduce((total, pago) => total + obtenerMontoPago(pago), 0);
+}
+
+function obtenerMontoPago(pago) {
+  if (typeof pago === 'object' && pago.monto !== undefined) {
+    return parseFloat(pago.monto) || 0;
+  }
+  return 0;
+}
+
+function calcularSaldoPendienteHistorial() {
+  const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
+  const totalPagado = calcularTotalPagado();
+  const saldo = totalMensualidad - totalPagado;
+  return Math.max(0, saldo);
+}
+
 function obtenerValorNumericoMensualidad() {
   if (!props.mensualidad.valor) return 0;
   return parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
 }
 
-function calcularTotalPagado() {
-  if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) return 0;
-  
-  return props.mensualidad.fechasPago.reduce((total, pago) => {
-    return total + obtenerMontoPago(pago);
-  }, 0);
-}
-
-
-function calcularSaldoPendienteHistorial() {
-  const totalMensualidad = obtenerValorNumericoMensualidad();
-  const totalPagado = calcularTotalPagado();
-  const saldo = totalMensualidad - totalPagado;
-  return Math.max(0, saldo); // Nunca negativo
-}
-
 function getEstadoPago() {
+  const sp = props.mensualidad.saldo_pendiente_raw;
+  if (sp !== undefined && sp !== null) return Number(sp) === 0 ? 'Pagado' : 'Pendiente';
   const totalPagado = calcularTotalPagado();
   const totalMensualidad = obtenerValorNumericoMensualidad();
-  
   if (totalPagado === 0) return 'Sin pagos';
   if (totalPagado === totalMensualidad) return 'Pagado';
   if (totalPagado < totalMensualidad) return 'Pendiente';
@@ -445,7 +676,6 @@ function getEstadoPago() {
 function getClaseEstado() {
   const totalPagado = calcularTotalPagado();
   const totalMensualidad = obtenerValorNumericoMensualidad();
-  
   if (totalPagado === 0) return 'sin-pagos';
   if (totalPagado === totalMensualidad) return 'completo';
   if (totalPagado < totalMensualidad) return 'parcial';
@@ -454,42 +684,97 @@ function getClaseEstado() {
 
 function formatearFecha(fecha) {
   if (!fecha) return '';
-  
   try {
-    // Si la fecha ya está en formato DD/MM/YYYY, devolverla tal como está
     if (typeof fecha === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(fecha)) {
       return fecha;
     }
-    
-    // Si es un string en formato YYYY-MM-DD (formato de input date)
     if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
       const [año, mes, dia] = fecha.split('-');
       return `${parseInt(dia)}/${parseInt(mes)}/${año}`;
     }
-    
-    // Para otros casos, crear la fecha evitando problemas de zona horaria
     let fechaObj;
     if (typeof fecha === 'string') {
-      // Si es un string con formato YYYY-MM-DD, crear fecha localmente
       if (fecha.includes('-')) {
         const [año, mes, dia] = fecha.split('-');
         fechaObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
       } else {
-        fechaObj = new Date(fecha + 'T00:00:00'); // Agregar tiempo para evitar problemas de UTC
+        fechaObj = new Date(fecha + 'T00:00:00');
       }
     } else {
       fechaObj = new Date(fecha);
     }
-    
     if (isNaN(fechaObj.getTime())) return fecha;
-    
     const dia = fechaObj.getDate();
     const mes = fechaObj.getMonth() + 1;
     const año = fechaObj.getFullYear();
-    
     return `${dia}/${mes}/${año}`;
-  } catch (error) {
+  } catch {
     return fecha;
   }
 }
+
+function listaPagosYAbonos() {
+  const items = [];
+  // Abonos desde backend
+  if (abonos.value && abonos.value.length > 0) {
+    abonos.value.forEach(a => {
+      const metodo = (() => {
+        const id = a.id_metodo_pago;
+        if (!id) return undefined;
+        const found = (metodosPago.value || []).find(x => x.id === id);
+        return found ? found.nombre : `Método ${id}`;
+      })();
+      const tipo = a.es_pago_final ? 'Pago' : 'Abono';
+      items.push({ id_abono: a.id_abono, fecha: a.fecha_abono || a.fecha || a.f, monto: a.monto, metodo, tipo });
+    });
+  }
+  // Fechas de pago heredadas (si existen en la tarjeta)
+  if (props.mensualidad.fechasPago && props.mensualidad.fechasPago.length > 0) {
+    props.mensualidad.fechasPago.forEach(p => {
+      const fecha = (typeof p === 'object' && p.fecha) ? p.fecha : p;
+      // Evitar duplicar si ya existe un registro (abono/pago) con la misma fecha
+      const yaExiste = items.some(x => String(x.fecha).slice(0, 10) === String(fecha).slice(0, 10));
+      if (yaExiste) return;
+      const monto = (typeof p === 'object' && p.monto !== undefined) ? p.monto : undefined;
+      items.push({ id_abono: undefined, fecha, monto, metodo: undefined, tipo: 'Pago' });
+    });
+  }
+  return items.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+}
 </script>
+
+<style>
+.btn-toggle-activo {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db; /* gray-300 */
+  background: #f9fafb;       /* gray-50 */
+  color: #374151;            /* gray-700 */
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+.btn-toggle-activo:hover { filter: brightness(0.98); }
+.btn-toggle-activo.on {
+  background: #ecfdf5;       /* emerald-50 */
+  border-color: #10b981;     /* emerald-500 */
+  color: #059669;            /* emerald-600 */
+}
+.tabs-edicion {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.tab-btn {
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.tab-btn.active {
+  background: #eef2ff; /* indigo-50 */
+  border-color: #6366f1; /* indigo-500 */
+  color: #3730a3; /* indigo-800 */
+}
+</style>

@@ -6,7 +6,7 @@ Maneja la creación de preferencias, verificación de pagos y webhooks.
 import os
 import mercadopago
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 from typing import Dict, Any, Optional
 from src.models.base import db
 from src.models.pagos import TransaccionMercadoPago, MetodoPago
@@ -38,6 +38,54 @@ class MercadoPagoService:
         self.sdk = mercadopago.SDK(self.access_token)
         
         logger.info(f"MercadoPagoService inicializado en modo: {self.environment}")
+
+    # Utilidad para sumar meses sin dependencias externas
+    @staticmethod
+    def _add_months(base: date, months: int) -> date:
+        month = base.month - 1 + months
+        year = base.year + month // 12
+        month = month % 12 + 1
+        # calcular día válido del mes destino
+        max_days = [31,
+                    29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28,
+                    31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+        day = min(base.day, max_days)
+        return date(year, month, day)
+
+    @staticmethod
+    def _aplicar_abono_mensualidad(mensualidad, monto_abonado: float) -> Dict[str, Any]:
+        """Aplica la misma lógica de abono que el endpoint de mensualidades.
+        Retorna datos de cálculo para logging/uso adicional.
+        """
+        from src.models.pagos.mensualidad import Mensualidad as MensualidadModel  # evitar ciclos
+
+        monto_mensual = float(mensualidad.monto_pago)
+        meses_cubiertos = int(monto_abonado // monto_mensual)
+        sobrante = monto_abonado - (meses_cubiertos * monto_mensual)
+
+        if meses_cubiertos > 0:
+            base = mensualidad.fecha_vencimiento if mensualidad.fecha_vencimiento and mensualidad.fecha_vencimiento > date.today() else date.today()
+            mensualidad.fecha_vencimiento = MercadoPagoService._add_months(base, meses_cubiertos)
+
+        if meses_cubiertos >= 1:
+            mensualidad.saldo_pendiente = monto_mensual - sobrante if sobrante > 0 else 0
+        else:
+            mensualidad.saldo_pendiente = max(0, float(mensualidad.saldo_pendiente) - sobrante)
+
+        if mensualidad.saldo_pendiente == 0:
+            mensualidad.estado = True
+            mensualidad.fecha_pago = date.today()
+        else:
+            mensualidad.estado = False
+            mensualidad.fecha_pago = None
+
+        return {
+            'meses_cubiertos': meses_cubiertos,
+            'sobrante': sobrante,
+            'nuevo_saldo_pendiente': float(mensualidad.saldo_pendiente),
+            'nueva_fecha_vencimiento': mensualidad.fecha_vencimiento.isoformat() if mensualidad.fecha_vencimiento else None,
+            'estado': mensualidad.estado
+        }
     
     def crear_preferencia(self, datos_pago: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -192,6 +240,24 @@ class MercadoPagoService:
                     resultado = self.verificar_pago(payment_id)
                     
                     if resultado["success"]:
+                        payment = resultado.get("payment", {})
+                        estado = resultado.get("estado")
+                        metadata = payment.get('metadata', {}) if isinstance(payment, dict) else {}
+
+                        # Cuando sea un pago aprobado de mensualidad, aplicar abono
+                        if estado == 'approved' and metadata.get('tipo_pago') == 'mensualidad' and metadata.get('id_mensualidad'):
+                            try:
+                                from src.models.pagos.mensualidad import Mensualidad
+                                mensualidad = Mensualidad.query.get(int(metadata['id_mensualidad']))
+                                if mensualidad:
+                                    monto_abonado = float(payment.get('transaction_amount', 0))
+                                    calculo = self._aplicar_abono_mensualidad(mensualidad, monto_abonado)
+                                    db.session.commit()
+                                    logger.info(f"Mensualidad {mensualidad.id_mensualidad} actualizada por webhook MP: {calculo}")
+                            except Exception as ex:
+                                logger.error(f"Error aplicando abono de mensualidad por webhook: {str(ex)}")
+                                db.session.rollback()
+                        
                         logger.info(f"Webhook procesado exitosamente: {payment_id}")
                         return {"success": True, "message": "Webhook procesado"}
                     
