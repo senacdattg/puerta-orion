@@ -102,6 +102,11 @@ class MercadoPagoService:
             
         try:
             # Estructurar la preferencia según la API de Mercado Pago
+            # Construir back_urls con defaults
+            success_url = datos_pago.get('url_exito', 'http://localhost:5173/pago-exitoso')
+            failure_url = datos_pago.get('url_fallo', 'http://localhost:5173/pago-fallido')
+            pending_url = datos_pago.get('url_pendiente', 'http://localhost:5173/pago-pendiente')
+
             preference_data = {
                 "items": [
                     {
@@ -120,11 +125,10 @@ class MercadoPagoService:
                     }
                 },
                 "back_urls": {
-                    "success": datos_pago.get('url_exito', 'http://localhost:3000/pago-exitoso'),
-                    "failure": datos_pago.get('url_fallo', 'http://localhost:3000/pago-fallido'),
-                    "pending": datos_pago.get('url_pendiente', 'http://localhost:3000/pago-pendiente')
+                    "success": success_url,
+                    "failure": failure_url,
+                    "pending": pending_url
                 },
-                "auto_return": "approved",
                 "external_reference": datos_pago.get('referencia_externa', ''),
                 "notification_url": datos_pago.get('url_notificacion', ''),
                 "metadata": {
@@ -133,6 +137,13 @@ class MercadoPagoService:
                     "id_mensualidad": datos_pago.get('id_mensualidad')
                 }
             }
+
+            # En ambientes locales sin HTTPS, Mercado Pago puede rechazar auto_return
+            try:
+                if all(url.startswith('https://') for url in [success_url, failure_url, pending_url]):
+                    preference_data["auto_return"] = "approved"
+            except Exception:
+                pass
             
             # Crear la preferencia
             result = self.sdk.preference().create(preference_data)
@@ -244,13 +255,35 @@ class MercadoPagoService:
                         estado = resultado.get("estado")
                         metadata = payment.get('metadata', {}) if isinstance(payment, dict) else {}
 
-                        # Cuando sea un pago aprobado de mensualidad, aplicar abono
+                        # Cuando sea un pago aprobado de mensualidad, registrar abono y aplicar recálculo
                         if estado == 'approved' and metadata.get('tipo_pago') == 'mensualidad' and metadata.get('id_mensualidad'):
                             try:
                                 from src.models.pagos.mensualidad import Mensualidad
+                                from src.models.pagos.abono_mensualidad import AbonoMensualidad
                                 mensualidad = Mensualidad.query.get(int(metadata['id_mensualidad']))
                                 if mensualidad:
                                     monto_abonado = float(payment.get('transaction_amount', 0))
+                                    # Fecha del pago reportada por MP (created_date) o hoy
+                                    fecha_mp = payment.get('date_approved') or payment.get('date_created')
+                                    try:
+                                        fecha_abono = datetime.fromisoformat(fecha_mp.replace('Z','+00:00')).date() if isinstance(fecha_mp, str) else date.today()
+                                    except Exception:
+                                        fecha_abono = date.today()
+
+                                    # Metodo de pago "Mercado Pago"
+                                    metodo_mp = self.obtener_metodo_pago_mercadopago()
+                                    id_metodo_pago = getattr(metodo_mp, 'id_metodo_pago', None)
+
+                                    # Registrar abono para el historial
+                                    abono = AbonoMensualidad(
+                                        id_mensualidad=mensualidad.id_mensualidad,
+                                        monto=monto_abonado,
+                                        fecha_abono=fecha_abono,
+                                        id_metodo_pago=id_metodo_pago
+                                    )
+                                    db.session.add(abono)
+
+                                    # Aplicar recálculo de mensualidad con la misma lógica
                                     calculo = self._aplicar_abono_mensualidad(mensualidad, monto_abonado)
                                     db.session.commit()
                                     logger.info(f"Mensualidad {mensualidad.id_mensualidad} actualizada por webhook MP: {calculo}")

@@ -309,13 +309,38 @@ router.beforeEach(async (to, from, next) => {
       next()
     }
   } else {
-    // Si requiere permiso específico, validar permisos del usuario
+    // Si requiere permiso específico, validar permisos del usuario (con bypass para SuperAdmin/Administrador)
     if (requiresAuth && isAuthenticated && requiredPermission) {
-      const permisos = authStore.permisos || []
-      if (!permisos.includes(requiredPermission)) {
+      const roles = (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol)
+      const isSuperOrAdmin = roles.includes('SuperAdmin') || roles.includes('Administrador')
+      if (isSuperOrAdmin) {
+        next()
+        return
+      }
+
+      // Asegurar que los permisos estén cargados antes de validar
+      if (!authStore.permissions || authStore.permissions.length === 0) {
+        try { await authStore.loadUserPermissions?.() } catch {}
+      }
+      const permisos = authStore.permissions || []
+      const has = (Array.isArray(permisos) && permisos.includes(requiredPermission)) || (authStore.hasPermission && authStore.hasPermission(requiredPermission))
+      if (!has) {
         console.log('🚫 Acceso denegado: permiso insuficiente. Requerido:', requiredPermission)
         next('/home')
         return
+      }
+    }
+
+    // Regla explícita: Entrenador y Usuario no pueden ver mensualidades
+    if (to.name === 'mensualidades') {
+      const roles = (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol)
+      const isSuperOrAdmin = roles.includes('SuperAdmin') || roles.includes('Administrador')
+      if (!isSuperOrAdmin) {
+        if (roles.includes('Entrenador') || roles.includes('Usuario')) {
+          console.log('🚫 Acceso denegado a mensualidades por rol (Entrenador/Usuario)')
+          next('/home')
+          return
+        }
       }
     }
     next()

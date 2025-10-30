@@ -48,6 +48,23 @@ def crear_preferencia():
         if not data.get('email_pagador'):
             return jsonify({"success": False, "error": "Email del pagador requerido"}), 400
         
+        # Enriquecer con URLs por defecto requeridas por Mercado Pago
+        origin = request.headers.get('Origin') or 'http://localhost:5173'
+        base_success = f"{origin}/pago-exitoso"
+        base_failure = f"{origin}/pago-fallido"
+        base_pending = f"{origin}/pago-pendiente"
+        # back_urls obligatorias cuando se usa auto_return
+        data.setdefault('url_exito', base_success)
+        data.setdefault('url_fallo', base_failure)
+        data.setdefault('url_pendiente', base_pending)
+        # webhook por defecto
+        try:
+            from flask import current_app
+            host_url = request.host_url.rstrip('/')
+            data.setdefault('url_notificacion', current_app.config.get('MERCADOPAGO_WEBHOOK_URL') or f"{host_url}/api/mercadopago/webhook")
+        except Exception:
+            data.setdefault('url_notificacion', f"{request.host_url.rstrip('/')}/api/mercadopago/webhook")
+
         # Crear preferencia según el tipo de pago
         if data['tipo_pago'] == 'cuota':
             if not data.get('id_cuota'):

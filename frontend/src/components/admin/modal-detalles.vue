@@ -206,11 +206,11 @@
                   </label>
                   <select id="abono-metodo" v-model.number="nuevoAbono.id_metodo_pago" class="select-edicion">
                     <option :value="undefined">—</option>
-                    <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                    <option v-for="m in metodosPago" :key="m.id" :value="m.id" :disabled="String(m.nombre).toLowerCase()==='ninguno'">{{ m.nombre }}</option>
                   </select>
                 </div>
                 <div class="campo-formulario" style="align-self:end;">
-                  <button type="button" class="btn btn-primary" @click="registrarAbono">Registrar Abono</button>
+                  <button type="button" class="btn btn-primary" @click="registrarAbono" v-if="puedeAbonar">Registrar Abono</button>
                 </div>
               </div>
             </div>
@@ -293,8 +293,8 @@
                             <button class="btn btn-secondary" @click="abonoEditIndex=null">Cancelar</button>
                           </template>
                           <template v-else>
-                            <button class="btn btn-secondary" style="margin-right:6px;" @click="iniciarEdicionAbono(index)">Editar</button>
-                            <button class="btn btn-danger" @click="eliminarAbono(index)">Eliminar</button>
+                            <button class="btn btn-secondary" style="margin-right:6px;" @click="iniciarEdicionAbono(index)" v-if="puedeEditarAbono">Editar</button>
+                            <button class="btn btn-danger" @click="eliminarAbono(index)" v-if="puedeEliminarAbono">Eliminar</button>
                           </template>
                         </template>
                         <template v-else>
@@ -316,8 +316,11 @@
       <div class="modal-footer">
         <!-- Botones en modo vista -->
         <template v-if="!editando">
-          <button @click="toggleEdicion" class="btn btn-edit">
+          <button @click="toggleEdicion" class="btn btn-edit" v-if="puedeEditarMensualidad">
             ✏️ Editar
+          </button>
+          <button v-if="saldoPendienteHistNum > 0" @click="pagarConMercadoPago" class="btn btn-primary">
+            💳 Pagar con Mercado Pago
           </button>
           <button @click="$emit('cerrar')" class="btn btn-secondary">
             Cerrar
@@ -339,9 +342,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
+import { useAuthStore } from '@/stores/auth';
 
 // Props
 const props = defineProps({
@@ -377,6 +381,28 @@ const nuevoAbono = ref({ fecha: '', monto: undefined });
 const abonos = ref([]);
 const abonoEditIndex = ref(null);
 const abonoEdit = ref({ fecha: '', monto: undefined, id_metodo_pago: undefined });
+
+// Permisos
+const authStore = useAuthStore();
+const roleNames = computed(() => (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol));
+const isSuperOrAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNames.value.includes('Administrador'));
+const puedeEditarMensualidad = computed(() => {
+  if (isSuperOrAdmin.value) return true;
+  try { return !!authStore?.hasPermission?.('editar_mensualidad'); } catch { return false; }
+});
+const puedeAbonar = computed(() => {
+  // Solo Admin/SuperAdmin o permiso explícito pueden registrar abonos manuales
+  if (isSuperOrAdmin.value) return true;
+  try { return !!authStore?.hasPermission?.('abonar_mensualidad'); } catch { return false; }
+});
+const puedeEditarAbono = computed(() => {
+  if (isSuperOrAdmin.value) return true;
+  try { return !!authStore?.hasPermission?.('editar_abono_mensualidad'); } catch { return false; }
+});
+const puedeEliminarAbono = computed(() => {
+  if (isSuperOrAdmin.value) return true;
+  try { return !!authStore?.hasPermission?.('eliminar_abono_mensualidad'); } catch { return false; }
+});
 
 onMounted(async () => {
   try {
@@ -517,6 +543,10 @@ function actualizarValorConSimbolo() {
 }
 
 function toggleEdicion() {
+  if (!editando.value && !puedeEditarMensualidad.value) {
+    alert('No tienes permiso para editar esta mensualidad');
+    return;
+  }
   editando.value = !editando.value;
   if (!editando.value) {
     // Restaurar
@@ -563,6 +593,10 @@ function guardarCambios() {
 }
 
 async function registrarAbono() {
+  if (!puedeAbonar.value) {
+    alert('No tienes permiso para registrar abonos');
+    return;
+  }
   if (!nuevoAbono.value.monto || nuevoAbono.value.monto <= 0) {
     alert('Ingresa el monto del abono');
     return;
@@ -606,6 +640,10 @@ function iniciarEdicionAbono(index) {
 async function guardarEdicionAbono() {
   const ed = abonoEdit.value;
   if (!ed || !ed.id_abono) return;
+  if (!puedeEditarAbono.value) {
+    alert('No tienes permiso para editar abonos');
+    return;
+  }
   try {
     await mensualidadesService.updateAbono(props.mensualidad.id, ed.id_abono, {
       fecha_abono: ed.fecha,
@@ -625,6 +663,10 @@ async function eliminarAbono(index) {
   const item = lista[index];
   const original = (abonos.value || []).find(a => a.id_abono === item.id_abono);
   if (!original || !original.id_abono) return;
+  if (!puedeEliminarAbono.value) {
+    alert('No tienes permiso para eliminar abonos');
+    return;
+  }
   if (!confirm('¿Eliminar este abono?')) return;
   try {
     await mensualidadesService.deleteAbono(props.mensualidad.id, original.id_abono);
@@ -656,6 +698,8 @@ function calcularSaldoPendienteHistorial() {
   const saldo = totalMensualidad - totalPagado;
   return Math.max(0, saldo);
 }
+
+const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());
 
 function obtenerValorNumericoMensualidad() {
   if (!props.mensualidad.valor) return 0;
@@ -715,6 +759,17 @@ function formatearFecha(fecha) {
 
 function listaPagosYAbonos() {
   const items = [];
+  // Registro de creación de la mensualidad (si tenemos alguna fecha de creación disponible)
+  const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
+  if (fechaCreacion) {
+    const metodoCreacion = (() => {
+      const idm = props.mensualidad.id_metodo_pago;
+      if (!idm) return 'Ninguno';
+      const found = (metodosPago.value || []).find(x => x.id === idm);
+      return found ? found.nombre : `Método ${idm}`;
+    })();
+    items.push({ id_abono: undefined, fecha: fechaCreacion, monto: undefined, metodo: metodoCreacion, tipo: 'Creación' });
+  }
   // Abonos desde backend
   if (abonos.value && abonos.value.length > 0) {
     abonos.value.forEach(a => {
@@ -741,40 +796,55 @@ function listaPagosYAbonos() {
   }
   return items.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 }
+
+// Pago con Mercado Pago
+async function pagarConMercadoPago() {
+  try {
+    const base = API_CONFIG.baseURL || '';
+    // Datos del pagador a partir del perfil si existen
+    const nombre_pagador = authStore?.user?.nombres ? `${authStore.user.nombres} ${authStore.user.apellidos || ''}`.trim() : 'Cliente';
+    const email_pagador = authStore?.user?.email || 'sin-email@example.com';
+    const numero_documento = authStore?.user?.documento || undefined;
+    const tipo_documento = authStore?.user?.tipo_documento || undefined;
+
+    const resp = await fetch(`${base}/api/mercadopago/crear-preferencia`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      },
+      body: JSON.stringify({
+        tipo_pago: 'mensualidad',
+        id_mensualidad: props.mensualidad.id,
+        nombre_pagador,
+        email_pagador,
+        numero_documento,
+        tipo_documento
+      })
+    });
+    const text = await resp.text();
+    let json;
+    try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
+    if (!resp.ok || !json.success) {
+      const msg = json.error || json.message || text || 'No se pudo crear la preferencia';
+      alert(msg);
+      return;
+    }
+    const url = json.init_point || json.preference_url || json.initPoint || json.url;
+    if (!url) throw new Error('Preferencia creada sin URL de inicio');
+    window.location.href = url;
+  } catch (e) {
+    try {
+      if (typeof e === 'object' && e !== null && e.message) {
+        alert(e.message);
+      } else {
+        alert(typeof e === 'string' ? e : JSON.stringify(e));
+      }
+    } catch {
+      alert('Error iniciando pago con Mercado Pago');
+    }
+  }
+}
 </script>
 
-<style>
-.btn-toggle-activo {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db; /* gray-300 */
-  background: #f9fafb;       /* gray-50 */
-  color: #374151;            /* gray-700 */
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-}
-.btn-toggle-activo:hover { filter: brightness(0.98); }
-.btn-toggle-activo.on {
-  background: #ecfdf5;       /* emerald-50 */
-  border-color: #10b981;     /* emerald-500 */
-  color: #059669;            /* emerald-600 */
-}
-.tabs-edicion {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.tab-btn {
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #374151;
-  border-radius: 8px;
-  cursor: pointer;
-}
-.tab-btn.active {
-  background: #eef2ff; /* indigo-50 */
-  border-color: #6366f1; /* indigo-500 */
-  color: #3730a3; /* indigo-800 */
-}
-</style>
