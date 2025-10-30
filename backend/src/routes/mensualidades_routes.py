@@ -107,6 +107,12 @@ def listar_mensualidades():
         for m in paginated.items:
             d = m.to_dict()
             d['estado_texto'] = _estado_texto(m)
+            # Campos adicionales para frontend
+            try:
+                d['created_at'] = getattr(m, 'created_at', None).isoformat() if getattr(m, 'created_at', None) else None
+            except Exception:
+                d['created_at'] = None
+            d['id_metodo_pago'] = getattr(m, 'id_metodo_pago', None)
             # Resolver nombre de persona de forma robusta
             persona_nombre = None
             try:
@@ -160,6 +166,12 @@ def obtener_mensualidad(mensualidad_id: int):
             return jsonify({'success': False, 'error': 'No autorizado ver esta mensualidad'}), 403
     d = m.to_dict()
     d['estado_texto'] = _estado_texto(m)
+    # Campos adicionales para frontend
+    try:
+        d['created_at'] = getattr(m, 'created_at', None).isoformat() if getattr(m, 'created_at', None) else None
+    except Exception:
+        d['created_at'] = None
+    d['id_metodo_pago'] = getattr(m, 'id_metodo_pago', None)
     persona_nombre = None
     try:
         pers = getattr(m, 'persona', None)

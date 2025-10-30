@@ -38,7 +38,7 @@
       </div>
     </div>
 
-    <!-- Botones de acción para ADMINISTRADOR -->
+    <!-- Botones de acción (visibilidad según permisos) -->
     <div class="acciones-mensualidad">
       <div class="acciones-principales">
         <button
@@ -49,6 +49,15 @@
           <span class="icono-accion">👁️</span>
           <span class="texto-accion">Ver Detalles</span>
         </button>
+        <button
+          class="boton-accion boton-principal"
+          v-if="puedeIniciarPago && saldoPendientePositivo"
+          @click.stop="pagarConMercadoPago"
+          title="Pagar mensualidad"
+        >
+          <span class="icono-accion">💳</span>
+          <span class="texto-accion">Pagar</span>
+        </button>
       </div>
 
       <div class="acciones-secundarias">
@@ -56,6 +65,7 @@
           class="boton-accion boton-secundario gestionar"
           @click.stop="gestionarMensualidad"
           title="Gestionar mensualidad"
+          v-if="puedeEditarMensualidad"
         >
           <span class="icono-accion">⚙️</span>
         </button>
@@ -63,6 +73,7 @@
           class="boton-accion boton-secundario eliminar"
           @click.stop="eliminarMensualidad"
           :title="props.mensualidad.activo ? 'Desactivar mensualidad' : 'Reactivar mensualidad'"
+          v-if="puedeToggleMensualidad"
         >
           <span class="icono-accion">{{ props.mensualidad.activo ? '🗑️' : '♻️' }}</span>
         </button>
@@ -78,6 +89,8 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
+import { API_CONFIG } from '@/config/environment';
 
 // Props
 const props = defineProps({
@@ -101,6 +114,33 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits(['ver-detalle', 'gestionar', 'eliminar', 'ver-detalle-completo']);
+
+// Permisos
+const authStore = useAuthStore();
+const roleNames = computed(() => (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol));
+const isSuperOrAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNames.value.includes('Administrador'));
+
+const puedeEditarMensualidad = computed(() => {
+  if (isSuperOrAdmin.value) return true;
+  try { return !!authStore?.hasPermission?.('editar_mensualidad'); } catch { return false; }
+});
+const puedeToggleMensualidad = computed(() => {
+  if (isSuperOrAdmin.value) return true;
+  try {
+    return !!authStore?.hasPermission?.('desactivar_mensualidad') || !!authStore?.hasPermission?.('reactivar_mensualidad');
+  } catch { return false; }
+});
+
+// Pago: permitir a Deportista/Acudiente iniciar pago
+const roles = roleNames; // alias
+const puedeIniciarPago = computed(() => roles.value.includes('Deportista') || roles.value.includes('Acudiente'));
+const saldoPendientePositivo = computed(() => {
+  const spRaw = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldoPendiente;
+  const spNum = Number(spRaw);
+  if (!isNaN(spNum)) return spNum > 0;
+  // Fallback si no viene saldo: mostrar pagar si no está pagado
+  return props.mensualidad.estado !== 'Pagado';
+});
 
 // Helpers
 function parseISODateLocal(iso) {
@@ -252,4 +292,54 @@ function saldoPendienteTexto() {
   return `$${monto.toLocaleString('es-CO')}`;
 }
 
+async function pagarConMercadoPago() {
+  try {
+    const base = API_CONFIG.baseURL || '';
+    const nombre_pagador = authStore?.user?.nombres ? `${authStore.user.nombres} ${authStore.user.apellidos || ''}`.trim() : 'Cliente';
+    const email_pagador = authStore?.user?.email || 'sin-email@example.com';
+    const numero_documento = authStore?.user?.documento || undefined;
+    const tipo_documento = authStore?.user?.tipo_documento || undefined;
+
+    const resp = await fetch(`${base}/api/mercadopago/crear-preferencia`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      },
+      body: JSON.stringify({
+        tipo_pago: 'mensualidad',
+        id_mensualidad: props.mensualidad.id,
+        nombre_pagador,
+        email_pagador,
+        numero_documento,
+        tipo_documento
+      })
+    });
+    const text = await resp.text();
+    let json;
+    try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
+    if (!resp.ok || !json.success) {
+      const msg = json.error || json.message || text || 'No se pudo crear la preferencia';
+      alert(msg);
+      return;
+    }
+    const url = json.init_point || json.preference_url || json.initPoint || json.url;
+    if (!url) throw new Error('Preferencia creada sin URL de inicio');
+    window.location.href = url;
+  } catch (e) {
+    try {
+      if (typeof e === 'object' && e !== null && e.message) {
+        alert(e.message);
+      } else {
+        alert(typeof e === 'string' ? e : JSON.stringify(e));
+      }
+    } catch {
+      alert('Error iniciando pago con Mercado Pago');
+    }
+  }
+}
+
 </script>
+
+

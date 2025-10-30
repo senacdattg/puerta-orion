@@ -62,7 +62,10 @@ function mapMensualidadToCard(m) {
     monto_pago_raw: m.monto_pago,
     saldo_pendiente_raw: m.saldo_pendiente,
     estado_bool: m.estado,
-    fecha_vencimiento_raw: vencRaw
+    fecha_vencimiento_raw: vencRaw,
+    // para fila de creación y método base
+    created_at: m.created_at || m.fecha_creacion || m.creado,
+    id_metodo_pago: m.id_metodo_pago
   };
 }
 
@@ -81,17 +84,32 @@ async function cargarMensualidades() {
 
 async function iniciarPago(m) {
   try {
-    const resp = await mensualidadesService.crearPreferenciaMensualidad({
+    const resp = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/mercadopago/crear-preferencia`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')||''}` },
+      body: JSON.stringify({
       id_mensualidad: m.id,
       nombre_pagador: 'Tester',
       email_pagador: 'test_user_xxx@testuser.com',
       numero_documento: '12345678',
       tipo_documento: 'CC'
+      })
     });
-    const url = resp.init_point || resp.sandbox_init_point;
+    const text = await resp.text();
+    let json; try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
+    if (!resp.ok || !json.success) { alert(json.error || json.message || text || 'Error iniciando pago'); return; }
+    const url = json.init_point || json.sandbox_init_point || json.preference_url || json.initPoint;
     if (url) window.location.href = url; else alert('No se obtuvo link de pago');
   } catch (e) {
-    alert(e?.message || 'Error iniciando pago');
+    try {
+      if (typeof e === 'object' && e !== null && e.message) {
+        alert(e.message);
+      } else {
+        alert(typeof e === 'string' ? e : JSON.stringify(e));
+      }
+    } catch {
+      alert('Error iniciando pago');
+    }
   }
 }
 

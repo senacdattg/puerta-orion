@@ -81,6 +81,41 @@
             <TablaUsuarios :search-term="terminoBusqueda" :role-filter="filtroRol" @usuarios-cargados="setUsuarios"
               @usuario-actualizado="actualizarUsuario" />
           </div>
+
+          <!-- Panel: Pagos recientes (Mercado Pago) -->
+          <div class="content-panel">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <i class="fas fa-credit-card"></i>
+                Pagos recientes
+              </h2>
+              <div class="panel-actions">
+                <button class="btn btn--small" @click="cargarPagosRecientes">Actualizar</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div v-if="cargandoPagos" class="muted">Cargando...</div>
+              <div v-else-if="pagosRecientes.length === 0" class="muted">Sin pagos recientes</div>
+              <table v-else class="tabla-simple">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Estado</th>
+                    <th>Monto</th>
+                    <th>Fecha</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in pagosRecientes" :key="p.id_transaccion || p.id">
+                    <td>{{ p.id_pago_mercadopago || p.preference_id || p.id }}</td>
+                    <td>{{ p.estado }}</td>
+                    <td>${{ Number(p.monto || p.transaction_amount || 0).toLocaleString('es-CO') }}</td>
+                    <td>{{ formatearFecha(p.fecha_creacion || p.created_at) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -92,6 +127,7 @@
 </template>
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { API_CONFIG } from '@/config/environment';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
 import TablaUsuarios from '@/components/admin/tabla-usuarios.vue';
 import usuariosService from '@/services/usuariosService';
@@ -108,6 +144,8 @@ const rolesOptions = ref([{ value: 'todos', label: 'Todos' }]);
 
 // Usuarios para conteos
 const usuariosPanel = ref([]);
+const pagosRecientes = ref([]);
+const cargandoPagos = ref(false);
 
 // Conteos computados
 const totalUsuarios = computed(() => usuariosPanel.value.length);
@@ -211,6 +249,7 @@ onMounted(async () => {
   } catch (e) {
     console.error('Error cargando roles:', e);
   }
+  await cargarPagosRecientes();
 });
 
 // Funciones
@@ -242,5 +281,30 @@ function actualizarUsuario(usuarioActualizado) {
     nuevaLista[idx] = { ...nuevaLista[idx], ...usuarioActualizado };
     usuariosPanel.value = nuevaLista;
   }
+}
+
+async function cargarPagosRecientes() {
+  try {
+    cargandoPagos.value = true;
+    const base = API_CONFIG.baseURL || '';
+    const resp = await fetch(`${base}/api/mercadopago/transacciones?limit=10`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      }
+    });
+    if (!resp.ok) throw new Error('No se pudieron cargar');
+    const json = await resp.json();
+    pagosRecientes.value = json.transacciones || [];
+  } catch (e) {
+    pagosRecientes.value = [];
+  } finally {
+    cargandoPagos.value = false;
+  }
+}
+
+function formatearFecha(fecha) {
+  if (!fecha) return '';
+  try { return new Date(fecha).toLocaleString('es-CO'); } catch { return String(fecha); }
 }
 </script>

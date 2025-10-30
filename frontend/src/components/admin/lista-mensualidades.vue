@@ -30,19 +30,19 @@
 
       <!-- Estadísticas -->
       <div class="estadisticas ordenadas">
-        <div class="stat-card stat-total">
+        <div id="statCard" class="stat-card stat-total">
           <span class="stat-numero">{{ mensualidadesFiltradas.length }}</span>
           <span class="stat-label">TOTAL</span>
         </div>
-        <div class="stat-card stat-pagadas">
+        <div id="statCard" class="stat-card stat-pagadas">
           <span class="stat-numero">{{ estadisticas.pagadas }}</span>
           <span class="stat-label">PAGADAS</span>
         </div>
-        <div class="stat-card stat-pendientes">
+        <div id="statCard" class="stat-card stat-pendientes">
           <span class="stat-numero">{{ estadisticas.pendientes }}</span>
           <span class="stat-label">PENDIENTES</span>
         </div>
-        <div class="stat-card stat-vencidas">
+        <div id="statCard" class="stat-card stat-vencidas">
           <span class="stat-numero">{{ estadisticas.vencidas }}</span>
           <span class="stat-label">VENCIDAS</span>
         </div>
@@ -69,7 +69,7 @@
           <p class="empty-sub">Prueba limpiar los filtros o crea una nueva mensualidad.</p>
           <div class="empty-actions">
             <button @click="limpiarFiltros" class="btn btn-primary">Limpiar filtros</button>
-            <button @click="abrirFormulario" class="btn btn-secondary">Nueva mensualidad</button>
+            <button v-if="esAdmin" @click="abrirFormulario" class="btn btn-secondary">Nueva mensualidad</button>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@
 
 
       <!-- Modal de formulario para nueva mensualidad -->
-      <div v-if="mostrarFormulario" class="modal-overlay">
+      <div v-if="mostrarFormulario && esAdmin" class="modal-overlay">
         <div class="modal-content" @click.stop>
           <div class="modal-header">
             <h3>Agregar Nueva Mensualidad</h3>
@@ -108,12 +108,13 @@
             <div class="campo-formulario">
               <label for="idMetodo">
                 <i class="fas fa-money-bill-wave"></i>
-                Método de Pago *
+                Método de Pago (opcional)
               </label>
-              <select id="idMetodo" v-model.number="form.id_metodo_pago" class="select-mensualidad" required>
-                <option disabled value="">Selecciona un método</option>
+              <select id="idMetodo" v-model.number="form.id_metodo_pago" class="select-mensualidad">
+                <option :value="''">— Sin seleccionar —</option>
                 <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
               </select>
+              <small class="hint">Déjalo vacío si no hay pago inicial.</small>
             </div>
 
             <div class="campo-formulario">
@@ -159,7 +160,7 @@
               </button>
             </div>
 
-            
+
             <div class="campo-formulario">
               <label>
                 <i class="fas fa-info-circle"></i>
@@ -198,6 +199,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 import TarjetaMensualidad from './tarjeta-mensualidad.vue';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
@@ -220,7 +222,9 @@ const meses = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-const esAdmin = true;
+const authStore = useAuthStore();
+const roleNames = computed(() => (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol));
+const esAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNames.value.includes('Administrador'));
 
 const estados = ['Pagado', 'Pendiente', 'Vencido'];
 
@@ -286,7 +290,9 @@ function cerrarModalDetalleCompleto() {
 
 function abrirModalEnModoEdicion(mensualidad) {
   console.log('Abriendo modal en modo edición para:', mensualidad);
+  mensualidadSeleccionada.value = mensualidad;
   modalDetalleEnEdicion.value = true;
+  modalDetalleCompletoVisible.value = true;
 }
 
 function guardarCambiosMensualidad(mensualidadActualizada) {
@@ -318,6 +324,10 @@ function limpiarFiltros() {
 
 // Funciones del formulario
 async function abrirFormulario() {
+  if (!esAdmin.value) {
+    alert('No tienes permiso para crear mensualidades');
+    return;
+  }
   limpiarFormulario();
   try {
     cargandoMetodosPago.value = true;
@@ -344,6 +354,11 @@ async function abrirFormulario() {
     cargandoMetodosPago.value = false;
   }
   formKey.value++;
+  // Seleccionar por defecto 'Ninguno' si existe
+  const ninguno = (metodosPago.value || []).find(x => String(x.nombre).toLowerCase() === 'ninguno');
+  if (ninguno) {
+    form.value.id_metodo_pago = ninguno.id;
+  }
   mostrarFormulario.value = true;
 }
 
@@ -377,14 +392,13 @@ function actualizarValorConSimbolo() {
 }
 
 function guardarMensualidad() {
-  if (!form.value.id_persona || !form.value.id_metodo_pago || !form.value.valorSinSimbolo || !form.value.vencimiento) {
-    alert('Completa ID Persona, ID Método de Pago, Valor y Fecha de vencimiento');
+  if (!form.value.id_persona || !form.value.valorSinSimbolo || !form.value.vencimiento) {
+    alert('Completa ID Persona, Valor y Fecha de vencimiento');
     return;
   }
 
   const payload = {
     id_persona: Number(form.value.id_persona),
-    id_metodo_pago: Number(form.value.id_metodo_pago),
     monto_pago: Number(form.value.valorSinSimbolo),
     fecha_vencimiento: form.value.vencimiento,
     activo: !!form.value.activo,
@@ -392,6 +406,10 @@ function guardarMensualidad() {
     saldo_pendiente: form.value.saldo_pendiente !== undefined && form.value.saldo_pendiente !== null && form.value.saldo_pendiente !== ''
       ? Number(form.value.saldo_pendiente) : undefined
   };
+  // Adjuntar id_metodo_pago solo si fue seleccionado
+  if (form.value.id_metodo_pago !== '' && form.value.id_metodo_pago !== undefined && form.value.id_metodo_pago !== null) {
+    payload.id_metodo_pago = Number(form.value.id_metodo_pago);
+  }
   // Si marcó Pagado en la creación, forzar saldo 0 para coherencia inmediata
   if (form.value.estado_ui === 'Pagado') {
     payload.saldo_pendiente = 0;
@@ -401,73 +419,4 @@ function guardarMensualidad() {
 }
 </script>
 
-<style>
-.lista-mensualidades .estadisticas {
-  display: grid;
-  gap: 8px;
-  margin: 4px 0 8px;
-}
-.lista-mensualidades .estadisticas.ordenadas {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
-  justify-content: center;
-}
-.lista-mensualidades .stat-card {
-  background: #fff;
-  border-radius: 14px;
-  padding: 16px 12px;
-  width: 220px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  text-align: center;
-}
-.lista-mensualidades .stat-numero {
-  font-size: 36px;
-  font-weight: 700;
-  color: #0b4fb3;
-}
-.lista-mensualidades .stat-label {
-  font-size: 13px;
-  color: #6b7280;
-  letter-spacing: .06em;
-}
-.lista-mensualidades .estadisticas .stat-card { display:flex; flex-direction:column; align-items:center; justify-content:center; }
 
-@media (max-width: 1024px) {
-  .lista-mensualidades .estadisticas.ordenadas { grid-template-columns: repeat(2, minmax(220px, 1fr)); }
-}
-
-@media (max-width: 640px) {
-  .lista-mensualidades .estadisticas.ordenadas { grid-template-columns: 1fr; }
-}
-.lista-mensualidades .stat-total { border: 2px solid #34d399; }
-.lista-mensualidades .stat-pagadas { border: 2px solid #10b981; }
-.lista-mensualidades .stat-pendientes { border: 2px solid #f59e0b; }
-.lista-mensualidades .stat-vencidas { border: 2px solid #ef4444; }
-.btn-toggle-activo {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db; /* gray-300 */
-  background: #f9fafb;       /* gray-50 */
-  color: #374151;            /* gray-700 */
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-}
-.sin-resultados.mejorado { display:flex; justify-content:center; }
-.sin-resultados.mejorado .empty-card {
-  width: 100%; max-width: 900px;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-}
-.empty-icon { font-size: 36px; opacity: .75; }
-.empty-title { margin: 0; font-size: 20px; color: #0b4fb3; }
-.empty-sub { margin: 0; color: #6b7280; font-size: 14px; }
-.empty-actions { display:flex; gap: 12px; margin-top: 8px; }
-.btn-toggle-activo:hover { filter: brightness(0.98); }
-.btn-toggle-activo.on {
-  background: #ecfdf5;       /* emerald-50 */
-  border-color: #10b981;     /* emerald-500 */
-  color: #059669;            /* emerald-600 */
-}
-</style>
