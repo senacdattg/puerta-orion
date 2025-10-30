@@ -194,10 +194,41 @@ def obtener_mensualidad(mensualidad_id: int):
 def crear_mensualidad():
     try:
         data = request.get_json() or {}
-        required = ['id_persona', 'id_metodo_pago', 'monto_pago']
-        for field in required:
-            if data.get(field) in (None, ''):
-                return jsonify({'success': False, 'error': f'{field} es requerido'}), 400
+        # Validar identificador de persona por id o número de documento
+        id_persona = data.get('id_persona')
+        numero_documento = (data.get('numero_documento') or data.get('documento') or '').strip() if isinstance(data.get('numero_documento') or data.get('documento'), str) else data.get('numero_documento') or data.get('documento')
+        if not id_persona and not numero_documento:
+            return jsonify({'success': False, 'error': 'Debe proporcionar id_persona o numero_documento'}), 400
+
+        # Resolver persona por número de documento si aplica
+        if not id_persona and numero_documento and Persona is not None:
+            from sqlalchemy import or_, cast, String
+            doc_str = str(numero_documento).strip()
+            cols = []
+            # Reunir posibles columnas de documento presentes en el modelo
+            for nombre in ('numero_documento', 'documento', 'num_documento', 'dni', 'cedula'):
+                try:
+                    col = getattr(Persona, nombre, None)
+                    if col is not None:
+                        cols.append(col)
+                except Exception:
+                    pass
+            p = None
+            if cols:
+                try:
+                    condiciones = [cast(col, String) == doc_str for col in cols]
+                    p = db.session.query(Persona).filter(or_(*condiciones)).first()
+                except Exception:
+                    p = None
+            if not p:
+                return jsonify({'success': False, 'error': 'Persona no encontrada por numero_documento'}), 404
+            id_persona = getattr(p, 'id_persona', None) or getattr(p, 'id', None)
+            if not id_persona:
+                return jsonify({'success': False, 'error': 'No se pudo determinar id_persona de la persona encontrada'}), 400
+
+        # Validar monto
+        if data.get('monto_pago') in (None, ''):
+            return jsonify({'success': False, 'error': 'monto_pago es requerido'}), 400
 
         monto_pago = parse_decimal(data.get('monto_pago'))
         if monto_pago is None or monto_pago <= 0:
@@ -224,9 +255,12 @@ def crear_mensualidad():
         is_pagado_inicial = (estado_ui == 'pagado') or (estado_bool_norm is True) or (saldo_inicial is not None and float(saldo_inicial) == 0)
         saldo_pendiente = 0 if is_pagado_inicial else (saldo_inicial if saldo_inicial is not None else float(monto_pago))
 
+        id_metodo_pago_raw = data.get('id_metodo_pago')
+        id_metodo_pago_val = int(id_metodo_pago_raw) if id_metodo_pago_raw not in (None, '',) else None
+
         mensualidad = Mensualidad(
-            id_persona=int(data['id_persona']),
-            id_metodo_pago=int(data['id_metodo_pago']),
+            id_persona=int(id_persona),
+            id_metodo_pago=id_metodo_pago_val,
             monto_pago=monto_pago,
             estado=bool(is_pagado_inicial),
             fecha_pago=date.today() if is_pagado_inicial else None,
@@ -240,7 +274,7 @@ def crear_mensualidad():
         db.session.flush()
 
         # Si se creó como pagado, registrar abono equivalente con método y monto
-        if is_pagado_inicial and mensualidad.id_mensualidad:
+        if is_pagado_inicial and mensualidad.id_mensualidad and id_metodo_pago_val is not None:
             try:
                 abono_inicial = AbonoMensualidad(
                     id_mensualidad=mensualidad.id_mensualidad,
