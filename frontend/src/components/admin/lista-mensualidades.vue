@@ -97,11 +97,11 @@
 
           <form @submit.prevent="guardarMensualidad" class="formulario-mensualidad" :key="formKey" autocomplete="off">
             <div class="campo-formulario">
-              <label for="idPersona">
-                <i class="fas fa-user"></i>
-                ID Persona *
+              <label for="docPersona">
+                <i class="fas fa-id-card"></i>
+                Número de documento de la persona *
               </label>
-              <input id="idPersona" v-model.number="form.id_persona" type="number" placeholder="Ej: 1" autocomplete="off"
+              <input id="docPersona" v-model="form.numero_documento" type="text" placeholder="Ej: 12345678" autocomplete="off"
                 class="input-mensualidad" required />
             </div>
 
@@ -243,7 +243,7 @@ const modalDetalleEnEdicion = ref(false);
 const mostrarFormulario = ref(false);
 const formKey = ref(0);
 const form = ref({
-  id_persona: '',
+  numero_documento: '',
   id_metodo_pago: '',
   valorSinSimbolo: '',
   valor: '',
@@ -369,7 +369,7 @@ function cerrarFormulario() {
 
 function limpiarFormulario() {
   form.value = {
-    id_persona: '',
+    numero_documento: '',
     id_metodo_pago: '',
     valorSinSimbolo: '',
     valor: '',
@@ -392,13 +392,13 @@ function actualizarValorConSimbolo() {
 }
 
 function guardarMensualidad() {
-  if (!form.value.id_persona || !form.value.valorSinSimbolo || !form.value.vencimiento) {
-    alert('Completa ID Persona, Valor y Fecha de vencimiento');
+  if (!form.value.numero_documento || !form.value.valorSinSimbolo || !form.value.vencimiento) {
+    alert('Completa Número de documento, Valor y Fecha de vencimiento');
     return;
   }
 
   const payload = {
-    id_persona: Number(form.value.id_persona),
+    numero_documento: String(form.value.numero_documento).trim(),
     monto_pago: Number(form.value.valorSinSimbolo),
     fecha_vencimiento: form.value.vencimiento,
     activo: !!form.value.activo,

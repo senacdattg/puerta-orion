@@ -145,7 +145,7 @@ async function eliminarMensualidad(m) {
 async function nuevaMensualidad(payload) {
   try {
     await mensualidadesService.create({
-      id_persona: payload.id_persona,
+      numero_documento: payload.numero_documento,
       id_metodo_pago: payload.id_metodo_pago,
       monto_pago: payload.monto_pago,
       fecha_vencimiento: payload.fecha_vencimiento,
