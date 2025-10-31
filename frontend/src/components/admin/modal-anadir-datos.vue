@@ -50,14 +50,40 @@
 
           <form @submit.prevent="enviar">
             <div class="form-grid">
-              <div class="form-item">
-                <label class="label">Nombre</label>
-                <input v-model.trim="form.nombre" type="text" class="input" placeholder="Nombre" required />
-              </div>
-              <div v-if="seleccionado?.id === 'eps'" class="form-item">
-                <label class="label">Código (opcional)</label>
-                <input v-model.trim="form.codigo" type="text" class="input" placeholder="Código EPS" />
-              </div>
+              <!-- Campos para Categorías -->
+              <template v-if="seleccionado?.id === 'categoria'">
+                <div class="form-item">
+                  <label class="label">Nombre de Categoría</label>
+                  <input v-model.trim="form.nombre_categoria" type="text" class="input" placeholder="Ej: Pre-infantil" required />
+                </div>
+                <div class="form-item">
+                  <label class="label">Edad Mínima</label>
+                  <input v-model.number="form.edad_minima" type="number" class="input" placeholder="Ej: 5" required min="0" />
+                </div>
+                <div class="form-item">
+                  <label class="label">Edad Máxima</label>
+                  <input v-model.number="form.edad_maxima" type="number" class="input" placeholder="Ej: 7" required min="0" />
+                </div>
+                <div class="form-item">
+                  <label class="label">Estado</label>
+                  <select v-model="form.estado" class="input" required>
+                    <option :value="true">Activo</option>
+                    <option :value="false">Inactivo</option>
+                  </select>
+                </div>
+              </template>
+              
+              <!-- Campos para otras entidades -->
+              <template v-else>
+                <div class="form-item">
+                  <label class="label">Nombre</label>
+                  <input v-model.trim="form.nombre" type="text" class="input" placeholder="Nombre" required />
+                </div>
+                <div v-if="seleccionado?.id === 'eps'" class="form-item">
+                  <label class="label">Código (opcional)</label>
+                  <input v-model.trim="form.codigo" type="text" class="input" placeholder="Código EPS" />
+                </div>
+              </template>
             </div>
 
             <div class="footer-acciones">
@@ -99,7 +125,15 @@ const items = ref([
 
 const paso = ref(1)
 const seleccionado = ref(null)
-const form = ref({ nombre: '', codigo: '' })
+const form = ref({ 
+  nombre: '', 
+  codigo: '',
+  // Campos específicos para categorías
+  nombre_categoria: '',
+  edad_minima: null,
+  edad_maxima: null,
+  estado: true
+})
 
 function cerrar() {
   emit('cerrar')
@@ -111,7 +145,14 @@ function seleccionar(item){
 
 function volverPaso1(){
   paso.value = 1
-  form.value = { nombre: '', codigo: '' }
+  form.value = { 
+    nombre: '', 
+    codigo: '',
+    nombre_categoria: '',
+    edad_minima: null,
+    edad_maxima: null,
+    estado: true
+  }
 }
 
 function enviar(){
@@ -145,6 +186,7 @@ function enviar(){
 .label{font-size:.9rem;color:#555;font-weight:600}
 .input{padding:10px 12px;border:2px solid #d1d5db;border-radius:8px;background:#fff;color:#333;font-size:.95rem}
 .input:focus{outline:none;border-color:#0047ab;box-shadow:0 0 0 3px rgba(0,71,171,.15)}
+select.input{appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 8px center;background-repeat:no-repeat;background-size:16px;padding-right:40px;cursor:pointer}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s ease;text-decoration:none}
 .btn--outline{background-color:transparent;color:#6c757d;border:2px solid #6c757d}
 .btn--outline:hover{background-color:#6c757d;color:#fff}
