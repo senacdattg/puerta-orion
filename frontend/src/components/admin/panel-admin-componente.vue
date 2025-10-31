@@ -276,9 +276,55 @@ function cerrarModalDatos() {
   mostrarModalDatos.value = false;
 }
 
-function onGuardarDato(payload) {
-  console.log('Añadir dato recibido:', payload)
-  // Aquí luego llamaremos a la API correspondiente según payload.entidad
+async function onGuardarDato(payload) {
+  try {
+    const { entidad, nombre, codigo } = payload
+    
+    // Mapear entidad del frontend al tema del backend en dynamic-data
+    const temaMap = {
+      'ciudad': 'ciudad-residencia',
+      'eps': 'eps',
+      'tipo-evento': 'tipo-evento'
+    }
+    
+    const tema = temaMap[entidad]
+    
+    // Si no está en el mapeo, mostrar mensaje de que no está disponible
+    if (!tema) {
+      alert(`⚠️ La creación de "${payload.entidad}" aún no está disponible mediante esta interfaz.`)
+      return
+    }
+    
+    // Preparar datos según el tipo
+    const datos = { nombre: nombre.trim() }
+    
+    // Campos adicionales según entidad
+    if (entidad === 'eps' && codigo) {
+      datos.codigo_eps = codigo.trim()
+    }
+    
+    const base = API_CONFIG.baseURL || ''
+    const response = await fetch(`${base}/api/dynamic-data/${tema}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(datos)
+    })
+    
+    const result = await response.json()
+    
+    if (result.success) {
+      alert(`✅ ${payload.entidad} creado exitosamente`)
+      // Aquí puedes recargar datos si es necesario
+    } else {
+      alert(`❌ Error: ${result.error || 'No se pudo crear el registro'}`)
+    }
+  } catch (error) {
+    console.error('Error al guardar dato:', error)
+    alert(`❌ Error de conexión: ${error.message}`)
+  }
 }
 
 function manejarUsuarioRegistrado(datosUsuario) {
