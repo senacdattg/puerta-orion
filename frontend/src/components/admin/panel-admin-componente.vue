@@ -299,8 +299,16 @@ async function onGuardarDato(payload) {
     const datos = { nombre: nombre.trim() }
     
     // Campos adicionales según entidad
-    if (entidad === 'eps' && codigo) {
-      datos.codigo_eps = codigo.trim()
+    if (entidad === 'eps') {
+      if (codigo) {
+        datos.codigo_eps = codigo.trim()
+      }
+      // El estado se envía automáticamente si está en el payload
+      if (payload.estado !== undefined) {
+        datos.estado = payload.estado
+      } else {
+        datos.estado = true // Por defecto activo
+      }
     }
     
     const base = API_CONFIG.baseURL || ''

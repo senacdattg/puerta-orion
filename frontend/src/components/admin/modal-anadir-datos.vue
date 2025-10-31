@@ -83,6 +83,13 @@
                   <label class="label">Código (opcional)</label>
                   <input v-model.trim="form.codigo" type="text" class="input" placeholder="Código EPS" />
                 </div>
+                <div v-if="seleccionado?.id === 'eps'" class="form-item">
+                  <label class="label">Estado</label>
+                  <select v-model="form.estado" class="input" required>
+                    <option :value="true">Activo</option>
+                    <option :value="false">Inactivo</option>
+                  </select>
+                </div>
               </template>
             </div>
 

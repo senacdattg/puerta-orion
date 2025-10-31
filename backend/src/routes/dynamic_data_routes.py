@@ -140,7 +140,8 @@ def crear_dato_dinamico(tema):
         nuevo_registro = modelo()
         setattr(nuevo_registro, campo_nombre, nombre)
         if hasattr(nuevo_registro, 'estado'):
-            nuevo_registro.estado = True
+            # Usar el estado del request si está presente, sino usar True por defecto
+            nuevo_registro.estado = data.get('estado', True)
         
         # Manejar campos adicionales específicos por modelo
         if tema == 'eps' and 'codigo_eps' in data:
