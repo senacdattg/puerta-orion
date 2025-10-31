@@ -12,6 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || null)
   const permissions = ref([]) // Nuevo: permisos específicos del usuario
+  const userDetail = ref(null) // Detalle completo del usuario (con información por rol)
   const isLoading = ref(false)
   const error = ref(null)
 
@@ -228,6 +229,54 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const loadUserProfileDetail = async () => {
+    try {
+      if (!token.value) {
+        console.warn('No hay token para cargar detalle del perfil')
+        return false
+      }
+
+      isLoading.value = true
+      console.log('🔄 Iniciando carga de detalle del perfil...')
+
+      const response = await authService.getProfileDetail()
+      console.log('📥 Respuesta del servicio:', response)
+
+      if (response && response.success) {
+        userDetail.value = response.data
+        console.log('✅ userDetail actualizado:', userDetail.value)
+
+        // Si hay un warning, solo lo logueamos pero no fallamos
+        if (response.warning) {
+          console.warn('⚠️ Advertencia al cargar detalle:', response.warning)
+        }
+        return true
+      } else {
+        console.warn('❌ Error al cargar detalle del perfil:', response?.error || 'Respuesta sin éxito')
+        userDetail.value = null
+        return false
+      }
+    } catch (err) {
+      console.error('❌ Excepción al cargar detalle del perfil:', err)
+      console.error('📋 Detalles del error:', {
+        message: err.message,
+        stack: err.stack
+      })
+
+      userDetail.value = null
+
+      // Si el error es sobre persona no asociada, permitir continuar con datos parciales
+      if (err.message && err.message.includes('persona asociada')) {
+        console.warn('⚠️ Continuando con datos parciales')
+        return false
+      }
+      return false
+    } finally {
+      isLoading.value = false
+      console.log('🏁 Carga de detalle finalizada')
+    }
+  }
+
   const inicializar = async () => {
     try {
       // Cargar datos del localStorage con validación
@@ -273,6 +322,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     permissions, // Nuevo: permisos específicos
+    userDetail, // Detalle completo del usuario
     isLoading,
     error,
 
@@ -303,6 +353,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     verifyToken,
     loadUserProfile,
+    loadUserProfileDetail, // Nueva acción para cargar detalle completo
     loadUserPermissions, // Nueva acción
     setPermissionsByRole, // Nueva acción
     inicializar,

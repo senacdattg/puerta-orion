@@ -7,12 +7,43 @@
 
     <img src="@/assets/imgs/logo.png" alt="Logo">
 
-    <!-- Info del usuario autenticado -->
+    <!-- Info del usuario autenticado con dropdown -->
     <div v-if="!sinMenu && authStore.estaAutenticado" class="usuario-info">
-      <router-link to="/perfil" class="usuario-nombre usuario-link">
-        <i class="fas fa-user-circle"></i>
-        {{ nombreUsuario }}
-      </router-link>
+      <div class="profile-menu-container" ref="profileMenuRef">
+        <button
+          class="profile-button"
+          @click="toggleProfileMenu"
+          :class="{ active: showProfileMenu }"
+        >
+          <img
+            v-if="fotoPerfil"
+            :src="fotoPerfil"
+            alt="Foto de perfil"
+            class="profile-image"
+          />
+          <div v-else class="profile-placeholder">
+            <i class="fas fa-user"></i>
+          </div>
+        </button>
+
+        <transition name="fade">
+          <div v-if="showProfileMenu" class="profile-dropdown">
+            <button @click="verPerfil" class="dropdown-item">
+              <i class="fas fa-user"></i>
+              Ver perfil
+            </button>
+            <button @click="editarPerfil" class="dropdown-item">
+              <i class="fas fa-edit"></i>
+              Editar información
+            </button>
+            <hr class="dropdown-divider" />
+            <button @click="cerrarSesion" class="dropdown-item logout">
+              <i class="fas fa-sign-out-alt"></i>
+              Cerrar sesión
+            </button>
+          </div>
+        </transition>
+      </div>
     </div>
 
     <div class="menu-categorias" id="menu" v-show="menuVisible">
@@ -62,6 +93,8 @@ const props = defineProps({
 // Estado
 const menuVisible = ref(false)
 const opciones = ref([])
+const showProfileMenu = ref(false)
+const profileMenuRef = ref(null)
 
 // Computed para obtener el rol del usuario desde la sesión
 const userRole = computed(() => {
@@ -91,15 +124,9 @@ const userRole = computed(() => {
   return 'Usuario'
 })
 
-// Computed para obtener el nombre del usuario
-const nombreUsuario = computed(() => {
-  if (authStore.user && authStore.user.persona) {
-    return authStore.user.persona.nombre_completo ||
-           authStore.user.persona.primer_nombre ||
-           authStore.user.username ||
-           'Usuario'
-  }
-  return authStore.user?.username || 'Usuario'
+// Computed para obtener la foto de perfil
+const fotoPerfil = computed(() => {
+  return authStore.user?.persona?.foto || null
 })
 
 // Métodos
@@ -111,10 +138,40 @@ function closeMenu() {
   menuVisible.value = false
 }
 
+function toggleProfileMenu() {
+  showProfileMenu.value = !showProfileMenu.value
+}
+
 function handleOutsideClick(e) {
   const header = document.querySelector('.encabezado')
   if (header && !header.contains(e.target)) {
     menuVisible.value = false
+  }
+
+  // Cerrar el menú de perfil si se hace clic fuera
+  if (profileMenuRef.value && !profileMenuRef.value.contains(e.target)) {
+    showProfileMenu.value = false
+  }
+}
+
+function verPerfil() {
+  showProfileMenu.value = false
+  router.push('/perfil')
+}
+
+function editarPerfil() {
+  showProfileMenu.value = false
+  router.push('/actualizar-info')
+}
+
+async function cerrarSesion() {
+  showProfileMenu.value = false
+  const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
+
+  if (confirmar) {
+    closeMenu()
+    await authStore.logout()
+    router.push('/login')
   }
 }
 
@@ -214,33 +271,123 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
-.usuario-nombre {
-  color: #000000;
-  font-size: 14px;
-  font-weight: 500;
+.profile-menu-container {
+  position: relative;
+}
+
+.profile-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  border: 3px solid #FFD600;
+  background: transparent;
+  position: relative;
 }
 
-.usuario-nombre i {
-  font-size: 20px;
-  color: #007bff;
-}
-
-.usuario-link {
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.3s ease;
-}
-
-.usuario-link:hover {
-  color: #007bff;
+.profile-button:hover,
+.profile-button.active {
+  border-color: #FFD600;
   transform: scale(1.05);
+  background: transparent;
 }
 
-.usuario-link:hover i {
-  color: #0056b3;
+.profile-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #87CEEB; /* Sky blue - azul claro sólido */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff; /* Icono blanco */
+  font-size: 22px;
+  border: none;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #333333;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.dropdown-item:hover {
+  background: #f5f5f5;
+  color: #004AAD;
+}
+
+.dropdown-item i {
+  width: 20px;
+  text-align: center;
+  color: #004AAD;
+  font-size: 16px;
+}
+
+.dropdown-item.logout {
+  color: #dc3545;
+}
+
+.dropdown-item.logout:hover {
+  background: #fee;
+  color: #c82333;
+}
+
+.dropdown-item.logout i {
+  color: #dc3545;
+}
+
+.dropdown-divider {
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid #e5e5e5;
+}
+
+/* Transiciones */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .menu-link {

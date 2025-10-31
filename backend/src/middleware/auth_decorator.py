@@ -396,6 +396,8 @@ class TokenRequired:
                     'documento': usuario.persona.documento
                 }
             }
+            # Guardar el objeto Usuario completo para uso en servicios
+            g.current_user_obj = usuario
             
             g.current_session = {
                 'id_sesion': sesion.id_sesion,

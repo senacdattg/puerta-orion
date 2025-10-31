@@ -315,6 +315,19 @@ class RegistroDeportistaService:
             # Asociar acudientes si se proporcionan
             acudientes_data = datos.get('acudientes', [])
             if acudientes_data and len(acudientes_data) > 0:
+                # Validar que no se intenten asociar más de 3 acudientes al deportista
+                acudientes_existentes = DeportistaAcudiente.query.filter_by(
+                    id_deportista=deportista.id_deportista
+                ).count()
+                
+                if acudientes_existentes + len(acudientes_data) > 3:
+                    return {
+                        'success': False,
+                        'message': f'Un deportista solo puede tener máximo 3 acudientes. '
+                                   f'Actualmente tiene {acudientes_existentes} acudiente(s) y se intentan asociar {len(acudientes_data)} más.',
+                        'status_code': 400
+                    }
+                
                 for acudiente_data in acudientes_data:
                     id_acudiente = acudiente_data.get('id_acudiente')
                     id_parentesco = acudiente_data.get('id_parentesco')
@@ -328,6 +341,28 @@ class RegistroDeportistaService:
                     # Validar que el parentesco existe
                     parentesco = Parentesco.query.filter_by(id_parentesco=id_parentesco).first()
                     if not parentesco:
+                        continue
+                    
+                    # Validar que no exista ya esta relación
+                    relacion_existente = DeportistaAcudiente.query.filter_by(
+                        id_deportista=deportista.id_deportista,
+                        id_acudiente=id_acudiente
+                    ).first()
+                    
+                    if relacion_existente:
+                        logger.warning(f'Ya existe relación entre deportista {deportista.id_deportista} y acudiente {id_acudiente}')
+                        continue
+                    
+                    # Validar que el acudiente no tenga más de 5 deportistas asociados
+                    deportistas_acudiente = DeportistaAcudiente.query.filter_by(
+                        id_acudiente=id_acudiente
+                    ).count()
+                    
+                    if deportistas_acudiente >= 5:
+                        logger.warning(
+                            f'Acudiente {id_acudiente} ya tiene {deportistas_acudiente} deportista(s). '
+                            'No se puede asociar más (máximo 5).'
+                        )
                         continue
                     
                     deportista_acudiente = DeportistaAcudiente(
@@ -498,30 +533,12 @@ class RegistroDeportistaService:
                     año_actual = date.today().year
                     persona_data['edad_aproximada'] = año_actual - deportista.fecha_nacimiento
                 
-                # Tipo sanguíneo (con información completa)
-                if deportista.tipo_sanguineo:
-                    persona_data['tipo_sanguineo'] = {
-                        'id': deportista.tipo_sanguineo.id_tipo_sangre,
-                        'tipo': deportista.tipo_sanguineo.tipo_sangre
-                    }
-                
-                # Ciudad de residencia (con información completa)
-                if deportista.ciudad_residencia:
-                    persona_data['ciudad_recidencia'] = {
-                        'id': deportista.ciudad_residencia.id_ciudad,
-                        'nombre': deportista.ciudad_residencia.nombre_ciudad,
-                        'codigo_dane': deportista.ciudad_residencia.codigo_dane
-                    }
-                
-                # EPS (con información completa)
-                if deportista.eps:
-                    persona_data['eps'] = {
-                        'id': deportista.eps.id_eps,
-                        'nombre': deportista.eps.nombre_eps,
-                        'codigo': deportista.eps.codigo_eps
-                    }
+                # Solo IDs de catálogos (el frontend mapeará los nombres)
+                persona_data['id_tipo_sanguineo'] = deportista.id_tipo_sanguineo
+                persona_data['id_ciudad_recidencia'] = deportista.id_ciudad_recidencia
+                persona_data['id_eps'] = deportista.id_eps
             
-            # Construir información deportiva
+            # Construir información deportiva (solo IDs de catálogos)
             info_deportiva = {}
             if deportista.informacion_deportiva:
                 info = deportista.informacion_deportiva
@@ -530,84 +547,49 @@ class RegistroDeportistaService:
                     'practica_otro_deporte': info.practica_otro_deporte,
                     'participa_escuela': info.participa_escuela,
                     'recomendacion_medica': info.recomendacion_medica,
-                    'descripcion_recomendacion': info.descripcion_recomendacion
+                    'descripcion_recomendacion': info.descripcion_recomendacion,
+                    # Solo IDs de catálogos (el frontend mapeará los nombres)
+                    'id_deporte': info.id_deporte,
+                    'id_escuela': info.id_escuela,
+                    'id_institucion_registro': info.id_institucion_registro,
+                    'id_categoria': deportista.id_categoria
                 }
-                
-                # Deporte (con información completa)
-                if info.deporte:
-                    info_deportiva['deporte'] = {
-                        'id': info.deporte.id_deporte,
-                        'nombre': info.deporte.nombre,
-                        'descripcion': info.deporte.descripcion
-                    }
-                else:
-                    info_deportiva['deporte'] = None
-                
-                # Escuela (con información completa)
-                if info.escuela:
-                    info_deportiva['escuela'] = {
-                        'id': info.escuela.id_escuela,
-                        'nombre': info.escuela.nombre
-                    }
-                else:
-                    info_deportiva['escuela'] = None
-                
-                # Institución de registro (con información completa)
-                if info.institucion_registro:
-                    info_deportiva['institucion'] = {
-                        'id': info.institucion_registro.id_institucion,
-                        'nombre': info.institucion_registro.nombre_institucion
-                    }
-                else:
-                    info_deportiva['institucion'] = None
-                
-                # Categoría (está en el deportista, no en info_deportiva)
-                if deportista.categoria:
-                    info_deportiva['categoria'] = deportista.categoria.nombre_categoria
             else:
                 info_deportiva = {
-                    'mensaje': 'No hay información deportiva registrada'
+                    'practica_otro_deporte': False,
+                    'participa_escuela': False,
+                    'recomendacion_medica': False,
+                    'descripcion_recomendacion': None,
+                    'id_deporte': None,
+                    'id_escuela': None,
+                    'id_institucion_registro': None,
+                    'id_categoria': deportista.id_categoria if deportista.id_categoria else None
                 }
             
-            # Construir información de salud (diagnósticos)
+            # Construir información de salud (solo IDs de diagnósticos)
             salud_data = {}
             diagnósticos_deportista = DiagnosticoDeportista.query.filter_by(id_deportista=id_deportista).all()
             
             if diagnósticos_deportista:
-                diagnosticos_list = []
-                tipos_enfermedad_encontrados = set()
+                diagnosticos_ids = []
+                tipos_enfermedad_ids = set()
                 
                 for diagnostico_deportista in diagnósticos_deportista:
                     if diagnostico_deportista.diagnostico:
-                        diagnostico_info = {
+                        diagnosticos_ids.append({
                             'id_diagnostico': diagnostico_deportista.id_diagnostico,
-                            'nombre': diagnostico_deportista.diagnostico.nombre,
+                            'id_tipo_enfermedad': diagnostico_deportista.diagnostico.id_tipo_enfermedad if diagnostico_deportista.diagnostico.tipo_enfermedad else None,
                             'fecha': diagnostico_deportista.fecha.isoformat() if diagnostico_deportista.fecha else None
-                        }
+                        })
                         
-                        # Agregar tipo de enfermedad si existe
+                        # Agregar ID de tipo de enfermedad
                         if diagnostico_deportista.diagnostico.tipo_enfermedad:
-                            tipo_enfermedad_nombre = diagnostico_deportista.diagnostico.tipo_enfermedad.nombre
-                            tipo_enfermedad_id = diagnostico_deportista.diagnostico.tipo_enfermedad.id_tipo_enfermedad
-                            
-                            diagnostico_info['tipo_enfermedad'] = {
-                                'id': tipo_enfermedad_id,
-                                'nombre': tipo_enfermedad_nombre
-                            }
-                            
-                            diagnosticos_list.append(diagnostico_info)
-                            
-                            if tipo_enfermedad_nombre not in tipos_enfermedad_encontrados:
-                                tipos_enfermedad_encontrados.add(tipo_enfermedad_nombre)
+                            tipos_enfermedad_ids.add(diagnostico_deportista.diagnostico.tipo_enfermedad.id_tipo_enfermedad)
                 
-                if diagnosticos_list:
-                    salud_data['diagnosticos_completos'] = diagnosticos_list
-                    salud_data['diagnosticos'] = [d['nombre'] for d in diagnosticos_list]
-                    salud_data['cantidad_diagnosticos'] = len(diagnosticos_list)
-                    
-                    # Lista de tipos de enfermedad encontrados
-                    if tipos_enfermedad_encontrados:
-                        salud_data['tipos_enfermedad'] = list(tipos_enfermedad_encontrados)
+                if diagnosticos_ids:
+                    salud_data['diagnosticos'] = diagnosticos_ids
+                    salud_data['cantidad_diagnosticos'] = len(diagnosticos_ids)
+                    salud_data['tipos_enfermedad_ids'] = list(tipos_enfermedad_ids)
             
             # Agregar información adicional del deportista
             datos_deportista_adicionales = {}
@@ -626,16 +608,6 @@ class RegistroDeportistaService:
                     'monto': float(deportista.mensualidad.monto_pago) if deportista.mensualidad.monto_pago else None,
                     'fecha_pago': deportista.mensualidad.fecha_pago.isoformat() if deportista.mensualidad.fecha_pago else None,
                     'estado': deportista.mensualidad.estado
-                }
-            
-            # Información detallada de categoría
-            if deportista.categoria:
-                datos_deportista_adicionales['categoria_detallada'] = {
-                    'id_categoria': deportista.categoria.id_categoria,
-                    'nombre': deportista.categoria.nombre_categoria,
-                    'codigo': deportista.categoria.codigo_categoria,
-                    'edad_minima': deportista.categoria.edad_minima,
-                    'edad_maxima': deportista.categoria.edad_maxima
                 }
             
             logger.info(f'Información completa obtenida para deportista ID {id_deportista}')
