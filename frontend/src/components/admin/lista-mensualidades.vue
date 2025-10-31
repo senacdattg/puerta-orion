@@ -69,7 +69,7 @@
         <TarjetaMensualidad v-for="mensualidad in mensualidadesFiltradas" :key="mensualidad.id"
           :mensualidad="mensualidad" @ver-detalle-completo="verDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
           @eliminar="eliminarMensualidad" />
-
+          
         <div v-if="esAdmin" class="boton-agregar" @click="abrirFormulario">
           +
         </div>
@@ -95,7 +95,7 @@
       <!-- Modal de Detalles Completos -->
       <ModalDetalles v-if="modalDetalleCompletoVisible" :mensualidad="mensualidadSeleccionada"
         :modo-edicion="modalDetalleEnEdicion"
-        @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
+        @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion" 
         @guardar-cambios="guardarCambiosMensualidad" />
 
 
@@ -320,7 +320,7 @@ function abrirModalEnModoEdicion(mensualidad) {
 
 function guardarCambiosMensualidad(mensualidadActualizada) {
   console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
-
+  
   const index = props.mensualidades.findIndex(m => m.id === mensualidadActualizada.id);
   if (index !== -1) {
     Object.assign(props.mensualidades[index], mensualidadActualizada);

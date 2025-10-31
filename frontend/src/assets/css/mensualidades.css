@@ -804,7 +804,7 @@
   border-top: 2px solid var(--color-gris-claro);
   display: flex;          /* activa flexbox */
   justify-content: flex-end; /* alinea los botones a la derecha (opcional) */
-  gap: 1rem;
+  gap: 1rem;    
 }
 
 .acciones-footer {
@@ -1113,23 +1113,23 @@
     margin: 1rem;
     max-height: 95vh;
   }
-
+  
   .modal-header {
     padding: 1rem;
   }
-
+  
   .modal-header h3 {
     font-size: 1.3rem;
   }
-
+  
   .formulario-mensualidad {
     padding: 1rem;
   }
-
+  
   .acciones {
     flex-direction: column;
   }
-
+  
   .btn-principal,
   .btn-secundario {
     width: 100%;
@@ -1481,26 +1481,26 @@
     flex-direction: column;
     gap: 0.25rem;
   }
-
+  
   .btn-edit {
     width: 100%;
     text-align: center;
   }
-
+  
   .botones-rapidos {
     flex-direction: column;
   }
-
+  
   .btn-rapido {
     flex: none;
     width: 100%;
   }
-
+  
   .modal-footer {
     flex-direction: column;
     gap: 0.5rem;
   }
-
+  
   .modal-footer .btn {
     width: 100%;
   }
@@ -1751,12 +1751,12 @@
   .resumen-pagos {
     grid-template-columns: 1fr;
   }
-
+  
   .fecha-pago-item {
     flex-direction: column;
     align-items: stretch;
   }
-
+  
   .btn-eliminar-fecha {
     align-self: flex-end;
     margin-top: 0.5rem;

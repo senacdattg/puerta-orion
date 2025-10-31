@@ -94,15 +94,30 @@ async function handleLogin() {
     if (resultado.success) {
       mensajeExito.value = "¡Login exitoso! Redirigiendo..."
 
-      // Verificar roles del usuario para decidir la redirección
+      // Verificar si el usuario tiene múltiples roles
       const userRoles = resultado.user?.roles || []
-      const roleNames = userRoles.map(role => role.nombre_rol)
+      const roleNames = userRoles.map(role => typeof role === 'string' ? role : role.nombre_rol)
 
-      // Determinar ruta de redirección según el rol
-      let rutaDestino = "/home"
-
-      if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
-        rutaDestino = "/admin-manager"
+      // Si tiene un solo rol, redirigir directamente
+      // Si tiene múltiples roles, mostrar selección
+      let rutaDestino = "/seleccionar-rol"
+      
+      if (roleNames.length === 1) {
+        // Un solo rol, establecer automáticamente (esto también cargará los permisos)
+        await authStore.setActiveRole(roleNames[0])
+        
+        // Determinar ruta según el rol único
+        if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
+          rutaDestino = "/admin-manager"
+        } else if (roleNames.includes('Entrenador')) {
+          rutaDestino = "/home"
+        } else if (roleNames.includes('Deportista')) {
+          rutaDestino = "/deportista/dashboard"
+        } else if (roleNames.includes('Acudiente')) {
+          rutaDestino = "/acudiente/dashboard"
+        } else {
+          rutaDestino = "/home"
+        }
       }
 
       // Redirigir después de 1 segundo

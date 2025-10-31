@@ -98,7 +98,7 @@ const cerrarSesion = async () => {
 
   if (confirmar) {
     await authStore.logout()
-    router.push('/login')
+    router.replace('/login')
   }
 }
 

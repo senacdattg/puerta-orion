@@ -59,31 +59,26 @@ const appConfig = APP_CONFIG
 const socialLinks = SOCIAL_LINKS
 const authStore = useAuthStore()
 
-// Computed para obtener el rol del usuario desde la sesión
+// Computed para obtener el rol ACTIVO (respeta selección del usuario)
 const userRole = computed(() => {
+  const active = authStore.activeRole
+  if (active) {
+    if (active === 'SuperAdmin' || active === 'Administrador') return 'Admin'
+    return active
+  }
+
   if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
     return 'Usuario'
   }
 
-  // Obtener el primer rol del usuario (o el más relevante)
   const roles = authStore.user.roles
-  const roleNames = roles.map(role =>
-    typeof role === 'string' ? role : role.nombre_rol
-  )
+  const roleNames = roles.map(role => typeof role === 'string' ? role : role.nombre_rol)
 
-  // Priorizar roles en orden de importancia
-  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
-    return 'Admin'
-  } else if (roleNames.includes('Entrenador')) {
-    return 'Entrenador'
-  } else if (roleNames.includes('Deportista')) {
-    return 'Deportista'
-  } else if (roleNames.includes('Acudiente')) {
-    return 'Acudiente'
-  } else if (roleNames.includes('usuario')) {
-    return 'Usuario'
-  }
-
+  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) return 'Admin'
+  if (roleNames.includes('Entrenador')) return 'Entrenador'
+  if (roleNames.includes('Deportista')) return 'Deportista'
+  if (roleNames.includes('Acudiente')) return 'Acudiente'
+  if (roleNames.includes('usuario')) return 'Usuario'
   return 'UsuarioSinAuth'
 })
 

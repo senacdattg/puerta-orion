@@ -331,7 +331,7 @@ async function pagarConMercadoPago() {
     try {
       if (typeof e === 'object' && e !== null && e.message) {
         alert(e.message);
-      } else {
+  } else {
         alert(typeof e === 'string' ? e : JSON.stringify(e));
       }
     } catch {

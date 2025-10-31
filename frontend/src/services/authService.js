@@ -200,7 +200,7 @@ class AuthService {
   }
 
   /**
-   * Obtener permisos específicos del usuario autenticado
+   * Obtener permisos específicos del usuario autenticado (todos los roles)
    */
   async getUserPermissions() {
     try {
@@ -226,6 +226,37 @@ class AuthService {
       return { success: true, ...data.data }
     } catch (error) {
       console.error('Error obteniendo permisos:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
+
+  /**
+   * Obtener permisos de un rol específico
+   */
+  async getRolePermissions(roleName) {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/auth/role-permissions?role_name=${encodeURIComponent(roleName)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al obtener permisos del rol')
+      }
+
+      return { success: true, ...data.data }
+    } catch (error) {
+      console.error('Error obteniendo permisos del rol:', error)
       return { success: false, error: error.message || 'Error de conexión' }
     }
   }
