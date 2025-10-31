@@ -57,6 +57,28 @@ def create_app(config_name=None):
          methods=app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']),
          allow_headers=app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
          supports_credentials=app.config.get('CORS_SUPPORTS_CREDENTIALS', True))
+    
+    # Handler global para OPTIONS (preflight CORS) - debe ir DESPUÉS de CORS
+    @app.before_request
+    def handle_preflight():
+        """Maneja peticiones OPTIONS (preflight CORS) antes de cualquier otra lógica."""
+        if request.method == 'OPTIONS':
+            response = make_response()
+            origin = request.headers.get('Origin')
+            
+            if origin:
+                response.headers['Access-Control-Allow-Origin'] = origin
+            else:
+                response.headers['Access-Control-Allow-Origin'] = '*'
+            
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Max-Age'] = '3600'
+            response.status_code = 200
+            
+            app.logger.info(f"OPTIONS preflight handled for: {request.path}")
+            return response
 
     # Inicializar sistema de logs
     gestor_logs.inicializar_aplicacion(app)

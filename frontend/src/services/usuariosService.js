@@ -70,14 +70,17 @@ class UsuariosService {
   }
 
   /**
-   * Cambia el rol de un usuario
+   * Cambia los roles de un usuario (acepta múltiples roles)
    */
-  async cambiarRolUsuario(idUsuario, idRol) {
+  async cambiarRolUsuario(idUsuario, idRoles) {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/rol/`, {
+      // Normalizar: si viene un solo número, convertirlo a array
+      const rolesArray = Array.isArray(idRoles) ? idRoles : [idRoles]
+      
+      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/rol`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ id_rol: idRol })
+        body: JSON.stringify({ id_roles: rolesArray })
       })
 
       if (!response.ok) {
@@ -87,7 +90,7 @@ class UsuariosService {
       const data = await response.json()
       return data
     } catch (error) {
-      console.error('Error al cambiar rol de usuario:', error)
+      console.error('Error al cambiar roles de usuario:', error)
       throw error
     }
   }
