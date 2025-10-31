@@ -125,26 +125,31 @@ const isMobile = ref(false)
 const hoverTimeout = ref(null)
 const menuOpenedByClick = ref(false) // Track si se abrió por click
 
-// Computed para obtener el rol ACTIVO (respeta selección del usuario)
+// Computed para obtener el rol del usuario desde la sesión
 const userRole = computed(() => {
-  const active = authStore.activeRole
-  if (active) {
-    if (active === 'SuperAdmin' || active === 'Administrador') return 'Admin'
-    return active
-  }
-
   if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
     return 'Usuario'
   }
 
+  // Obtener el primer rol del usuario (o el más relevante)
   const roles = authStore.user.roles
-  const roleNames = roles.map(role => typeof role === 'string' ? role : role.nombre_rol)
+  const roleNames = roles.map(role =>
+    typeof role === 'string' ? role : role.nombre_rol
+  )
 
-  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) return 'Admin'
-  if (roleNames.includes('Entrenador')) return 'Entrenador'
-  if (roleNames.includes('Deportista')) return 'Deportista'
-  if (roleNames.includes('Acudiente')) return 'Acudiente'
-  if (roleNames.includes('usuario')) return 'Usuario'
+  // Priorizar roles en orden de importancia
+  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
+    return 'Admin'
+  } else if (roleNames.includes('Entrenador')) {
+    return 'Entrenador'
+  } else if (roleNames.includes('Deportista')) {
+    return 'Deportista'
+  } else if (roleNames.includes('Acudiente')) {
+    return 'Acudiente'
+  } else if (roleNames.includes('usuario')) {
+    return 'Usuario'
+  }
+
   return 'Usuario'
 })
 
@@ -261,7 +266,7 @@ function cargarOpciones() {
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
       { texto: "Panel Admin", link: "/admin-manager", icono: "fas fa-cog" },
     ],
-    UsuarioSinAuth: [
+    Usuario: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
@@ -269,7 +274,7 @@ function cargarOpciones() {
   }
 
   const rolActual = userRole.value
-  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['UsuarioSinAuth']
+  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['Usuario']
 }
 
 function checkMobile() {
@@ -313,7 +318,6 @@ async function cerrarSesion() {
   if (confirmar) {
     await authStore.logout()
     router.replace('/login')
-  }
 }
 
 // Ciclo de vida
