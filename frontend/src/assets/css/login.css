@@ -34,7 +34,7 @@
 
 /* ===== CONTENEDOR PRINCIPAL - TEMA VOLEIBOL ===== */
 .login-container-volleyball {
-  min-height: calc(100vh - 50px);
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;

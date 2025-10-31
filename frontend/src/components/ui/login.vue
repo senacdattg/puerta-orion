@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue"
+import { ref, onMounted, onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import "@/assets/css/login.css"
@@ -242,6 +242,19 @@ async function handleLogin() {
     cargando.value = false
   }
 }
+
+// Limpiar estilos del body cuando se monta el login
+onMounted(() => {
+  document.body.classList.remove('has-fixed-header', 'has-static-sidebar', 'menu-closing')
+  document.body.style.paddingTop = '0'
+  document.body.style.paddingLeft = '0'
+})
+
+// Restaurar al desmontar (aunque no debería ser necesario)
+onBeforeUnmount(() => {
+  document.body.style.paddingTop = ''
+  document.body.style.paddingLeft = ''
+})
 </script>
 
 <style scoped>
