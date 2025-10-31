@@ -123,17 +123,22 @@
     <!-- Modal de Registro de Usuario -->
     <ModalRegistroUsuario :mostrar="mostrarModalRegistro" @cerrar="cerrarModalRegistro"
       @usuario-registrado="manejarUsuarioRegistrado" />
+
+    <!-- Modal Añadir Datos -->
+    <ModalAnadirDatos :mostrar="mostrarModalDatos" @cerrar="cerrarModalDatos" />
   </main>
 </template>
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { API_CONFIG } from '@/config/environment';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
+import ModalAnadirDatos from '@/components/admin/modal-anadir-datos.vue';
 import TablaUsuarios from '@/components/admin/tabla-usuarios.vue';
 import usuariosService from '@/services/usuariosService';
 
 // Estado del modal
 const mostrarModalRegistro = ref(false);
+const mostrarModalDatos = ref(false);
 const mostrarFiltros = ref(false);
 const mostrarBusqueda = ref(false);
 const terminoBusqueda = ref('');
@@ -261,6 +266,14 @@ function abrirModalRegistro() {
 
 function cerrarModalRegistro() {
   mostrarModalRegistro.value = false;
+}
+
+function abrirModalDatos() {
+  mostrarModalDatos.value = true;
+}
+
+function cerrarModalDatos() {
+  mostrarModalDatos.value = false;
 }
 
 function manejarUsuarioRegistrado(datosUsuario) {
