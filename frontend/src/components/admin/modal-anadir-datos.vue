@@ -79,6 +79,10 @@
                   <label class="label">Nombre</label>
                   <input v-model.trim="form.nombre" type="text" class="input" placeholder="Nombre" required />
                 </div>
+                <div v-if="seleccionado?.id === 'tipo-evento'" class="form-item">
+                  <label class="label">Descripción (opcional)</label>
+                  <textarea v-model.trim="form.descripcion" class="input" placeholder="Descripción del tipo de evento" rows="3"></textarea>
+                </div>
                 <div v-if="seleccionado?.id === 'eps'" class="form-item">
                   <label class="label">Código (opcional)</label>
                   <input v-model.trim="form.codigo" type="text" class="input" placeholder="Código EPS" />
@@ -135,6 +139,7 @@ const seleccionado = ref(null)
 const form = ref({ 
   nombre: '', 
   codigo: '',
+  descripcion: '',
   // Campos específicos para categorías
   nombre_categoria: '',
   edad_minima: null,
@@ -155,6 +160,7 @@ function volverPaso1(){
   form.value = { 
     nombre: '', 
     codigo: '',
+    descripcion: '',
     nombre_categoria: '',
     edad_minima: null,
     edad_maxima: null,
@@ -191,8 +197,9 @@ function enviar(){
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:16px}
 .form-item{display:flex;flex-direction:column;gap:6px}
 .label{font-size:.9rem;color:#555;font-weight:600}
-.input{padding:10px 12px;border:2px solid #d1d5db;border-radius:8px;background:#fff;color:#333;font-size:.95rem}
+.input{padding:10px 12px;border:2px solid #d1d5db;border-radius:8px;background:#fff;color:#333;font-size:.95rem;font-family:inherit;resize:vertical}
 .input:focus{outline:none;border-color:#0047ab;box-shadow:0 0 0 3px rgba(0,71,171,.15)}
+textarea.input{min-height:80px;line-height:1.5}
 select.input{appearance:none;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");background-position:right 8px center;background-repeat:no-repeat;background-size:16px;padding-right:40px;cursor:pointer}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s ease;text-decoration:none}
 .btn--outline{background-color:transparent;color:#6c757d;border:2px solid #6c757d}

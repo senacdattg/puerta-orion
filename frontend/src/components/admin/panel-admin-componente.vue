@@ -311,6 +311,9 @@ async function onGuardarDato(payload) {
     } else {
       datos.nombre = nombre.trim()
       // Campos adicionales según entidad
+      if (entidad === 'tipo-evento' && payload.descripcion) {
+        datos.descripcion = payload.descripcion.trim()
+      }
       if (entidad === 'eps') {
         if (codigo) {
           datos.codigo_eps = codigo.trim()
