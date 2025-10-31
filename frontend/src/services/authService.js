@@ -426,6 +426,51 @@ class AuthService {
        return { success: false, error: error.message || 'Error de conexión' }
      }
    }
+
+  /**
+   * Actualizar datos de usuario
+   */
+  async updateUser(idUsuario, datosPersona = {}, datosUsuario = {}) {
+    try {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const body = {}
+      if (Object.keys(datosPersona).length > 0) {
+        body.datos_persona = datosPersona
+      }
+      if (Object.keys(datosUsuario).length > 0) {
+        body.datos_usuario = datosUsuario
+      }
+
+      if (Object.keys(body).length === 0) {
+        throw new Error('Debe proporcionar al menos datos_persona o datos_usuario')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/usuarios/${idUsuario}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al actualizar usuario')
+      }
+
+      return { success: true, data: data.data, message: data.message }
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
 }
 
 // Exportar instancia única

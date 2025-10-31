@@ -445,18 +445,23 @@ class UsuarioService:
         if hasattr(usuario, 'roles') and usuario.roles:
             roles_usuario = [rol.to_dict() for rol in usuario.roles]
         
+        # Serializar datos de persona solo si existe
+        datos_persona = None
+        if usuario.persona:
+            datos_persona = {
+                'nombre_completo': usuario.persona.nombre_completo,
+                'correo_electronico': usuario.persona.correo_electronico,
+                'documento': usuario.persona.documento,
+                'telefono': usuario.persona.telefono
+            }
+        
         return {
             'id_usuario': usuario.id_usuario,
             'id_persona': usuario.id_persona,
             'usuario': usuario.usuario,
             'estado': usuario.estado,
             'roles': roles_usuario,
-            'persona': {
-                'nombre_completo': usuario.persona.nombre_completo,
-                'correo_electronico': usuario.persona.correo_electronico,
-                'documento': usuario.persona.documento,
-                'telefono': usuario.persona.telefono
-            },
+            'persona': datos_persona,
             'fecha_creacion': usuario.created_at.isoformat() if usuario.created_at else None
         }
     
@@ -517,6 +522,279 @@ class UsuarioService:
         except Exception as e:
             self.logger.error(f"Error al obtener usuario con roles: {str(e)}")
             return None
+
+    def actualizar_usuario(
+        self, 
+        id_usuario: int, 
+        datos_persona: Dict[str, Any] = None,
+        datos_usuario: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Actualiza los datos de un usuario existente.
+        
+        Permite actualizar tanto datos de la persona como datos del usuario.
+        La contraseña NO se puede actualizar desde este método.
+        Aplica validaciones de unicidad y formato antes de actualizar.
+        
+        Args:
+            id_usuario (int): ID del usuario a actualizar
+            datos_persona (Dict): Datos de la persona a actualizar (opcional)
+            datos_usuario (Dict): Datos del usuario a actualizar (opcional, sin contraseña)
+            
+        Returns:
+            Dict: Respuesta con el resultado de la operación
+            
+        Raises:
+            UsuarioServiceError: Si hay errores de validación o el usuario no existe
+        """
+        try:
+            # Verificar que el usuario existe
+            usuario = Usuario.query.filter_by(id_usuario=id_usuario).first()
+            if not usuario:
+                raise UsuarioServiceError(f"Usuario con ID {id_usuario} no encontrado")
+            
+            # Verificar que el usuario esté activo
+            if not usuario.estado:
+                raise UsuarioServiceError(f"Usuario con ID {id_usuario} está inactivo")
+            
+            # Validar y actualizar datos de persona SOLO si se proporcionan
+            if datos_persona:
+                # Cargar la persona directamente desde la sesión para asegurar que esté en el contexto de SQLAlchemy
+                from src.models.personas.persona import Persona
+                persona = Persona.query.get(usuario.id_persona)
+                if not persona:
+                    raise UsuarioServiceError(f"Persona con ID {usuario.id_persona} no encontrada para el usuario {id_usuario}")
+                
+                self.logger.info(f"Actualizando datos de persona ID: {persona.id_persona} (antes: {persona.primer_nombre} {persona.primer_apellido})")
+                self._validar_y_actualizar_persona(persona, datos_persona, persona.id_persona)
+                self.logger.info(f"Datos de persona actualizados: {persona.primer_nombre} {persona.primer_apellido}")
+                
+                # Asegurar que SQLAlchemy detecte los cambios en el objeto persona
+                db.session.add(persona)
+            
+            # Validar y actualizar datos de usuario SOLO si se proporcionan
+            if datos_usuario:
+                self._validar_y_actualizar_usuario(usuario, datos_usuario, id_usuario)
+            
+            # Verificar que se haya actualizado al menos un campo
+            if not datos_persona and not datos_usuario:
+                raise UsuarioServiceError("Debe proporcionar al menos datos_persona o datos_usuario para actualizar")
+            
+            # Asegurar que los objetos estén marcados como modificados
+            db.session.flush()
+            
+            # Guardar cambios
+            db.session.commit()
+            
+            # Refrescar los objetos para obtener los valores actualizados
+            db.session.refresh(usuario)
+            if datos_persona and usuario.persona:
+                db.session.refresh(usuario.persona)
+            
+            self.logger.info(f"Usuario actualizado exitosamente: ID {id_usuario}")
+            
+            # Retornar datos actualizados
+            return {
+                'success': True,
+                'message': 'Usuario actualizado exitosamente',
+                'data': self._serializar_usuario(usuario),
+                'status_code': 200
+            }
+            
+        except UsuarioServiceError:
+            db.session.rollback()
+            raise
+        except IntegrityError as e:
+            db.session.rollback()
+            self.logger.error(f"Error de integridad al actualizar usuario: {str(e)}")
+            raise UsuarioServiceError("Error de duplicación de datos")
+        except Exception as e:
+            db.session.rollback()
+            self.logger.error(f"Error inesperado al actualizar usuario: {str(e)}")
+            raise UsuarioServiceError(f"Error interno del servidor: {str(e)}")
+    
+    def _validar_y_actualizar_usuario(
+        self, 
+        usuario: Usuario, 
+        datos: Dict[str, Any],
+        id_usuario: int
+    ) -> None:
+        """
+        Valida y actualiza los datos del usuario.
+        
+        Nota: La contraseña NO se actualiza desde este método.
+        Para cambiar la contraseña, debe usarse un endpoint dedicado.
+        
+        Args:
+            usuario (Usuario): Objeto Usuario a actualizar
+            datos (Dict): Datos a actualizar
+            id_usuario (int): ID del usuario (para validaciones de unicidad)
+            
+        Raises:
+            UsuarioServiceError: Si hay errores de validación
+        """
+        # Validar nombre de usuario si se proporciona
+        if 'usuario' in datos:
+            nuevo_usuario = datos['usuario'].strip()
+            
+            # Validar longitud
+            if len(nuevo_usuario) < 3:
+                raise UsuarioServiceError("El nombre de usuario debe tener al menos 3 caracteres")
+            
+            if len(nuevo_usuario) > 200:
+                raise UsuarioServiceError("El nombre de usuario excede la longitud máxima (200 caracteres)")
+            
+            # Validar unicidad (excluyendo el usuario actual)
+            usuario_existente = Usuario.query.filter_by(usuario=nuevo_usuario).filter(
+                Usuario.id_usuario != id_usuario
+            ).first()
+            
+            if usuario_existente:
+                raise UsuarioServiceError(f"Ya existe un usuario con el nombre {nuevo_usuario}")
+            
+            usuario.usuario = nuevo_usuario
+        
+        # No permitir actualizar contraseña desde este endpoint
+        if 'password' in datos:
+            raise UsuarioServiceError("La contraseña no se puede actualizar desde este endpoint. Use el endpoint dedicado para cambio de contraseña")
+        
+        # No permitir actualizar estado desde este endpoint
+        if 'estado' in datos:
+            raise UsuarioServiceError("El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar usuarios")
+    
+    def _validar_y_actualizar_persona(
+        self, 
+        persona: Persona, 
+        datos: Dict[str, Any],
+        id_persona: int
+    ) -> None:
+        """
+        Valida y actualiza los datos de la persona.
+        
+        Args:
+            persona (Persona): Objeto Persona a actualizar
+            datos (Dict): Datos a actualizar
+            id_persona (int): ID de la persona (para validaciones de unicidad)
+            
+        Raises:
+            UsuarioServiceError: Si hay errores de validación
+        """
+        campos_actualizados = []
+        # Validar y actualizar nombre completo
+        if 'primer_nombre' in datos:
+            primer_nombre = datos['primer_nombre'].strip()
+            if len(primer_nombre) > 50:
+                raise UsuarioServiceError("El primer nombre excede la longitud máxima (50 caracteres)")
+            if persona.primer_nombre != primer_nombre:
+                persona.primer_nombre = primer_nombre
+                campos_actualizados.append('primer_nombre')
+        
+        if 'segundo_nombre' in datos:
+            segundo_nombre = datos.get('segundo_nombre', '').strip() if datos.get('segundo_nombre') else None
+            if segundo_nombre and len(segundo_nombre) > 50:
+                raise UsuarioServiceError("El segundo nombre excede la longitud máxima (50 caracteres)")
+            if persona.segundo_nombre != segundo_nombre:
+                persona.segundo_nombre = segundo_nombre
+                campos_actualizados.append('segundo_nombre')
+        
+        if 'primer_apellido' in datos:
+            primer_apellido = datos['primer_apellido'].strip()
+            if len(primer_apellido) > 50:
+                raise UsuarioServiceError("El primer apellido excede la longitud máxima (50 caracteres)")
+            if persona.primer_apellido != primer_apellido:
+                persona.primer_apellido = primer_apellido
+                campos_actualizados.append('primer_apellido')
+        
+        if 'segundo_apellido' in datos:
+            segundo_apellido = datos.get('segundo_apellido', '').strip() if datos.get('segundo_apellido') else None
+            if segundo_apellido and len(segundo_apellido) > 50:
+                raise UsuarioServiceError("El segundo apellido excede la longitud máxima (50 caracteres)")
+            if persona.segundo_apellido != segundo_apellido:
+                persona.segundo_apellido = segundo_apellido
+                campos_actualizados.append('segundo_apellido')
+        
+        # Validar y actualizar documento
+        if 'documento' in datos:
+            documento = str(datos['documento']).strip()
+            if len(documento) < 6:
+                raise UsuarioServiceError("El documento debe tener al menos 6 dígitos")
+            
+            # Validar unicidad (excluyendo la persona actual)
+            documento_existente = Persona.query.filter_by(documento=documento).filter(
+                Persona.id_persona != id_persona
+            ).first()
+            
+            if documento_existente:
+                raise UsuarioServiceError(f"Ya existe una persona con el documento {documento}")
+            
+            if persona.documento != documento:
+                persona.documento = documento
+                campos_actualizados.append('documento')
+        
+        # Validar y actualizar correo electrónico
+        if 'correo_electronico' in datos:
+            email = datos['correo_electronico'].strip().lower()
+            
+            # Validar formato básico
+            if '@' not in email or '.' not in email.split('@')[-1]:
+                raise UsuarioServiceError("Formato de email inválido")
+            
+            # Validar unicidad (excluyendo la persona actual)
+            email_existente = Persona.query.filter_by(correo_electronico=email).filter(
+                Persona.id_persona != id_persona
+            ).first()
+            
+            if email_existente:
+                raise UsuarioServiceError(f"Ya existe una persona con el email {email}")
+            
+            if persona.correo_electronico != email:
+                persona.correo_electronico = email
+                campos_actualizados.append('correo_electronico')
+        
+        # Actualizar dirección
+        if 'direccion' in datos:
+            nueva_direccion = datos['direccion'].strip() if datos['direccion'] else None
+            if persona.direccion != nueva_direccion:
+                persona.direccion = nueva_direccion
+                campos_actualizados.append('direccion')
+        
+        # Validar y actualizar teléfono
+        if 'telefono' in datos:
+            telefono = str(datos['telefono']).strip()
+            if len(telefono) < 7 or len(telefono) > 20:
+                raise UsuarioServiceError("El teléfono debe tener entre 7 y 20 caracteres")
+            if persona.telefono != telefono:
+                persona.telefono = telefono
+                campos_actualizados.append('telefono')
+        
+        # Validar y actualizar relaciones
+        if 'id_tipo_documento' in datos:
+            from src.models.catalogos.tipo_documento import TipoDocumento
+            tipo_doc = TipoDocumento.query.get(datos['id_tipo_documento'])
+            if not tipo_doc:
+                raise UsuarioServiceError(f"Tipo de documento con ID {datos['id_tipo_documento']} no encontrado")
+            if persona.id_tipo_documento != datos['id_tipo_documento']:
+                persona.id_tipo_documento = datos['id_tipo_documento']
+                campos_actualizados.append('id_tipo_documento')
+        
+        if 'id_sexo' in datos:
+            from src.models.categorias.sexo import Sexo
+            sexo = Sexo.query.get(datos['id_sexo'])
+            if not sexo:
+                raise UsuarioServiceError(f"Sexo con ID {datos['id_sexo']} no encontrado")
+            if persona.id_sexo != datos['id_sexo']:
+                persona.id_sexo = datos['id_sexo']
+                campos_actualizados.append('id_sexo')
+        
+        # No permitir actualizar estado desde este endpoint
+        if 'estado' in datos:
+            raise UsuarioServiceError("El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar personas")
+        
+        # Log de campos actualizados
+        if campos_actualizados:
+            self.logger.info(f"Campos de persona actualizados: {', '.join(campos_actualizados)}")
+        else:
+            self.logger.warning(f"No se actualizaron campos de persona (todos los valores son iguales a los existentes)")
 
     def obtener_detalle_completo_usuario(self, id_usuario: int, usuario_obj: Optional[Usuario] = None) -> Optional[Dict[str, Any]]:
         """

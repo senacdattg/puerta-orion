@@ -18,7 +18,7 @@ from ..models.roles_y_permisos.rol import Rol
 from ..models.roles_y_permisos.usuario_rol import UsuarioRol
 from ..middleware.auth_decorator import token_required
 from ..utils.logger import obtener_registrador
-from ..services.Auth.usuario_service import usuario_service
+from ..services.Auth.usuario_service import usuario_service, UsuarioServiceError
 
 # Crear Blueprint de usuarios
 usuarios_bp = Blueprint('usuarios', __name__, url_prefix='/api/usuarios')
@@ -126,6 +126,162 @@ def obtener_detalle_usuario(id_usuario):
             'error': 'Error interno del servidor',
             'status_code': 500
         }), 500
+
+@usuarios_bp.route('/<int:id_usuario>', methods=['PUT', 'OPTIONS'])
+@cross_origin(methods=['PUT', 'OPTIONS'])
+@token_required()  # Habilitar autenticación
+def actualizar_usuario(id_usuario):
+    """
+    Endpoint para actualizar los datos de un usuario.
+    
+    Permite actualizar tanto datos de la persona como datos del usuario.
+    Puede actualizar SOLO datos_usuario, SOLO datos_persona, o AMBOS.
+    La contraseña y el estado NO se pueden actualizar desde este endpoint.
+    
+    Los datos se envían en el body JSON con dos secciones opcionales (al menos una es requerida):
+    - datos_persona: campos de la persona (nombres, apellidos, documento, etc.) - OPCIONAL
+    - datos_usuario: campos del usuario (solo usuario, NO contraseña ni estado) - OPCIONAL
+    
+    Headers requeridos:
+    Authorization: Bearer <token>
+    
+    Ejemplos de Body JSON:
+    
+    Ejemplo 1: Actualizar solo el nombre de usuario
+    {
+        "datos_usuario": {
+            "usuario": "nuevo_usuario"
+        }
+    }
+    
+    Ejemplo 2: Actualizar solo datos de persona
+    {
+        "datos_persona": {
+            "primer_nombre": "Juan",
+            "correo_electronico": "juan@example.com"
+        }
+    }
+    
+    Ejemplo 3: Actualizar ambos (persona y usuario)
+    {
+        "datos_persona": {
+            "primer_nombre": "Juan",
+            "segundo_nombre": "Carlos",
+            "primer_apellido": "Pérez",
+            "segundo_apellido": "González",
+            "documento": "12345678",
+            "correo_electronico": "juan@example.com",
+            "telefono": "1234567890",
+            "direccion": "Calle 123",
+            "id_tipo_documento": 1,
+            "id_sexo": 1
+        },
+        "datos_usuario": {
+            "usuario": "nuevo_usuario"
+        }
+    }
+    
+    Campos disponibles en datos_persona:
+    - primer_nombre (string): Primer nombre
+    - segundo_nombre (string, opcional): Segundo nombre
+    - primer_apellido (string): Primer apellido
+    - segundo_apellido (string, opcional): Segundo apellido
+    - documento (string): Número de documento
+    - correo_electronico (string): Correo electrónico
+    - telefono (string): Número de teléfono
+    - direccion (string): Dirección de residencia
+    - id_tipo_documento (int): ID del tipo de documento
+    - id_sexo (int): ID del sexo/género
+    
+    Campos disponibles en datos_usuario:
+    - usuario (string): Nombre de usuario
+    
+    NOTA: La contraseña y el estado NO se pueden actualizar desde este endpoint
+    
+    Returns:
+        JSON: Usuario actualizado o error
+    """
+    try:
+        # Validar que la petición sea JSON
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type debe ser application/json',
+                'status_code': 400
+            }), 400
+        
+        # Obtener datos del JSON
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Datos requeridos',
+                'status_code': 400
+            }), 400
+        
+        # Separar datos de persona y usuario (opcionales)
+        # Nota: datos_persona primero, datos_usuario segundo (orden lógico)
+        datos_persona = data.get('datos_persona')
+        datos_usuario = data.get('datos_usuario')
+        
+        # Validar que al menos se proporcione un tipo de datos
+        if not datos_persona and not datos_usuario:
+            return jsonify({
+                'success': False,
+                'error': 'Debe proporcionar al menos datos_persona o datos_usuario',
+                'status_code': 400
+            }), 400
+        
+        # Validar que no se intente actualizar la contraseña
+        if datos_usuario and 'password' in datos_usuario:
+            return jsonify({
+                'success': False,
+                'error': 'La contraseña no se puede actualizar desde este endpoint. Use el endpoint dedicado para cambio de contraseña',
+                'status_code': 400
+            }), 400
+        
+        # Validar que no se intente actualizar el estado
+        if datos_usuario and 'estado' in datos_usuario:
+            return jsonify({
+                'success': False,
+                'error': 'El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar usuarios',
+                'status_code': 400
+            }), 400
+        
+        if datos_persona and 'estado' in datos_persona:
+            return jsonify({
+                'success': False,
+                'error': 'El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar personas',
+                'status_code': 400
+            }), 400
+        
+        # Llamar al servicio para actualizar
+        # Nota: El orden es datos_persona primero, luego datos_usuario
+        resultado = usuario_service.actualizar_usuario(
+            id_usuario=id_usuario,
+            datos_persona=datos_persona,
+            datos_usuario=datos_usuario
+        )
+        
+        return jsonify(resultado), resultado.get('status_code', 200)
+        
+    except UsuarioServiceError as e:
+        logger.error(f"Error de servicio al actualizar usuario: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'status_code': 400
+        }), 400
+        
+    except Exception as e:
+        logger.error(f"Error inesperado al actualizar usuario: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
 
 @usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])
 @cross_origin(methods=['PUT', 'OPTIONS'])
