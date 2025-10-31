@@ -29,25 +29,37 @@
         >
           <td class="user-name">{{ user.usuario }}</td>
           <td class="user-role">
-            <span :class="['badge', roleColor(user.roles[0]?.nombre_rol)]">
-              {{ user.roles[0]?.nombre_rol || 'Sin rol' }}
-            </span>
+            <div class="roles-badges">
+              <span
+                v-for="rol in user.roles"
+                :key="rol.id_rol"
+                :class="['badge', roleColor(rol.nombre_rol)]"
+              >
+                {{ rol.nombre_rol }}
+              </span>
+              <span v-if="!user.roles || user.roles.length === 0" class="badge badge-none">Sin rol</span>
+            </div>
           </td>
           <td class="user-action">
-            <select
-              :value="user.roles[0]?.id_rol"
-              @change="updateRole(user, $event.target.value)"
-              class="role-select"
-              :disabled="loading"
-            >
-              <option
-                v-for="rol in roles"
+            <div class="roles-checkboxes">
+              <label
+                v-for="rol in rolesFiltrados"
                 :key="rol.value"
-                :value="rol.value"
+                class="role-checkbox-label"
+                :class="{ 'role-checkbox-checked': userRolesIds(user).includes(rol.value) }"
+                :title="rol.label"
               >
-                {{ rol.label }}
-              </option>
-            </select>
+                <input
+                  type="checkbox"
+                  :value="rol.value"
+                  :checked="userRolesIds(user).includes(rol.value)"
+                  @change="handleRoleChange(user, rol.value, $event.target.checked)"
+                  :disabled="loading"
+                  class="role-checkbox"
+                />
+                <span class="role-checkbox-text">{{ rol.label }}</span>
+              </label>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -55,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import usuariosService from '@/services/usuariosService';
 
 const props = defineProps({
@@ -89,17 +101,25 @@ async function cargarDatos() {
 
     if (usuariosResponse.success) {
       users.value = usuariosResponse.data;
-      // Emitir al padre la lista cargada
+      // Resetear selecciones cuando se cargan nuevos usuarios
+      userRolesSelections.value = {};
       emit('usuarios-cargados', users.value);
     } else {
       throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
     }
 
     if (rolesResponse.success) {
-      roles.value = rolesResponse.data.map(rol => ({
-        value: rol.id_rol,
-        label: rol.nombre_rol
-      }));
+      // Solo mostrar Entrenador y Administrador (excluir SuperAdmin, Usuario, Deportista, Acudiente)
+      const rolesPermitidos = ['entrenador', 'administrador'];
+      roles.value = rolesResponse.data
+        .filter(rol => {
+          const nombreLower = rol.nombre_rol.toLowerCase();
+          return rolesPermitidos.includes(nombreLower);
+        })
+        .map(rol => ({
+          value: rol.id_rol,
+          label: rol.nombre_rol
+        }));
     } else {
       throw new Error(rolesResponse.error || 'Error al cargar roles');
     }
@@ -109,6 +129,19 @@ async function cargarDatos() {
   } finally {
     loading.value = false;
   }
+}
+
+// Obtener IDs de roles del usuario (todos)
+function userRolesIds(user) {
+  return (user.roles || []).map(r => r.id_rol);
+}
+
+// Obtener IDs de roles gestionables del usuario (solo Entrenador y Administrador)
+function userGestionableRolesIds(user) {
+  const rolesPermitidos = ['entrenador', 'administrador'];
+  return (user.roles || [])
+    .filter(r => rolesPermitidos.includes(r.nombre_rol?.toLowerCase()))
+    .map(r => r.id_rol);
 }
 
 // Filtrar usuarios localmente
@@ -134,42 +167,79 @@ watch(
   { immediate: true }
 );
 
-// Actualizar rol de usuario
-async function updateRole(user, newRoleId) {
+// Roles filtrados (sin SuperAdmin)
+const rolesFiltrados = computed(() => roles.value);
+
+// Manejar cambio de checkbox de rol
+const userRolesSelections = ref({}); // Guardar selecciones temporales por usuario
+
+function handleRoleChange(user, roleId, checked) {
+  const userId = user.id_usuario;
+
+  // Si no existe selección previa, inicializar con roles gestionables actuales del usuario
+  if (!userRolesSelections.value[userId]) {
+    userRolesSelections.value[userId] = [...userGestionableRolesIds(user)];
+  }
+
+  // Actualizar selección en el estado
+  if (checked) {
+    if (!userRolesSelections.value[userId].includes(roleId)) {
+      userRolesSelections.value[userId].push(roleId);
+    }
+  } else {
+    userRolesSelections.value[userId] = userRolesSelections.value[userId].filter(id => id !== roleId);
+  }
+
+  const newSelection = [...userRolesSelections.value[userId]];
+
+  // Cancelar timeout anterior si existe
+  if (userRolesSelections.value[`${userId}_timeout`]) {
+    clearTimeout(userRolesSelections.value[`${userId}_timeout`]);
+  }
+
+  // Guardar una copia inmutable de los roles para enviar después del delay
+  const rolesToSend = [...newSelection];
+
+  // Aplicar cambios después de un pequeño delay para evitar múltiples llamadas
+  userRolesSelections.value[`${userId}_timeout`] = setTimeout(() => {
+    updateRoles(user, rolesToSend);
+  }, 500);
+}
+
+// Actualizar múltiples roles de usuario
+async function updateRoles(user, selectedRoleIds) {
   try {
     loading.value = true;
-    error.value = null; // Limpiar errores previos
+    error.value = null;
 
-    const response = await usuariosService.cambiarRolUsuario(user.id_usuario, newRoleId);
+    const response = await usuariosService.cambiarRolUsuario(user.id_usuario, selectedRoleIds);
 
     if (response.success) {
       // Actualizar el usuario localmente
       const userIndex = users.value.findIndex(u => u.id_usuario === user.id_usuario);
       if (userIndex !== -1) {
-        // Forzar la reactividad creando un nuevo array
         const updatedUsers = [...users.value];
         updatedUsers[userIndex] = {
-          ...updatedUsers[userIndex], // Mantener datos existentes
-          roles: response.data.roles  // Solo actualizar los roles
+          ...updatedUsers[userIndex],
+          roles: response.data.roles
         };
-        users.value = updatedUsers; // Asignar el nuevo array
+        users.value = updatedUsers;
 
-        // Debug: verificar que se actualizó
-        console.log('Usuario actualizado:', updatedUsers[userIndex]);
-        // Notificar al padre el usuario actualizado
+        // Resetear selecciones solo con roles gestionables del estado actual
+        userRolesSelections.value[user.id_usuario] = [...userGestionableRolesIds(updatedUsers[userIndex])];
+
         emit('usuario-actualizado', updatedUsers[userIndex]);
       }
 
-      console.log(`Rol actualizado: ${user.usuario} ahora es ${response.data.roles[0]?.nombre_rol}`);
-
-      // Mostrar notificación de éxito
-      alert(`✅ Rol actualizado exitosamente!\nUsuario: ${user.usuario} ahora es ${response.data.roles[0]?.nombre_rol}`);
+      const rolesNames = response.data.roles.map(r => r.nombre_rol).join(', ');
+      console.log(`Roles actualizados: ${user.usuario} ahora tiene: ${rolesNames}`);
     } else {
-      throw new Error(response.error || 'Error al actualizar rol');
+      throw new Error(response.error || 'Error al actualizar roles');
     }
   } catch (err) {
     error.value = err.message;
-    console.error('Error al actualizar rol:', err);
+    console.error('Error al actualizar roles:', err);
+    alert(`❌ Error al actualizar roles: ${err.message}`);
   } finally {
     loading.value = false;
   }
@@ -336,6 +406,133 @@ function roleColor(role) {
   border: 1px solid #e5e7eb;
 }
 
+.badge-none {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.roles-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.roles-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 200px;
+  max-width: 250px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.role-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-checkbox-label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background-color: #3b82f6;
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.role-checkbox-label:hover {
+  background-color: #f0f9ff;
+  border-color: #93c5fd;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.role-checkbox-label:hover::before {
+  transform: scaleY(1);
+}
+
+.role-checkbox-label.role-checkbox-checked,
+.role-checkbox-label:has(.role-checkbox:checked) {
+  background-color: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.role-checkbox-label.role-checkbox-checked::before,
+.role-checkbox-label:has(.role-checkbox:checked)::before {
+  transform: scaleY(1);
+}
+
+.role-checkbox-label.role-checkbox-checked .role-checkbox-text,
+.role-checkbox-label:has(.role-checkbox:checked) .role-checkbox-text {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.role-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+  border-radius: 4px;
+  border: 2px solid #d1d5db;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.role-checkbox:hover {
+  border-color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.role-checkbox:checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.role-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+.role-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.role-checkbox-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  user-select: none;
+  transition: color 0.3s ease;
+  flex: 1;
+}
+
+.role-checkbox-label:hover .role-checkbox-text {
+  color: #1e40af;
+}
+
 select {
   padding: 8px 12px;
   border: 2px solid #d1d5db;
@@ -371,6 +568,60 @@ select:hover {
     padding: 12px 16px;
   }
 
+  .roles-checkboxes {
+    min-width: 160px;
+    max-width: 200px;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .role-checkbox-label {
+    padding: 8px 10px;
+    gap: 10px;
+  }
+
+  .role-checkbox {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+  }
+
+  .role-checkbox-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .roles-checkboxes {
+    min-width: 140px;
+    max-width: 180px;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .role-checkbox-label {
+    padding: 6px 8px;
+    gap: 8px;
+  }
+
+  .role-checkbox {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+  }
+
+  .role-checkbox-text {
+    font-size: 11px;
+  }
+
+  select {
+    min-width: 120px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 768px) {
   select {
     min-width: 120px;
     font-size: 12px;

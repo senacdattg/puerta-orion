@@ -14,7 +14,7 @@ import jwt
 from datetime import datetime
 from functools import wraps
 from typing import Dict, Any, Optional, Callable
-from flask import request, jsonify, g, current_app
+from flask import request, jsonify, g, current_app, make_response
 
 from ..models.base import db
 from ..models.usuarios.usuario import Usuario
@@ -156,6 +156,21 @@ class TokenRequired:
         """
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            # Permitir peticiones OPTIONS (preflight CORS) sin autenticación
+            if request.method == 'OPTIONS':
+                response = make_response()
+                origin = request.headers.get('Origin')
+                if origin:
+                    response.headers.add('Access-Control-Allow-Origin', origin)
+                else:
+                    response.headers.add('Access-Control-Allow-Origin', '*')
+                response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+                response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+                response.headers.add('Access-Control-Allow-Credentials', 'true')
+                response.headers.add('Access-Control-Max-Age', '3600')
+                response.status_code = 200
+                return response
+            
             try:
                 # Extraer token del header Authorization
                 token = self._extraer_token()

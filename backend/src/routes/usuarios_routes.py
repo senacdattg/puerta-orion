@@ -9,7 +9,7 @@ Responsabilidad:
 Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_cors import cross_origin
 
 from ..models.base import db
@@ -24,7 +24,8 @@ usuarios_bp = Blueprint('usuarios', __name__, url_prefix='/api/usuarios')
 logger = obtener_registrador('aplicacion')
 
 
-@usuarios_bp.route('/', methods=['GET'])
+@usuarios_bp.route('/', methods=['GET', 'OPTIONS'])
+@cross_origin(methods=['GET', 'OPTIONS'])
 @token_required()  # Habilitar autenticación
 def listar_usuarios():
     """
@@ -84,8 +85,7 @@ def listar_usuarios():
         }), 500
 
 
-@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])
-@cross_origin(methods=['PUT', 'OPTIONS'])
+@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT'])
 @token_required()  # Habilitar autenticación
 def cambiar_rol_usuario(id_usuario):
     """
@@ -121,15 +121,19 @@ def cambiar_rol_usuario(id_usuario):
                 'status_code': 400
             }), 400
         
-        # Validar que se proporcione id_rol
-        if 'id_rol' not in data:
+        # Validar que se proporcione id_rol o id_roles (array)
+        id_rol = data.get('id_rol')
+        id_roles = data.get('id_roles', [])
+        
+        # Normalizar a lista: si viene id_rol único, convertirlo a lista
+        if id_rol is not None and not id_roles:
+            id_roles = [id_rol]
+        elif not id_rol and not id_roles:
             return jsonify({
                 'success': False,
-                'error': 'Campo id_rol requerido',
+                'error': 'Debe proporcionar id_rol o id_roles (array)',
                 'status_code': 400
             }), 400
-        
-        id_rol = data['id_rol']
         
         # Verificar que el usuario existe
         usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
@@ -140,25 +144,59 @@ def cambiar_rol_usuario(id_usuario):
                 'status_code': 404
             }), 404
         
-        # Verificar que el rol existe
-        rol = Rol.query.filter_by(id_rol=id_rol).first()
-        if not rol:
+        # Validar y obtener roles (solo permitir Entrenador y Administrador)
+        roles_permitidos = ['entrenador', 'administrador']
+        roles_excluidos = ['superadmin', 'super_admin', 'usuario', 'deportista', 'acudiente']
+        roles_validos = []
+        for rid in id_roles:
+            if not isinstance(rid, int):
+                try:
+                    rid = int(rid)
+                except (ValueError, TypeError):
+                    continue
+            rol = Rol.query.filter_by(id_rol=rid).first()
+            if rol:
+                nombre_lower = rol.nombre_rol.lower()
+                # Solo permitir Entrenador y Administrador
+                if nombre_lower in roles_permitidos:
+                    roles_validos.append(rol)
+                elif nombre_lower in roles_excluidos:
+                    logger.warning(f"Intento de asignar rol {rol.nombre_rol} a usuario {id_usuario}, ignorado (rol automático o no permitido)")
+        
+        if not roles_validos:
             return jsonify({
                 'success': False,
-                'error': f'Rol con ID {id_rol} no encontrado',
-                'status_code': 404
-            }), 404
+                'error': 'Solo se pueden asignar los roles Entrenador y Administrador manualmente',
+                'status_code': 400
+            }), 400
         
-        # Eliminar roles actuales del usuario
-        UsuarioRol.query.filter_by(id_usuario=id_usuario).delete()
+        # Obtener roles actuales del usuario
+        roles_actuales_usuario = UsuarioRol.query.filter_by(id_usuario=id_usuario).all()
         
-        # Asignar nuevo rol
-        nuevo_usuario_rol = UsuarioRol(
-            id_usuario=id_usuario,
-            id_rol=id_rol
-        )
+        # Identificar roles automáticos (Usuario, Deportista, Acudiente) que NO se deben eliminar
+        roles_automaticos = ['usuario', 'deportista', 'acudiente']
         
-        db.session.add(nuevo_usuario_rol)
+        # Eliminar solo los roles gestionables manualmente (Entrenador, Administrador)
+        # y SuperAdmin si existe, preservando los roles automáticos
+        roles_gestionables_eliminados = []
+        for ur in roles_actuales_usuario:
+            rol_obj = Rol.query.get(ur.id_rol)
+            if rol_obj:
+                nombre_lower = rol_obj.nombre_rol.lower()
+                # Eliminar solo Entrenador, Administrador y SuperAdmin (no los automáticos)
+                if nombre_lower in ('entrenador', 'administrador', 'superadmin', 'super_admin'):
+                    db.session.delete(ur)
+                    roles_gestionables_eliminados.append(ur.id_rol)
+        
+        # Agregar TODOS los roles válidos que vienen en la petición
+        # (ya los eliminamos arriba, así que simplemente agregamos todos los nuevos)
+        for rol in roles_validos:
+            nuevo_usuario_rol = UsuarioRol(
+                id_usuario=id_usuario,
+                id_rol=rol.id_rol
+            )
+            db.session.add(nuevo_usuario_rol)
+        
         db.session.commit()
         
         # Obtener datos actualizados del usuario
@@ -190,14 +228,6 @@ def cambiar_rol_usuario(id_usuario):
             'error': 'Error interno del servidor',
             'status_code': 500
         }), 500
-
-
-# Espejo con barra final para evitar redirecciones en preflight
-@usuarios_bp.route('/<int:id_usuario>/rol/', methods=['PUT', 'OPTIONS'])
-@cross_origin(methods=['PUT', 'OPTIONS'])
-@token_required()
-def cambiar_rol_usuario_con_slash(id_usuario):
-    return cambiar_rol_usuario(id_usuario)
 
 
 # Manejadores de errores específicos del Blueprint
