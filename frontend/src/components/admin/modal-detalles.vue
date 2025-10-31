@@ -30,7 +30,7 @@
         <!-- Información general -->
         <div class="seccion-detalles">
           <h5>📋 Información General</h5>
-
+          
           <!-- Modo vista -->
           <div v-if="!editando" class="grid-detalles">
             <div class="detalle-item">
@@ -103,36 +103,36 @@
                   <small class="hint">Usa el método por defecto de esta mensualidad.</small>
                 </div>
 
-                <div class="campo-formulario">
-                  <label for="estado-edicion">
-                    <i class="fas fa-info-circle"></i>
+            <div class="campo-formulario">
+              <label for="estado-edicion">
+                <i class="fas fa-info-circle"></i>
                     Estado (visual)
-                  </label>
+              </label>
                   <select id="estado-edicion" v-model="formEdicion.estado_ui" class="select-edicion">
                     <option value="Pendiente">Pendiente</option>
-                    <option value="Pagado">Pagado</option>
-                  </select>
+                <option value="Pagado">Pagado</option>
+              </select>
                   <small class="hint">El estado real lo fija el saldo pendiente (0 = Pagado).</small>
-                </div>
+            </div>
 
-                <div class="campo-formulario">
-                  <label for="valor-edicion">
-                    <i class="fas fa-dollar-sign"></i>
-                    Valor Total *
-                  </label>
-                  <div class="input-with-symbol">
-                    <span class="dollar-symbol">$</span>
-                    <input id="valor-edicion" v-model="formEdicion.valorSinSimbolo" type="number" placeholder="80000"
-                      class="input-edicion" required @input="actualizarValorConSimbolo" />
-                  </div>
+            <div class="campo-formulario">
+              <label for="valor-edicion">
+                <i class="fas fa-dollar-sign"></i>
+                Valor Total *
+              </label>
+              <div class="input-with-symbol">
+                <span class="dollar-symbol">$</span>
+                <input id="valor-edicion" v-model="formEdicion.valorSinSimbolo" type="number" placeholder="80000"
+                  class="input-edicion" required @input="actualizarValorConSimbolo" />
+              </div>
                   <small class="hint">Es el valor base de cada mensualidad.</small>
-                </div>
+            </div>
 
                 <div class="campo-formulario" style="grid-column:1 / -1;max-width:360px;margin:0 auto;">
                   <label for="saldo-edicion">
                     <i class="fas fa-balance-scale"></i>
                     Saldo Pendiente
-                  </label>
+              </label>
                   <input id="saldo-edicion" v-model.number="formEdicion.saldo_pendiente" type="number" class="input-edicion" placeholder="0" />
                   <small class="hint">Si eliges “Pagado”, se guardará con saldo 0 automáticamente.</small>
                 </div>
@@ -145,23 +145,23 @@
               <h6>Fechas y vigencia</h6>
               <p class="descripcion-seccion">Controla vigencia y confirma cuándo quedó pago.</p>
               <div class="grid-detalles">
-                <div class="campo-formulario">
-                  <label for="vencimiento-edicion">
-                    <i class="fas fa-clock"></i>
-                    Fecha de Vencimiento
-                  </label>
+            <div class="campo-formulario">
+              <label for="vencimiento-edicion">
+                <i class="fas fa-clock"></i>
+                Fecha de Vencimiento
+              </label>
                   <input id="vencimiento-edicion" v-model="formEdicion.fecha_vencimiento" type="date"
-                    class="input-edicion" />
-                </div>
+                class="input-edicion" />
+            </div>
 
-                <div class="campo-formulario">
+            <div class="campo-formulario">
                   <label>
                     <i class="fas fa-calendar-check"></i>
                     Fecha de Pago
-                  </label>
+              </label>
                   <input type="date" :value="formEdicion.fecha_pago" class="input-edicion" disabled />
                   <small class="hint">Se llena sola cuando el saldo llega a 0.</small>
-                </div>
+            </div>
 
                 <div class="campo-formulario">
                   <label>
@@ -173,7 +173,7 @@
                           :class="{ on: formEdicion.activo }"
                           @click="formEdicion.activo = !formEdicion.activo">
                     {{ formEdicion.activo ? 'Activo' : 'Inactivo' }}
-                  </button>
+                </button>
                   <small class="hint">Click para activar/desactivar.</small>
                 </div>
               </div>
@@ -211,8 +211,8 @@
                 </div>
                 <div class="campo-formulario" style="align-self:end;">
                   <button type="button" class="btn btn-primary" @click="registrarAbono" v-if="puedeAbonar">Registrar Abono</button>
-                </div>
-              </div>
+          </div>
+        </div>
             </div>
             <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='abonos'"></div>
           </div>
@@ -242,7 +242,7 @@
                 <span class="resumen-valor estado" :class="getClaseEstado()">{{ getEstadoPago() }}</span>
               </div>
             </div>
-
+            
             <div class="lista-pagos">
               <h6>Fechas de pago y abonos</h6>
               <div v-if="listaPagosYAbonos().length > 0" class="pagos-list">
@@ -516,7 +516,7 @@ function mostrarVencimiento() {
     } catch {
       // ignorar formato inválido y caer al fallback
     }
-  }
+    }
   return props.mensualidad.vencimiento || '—';
 }
 
@@ -635,7 +635,7 @@ function iniciarEdicionAbono(index) {
     monto: Number(original.monto) || 0,
     id_metodo_pago: original.id_metodo_pago
   };
-}
+  }
 
 async function guardarEdicionAbono() {
   const ed = abonoEdit.value;

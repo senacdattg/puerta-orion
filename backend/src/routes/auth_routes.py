@@ -277,6 +277,96 @@ def obtener_permisos_usuario():
         }), 500
 
 
+@auth_bp.route('/role-permissions', methods=['GET'])
+@token_required()
+def obtener_permisos_por_rol():
+    """
+    Endpoint para obtener los permisos de un rol específico.
+    Requiere el nombre del rol como parámetro de consulta 'role_name'.
+    Solo devuelve permisos si el usuario autenticado tiene ese rol.
+    """
+    try:
+        # Obtener usuario actual
+        usuario_data = get_current_user()
+        if not usuario_data:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no autenticado',
+                'status_code': 401
+            }), 401
+        
+        # Obtener el nombre del rol del query string
+        role_name = request.args.get('role_name')
+        if not role_name:
+            return jsonify({
+                'success': False,
+                'error': 'Parámetro "role_name" es requerido',
+                'status_code': 400
+            }), 400
+        
+        # Obtener el objeto Usuario desde la base de datos
+        from ..models.usuarios.usuario import Usuario
+        from ..models.roles_y_permisos.rol import Rol
+        usuario_actual = Usuario.query.get(usuario_data['id_usuario'])
+        if not usuario_actual:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado',
+                'status_code': 404
+            }), 404
+        
+        # Verificar que el usuario tenga el rol solicitado
+        tiene_rol = False
+        if hasattr(usuario_actual, 'roles') and usuario_actual.roles:
+            tiene_rol = any(rol.nombre_rol == role_name for rol in usuario_actual.roles)
+        
+        if not tiene_rol:
+            return jsonify({
+                'success': False,
+                'error': f'El usuario no tiene el rol "{role_name}"',
+                'status_code': 403
+            }), 403
+        
+        # Buscar el rol en la base de datos
+        rol = Rol.query.filter_by(nombre_rol=role_name).first()
+        if not rol:
+            return jsonify({
+                'success': False,
+                'error': f'Rol "{role_name}" no encontrado',
+                'status_code': 404
+            }), 404
+        
+        # Obtener permisos del rol
+        permisos_rol = []
+        if hasattr(rol, 'permisos') and rol.permisos:
+            permisos_rol = [permiso.nombre for permiso in rol.permisos]
+        
+        # Ordenar permisos
+        permisos_lista = sorted(permisos_rol)
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'rol': {
+                    'id_rol': rol.id_rol,
+                    'nombre_rol': rol.nombre_rol,
+                    'descripcion': rol.descripcion
+                },
+                'permisos': permisos_lista,
+                'total_permisos': len(permisos_lista)
+            },
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        logger.error(f'Error al obtener permisos del rol: {str(e)}')
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
 @auth_bp.route('/debug-roles', methods=['GET'])
 def debug_roles():
     """

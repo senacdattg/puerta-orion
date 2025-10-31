@@ -56,7 +56,7 @@ export const navigationConfig = [
     route: '/admin-manager',
     icon: 'fas fa-cog',
     colorClass: 'nav-card--red',
-    roles: ['Administrador', 'Entrenador']
+    roles: ['Administrador', 'SuperAdmin']
   },
   {
     id: 'deportistas',
@@ -89,6 +89,15 @@ export function useUserRole() {
    * @returns {string} Nombre del rol activo
    */
   const userRole = computed(() => {
+    // PRIORIDAD 1: Usar el rol activo del store (si fue seleccionado explícitamente)
+    const activeRole = authStore.activeRole
+    if (activeRole) {
+      if (activeRole === 'SuperAdmin' || activeRole === 'Administrador') {
+        return 'Admin'
+      }
+      return activeRole
+    }
+
     const userRoles = authStore.userRoles
 
     if (!userRoles || userRoles.length === 0) {
@@ -103,70 +112,24 @@ export function useUserRole() {
       return role.toString()
     })
 
-    // Lista de roles válidos para validación
-    const ROLES_VALIDOS = ['Deportista', 'Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin', 'Usuario', 'usuario']
-
-    // Función para validar y limpiar el rol guardado
-    function validarRolGuardado(rol) {
-      if (!rol || typeof rol !== 'string') return null
-      const rolLimpio = rol.trim()
-      if (ROLES_VALIDOS.includes(rolLimpio)) {
-        return rolLimpio
+    // PRIORIDAD 2: Si tiene UN SOLO rol, usar ese (automático)
+    if (roleNames.length === 1) {
+      const singleRole = roleNames[0]
+      if (singleRole === 'SuperAdmin' || singleRole === 'Administrador') {
+        return 'Admin'
       }
-      return null
+      return singleRole
     }
 
-    // Verificar si hay un rol activo guardado en localStorage
-    const rolActivoGuardadoRaw = localStorage.getItem('rolActivo')
-    const rolActivoGuardado = validarRolGuardado(rolActivoGuardadoRaw)
-
-    // Si hay un valor corrupto, limpiarlo
-    if (rolActivoGuardadoRaw && !rolActivoGuardado) {
-      console.warn('🧹 Limpiando rol corrupto de localStorage:', rolActivoGuardadoRaw)
-      localStorage.removeItem('rolActivo')
-    }
-
-    // Si hay un rol activo guardado válido y está disponible en los roles del usuario, usarlo
-    if (rolActivoGuardado && roleNames.includes(rolActivoGuardado)) {
-      return rolActivoGuardado
-    }
-
-    // Si no hay rol activo o no está disponible, usar jerarquía de prioridades
-    const rolePriority = ['Administrador', 'Entrenador', 'Acudiente', 'Deportista']
-
-    for (const role of rolePriority) {
-      if (roleNames.includes(role)) {
-        // Guardar el rol principal como activo si no había uno guardado válido
-        if (!rolActivoGuardado) {
-          localStorage.setItem('rolActivo', role)
-        }
-        return role
-      }
-    }
-
-    const rolPorDefecto = roleNames[0] || 'Usuario'
-    // Guardar el rol por defecto si no había uno guardado válido
-    if (!rolActivoGuardado && rolPorDefecto !== 'Usuario') {
-      localStorage.setItem('rolActivo', rolPorDefecto)
-    }
-
-    return rolPorDefecto
+    // PRIORIDAD 3: Si tiene MÚLTIPLES roles pero NO ha seleccionado uno, devolver null/UsuarioSinAuth
+    // NO usar fallback automático para evitar asignar Admin por defecto
+    return 'UsuarioSinAuth'
   })
 
   /**
    * Función helper para extraer nombres de roles
    */
-  const getRoleNames = () => {
-    const userRoles = authStore.userRoles
-    if (!userRoles || userRoles.length === 0) return []
-
-    return userRoles.map(role => {
-      if (typeof role === 'string') return role
-      if (role.nombre_rol) return role.nombre_rol
-      if (role.rol) return role.rol
-      return role.toString()
-    })
-  }
+  // Nota: getRoleNames no se utiliza actualmente; eliminar para evitar warning del linter
 
   /**
    * Verifica si el usuario es administrador o entrenador (basado en el rol activo)

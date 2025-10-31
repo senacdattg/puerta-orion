@@ -42,27 +42,27 @@ function getNombreRolSimple(rol) {
   return ''
 }
 
-// Función para obtener el rol principal (prioridad: Acudiente > Deportista > otros)
+// Función para obtener el rol principal (prioridad: Admin > Entrenador > Acudiente > Deportista)
 function obtenerRolPrincipal(roles) {
   if (!roles || roles.length === 0) return 'usuario'
 
-  // Convertir roles a nombres simples
-  const nombresRoles = roles.map(rol => getNombreRolSimple(rol))
+  // Aceptar tanto objetos como strings
+  const nombresRoles = roles.map(rol => getNombreRolSimple(rol) || rol)
 
-  // Prioridad de roles
-  if (nombresRoles.includes('Acudiente')) return 'Acudiente'
-  if (nombresRoles.includes('Deportista')) return 'Deportista'
+  if (nombresRoles.includes('SuperAdmin')) return 'Administrador'
   if (nombresRoles.includes('Administrador')) return 'Administrador'
   if (nombresRoles.includes('Entrenador')) return 'Entrenador'
+  if (nombresRoles.includes('Acudiente')) return 'Acudiente'
+  if (nombresRoles.includes('Deportista')) return 'Deportista'
 
-  // Retornar el primer rol disponible (excluyendo Usuario)
-  const rolSinUsuario = nombresRoles.find(r => r !== 'Usuario' && r !== 'usuario')
-  return rolSinUsuario || nombresRoles[0] || 'usuario'
+  const primero = nombresRoles.find(r => r && r !== 'Usuario' && r !== 'usuario')
+  return primero || 'usuario'
 }
 
 const rolesDisponibles = computed(() => {
-  if (!authStore.user?.roles) return []
-  return authStore.user.roles
+  const roles = authStore.user?.roles || []
+  // Normalizar a nombres simples
+  return roles.map(r => getNombreRolSimple(r) || r).filter(Boolean)
 })
 
 // Lista de roles válidos para validación
@@ -80,45 +80,10 @@ function validarRol(rol) {
   return null
 }
 
-// Función para inicializar el rol activo
-function inicializarRolActivo() {
-  const rolGuardadoRaw = localStorage.getItem('rolActivo')
-  const rolGuardado = validarRol(rolGuardadoRaw)
-  const roles = authStore.user?.roles || []
+// Eliminado: lógica antigua basada en localStorage (sustituida por authStore.activeRole)
 
-  // Si hay un rol guardado corrupto o inválido, limpiarlo
-  if (rolGuardadoRaw && !rolGuardado) {
-    console.warn('🧹 Limpiando rol corrupto de localStorage:', rolGuardadoRaw)
-    localStorage.removeItem('rolActivo')
-  }
-
-  // Si hay un rol guardado válido y está disponible y no es Usuario, usarlo
-  if (rolGuardado && roles.some(r => getNombreRolSimple(r) === rolGuardado)) {
-    // Si el rol guardado es Usuario, buscar otro rol disponible
-    if (rolGuardado === 'Usuario' || rolGuardado === 'usuario') {
-      const rolPrincipal = obtenerRolPrincipal(roles)
-      if (rolPrincipal && rolPrincipal !== 'Usuario' && rolPrincipal !== 'usuario') {
-        localStorage.setItem('rolActivo', rolPrincipal)
-        return rolPrincipal
-      }
-    }
-    return rolGuardado
-  }
-
-  // Si no, usar el rol principal (prioridad: Acudiente > Deportista > otros)
-  if (roles.length > 0) {
-    const rolPrincipal = obtenerRolPrincipal(roles)
-    if (rolPrincipal && rolPrincipal !== 'Usuario' && rolPrincipal !== 'usuario') {
-      localStorage.setItem('rolActivo', rolPrincipal)
-      return rolPrincipal
-    }
-  }
-
-  return 'usuario'
-}
-
-// Obtener el rol activo del localStorage o el rol principal
-const rolActivo = ref(inicializarRolActivo())
+// Obtener el rol activo: preferir store.activeRole, si no, elegir por prioridad
+const rolActivo = ref(authStore.activeRole || obtenerRolPrincipal(rolesDisponibles.value))
 
 // Función para obtener el nombre del rol (maneja tanto strings como objetos)
 function getNombreRol(rol) {
@@ -154,7 +119,7 @@ function getNombreRol(rol) {
   return JSON.stringify(rol)
 }
 
-function cambiarRol(event) {
+async function cambiarRol(event) {
   // Obtener el valor seleccionado
   const nuevoRol = event?.target?.value || rolActivo.value
 
@@ -180,9 +145,13 @@ function cambiarRol(event) {
     return
   }
 
-  // Actualizar el estado con el rol validado
+  // Actualizar el estado con el rol validado y cargar permisos desde el store
   rolActivo.value = rolValidado
-  localStorage.setItem('rolActivo', rolValidado)
+  try {
+    await authStore.setActiveRole?.(rolValidado)
+  } catch (e) {
+    console.warn('No se pudo establecer el rol activo en el store:', e)
+  }
 
   // Redirigir según el rol activo a los paneles específicos
   const rutasPorRol = {
@@ -197,7 +166,7 @@ function cambiarRol(event) {
 
   // Redirigir siempre al cambiar de rol para asegurar que se muestre el panel correcto
   if (ruta && router.currentRoute.value.path !== ruta) {
-    router.push(ruta).catch((err) => {
+    router.replace(ruta).catch((err) => {
       // Si hay un error de navegación, forzar navegación
       console.error('Error de navegación:', err)
       window.location.href = ruta
@@ -216,14 +185,18 @@ watch(() => authStore.user?.roles, (nuevosRoles) => {
       const nuevoRolPrincipal = obtenerRolPrincipal(nuevosRoles)
       if (nuevoRolPrincipal && nuevoRolPrincipal !== 'Usuario' && nuevoRolPrincipal !== 'usuario') {
         rolActivo.value = nuevoRolPrincipal
-        localStorage.setItem('rolActivo', nuevoRolPrincipal)
-
-        // Redirigir solo si es necesario
         cambiarRol({ target: { value: nuevoRolPrincipal } })
       }
     }
   }
 }, { immediate: true })
+
+// Mantener sincronía si el rol activo en el store cambia desde otra parte
+watch(() => authStore.activeRole, (nuevo) => {
+  if (nuevo && nuevo !== rolActivo.value) {
+    rolActivo.value = nuevo
+  }
+})
 </script>
 
 <style scoped>

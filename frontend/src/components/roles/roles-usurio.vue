@@ -1,8 +1,17 @@
 <template>
   <main class="contenedor-roles">
     <div class="contenedor">
-      <div class="titulo">ROLES DEL USUARIO</div>
+      <div class="titulo"> GESTIÓN DE ROLES </div>
 
+      <!-- Selector de vista actual -->
+      <div class="selector-rol">
+        <label class="label">Vista actual:</label>
+        <select v-model="rolActual" @change="cambiarRol" class="select-rol">
+          <option v-for="r in rolesDisponibles" :key="r" :value="r">{{ r }}</option>
+        </select>
+      </div>
+
+      <!-- Roles asignados (visual) -->
       <div class="tarjetas">
         <div v-for="(rol, index) in roles" :key="index" class="sub-contenedor"
           :class="{ inactivo: !usuarioRoles.includes(rol.nombre) }">
@@ -16,19 +25,18 @@
       <button class="boton" @click="accionBoton">Volver</button>
     </div>
   </main>
-</template>
+  </template>
 
 <script setup>
 import { useRouter } from "vue-router"
-import { defineProps, ref } from "vue"
+import { defineProps, ref, computed, onMounted } from "vue"
+import { useAuthStore } from "@/stores/auth"
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const props = defineProps({
-  usuarioRoles: {
-    type: Array,
-    default: () => []
-  }
+  usuarioRoles: { type: Array, default: () => [] }
 })
 
 const roles = ref([
@@ -39,7 +47,53 @@ const roles = ref([
   { nombre: "Administrador", icono: "fa-solid fa-user-gear" }
 ])
 
-function accionBoton() {
-  router.push("/ver-general")
+// Roles del usuario (desde props o store)
+const usuarioRoles = computed(() => {
+  const list = props.usuarioRoles && props.usuarioRoles.length
+    ? props.usuarioRoles
+    : (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol)
+  return list
+})
+
+// Lista para el selector (solo roles que posee)
+const rolesDisponibles = computed(() => usuarioRoles.value)
+
+// Rol actual tomado del store
+const rolActual = ref(authStore.activeRole || rolesDisponibles.value[0] || 'Usuario')
+
+async function cambiarRol() {
+  const nombreRol = rolActual.value
+  await authStore.setActiveRole(nombreRol) // carga permisos del rol
+  // Navegar según rol elegido
+  switch (nombreRol) {
+    case 'SuperAdmin':
+    case 'Administrador':
+      router.replace('/admin-manager'); break
+    case 'Entrenador':
+      router.replace('/home'); break
+    case 'Deportista':
+      router.replace('/deportista/dashboard'); break
+    case 'Acudiente':
+      router.replace('/acudiente/dashboard'); break
+    default:
+      router.replace('/home');
+  }
 }
+
+function accionBoton() {
+  router.push('/ver-general')
+}
+
+onMounted(() => {
+  // Sincronizar el valor inicial con el store si existe
+  if (authStore.activeRole && rolesDisponibles.value.includes(authStore.activeRole)) {
+    rolActual.value = authStore.activeRole
+  }
+})
 </script>
+
+<style scoped>
+.selector-rol { display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; }
+.label { font-weight: 600; }
+.select-rol { padding: .5rem .75rem; border-radius: .5rem; border: 1px solid #e5e7eb; }
+</style>
