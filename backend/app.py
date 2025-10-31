@@ -93,6 +93,9 @@ def create_app(config_name=None):
     from src.routes.auth_routes import registrar_auth_routes
     registrar_auth_routes(app)
 
+    from src.routes.auth_reset import registrar_auth_reset_routes
+    registrar_auth_reset_routes(app)
+
     from src.routes.pagos_routes import pagos_bp
     from src.routes.catalogos_routes import catalogos_bp
     from src.routes.dynamic_data_routes import dynamic_data_bp
