@@ -1,6 +1,6 @@
 <template>
   <div class="deportista-dashboard-page">
-    <HeaderDeportista />
+    <Encabezado />
 
     <TituloClub />
 
@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import HeaderDeportista from '@/components/deportistas/HeaderDeportista.vue'
+import Encabezado from '@/components/layout/encabezado.vue'
 import SidebarDeportista from '@/components/deportistas/SidebarDeportista.vue'
 import CardDeportista from '@/components/deportistas/CardDeportista.vue'
 import PerfilModal from '@/components/deportistas/PerfilModal.vue'
