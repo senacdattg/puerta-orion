@@ -48,11 +48,11 @@
   /* ===== TIPOGRAFÍA ===== */
   --tamano-fuente-xs: 0.75rem;   /* 12px */
   --tamano-fuente-sm: 0.875rem;  /* 14px */
-  --tamano-fuente-base: 1rem;     /* 16px */
-  --tamano-fuente-lg: 1.125rem;   /* 18px */
-  --tamano-fuente-xl: 1.25rem;    /* 20px */
-  --tamano-fuente-xxl: 1.5rem;    /* 24px */
-  --tamano-fuente-xxxl: 2rem;     /* 32px */
+  --tamano-fuente-base: clamp(0.95rem, 0.5vw + 0.85rem, 1rem);
+  --tamano-fuente-lg: clamp(1.05rem, 0.6vw + 0.9rem, 1.125rem);
+  --tamano-fuente-xl: clamp(1.2rem, 0.8vw + 1rem, 1.25rem);
+  --tamano-fuente-xxl: clamp(1.35rem, 1vw + 1.1rem, 1.5rem);
+  --tamano-fuente-xxxl: clamp(1.6rem, 1.4vw + 1.2rem, 2rem);
 
   /* ===== PESOS DE FUENTE ===== */
   --peso-fuente-normal: 400;
@@ -113,6 +113,39 @@
 /* Grid */
 .d-grid { display: grid; }
 .grid-center { place-items: center; }
+
+/* Contenedores fluidos */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--espaciado-md);
+  padding-right: var(--espaciado-md);
+}
+@media (min-width: 576px) { .container { max-width: 540px; } }
+@media (min-width: 768px) { .container { max-width: 720px; } }
+@media (min-width: 992px) { .container { max-width: 960px; } }
+@media (min-width: 1200px) { .container { max-width: 1140px; } }
+@media (min-width: 1400px) { .container { max-width: 1320px; } }
+
+/* Utilidades de columnas con CSS Grid */
+.grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+@media (min-width: 768px) {
+  .md\:grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .md\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (min-width: 992px) {
+  .lg\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
 
 /* Texto */
 .text-center { text-align: center; }
@@ -182,4 +215,7 @@
   .d-sm-block { display: block; }
   .d-sm-flex { display: flex; }
 }
+
+/* Scroll horizontal suave para tablas/listas en móvil */
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 

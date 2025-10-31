@@ -5,7 +5,6 @@ import ActualizarDeportista from '@/views/actualizar-deportista.vue'
 import RegistrarDeportista from '@/views/registrar-deportista.vue'
 import VerDeportista from '@/views/ver-deportista.vue'
 import RegistrarGeneral from '@/views/registrar-general.vue'
-import VerGeneral from '@/views/ver-general.vue'
 import ActualizarGeneral from '@/views/actualizar-general.vue'
 import VerRoles from '@/views/vista-roles.vue'
 import TablaMensualidades from '@/views/mensualidades.vue'
@@ -82,12 +81,6 @@ const router = createRouter({
       name: 'registrar-general',
       component: RegistrarGeneral,
       meta: { requiresGuest: true }
-    },
-    {
-      path: '/ver-general',
-      name: 'ver-general',
-      component: VerGeneral,
-      meta: { requiresAuth: true }
     },
     {
       path: '/actualizar-general',
