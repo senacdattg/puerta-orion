@@ -22,7 +22,7 @@ const rolUsuario = computed(() => {
 
 <template>
   <main>
-    <Encabezado :rol="rolUsuario"/>
+    <Encabezado />
     <Titulo />
     <CalendarioComponent :rol="rolUsuario" />
     <Pie />

@@ -11,7 +11,7 @@
     <div v-if="!sinMenu && authStore.estaAutenticado" class="usuario-info">
       <router-link to="/perfil" class="usuario-nombre usuario-link">
         <i class="fas fa-user-circle"></i>
-        {{ authStore.nombreUsuario || 'Usuario' }}
+        {{ nombreUsuario }}
       </router-link>
     </div>
 
@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import SelectorRoles from './selector-roles.vue'
@@ -49,10 +49,6 @@ const authStore = useAuthStore()
 
 // Props
 const props = defineProps({
-  rol: {
-    type: String,
-    default: ''
-  },
   sinMenu: {
     type: Boolean,
     default: false
@@ -62,6 +58,45 @@ const props = defineProps({
 // Estado
 const menuVisible = ref(false)
 const opciones = ref([])
+
+// Computed para obtener el rol del usuario desde la sesión
+const userRole = computed(() => {
+  if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
+    return 'Usuario'
+  }
+
+  // Obtener el primer rol del usuario (o el más relevante)
+  const roles = authStore.user.roles
+  const roleNames = roles.map(role =>
+    typeof role === 'string' ? role : role.nombre_rol
+  )
+
+  // Priorizar roles en orden de importancia
+  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
+    return 'Admin'
+  } else if (roleNames.includes('Entrenador')) {
+    return 'Entrenador'
+  } else if (roleNames.includes('Deportista')) {
+    return 'Deportista'
+  } else if (roleNames.includes('Acudiente')) {
+    return 'Acudiente'
+  } else if (roleNames.includes('usuario')) {
+    return 'Aspirante'
+  }
+
+  return 'Usuario'
+})
+
+// Computed para obtener el nombre del usuario
+const nombreUsuario = computed(() => {
+  if (authStore.user && authStore.user.persona) {
+    return authStore.user.persona.nombre_completo ||
+           authStore.user.persona.primer_nombre ||
+           authStore.user.username ||
+           'Usuario'
+  }
+  return authStore.user?.username || 'Usuario'
+})
 
 // Métodos
 function toggleMenu() {
@@ -94,23 +129,31 @@ function cargarOpciones() {
     Aspirante: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Entrenador: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
       { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Acudiente: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
       { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+      { texto: "Mis Deportistas", link: "/ver-acudidos", icono: "fas fa-child" },
       { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
+      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Deportista: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/ver-deportista", icono: "fas fa-user" },
+      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
       { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
+      { texto: "Eventos", link: "/eventos", icono: "fas fa-calendar-check" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Admin: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
@@ -120,13 +163,35 @@ function cargarOpciones() {
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
       { texto: "Panel Admin", link: "/admin-manager", icono: "fas fa-cog" },
+    ],
+    Usuario: [
+      { texto: "Inicio", link: "/home", icono: "fas fa-home" },
+      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ]
   }
 
-  opciones.value = opcionesPorRol[props.rol] || [
-    { texto: "Inicio", link: "/home", icono: "fas fa-home" }
-  ]
+  const rolActual = userRole.value
+  opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['Usuario']
+
+  console.log(`🔍 Menú cargado para rol: ${rolActual}`, opciones.value)
 }
+
+// Watcher para recargar opciones cuando cambie el rol del usuario
+watch(userRole, (newRole, oldRole) => {
+  if (newRole !== oldRole) {
+    console.log(`🔄 Rol cambiado de ${oldRole} a ${newRole}`)
+    cargarOpciones()
+  }
+})
+
+// Watcher para recargar opciones cuando cambie el estado de autenticación
+watch(() => authStore.user, (newUser, oldUser) => {
+  if (newUser !== oldUser) {
+    console.log('🔄 Usuario cambiado, recargando menú')
+    cargarOpciones()
+  }
+}, { deep: true })
 
 // Ciclo de vida
 onMounted(() => {
