@@ -193,13 +193,16 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid transparent;
+  border: 3px solid #FFD600;
+  background: transparent;
+  position: relative;
 }
 
 .profile-button:hover,
 .profile-button.active {
   border-color: #FFD600;
   transform: scale(1.05);
+  background: transparent;
 }
 
 .profile-image {
@@ -213,12 +216,12 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   border-radius: var(--radio-borde-circular);
-  background: rgba(255, 255, 255, 0.2);
+  background: #87CEEB; /* Sky blue - azul claro sólido */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-blanco);
-  font-size: var(--tamano-fuente-xl);
+  color: #ffffff; /* Icono blanco */
+  font-size: 22px;
 }
 
 .profile-dropdown {

@@ -18,6 +18,7 @@ from ..models.roles_y_permisos.rol import Rol
 from ..models.roles_y_permisos.usuario_rol import UsuarioRol
 from ..middleware.auth_decorator import token_required
 from ..utils.logger import obtener_registrador
+from ..services.Auth.usuario_service import usuario_service
 
 # Crear Blueprint de usuarios
 usuarios_bp = Blueprint('usuarios', __name__, url_prefix='/api/usuarios')
@@ -85,7 +86,49 @@ def listar_usuarios():
         }), 500
 
 
-@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT'])
+@usuarios_bp.route('/<int:id_usuario>/detalle', methods=['GET'])
+@token_required()  # Protegido con autenticación
+def obtener_detalle_usuario(id_usuario):
+    """
+    Endpoint para obtener la información completa de un usuario específico.
+
+    Incluye:
+    - Datos de usuario y persona
+    - Roles asignados
+    - Información específica por rol (deportista, acudiente)
+
+    Headers requeridos:
+    Authorization: Bearer <token>
+
+    Returns:
+        JSON: Estructura con la información completa o error
+    """
+    try:
+        detalle = usuario_service.obtener_detalle_completo_usuario(id_usuario)
+        if not detalle:
+            return jsonify({
+                'success': False,
+                'error': f'Usuario con ID {id_usuario} no encontrado',
+                'status_code': 404
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'message': 'Detalle de usuario obtenido exitosamente',
+            'data': detalle,
+            'status_code': 200
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener detalle de usuario: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])
+@cross_origin(methods=['PUT', 'OPTIONS'])
 @token_required()  # Habilitar autenticación
 def cambiar_rol_usuario(id_usuario):
     """

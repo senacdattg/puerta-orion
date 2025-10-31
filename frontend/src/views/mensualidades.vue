@@ -70,13 +70,36 @@ function mapMensualidadToCard(m) {
 }
 
 async function cargarMensualidades() {
-  loading.value = true; errorMsg.value = '';
+  loading.value = true; 
+  errorMsg.value = '';
   try {
+    console.log('🔄 [Mensualidades] Iniciando carga de mensualidades...');
     const res = await mensualidadesService.list();
+    console.log('📥 [Mensualidades] Respuesta del servicio:', res);
+    
+    if (!res) {
+      throw new Error('No se recibió respuesta del servidor');
+    }
+    
+    if (!res.success && res.error) {
+      throw new Error(res.error || 'Error al cargar mensualidades');
+    }
+    
     const items = res.data || [];
+    console.log('📊 [Mensualidades] Items recibidos:', items.length);
     mensualidades.value = items.map(mapMensualidadToCard);
+    console.log('✅ [Mensualidades] Mensualidades cargadas exitosamente:', mensualidades.value.length);
   } catch (e) {
+    console.error('❌ [Mensualidades] Error al cargar:', e);
     errorMsg.value = e?.message || 'Error cargando mensualidades';
+    // Mostrar mensaje de error más descriptivo
+    if (e?.message?.includes('403') || e?.message?.includes('Forbidden')) {
+      alert('No tienes permisos para ver mensualidades. Por favor, contacta al administrador.');
+    } else if (e?.message?.includes('401') || e?.message?.includes('Unauthorized')) {
+      alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+    } else {
+      alert(`Error al cargar mensualidades: ${e?.message || 'Error desconocido'}`);
+    }
   } finally {
     loading.value = false;
   }
@@ -164,13 +187,16 @@ onMounted(cargarMensualidades);
 
 <template>
   <main>
-    <Encabezado rol="Admin"/>
+    <Encabezado />
     <ListaMensualidades
       :mensualidades="mensualidades"
       @editar="editarMensualidad"
       @eliminar="eliminarMensualidad"
       @pagar="iniciarPago"
       @nueva="nuevaMensualidad"
+      @recargar="cargarMensualidades"
+      :loading="loading"
+      :error="errorMsg"
     />
     <Pie />
   </main>

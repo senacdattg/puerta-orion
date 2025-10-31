@@ -16,6 +16,7 @@ from ..services.Auth.auth_service import auth_service, AuthServiceError
 from ..services.Auth.profile_completion_service import profile_completion_service, ProfileCompletionError
 from ..middleware.auth_decorator import token_required, get_current_user
 from ..utils.logger import obtener_registrador
+from ..services.Auth.usuario_service import usuario_service
 
 
 # Crear Blueprint de autenticación
@@ -675,6 +676,83 @@ def obtener_perfil():
             'status_code': 500
         }), 500
 
+
+@auth_bp.route('/perfil/detalle', methods=['GET'])
+@token_required()
+def obtener_perfil_detalle():
+    """
+    Endpoint para obtener la información completa del usuario autenticado,
+    incluyendo datos por rol (deportista, acudiente).
+
+    Headers requeridos:
+    Authorization: Bearer <token>
+    """
+    try:
+        user = get_current_user()
+        if not user:
+            logger.warning("⚠️ Usuario no encontrado en el contexto de autenticación")
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado en el contexto',
+                'status_code': 401
+            }), 401
+
+        usuario_id = user.get('id_usuario')
+        username = user.get('username')
+        logger.info(f"[PERFIL] Obteniendo detalle para usuario ID: {usuario_id} (username: {username})")
+        
+        # Verificar que el ID del usuario sea válido
+        if not usuario_id or not isinstance(usuario_id, int):
+            logger.error(f"[PERFIL] ID de usuario invalido: {usuario_id} (tipo: {type(usuario_id)})")
+            return jsonify({
+                'success': False,
+                'error': 'ID de usuario inválido',
+                'status_code': 400
+            }), 400
+        
+        # Obtener el objeto Usuario del contexto si está disponible
+        from flask import g
+        usuario_obj = getattr(g, 'current_user_obj', None)
+        if usuario_obj:
+            logger.info(f"[PERFIL] Objeto Usuario obtenido del contexto: {usuario_obj.usuario}")
+        else:
+            logger.warning(f"[PERFIL] No se pudo obtener objeto Usuario del contexto, se buscará en BD")
+        
+        detalle = usuario_service.obtener_detalle_completo_usuario(usuario_id, usuario_obj=usuario_obj)
+        if not detalle:
+            logger.warning(f"[PERFIL] No se pudo obtener detalle completo para usuario ID: {user.get('id_usuario')}")
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado o inactivo',
+                'status_code': 404
+            }), 404
+        
+        # Si el detalle tiene un campo 'error', significa que faltan datos pero podemos retornar lo que hay
+        if 'error' in detalle and detalle.get('error'):
+            logger.warning(f"[PERFIL] Usuario ID {user.get('id_usuario')} tiene datos incompletos: {detalle.get('error')}")
+            # Retornar 200 pero con un warning en el mensaje
+            return jsonify({
+                'success': True,
+                'message': 'Información obtenida parcialmente. ' + detalle.get('error'),
+                'data': detalle,
+                'warning': detalle.get('error'),
+                'status_code': 200
+            }), 200
+
+        return jsonify({
+            'success': True,
+            'message': 'Detalle de perfil obtenido exitosamente',
+            'data': detalle,
+            'status_code': 200
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener detalle de perfil: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
 
 @auth_bp.route('/logout', methods=['POST'])
 @token_required()

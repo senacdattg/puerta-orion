@@ -518,6 +518,163 @@ class UsuarioService:
             self.logger.error(f"Error al obtener usuario con roles: {str(e)}")
             return None
 
+    def obtener_detalle_completo_usuario(self, id_usuario: int, usuario_obj: Optional[Usuario] = None) -> Optional[Dict[str, Any]]:
+        """
+        Obtiene la información completa de un usuario, incluyendo:
+        - Datos básicos del usuario y su persona
+        - Roles asignados
+        - Información específica por rol (Deportista, Acudiente, etc.)
+
+        Args:
+            id_usuario (int): ID del usuario
+            usuario_obj (Usuario, optional): Objeto Usuario ya obtenido. Si se proporciona, se usa directamente.
+
+        Returns:
+            Dict: Estructura con la información completa o None si no existe
+        """
+        try:
+            from src.models.deportistas.informacion_deportiva import InformacionDeportiva
+            from src.models.salud.diagnostico_deportista import DiagnosticoDeportista
+            from src.models.salud.diagnostico import Diagnostico
+            from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+            
+            self.logger.info(f"[DETALLE] Buscando detalle completo para usuario ID: {id_usuario}")
+            
+            # Si se proporciona el objeto usuario directamente, usarlo
+            if usuario_obj:
+                self.logger.info(f"[DETALLE] Usando usuario proporcionado: {usuario_obj.usuario} (ID: {usuario_obj.id_usuario}, estado: {usuario_obj.estado})")
+                usuario = usuario_obj
+            else:
+                # Primero buscar sin filtro de estado para ver si existe
+                usuario_sin_filtro = Usuario.query.filter_by(id_usuario=id_usuario).first()
+                if usuario_sin_filtro:
+                    self.logger.info(f"[DETALLE] Usuario encontrado sin filtro de estado: {usuario_sin_filtro.usuario}, estado: {usuario_sin_filtro.estado}")
+                
+                # Buscar primero con estado activo
+                usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
+                
+                # Si no se encuentra activo pero existe, usar el inactivo (ya pasó autenticación)
+                if not usuario and usuario_sin_filtro:
+                    self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} existe pero está inactivo, usando de todas formas (token válido)")
+                    usuario = usuario_sin_filtro
+                
+                if not usuario:
+                    self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} no encontrado en la base de datos")
+                    return None
+
+            self.logger.info(f"[DETALLE] Usuario encontrado: {usuario.usuario} (ID: {usuario.id_usuario}, estado: {usuario.estado})")
+
+            # Obtener persona completa
+            persona = usuario.persona
+            if not persona:
+                self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} no tiene persona asociada (id_persona: {usuario.id_persona})")
+                # Retornar al menos la información básica del usuario
+                return {
+                    'usuario': {
+                        'usuario': usuario.usuario
+                    },
+                    'persona': None,
+                    'error': 'El usuario no tiene una persona asociada'
+                }
+
+            self.logger.info(f"[DETALLE] Persona encontrada: {persona.primer_nombre} {persona.primer_apellido} (ID: {persona.id_persona})")
+
+            # Obtener fecha_nacimiento de deportista si existe, si no None
+            fecha_nacimiento_persona = None
+            deportista_temp = Deportista.query.filter_by(id_persona=persona.id_persona).first()
+            if deportista_temp and deportista_temp.fecha_nacimiento:
+                fecha_nacimiento_persona = deportista_temp.fecha_nacimiento
+
+            # Construir resultado base con estructura solicitada
+            resultado: Dict[str, Any] = {
+                'persona': {
+                    'primer_nombre': persona.primer_nombre,
+                    'segundo_nombre': persona.segundo_nombre,
+                    'primer_apellido': persona.primer_apellido,
+                    'segundo_apellido': persona.segundo_apellido,
+                    'documento': persona.documento,
+                    'correo_electronico': persona.correo_electronico,
+                    'direccion': persona.direccion,
+                    'telefono': persona.telefono,
+                    'fecha_nacimiento': fecha_nacimiento_persona,
+                    'id_tipo_documento': persona.id_tipo_documento,
+                    'id_sexo': persona.id_sexo
+                },
+                'usuario': {
+                    'usuario': usuario.usuario
+                }
+            }
+
+            # Deportista - información completa
+            deportista = Deportista.query.filter_by(id_persona=persona.id_persona).first()
+            if deportista:
+                resultado['deportista'] = {
+                    'id_deportista': deportista.id_deportista,
+                    'fecha_nacimiento': deportista.fecha_nacimiento,
+                    'id_tipo_sanguineo': deportista.id_tipo_sanguineo,
+                    'id_ciudad_recidencia': deportista.id_ciudad_recidencia,
+                    'id_eps': deportista.id_eps,
+                    'peso': deportista.peso,
+                    'altura': deportista.altura
+                }
+
+                # Información deportiva
+                if deportista.id_informacion_deportiva:
+                    info_deportiva = InformacionDeportiva.query.filter_by(
+                        id_informacion_deportiva=deportista.id_informacion_deportiva
+                    ).first()
+                    if info_deportiva:
+                        resultado['informacion_deportiva'] = {
+                            'practica_otro_deporte': info_deportiva.practica_otro_deporte,
+                            'participa_escuela': info_deportiva.participa_escuela,
+                            'recomendacion_medica': info_deportiva.recomendacion_medica,
+                            'descripcion_recomendacion': info_deportiva.descripcion_recomendacion,
+                            'id_escuela': info_deportiva.id_escuela,
+                            'id_deporte': info_deportiva.id_deporte,
+                            'id_institucion_registro': info_deportiva.id_institucion_registro,
+                            'id_categoria': deportista.id_categoria
+                        }
+
+                # Diagnósticos del deportista
+                diagnosticos_deportista = DiagnosticoDeportista.query.filter_by(
+                    id_deportista=deportista.id_deportista
+                ).all()
+
+                if diagnosticos_deportista:
+                    # Obtener IDs de diagnósticos
+                    ids_diagnosticos = [dd.id_diagnostico for dd in diagnosticos_deportista]
+                    resultado['diagnostico'] = ids_diagnosticos
+
+                    # Obtener tipo_enfermedad del primer diagnóstico
+                    if ids_diagnosticos:
+                        primer_diagnostico = Diagnostico.query.filter_by(
+                            id_diagnostico=ids_diagnosticos[0]
+                        ).first()
+                        if primer_diagnostico:
+                            resultado['tipo_enfermedad'] = primer_diagnostico.id_tipo_enfermedad
+
+            # Acudiente - información completa
+            acudiente = Acudiente.query.filter_by(id_persona=persona.id_persona).first()
+            if acudiente:
+                # Buscar relación DeportistaAcudiente para este acudiente
+                relacion = DeportistaAcudiente.query.filter_by(
+                    id_acudiente=acudiente.id_acudiente
+                ).first()
+
+                resultado['informacion_acudiente'] = {
+                    'id_acudiente': acudiente.id_acudiente,
+                    'es_respondable': relacion.es_responsable if relacion else False
+                }
+
+            self.logger.info(f"[DETALLE] Detalle completo obtenido exitosamente para usuario ID: {id_usuario}")
+            return resultado
+
+        except Exception as e:
+            self.logger.error(f"[DETALLE] Error al obtener detalle completo de usuario ID {id_usuario}: {str(e)}")
+            import traceback
+            self.logger.error(traceback.format_exc())
+            return None
+
 
 # Instancia global del servicio para uso en la aplicación
 usuario_service = UsuarioService()

@@ -16,7 +16,7 @@ from src.models.base import db
 from src.models.pagos.mensualidad import Mensualidad
 from src.utils.logger import logger
 from src.models.pagos.abono_mensualidad import AbonoMensualidad
-from src.middleware.auth_decorator import permission_required, get_current_user, has_role
+from src.middleware.auth_decorator import permission_required, get_current_user, has_role, token_required
 try:
     # Import defensivo: la ruta del modelo de Persona puede variar
     from src.models.personas.persona import Persona  # type: ignore
@@ -76,14 +76,50 @@ def parse_decimal(value):
 def listar_mensualidades():
     try:
         persona_id = request.args.get('persona_id', type=int)
-        # Restricción por rol: Deportista solo ve su persona; Acudiente debe indicar persona_id
+        # Restricción por rol: Deportista solo ve su persona; Acudiente puede ver sus acudidos
         user = get_current_user()
         if has_role('Deportista') and user and user.get('persona'):
             persona_id = user['persona'].get('id_persona')
-        if has_role('Acudiente'):
-            # Requiere persona_id explícito
-            if not persona_id:
-                return jsonify({'success': False, 'error': 'persona_id requerido para acudiente'}), 400
+        
+        # Para acudiente, si no se proporciona persona_id, mostrar todas las de sus acudidos
+        acudido_persona_ids = None
+        if has_role('Acudiente') and not persona_id:
+            # Obtener los deportistas asociados a este acudiente
+            from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+            from src.models.acudientes.acudiente import Acudiente
+            from src.models.deportistas.deportista import Deportista
+            
+            # Buscar el acudiente por persona
+            if user and user.get('persona'):
+                id_persona = user['persona'].get('id_persona')
+                acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
+                if acudiente:
+                    # Obtener los deportistas asociados
+                    relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=acudiente.id_acudiente).all()
+                    if relaciones:
+                        # Obtener los id_persona de los deportistas asociados
+                        deportista_ids = [rel.id_deportista for rel in relaciones]
+                        deportistas = Deportista.query.filter(Deportista.id_deportista.in_(deportista_ids)).all()
+                        acudido_persona_ids = [dep.id_persona for dep in deportistas if dep.id_persona]
+                        if not acudido_persona_ids:
+                            # Si no hay acudidos, retornar lista vacía
+                            return jsonify({
+                                'success': True,
+                                'data': [],
+                                'page': request.args.get('page', default=1, type=int),
+                                'per_page': request.args.get('per_page', default=20, type=int),
+                                'total': 0
+                            }), 200
+                else:
+                    # Si no se encuentra el acudiente, retornar lista vacía
+                    return jsonify({
+                        'success': True,
+                        'data': [],
+                        'page': request.args.get('page', default=1, type=int),
+                        'per_page': request.args.get('per_page', default=20, type=int),
+                        'total': 0
+                    }), 200
+        
         estado = request.args.get('estado')  # 'pagado' | 'pendiente' -> bool
         activo = request.args.get('activo', type=int)
         page = request.args.get('page', default=1, type=int)
@@ -93,6 +129,9 @@ def listar_mensualidades():
 
         if persona_id is not None:
             query = query.filter(Mensualidad.id_persona == persona_id)
+        elif acudido_persona_ids is not None:
+            # Filtrar por los id_persona de los acudidos
+            query = query.filter(Mensualidad.id_persona.in_(acudido_persona_ids))
 
         if estado in ('pagado', 'pendiente'):
             query = query.filter(Mensualidad.estado == (estado == 'pagado'))

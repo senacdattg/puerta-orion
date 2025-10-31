@@ -320,7 +320,11 @@ router.beforeEach(async (to, from, next) => {
 
       // Asegurar que los permisos estén cargados antes de validar
       if (!authStore.permissions || authStore.permissions.length === 0) {
-        try { await authStore.loadUserPermissions?.() } catch {}
+        try {
+          await authStore.loadUserPermissions?.()
+        } catch (e) {
+          console.warn('Error cargando permisos:', e)
+        }
       }
       const permisos = authStore.permissions || []
       const has = (Array.isArray(permisos) && permisos.includes(requiredPermission)) || (authStore.hasPermission && authStore.hasPermission(requiredPermission))

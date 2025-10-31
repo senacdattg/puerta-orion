@@ -263,6 +263,50 @@ class AuthService {
   }
 
   /**
+   * Obtener el detalle completo del perfil del usuario autenticado
+   * Incluye información completa por rol (deportista, acudiente, etc.)
+   */
+  async getProfileDetail() {
+    try {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/auth/perfil/detalle`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('❌ Error en getProfileDetail:', {
+          status: response.status,
+          statusText: response.statusText,
+          data
+        })
+        throw new Error(data.error || `Error al obtener detalle del perfil (${response.status})`)
+      }
+
+      // Si hay un warning, mostrarlo pero no fallar
+      if (data.warning) {
+        console.warn('⚠️ Advertencia al obtener detalle:', data.warning)
+      }
+
+      console.log('✅ Detalle del perfil obtenido:', data)
+      return data
+    } catch (error) {
+      console.error('Error al obtener detalle del perfil:', error)
+      throw error
+    }
+  }
+
+  /**
     * Completar perfil como deportista
     */
    async completarPerfilDeportista(datosDeportista) {

@@ -50,8 +50,22 @@
 
       <div class="linea-abajo"></div>
 
+      <!-- Estado de carga -->
+      <div v-if="props.loading" class="loading-state" style="text-align: center; padding: 40px;">
+        <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #004AAD; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+        <p style="margin-top: 15px; color: #64748b;">Cargando mensualidades...</p>
+      </div>
+
+      <!-- Estado de error -->
+      <div v-else-if="props.error" class="error-state" style="text-align: center; padding: 40px; background: #fee; border-radius: 8px; border: 1px solid #fcc; margin: 20px 0;">
+        <div style="color: #dc3545; font-size: 48px; margin-bottom: 15px;">⚠️</div>
+        <h4 style="color: #dc3545; margin-bottom: 10px;">Error al cargar mensualidades</h4>
+        <p style="color: #856404;">{{ props.error }}</p>
+        <button @click="$emit('recargar')" class="btn btn-primary" style="margin-top: 15px;">Intentar de nuevo</button>
+      </div>
+
       <!-- Grid de mensualidades -->
-      <div class="grid-mensualidades">
+      <div v-else class="grid-mensualidades">
         <TarjetaMensualidad v-for="mensualidad in mensualidadesFiltradas" :key="mensualidad.id"
           :mensualidad="mensualidad" @ver-detalle-completo="verDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
           @eliminar="eliminarMensualidad" />
@@ -62,7 +76,7 @@
       </div>
 
       <!-- Sin resultados -->
-      <div v-if="mensualidadesFiltradas.length === 0" class="sin-resultados mejorado">
+      <div v-if="!props.loading && !props.error && mensualidadesFiltradas.length === 0" class="sin-resultados mejorado">
         <div class="empty-card">
           <div class="empty-icon">🗂️</div>
           <h4 class="empty-title">No se encontraron mensualidades</h4>
@@ -161,6 +175,7 @@
             </div>
 
 
+
             <div class="campo-formulario">
               <label>
                 <i class="fas fa-info-circle"></i>
@@ -210,6 +225,14 @@ const props = defineProps({
     type: Array,
     required: true,
     default: () => []
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  error: {
+    type: String,
+    default: ''
   }
 });
 

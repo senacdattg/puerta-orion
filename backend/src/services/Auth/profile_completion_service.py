@@ -263,6 +263,28 @@ class AcudienteCreator(ProfileCreator):
                 "Ya existe una relación entre este acudiente y este deportista"
             )
         
+        # Validar que el acudiente no tenga más de 5 deportistas asociados
+        deportistas_acudiente = DeportistaAcudiente.query.filter_by(
+            id_acudiente=acudiente.id_acudiente
+        ).count()
+        
+        if deportistas_acudiente >= 5:
+            raise ProfileCompletionError(
+                "Un acudiente solo puede estar asociado a máximo 5 deportistas. "
+                f"Este acudiente ya tiene {deportistas_acudiente} deportista(s) asociado(s)."
+            )
+        
+        # Validar que el deportista no tenga más de 3 acudientes asociados
+        acudientes_deportista = DeportistaAcudiente.query.filter_by(
+            id_deportista=int(id_deportista)
+        ).count()
+        
+        if acudientes_deportista >= 3:
+            raise ProfileCompletionError(
+                "Un deportista solo puede estar asociado a máximo 3 acudientes. "
+                f"Este deportista ya tiene {acudientes_deportista} acudiente(s) asociado(s)."
+            )
+        
         # Crear la relación DeportistaAcudiente
         deportista_acudiente = DeportistaAcudiente(
             id_deportista=int(id_deportista),
