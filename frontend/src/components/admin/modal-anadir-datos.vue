@@ -11,7 +11,8 @@
         </button>
       </div>
 
-      <div class="modal-body">
+      <!-- Paso 1: elegir entidad -->
+      <div v-if="paso === 1" class="modal-body">
         <div class="seleccion-rol">
           <h3 class="paso-titulo">Selecciona el tipo de dato a gestionar</h3>
           <p class="paso-descripcion">Elige una categoría para crear o administrar datos base del sistema</p>
@@ -21,7 +22,8 @@
               v-for="item in items"
               :key="item.id"
               class="rol-option"
-              @click="abrirSeccion(item)"
+              :class="{ seleccionado: seleccionado?.id === item.id }"
+              @click="seleccionar(item)"
             >
               <div class="rol-icono">
                 <i :class="item.icono"></i>
@@ -35,9 +37,41 @@
         </div>
       </div>
 
+      <!-- Paso 2: formulario simple para la entidad seleccionada -->
+      <div v-else-if="paso === 2" class="modal-body">
+        <div class="formulario">
+          <div class="paso-header">
+            <button class="btn-volver" @click="volverPaso1">
+              <i class="fas fa-arrow-left"></i>
+              Volver
+            </button>
+            <h3 class="paso-titulo">Crear {{ seleccionado?.nombre }}</h3>
+          </div>
+
+          <form @submit.prevent="enviar">
+            <div class="form-grid">
+              <div class="form-item">
+                <label class="label">Nombre</label>
+                <input v-model.trim="form.nombre" type="text" class="input" placeholder="Nombre" required />
+              </div>
+              <div v-if="seleccionado?.id === 'eps'" class="form-item">
+                <label class="label">Código (opcional)</label>
+                <input v-model.trim="form.codigo" type="text" class="input" placeholder="Código EPS" />
+              </div>
+            </div>
+
+            <div class="footer-acciones">
+              <button type="button" class="btn btn--outline" @click="volverPaso1">Cancelar</button>
+              <button type="submit" class="btn btn--primary">Guardar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <div class="modal-footer">
-        <div class="footer-acciones">
+        <div v-if="paso === 1" class="footer-acciones">
           <button class="btn btn--outline" @click="cerrar">Cancelar</button>
+          <button class="btn btn--primary" :disabled="!seleccionado" @click="paso = 2">Continuar <i class="fas fa-arrow-right"></i></button>
         </div>
       </div>
     </div>
@@ -51,7 +85,7 @@ const props = defineProps({
   mostrar: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['cerrar'])
+const emit = defineEmits(['cerrar','guardar-dato'])
 
 const items = ref([
   { id: 'tipo_documento', nombre: 'Tipos de Documento', icono: 'fas fa-id-card', descripcion: 'Gestiona los tipos de documento' },
@@ -62,13 +96,27 @@ const items = ref([
   { id: 'metodo_pago', nombre: 'Métodos de Pago', icono: 'fas fa-money-check-alt', descripcion: 'Gestiona métodos de pago' }
 ])
 
+const paso = ref(1)
+const seleccionado = ref(null)
+const form = ref({ nombre: '', codigo: '' })
+
 function cerrar() {
   emit('cerrar')
 }
 
-function abrirSeccion(item) {
-  // Por ahora solo notifica; en el futuro puede navegar o abrir sub-formularios
-  alert(`Abrir gestión para: ${item.nombre}`)
+function seleccionar(item){
+  seleccionado.value = item
+}
+
+function volverPaso1(){
+  paso.value = 1
+  form.value = { nombre: '', codigo: '' }
+}
+
+function enviar(){
+  emit('guardar-dato', { entidad: seleccionado.value.id, ...form.value })
+  volverPaso1()
+  cerrar()
 }
 </script>
 
@@ -84,12 +132,18 @@ function abrirSeccion(item) {
 .roles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:30px}
 .rol-option{background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:25px;cursor:pointer;transition:all .3s ease;display:flex;align-items:center;gap:20px}
 .rol-option:hover{border-color:#0047ab;transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,71,171,.15)}
+.rol-option.seleccionado{border-color:#0047ab;background:#f8fbff;box-shadow:0 8px 25px rgba(0,71,171,.2)}
 .rol-icono{width:60px;height:60px;background:linear-gradient(135deg,#0047ab 0%,#0d47a1 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;flex-shrink:0}
 .rol-info{flex:1;text-align:left}
 .rol-nombre{font-size:1.2rem;font-weight:600;color:#333;margin:0 0 8px 0}
 .rol-descripcion{color:#666;margin:0;font-size:.9rem;line-height:1.4}
 .modal-footer{background:#f8f9fa;padding:20px 30px;border-top:1px solid #e0e0e0}
 .footer-acciones{display:flex;justify-content:flex-end;gap:15px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:16px}
+.form-item{display:flex;flex-direction:column;gap:6px}
+.label{font-size:.9rem;color:#555;font-weight:600}
+.input{padding:10px 12px;border:2px solid #d1d5db;border-radius:8px;background:#fff;color:#333;font-size:.95rem}
+.input:focus{outline:none;border-color:#0047ab;box-shadow:0 0 0 3px rgba(0,71,171,.15)}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s ease;text-decoration:none}
 .btn--outline{background-color:transparent;color:#6c757d;border:2px solid #6c757d}
 .btn--outline:hover{background-color:#6c757d;color:#fff}

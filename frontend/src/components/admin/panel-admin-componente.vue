@@ -125,7 +125,7 @@
       @usuario-registrado="manejarUsuarioRegistrado" />
 
     <!-- Modal Añadir Datos -->
-    <ModalAnadirDatos :mostrar="mostrarModalDatos" @cerrar="cerrarModalDatos" />
+    <ModalAnadirDatos :mostrar="mostrarModalDatos" @cerrar="cerrarModalDatos" @guardar-dato="onGuardarDato" />
   </main>
 </template>
 <script setup>
@@ -274,6 +274,11 @@ function abrirModalDatos() {
 
 function cerrarModalDatos() {
   mostrarModalDatos.value = false;
+}
+
+function onGuardarDato(payload) {
+  console.log('Añadir dato recibido:', payload)
+  // Aquí luego llamaremos a la API correspondiente según payload.entidad
 }
 
 function manejarUsuarioRegistrado(datosUsuario) {
