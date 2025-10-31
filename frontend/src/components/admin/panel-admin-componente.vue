@@ -284,7 +284,8 @@ async function onGuardarDato(payload) {
     const temaMap = {
       'ciudad': 'ciudad-residencia',
       'eps': 'eps',
-      'tipo-evento': 'tipo-evento'
+      'tipo-evento': 'tipo-evento',
+      'metodo_pago': 'metodo-pago'
     }
     
     const tema = temaMap[entidad]
@@ -296,18 +297,30 @@ async function onGuardarDato(payload) {
     }
     
     // Preparar datos según el tipo
-    const datos = { nombre: nombre.trim() }
+    let datos = {}
     
-    // Campos adicionales según entidad
-    if (entidad === 'eps') {
-      if (codigo) {
-        datos.codigo_eps = codigo.trim()
-      }
+    if (entidad === 'metodo_pago') {
+      // Para método de pago, el campo es nombre_metodo
+      datos.nombre_metodo = nombre.trim()
       // El estado se envía automáticamente si está en el payload
       if (payload.estado !== undefined) {
         datos.estado = payload.estado
       } else {
         datos.estado = true // Por defecto activo
+      }
+    } else {
+      datos.nombre = nombre.trim()
+      // Campos adicionales según entidad
+      if (entidad === 'eps') {
+        if (codigo) {
+          datos.codigo_eps = codigo.trim()
+        }
+        // El estado se envía automáticamente si está en el payload
+        if (payload.estado !== undefined) {
+          datos.estado = payload.estado
+        } else {
+          datos.estado = true // Por defecto activo
+        }
       }
     }
     

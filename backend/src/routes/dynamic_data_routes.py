@@ -10,6 +10,7 @@ from src.models import (
     TipoEvento,
     TipoEnfermedad
 )
+from src.models.pagos.metodo_pago import MetodoPago
 from src.models.roles_y_permisos.rol import Rol
 
 dynamic_data_bp = Blueprint('dynamic_data', __name__)
@@ -24,7 +25,8 @@ TEMA_MODELOS = {
     'institucion-registro': InstitucionRegistro,
     'tipo-evento': TipoEvento,
     'tipo-enfermedad': TipoEnfermedad,
-    'roles': Rol
+    'roles': Rol,
+    'metodo-pago': MetodoPago
 }
 
 # Mapeo de temas a nombres de campos
@@ -37,7 +39,8 @@ TEMA_CAMPOS = {
     'institucion-registro': 'nombre_institucion',
     'tipo-evento': 'nombre',
     'tipo-enfermedad': 'nombre',
-    'roles': 'nombre_rol'
+    'roles': 'nombre_rol',
+    'metodo-pago': 'nombre_metodo'
 }
 
 def validar_tema(tema):
