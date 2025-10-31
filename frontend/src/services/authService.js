@@ -428,6 +428,62 @@ class AuthService {
    }
 
   /**
+   * Solicitar recuperación de contraseña
+   */
+  async forgotPassword(email) {
+    try {
+      const response = await fetch(`${this.baseURL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Error al solicitar recuperación')
+      }
+
+      return { success: true, message: data.message || 'Se ha enviado un correo con las instrucciones para restablecer tu contraseña' }
+    } catch (error) {
+      console.error('Error en forgotPassword:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
+
+  /**
+   * Restablecer contraseña con token
+   */
+  async resetPassword(token, newPassword, confirmPassword) {
+    try {
+      const response = await fetch(`${this.baseURL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          new_password: newPassword,
+          confirm_password: confirmPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Error al restablecer contraseña')
+      }
+
+      return { success: true, message: data.message || 'Contraseña restablecida exitosamente' }
+    } catch (error) {
+      console.error('Error en resetPassword:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
+
+  /**
    * Actualizar datos de usuario
    */
   async updateUser(idUsuario, datosPersona = {}, datosUsuario = {}) {

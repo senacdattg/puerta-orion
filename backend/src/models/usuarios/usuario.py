@@ -42,6 +42,7 @@ class Usuario(BaseModel):
     # Si es solo una tabla de unión simple, se puede simplificar la relación 'roles'.
     # Para mantener la flexibilidad, mantendremos roles_usuarios.
     roles_usuarios = relationship('UsuarioRol', lazy=True)
+    password_reset_tokens = relationship('PasswordResetToken', back_populates='usuario', cascade='all, delete-orphan', lazy=True)
     
     def __repr__(self):
         """

@@ -1,38 +1,637 @@
-.contenedor-formulario {
+/* ===== VARIABLES CSS ===== */
+:root {
+  --color-primario: #0047ab;
+  --color-secundario: #f4d800;
+  --color-blanco: #ffffff;
+  --color-negro: #000000;
+  --color-gris-claro: #f8f9fa;
+  --color-gris-medio: #e9ecef;
+  --color-gris-oscuro: #6c757d;
+  --color-exito: #10b981;
+  --color-error: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  --color-court: #d4a574;
+  --color-court-line: #8b7355;
+  --color-net: #2d5016;
+
+  /* Sombras */
+  --sombra-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sombra-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sombra-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --sombra-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Bordes */
+  --radio-sm: 8px;
+  --radio-md: 12px;
+  --radio-lg: 16px;
+  --radio-full: 9999px;
+
+  /* Transiciones */
+  --transicion: all 0.2s ease-in-out;
+  --transicion-lenta: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== CONTENEDOR PRINCIPAL - TEMA VOLEIBOL ===== */
+.login-container-volleyball {
+  min-height: calc(100vh - 50px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  padding-bottom: 4rem; /* Espacio extra para evitar superposición con teclado móvil */
+  background: linear-gradient(135deg, #87ceeb 0%, #4682b4 50%, #87ceeb 100%);
+  background-size: 200% 200%;
+  animation: skyShift 15s ease infinite;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@keyframes skyShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ===== FONDO DE CANCHA ===== */
+.court-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.court-lines {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 400px;
+  transform: translateY(-50%);
+  background:
+    /* Línea central */
+    linear-gradient(to right,
+      transparent 48%,
+      var(--color-court-line) 48%,
+      var(--color-court-line) 52%,
+      transparent 52%
+    ),
+    /* Líneas laterales */
+    linear-gradient(to bottom,
+      transparent 0,
+      var(--color-court-line) 0,
+      var(--color-court-line) 2px,
+      transparent 2px,
+      transparent 398px,
+      var(--color-court-line) 398px,
+      var(--color-court-line) 400px,
+      transparent 400px
+    ),
+    /* Fondo de cancha */
+    radial-gradient(ellipse at center, var(--color-court) 0%, transparent 70%);
+  background-size: 100% 100%, 100% 100%, 100% 100%;
+}
+
+.court-net {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 300px;
+  z-index: 1;
+}
+
+.net-line {
+  width: 100%;
+  height: 100%;
+  background: var(--color-net);
+  box-shadow: 0 0 10px rgba(45, 80, 22, 0.5);
+}
+
+.net-mesh {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 300px;
+  background-image:
+    repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(45, 80, 22, 0.3) 19px, rgba(45, 80, 22, 0.3) 20px),
+    repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(45, 80, 22, 0.3) 19px, rgba(45, 80, 22, 0.3) 20px);
+}
+
+/* ===== LOGO DEL CLUB ===== */
+.logo-club {
+  width: 135px;
+  height: 135px;
+  object-fit: contain;
+  animation: logoBounce 2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 12px rgba(0, 71, 171, 0.3));
+  transition: var(--transicion-lenta);
+}
+
+.logo-club:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 16px rgba(0, 71, 171, 0.4));
+}
+
+@keyframes logoBounce {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+/* ===== WRAPPER DE LOGIN ===== */
+.login-wrapper-volleyball {
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 10;
+}
+
+.login-card-volleyball {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-xl);
+  padding: 2.5rem;
+  padding-bottom: 3rem; /* Espacio adicional en la parte inferior */
+  animation: cardEntry 0.5s ease-out;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: visible;
+  margin-bottom: 2rem; /* Margen adicional para evitar superposición */
+}
+
+@keyframes cardEntry {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ===== HEADER ===== */
+.login-header-volleyball {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo-container-volleyball {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.login-title-volleyball {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primario);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-subtitle-volleyball {
+  font-size: 0.95rem;
+  color: var(--color-gris-oscuro);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ===== ALERTAS ===== */
+.alert-volleyball {
+  display: flex;
   align-items: center;
-  height: calc(100vh - 50px);
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--radio-md);
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.contenedor-formulario img {
-  width: 150px;
+.alert-icon-volleyball {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
-.formulario {
-  background-color: #f4d800;
-  border: 4px solid #0047ab;
-  outline: 2px solid black;
-  padding: 15px 20px;
-  border-radius: 5px;
-  width: 300px;
+.alert-error-volleyball {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.alert-success-volleyball {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.bounce-enter-active {
+  animation: bounceIn 0.5s ease-out;
+}
+
+.bounce-leave-active {
+  animation: bounceOut 0.3s ease-in;
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bounceOut {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
+
+/* ===== FORMULARIO ===== */
+.login-form-volleyball {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ===== GRUPO DE INPUT ===== */
+.input-group-volleyball {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input-label-volleyball {
+  display: flex;
   align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 0.25rem;
 }
 
-.icono-formulario {
-  width: 80px;
-  height: auto;
-  max-height: 100px;
-  margin-bottom: 15px;
+.input-icon-volleyball {
+  width: 18px;
+  height: 18px;
+  color: var(--color-primario);
+}
+
+.form-input-volleyball {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 1rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-md);
+  background-color: var(--color-blanco);
+  color: var(--color-negro);
+  transition: var(--transicion-lenta);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.form-input-volleyball::placeholder {
+  color: var(--color-gris-oscuro);
+  opacity: 0.6;
+}
+
+.form-input-volleyball:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
+  background-color: var(--color-blanco);
+  transform: translateX(2px);
+}
+
+.form-input-volleyball:disabled {
+  background-color: var(--color-gris-claro);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+
+.password-wrapper {
+  position: relative;
+}
+
+.password-toggle-volleyball {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gris-oscuro);
+  transition: var(--transicion);
+  z-index: 1;
+}
+
+.password-toggle-volleyball:hover {
+  color: var(--color-primario);
+}
+
+.toggle-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* ===== ENLACE DE RECUPERACIÓN ===== */
+.forgot-link-volleyball {
+  text-align: right;
+  margin-top: -0.5rem;
+}
+
+.link-text-volleyball {
+  font-size: 0.875rem;
+  color: var(--color-primario);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transicion);
+}
+
+.link-text-volleyball:hover {
+  color: #003380;
+  text-decoration: underline;
+}
+
+/* ===== BOTÓN DE SUBMIT CON ANIMACIÓN DE SAQUE ===== */
+.submit-button-volleyball {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primario) 0%, #003380 100%);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transicion-lenta);
+  margin-top: 0.5rem;
+  box-shadow: var(--sombra-md);
+  position: relative;
+  overflow: visible;
+}
+
+.submit-button-volleyball::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.submit-button-volleyball:hover::before {
+  left: 100%;
+}
+
+.submit-button-volleyball:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-lg);
+  background: linear-gradient(135deg, #003380 0%, var(--color-primario) 100%);
+}
+
+.submit-button-volleyball:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-button-volleyball:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.submit-button-volleyball.serving {
+  animation: serveMotion 1s ease-in-out infinite;
+}
+
+@keyframes serveMotion {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.button-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.serve-icon {
+  width: 20px;
+  height: 20px;
+  animation: iconSwing 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes iconSwing {
+  0% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: rotate(5deg);
+  }
+}
+
+.spinner-volleyball {
+  width: 20px;
+  height: 20px;
+  position: relative;
+}
+
+.spinner-ball {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff 0%, var(--color-secundario) 100%);
+  border: 2px solid var(--color-primario);
+  animation: spinBall 0.8s linear infinite;
+}
+
+@keyframes spinBall {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ball-trail {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 60px;
+}
+
+.trail-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-secundario);
+  border: 1px solid var(--color-primario);
+  animation: trailMove 1s ease-out infinite;
+}
+
+@keyframes trailMove {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.3);
+  }
+}
+
+/* ===== DIVIDER ===== */
+.divider-volleyball {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  gap: 1rem;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-gris-medio);
+}
+
+.divider-text {
+  padding: 0 0.5rem;
+  color: var(--color-gris-oscuro);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* ===== ENLACE DE REGISTRO ===== */
+.register-link-volleyball {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-gris-oscuro);
+}
+
+.register-text {
+  margin-right: 0.5rem;
+}
+
+.link-primary-volleyball {
+  color: var(--color-primario);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--transicion);
+}
+
+.link-primary-volleyball:hover {
+  color: #003380;
+  text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+  .login-container-volleyball {
+    padding: 1rem;
+  }
+
+  .login-card-volleyball {
+    padding: 2rem 1.5rem;
+  }
+
+  .login-title-volleyball {
+    font-size: 1.75rem;
+  }
+
+  .logo-club {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card-volleyball {
+    padding: 1.5rem 1rem;
+    border-radius: var(--radio-md);
+  }
+
+  .login-title-volleyball {
+    font-size: 1.5rem;
+  }
+
+  .form-input-volleyball {
+    padding: 0.75rem 0.875rem;
+    font-size: 0.95rem;
+  }
+
+  .submit-button-volleyball {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.95rem;
+  }
 
 }
 
-.etiqueta-formulario {
-  font-size: 18px;
-  margin-bottom: 20px;
-  display: block;
-  color: #000000;
+/* ===== ACCESIBILIDAD ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus visible para accesibilidad */
+.form-input-volleyball:focus-visible,
+.submit-button-volleyball:focus-visible,
+.password-toggle-volleyball:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
 }

@@ -14,6 +14,8 @@ import Galeria from '@/views/galeria-vista.vue'
 import RolesRegistroVista from '@/views/roles-registro-vista.vue'
 import Calendario from '@/views/calendario.vue'
 import Login from '@/views/login.vue'
+import ForgotPassword from '@/views/forgot-password.vue'
+import ResetPassword from '@/views/reset-password.vue'
 import panelAdmin from '@/views/admin-manager.vue'
 import CompletarPerfil from '@/views/completar-perfil.vue'
 import RegistrarAcudiente from '@/views/registrar-acudiente.vue'
@@ -33,6 +35,18 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPassword,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/auth/reset-password',
+      name: 'reset-password',
+      component: ResetPassword,
       meta: { requiresGuest: true }
     },
     {
