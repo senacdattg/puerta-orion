@@ -1,6 +1,6 @@
 <template>
   <div class="acudiente-dashboard-page">
-    <HeaderAcudiente />
+    <Encabezado />
 
     <TituloClub />
 
@@ -77,7 +77,7 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import HeaderAcudiente from '@/components/acudientes/HeaderAcudiente.vue'
+import Encabezado from '@/components/layout/encabezado.vue'
 import SidebarAcudiente from '@/components/acudientes/SidebarAcudiente.vue'
 import CardDeportista from '@/components/deportistas/CardDeportista.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
