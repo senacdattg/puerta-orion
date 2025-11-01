@@ -50,37 +50,10 @@
           <section class="seccion-formulario">
             <h3>Crear {{ seleccionado?.nombre }}</h3>
 
-              <!-- Campos para Categorías -->
-              <template v-if="seleccionado?.id === 'categoria'">
-                <div class="fila-texto">
-                  <input v-model.trim="form.nombre_categoria" type="text" placeholder="Nombre de Categoría *" required />
-                  <input v-model.number="form.edad_minima" type="number" placeholder="Edad Mínima *" required min="0" />
-                </div>
-                <div class="fila-texto">
-                  <input v-model.number="form.edad_maxima" type="number" placeholder="Edad Máxima *" required min="0" />
-                  <select v-model="form.estado" required>
-                    <option value="" disabled>Estado *</option>
-                    <option :value="true">Activo</option>
-                    <option :value="false">Inactivo</option>
-                  </select>
-                </div>
-              </template>
-              
-              <!-- Campos para otras entidades -->
-              <template v-else>
-                <div class="fila-texto campo-nombre-centrado">
-                  <input v-model.trim="form.nombre" type="text" placeholder="Nombre *" required />
-                  <input v-if="seleccionado?.id === 'eps'" v-model.trim="form.codigo" type="text" placeholder="Código EPS" />
-                  <select v-if="seleccionado?.id === 'eps' || seleccionado?.id === 'metodo_pago'" v-model="form.estado" required>
-                    <option value="" disabled>Estado *</option>
-                    <option :value="true">Activo</option>
-                    <option :value="false">Inactivo</option>
-                  </select>
-                </div>
-                <div v-if="seleccionado?.id === 'tipo-evento'" class="fila-texto">
-                  <textarea v-model.trim="form.descripcion" placeholder="Descripción (opcional)" rows="3" style="grid-column: 1 / -1;"></textarea>
-                </div>
-              </template>
+            <component 
+              :is="componenteFormulario" 
+              v-model="form"
+            />
 
             <hr class="form-divider" />
 
@@ -102,7 +75,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import TipoDocumento from '../datos-dinamicos/tipo-documento.vue'
+import Sexo from '../datos-dinamicos/sexo.vue'
+import Categoria from '../datos-dinamicos/categoria.vue'
+import Ciudad from '../datos-dinamicos/ciudad.vue'
+import Eps from '../datos-dinamicos/eps.vue'
+import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
+import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false }
@@ -126,11 +106,27 @@ const form = ref({
   nombre: '', 
   codigo: '',
   descripcion: '',
-  // Campos específicos para categorías
   nombre_categoria: '',
   edad_minima: null,
   edad_maxima: null,
   estado: true
+})
+
+// Mapeo de IDs a componentes
+const componentes = {
+  'tipo_documento': TipoDocumento,
+  'sexo': Sexo,
+  'categoria': Categoria,
+  'ciudad': Ciudad,
+  'eps': Eps,
+  'metodo_pago': MetodoPago,
+  'tipo-evento': TipoEvento
+}
+
+// Componente del formulario según la selección
+const componenteFormulario = computed(() => {
+  if (!seleccionado.value) return null
+  return componentes[seleccionado.value.id] || null
 })
 
 function cerrar() {
@@ -168,6 +164,28 @@ watch(() => props.mostrar, (nuevoValor) => {
 
 function seleccionar(item){
   seleccionado.value = item
+  // Inicializar form según el tipo seleccionado
+  if (item.id === 'categoria') {
+    form.value = {
+      nombre_categoria: '',
+      edad_minima: null,
+      edad_maxima: null,
+      estado: true,
+      nombre: '',
+      codigo: '',
+      descripcion: ''
+    }
+  } else {
+    form.value = {
+      nombre: '',
+      codigo: '',
+      descripcion: '',
+      nombre_categoria: '',
+      edad_minima: null,
+      edad_maxima: null,
+      estado: true
+    }
+  }
 }
 
 function volverPaso1(){
@@ -216,10 +234,7 @@ function enviar(){
 .modal-footer{background:#f8f9fa;padding:20px 30px;border-top:1px solid #e0e0e0}
 .modal-footer .footer-acciones{display:flex;justify-content:flex-end;gap:15px}
 /* Los estilos de .fila-texto, .botones-formulario, .boton-formulario y .boton-secundario vienen de los CSS globales */
-.fila-texto textarea{grid-column:1/-1;min-height:80px;resize:vertical}
-.campo-nombre-centrado{max-width:400px;margin:0 auto;grid-template-columns:1fr}
-.campo-nombre-centrado input{text-align:center}
-.form-divider{border:none;height:1px;background:rgba(0,0,0,0.1);margin:20px 0;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.form-divider{border:none;height:1px;background:linear-gradient(to right,transparent,#333,transparent);margin:25px 0}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s ease;text-decoration:none}
 .btn--primary{background-color:#0047ab;color:white}
 .btn--primary:hover:not(:disabled){background-color:#0047ab !important;transform:none;box-shadow:none}
