@@ -32,6 +32,9 @@
                 <h4 class="rol-nombre">{{ item.nombre }}</h4>
                 <p class="rol-descripcion">{{ item.descripcion }}</p>
               </div>
+              <div class="rol-check">
+                <i v-if="seleccionado?.id === item.id" class="fas fa-check"></i>
+              </div>
             </div>
           </div>
         </div>
@@ -115,7 +118,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false }
@@ -147,8 +150,37 @@ const form = ref({
 })
 
 function cerrar() {
+  // Limpiar selección y resetear al cerrar
+  seleccionado.value = null
+  paso.value = 1
+  form.value = { 
+    nombre: '', 
+    codigo: '',
+    descripcion: '',
+    nombre_categoria: '',
+    edad_minima: null,
+    edad_maxima: null,
+    estado: true
+  }
   emit('cerrar')
 }
+
+// Limpiar selección cuando se abre el modal
+watch(() => props.mostrar, (nuevoValor) => {
+  if (nuevoValor) {
+    seleccionado.value = null
+    paso.value = 1
+    form.value = { 
+      nombre: '', 
+      codigo: '',
+      descripcion: '',
+      nombre_categoria: '',
+      edad_minima: null,
+      edad_maxima: null,
+      estado: true
+    }
+  }
+})
 
 function seleccionar(item){
   seleccionado.value = item
@@ -199,6 +231,7 @@ function enviar(){
 .rol-info{flex:1;text-align:left}
 .rol-nombre{font-size:1.2rem;font-weight:600;color:#333;margin:0 0 8px 0}
 .rol-descripcion{color:#666;margin:0;font-size:.9rem;line-height:1.4}
+.rol-check{width:30px;height:30px;background:#28a745;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:.9rem;flex-shrink:0}
 .modal-footer{background:#f8f9fa;padding:20px 30px;border-top:1px solid #e0e0e0}
 .footer-acciones{display:flex;justify-content:center;gap:15px;width:100%}
 .formulario .footer-acciones{justify-content:center}
@@ -214,6 +247,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3csvg xml
 .btn--outline:hover{background-color:#6c757d !important;color:white !important}
 .btn--primary{background-color:#0047ab;color:white;border:none}
 .btn--primary:hover{background-color:#0047ab !important;color:white !important}
+.btn--primary:disabled{background-color:#ccc;cursor:not-allowed;opacity:0.6}
 @media (max-width:768px){.modal-content{margin:10px;max-height:95vh}.modal-body{padding:20px}.roles-grid{grid-template-columns:1fr}.rol-option{flex-direction:column;text-align:center;padding:20px}.footer-acciones{flex-direction:column}.btn{width:100%;justify-content:center}}
 </style>
 
