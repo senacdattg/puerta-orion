@@ -129,8 +129,12 @@
                 <span>{{ detalle.persona.correo_electronico || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Documento:</label>
-                <span>{{ nombreTipoDocumento(detalle.persona.id_tipo_documento) }} {{ detalle.persona.documento || '—' }}</span>
+                <label>Tipo de documento:</label>
+                <span>{{ nombreTipoDocumento(detalle.persona.id_tipo_documento) || '—' }}</span>
+              </div>
+              <div class="info-row">
+                <label>Número de documento:</label>
+                <span>{{ detalle.persona.documento || '—' }}</span>
               </div>
               <div class="info-row">
                 <label>Teléfono:</label>
