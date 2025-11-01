@@ -244,6 +244,39 @@
   background: #dd6b20;
 }
 
+/* Botón para agregar evento en cada día */
+.btn-agregar-dia {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: #FFD700;
+  border: none;
+  border-radius: 50%;
+  color: #1a202c;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+  z-index: 10;
+  opacity: 0.8;
+}
+
+.btn-agregar-dia:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.6);
+  background: #FFA500;
+}
+
+.dia-calendario:hover .btn-agregar-dia {
+  opacity: 1;
+}
+
 /* Botón flotante */
 .btn-flotante {
   position: fixed;

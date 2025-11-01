@@ -110,6 +110,66 @@ def validar_lugar(lugar_str):
         return False
     return True
 
+def validar_solapamiento_horario(fecha_evento, hora_inicio, hora_fin, id_evento_excluir=None, id_categoria=None):
+    """
+    Valida que no haya solapamiento de horarios con otros eventos del mismo día y misma categoría.
+    
+    Args:
+        fecha_evento (date): Fecha del evento
+        hora_inicio (time): Hora de inicio
+        hora_fin (time): Hora de fin
+        id_evento_excluir (int, optional): ID del evento a excluir de la validación (para actualizaciones)
+        id_categoria (int, optional): ID de la categoría del evento. Si se proporciona, solo se validan eventos de la misma categoría.
+    
+    Returns:
+        tuple: (bool, str) - (True si no hay solapamiento, mensaje de error si hay solapamiento)
+    """
+    try:
+        # Buscar eventos del mismo día
+        query = Evento.query.filter_by(fecha_evento=fecha_evento)
+        
+        # Si se especifica categoría, solo validar contra eventos de la misma categoría
+        # Esto permite que eventos de diferentes categorías coexistan en el mismo horario
+        if id_categoria is not None:
+            query = query.filter_by(id_categoria=id_categoria)
+        
+        eventos_mismo_dia = query.all()
+        
+        # Excluir el evento actual si se está actualizando
+        if id_evento_excluir:
+            eventos_mismo_dia = [e for e in eventos_mismo_dia if e.id_evento != id_evento_excluir]
+        
+        # Validar solapamiento con cada evento existente
+        for evento_existente in eventos_mismo_dia:
+            # Convertir a datetime para comparar fácilmente
+            inicio_existente = datetime.combine(fecha_evento, evento_existente.hora_inicio)
+            fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            inicio_nuevo = datetime.combine(fecha_evento, hora_inicio)
+            fin_nuevo = datetime.combine(fecha_evento, hora_fin)
+            
+            # Verificar solapamiento:
+            # Dos eventos se solapan si:
+            # (inicio_nuevo < fin_existente) AND (fin_nuevo > inicio_existente)
+            if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
+                # Formatear horarios para el mensaje de error
+                hora_inicio_str = evento_existente.hora_inicio.strftime('%H:%M')
+                hora_fin_str = evento_existente.hora_fin.strftime('%H:%M')
+                hora_nuevo_inicio_str = hora_inicio.strftime('%H:%M')
+                hora_nuevo_fin_str = hora_fin.strftime('%H:%M')
+                
+                return (False, f"El horario del evento se solapa con el evento '{evento_existente.nombre}' "
+                               f"que está programado de {hora_inicio_str} a {hora_fin_str}. "
+                               f"Tu evento está programado de {hora_nuevo_inicio_str} a {hora_nuevo_fin_str}.")
+        
+        return (True, None)
+        
+    except Exception as e:
+        from src.utils.logger import obtener_registrador
+        logger = obtener_registrador('aplicacion')
+        logger.error(f'Error al validar solapamiento de horario: {str(e)}')
+        # En caso de error, permitir el evento (mejor permitir de más que bloquear)
+        return (True, None)
+
 
 # ============================================================================
 # CRUD DE EVENTOS
@@ -383,6 +443,16 @@ def crear_evento():
                 'error': 'El lugar debe tener al menos 3 caracteres'
             }), 400
         
+        # Validar que no haya solapamiento con otros eventos del mismo día Y misma categoría
+        validacion_horario, mensaje_error = validar_solapamiento_horario(
+            fecha_evento, hora_inicio, hora_fin, id_categoria=data.get('id_categoria')
+        )
+        if not validacion_horario:
+            return jsonify({
+                'success': False,
+                'error': mensaje_error
+            }), 400
+        
         # Validar que existan las relaciones
         categoria = Categoria.query.get(data['id_categoria'])
         if not categoria:
@@ -509,6 +579,52 @@ def actualizar_evento(id):
                     'error': 'El lugar debe tener al menos 3 caracteres'
                 }), 400
             evento.lugar = data['lugar'].strip()
+        
+        # Validar solapamiento de horarios si se modificó la fecha o las horas
+        fecha_para_validar = evento.fecha_evento
+        hora_inicio_para_validar = evento.hora_inicio
+        hora_fin_para_validar = evento.hora_fin
+        
+        if 'fecha_evento' in data:
+            fecha_para_validar = validar_fecha(data['fecha_evento'])
+            if not fecha_para_validar:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
+                }), 400
+        
+        if 'hora_inicio' in data:
+            hora_inicio_para_validar = validar_hora(data['hora_inicio'])
+            if not hora_inicio_para_validar:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS'
+                }), 400
+        
+        if 'hora_fin' in data:
+            hora_fin_para_validar = validar_hora(data['hora_fin'])
+            if not hora_fin_para_validar:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de hora de fin inválido. Use HH:MM o HH:MM:SS'
+                }), 400
+        
+        # Validar solapamiento solo si se modificó algo relacionado con el horario
+        # Usar la categoría actual del evento o la nueva si se está modificando
+        categoria_para_validar = evento.id_categoria
+        if 'id_categoria' in data:
+            categoria_para_validar = data['id_categoria']
+        
+        if 'fecha_evento' in data or 'hora_inicio' in data or 'hora_fin' in data or 'id_categoria' in data:
+            validacion_horario, mensaje_error = validar_solapamiento_horario(
+                fecha_para_validar, hora_inicio_para_validar, hora_fin_para_validar, 
+                id_evento_excluir=id, id_categoria=categoria_para_validar
+            )
+            if not validacion_horario:
+                return jsonify({
+                    'success': False,
+                    'error': mensaje_error
+                }), 400
         
         # Actualizar descripcion
         if 'descripcion' in data:

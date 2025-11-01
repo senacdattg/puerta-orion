@@ -53,6 +53,14 @@
                         </span>
                     </div>
                 </div>
+
+                <!-- Botón para agregar evento (siempre visible si hay permisos) -->
+                <button v-if="puedeCrear && dia.esMesActual" 
+                    @click="agregarEventoADia(dia, $event)" 
+                    class="btn-agregar-dia" 
+                    title="Agregar evento">
+                    <i class="fas fa-plus"></i>
+                </button>
             </div>
         </div>
 
@@ -176,7 +184,7 @@
         <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
             <div class="modal-content selector-eventos" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ puedeEditar ? 'Seleccionar Evento' : 'Eventos del Día' }}</h3>
+                    <h3>{{ puedeEditar ? 'Eventos del Día' : 'Eventos del Día' }}</h3>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
                         <i class="fas fa-times"></i>
                     </button>
@@ -209,6 +217,20 @@
                         <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
                             :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
                     </div>
+                </div>
+
+                <!-- Botón para agregar nuevo evento (solo si tiene permisos de creación) -->
+                <div v-if="puedeCrear" class="botones-selector">
+                    <button @click="abrirModalDesdeSelector" class="btn-agregar-evento">
+                        <i class="fas fa-plus"></i>
+                        Agregar Otro Evento
+                    </button>
+                </div>
+
+                <!-- Mensaje informativo -->
+                <div v-if="puedeCrear && eventosDelDia.length > 0" class="info-multiple-eventos">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Puedes agregar varios eventos en este día. Solo verifica que los horarios no se solapen.</span>
                 </div>
             </div>
         </div>
@@ -460,24 +482,25 @@ export default {
             if (!dia.esMesActual) return;
 
             if (dia.eventos && dia.eventos.length > 0) {
-                // Si hay múltiples eventos, mostrar selector
-                if (dia.eventos.length > 1) {
-                    this.eventosDelDia = dia.eventos;
-                    this.mostrarSelectorEventos();
-                } else {
-                    // Si hay un solo evento
-                    if (this.puedeEditar) {
-                        this.editarEvento(dia.eventos[0]);
-                    } else {
-                        this.verEvento(dia.eventos[0]);
-                    }
-                }
+                // Si hay eventos, mostrar selector que permite ver/editar o agregar nuevo
+                this.eventosDelDia = dia.eventos;
+                this.mostrarSelectorEventos(dia.fecha);
             } else if (this.puedeCrear) {
                 // Solo roles con permisos de creación pueden crear eventos en días vacíos
                 this.nuevoEvento.fecha = dia.fecha;
                 this.abrirModal();
             }
             // Si no tiene permisos de creación y no hay eventos, no hace nada
+        },
+
+        agregarEventoADia(dia, event) {
+            // Prevenir que el click en el botón también active seleccionarDia
+            if (event) {
+                event.stopPropagation();
+            }
+            if (!dia.esMesActual || !this.puedeCrear) return;
+            this.nuevoEvento.fecha = dia.fecha;
+            this.abrirModal();
         },
 
         abrirModal() {
@@ -497,13 +520,24 @@ export default {
             this.limpiarFormulario();
         },
 
-        mostrarSelectorEventos() {
+        mostrarSelectorEventos(fecha = null) {
             this.selectorEventosVisible = true;
+            // Guardar la fecha del día seleccionado para poder agregar un nuevo evento
+            if (fecha) {
+                this.nuevoEvento.fecha = fecha;
+            }
         },
 
         cerrarSelectorEventos() {
             this.selectorEventosVisible = false;
             this.eventosDelDia = [];
+        },
+
+        abrirModalDesdeSelector() {
+            // Cerrar el selector y abrir el modal de creación
+            this.selectorEventosVisible = false;
+            this.abrirModal();
+            // La fecha ya está guardada en nuevoEvento.fecha desde mostrarSelectorEventos
         },
 
         editarEvento(evento) {
@@ -559,8 +593,29 @@ export default {
                     }
                     await calendarioService.crearEvento(this.nuevoEvento);
                     this.mostrarNotificacion('Evento creado exitosamente', 'success');
+                    
+                    // Recargar eventos del calendario
+                    await calendarioService.cargarEventos();
+                    this.actualizarCalendario();
+                    
+                    // Preguntar si quiere agregar otro evento en el mismo día
+                    const fechaActual = this.nuevoEvento.fecha;
+                    const quiereAgregarOtro = confirm('¿Deseas agregar otro evento en este mismo día?');
+                    
+                    if (quiereAgregarOtro) {
+                        // Limpiar formulario pero mantener la fecha y el modal abierto
+                        this.limpiarFormulario();
+                        this.nuevoEvento.fecha = fechaActual;
+                        // El modal permanece abierto para agregar otro evento
+                        return;
+                    } else {
+                        // Cerrar el modal si no quiere agregar otro
+                        this.cerrarModal();
+                        return;
+                    }
                 }
 
+                // Esto solo se ejecuta si es edición
                 this.actualizarCalendario();
                 this.cerrarModal();
             } catch (error) {
