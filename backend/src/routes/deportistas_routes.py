@@ -180,6 +180,184 @@ def get_lista_deportistas():
         logger.error(f"Error inesperado al listar deportistas: {str(e)}")
         return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
 
+@deportistas_bp.route('/deportistas/asociar-acudiente', methods=['POST'])
+@token_required()
+def asociar_acudiente_deportista():
+    """
+    Endpoint para asociar un acudiente existente con un deportista.
+    
+    Permite que un acudiente ya registrado se asocie con un deportista adicional.
+    Valida que:
+    - El acudiente no tenga más de 3 deportistas asociados
+    - El deportista no tenga más de 3 acudientes asociados
+    - No exista ya esta relación
+    
+    Headers requeridos:
+    Authorization: Bearer <token>
+    
+    Body JSON requerido:
+    {
+        "id_deportista": 123,              // OBLIGATORIO: ID del deportista
+        "id_parentesco": 1,                // OBLIGATORIO: ID del tipo de parentesco
+        "es_responsable": false            // OBLIGATORIO: Si es responsable legal (bool)
+    }
+    
+    Returns:
+        JSON: Información de la relación creada
+    """
+    try:
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type debe ser application/json',
+                'status_code': 400
+            }), 400
+        
+        # Obtener usuario autenticado del contexto
+        user = get_current_user()
+        
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado en el contexto',
+                'status_code': 401
+            }), 401
+        
+        # Obtener datos del JSON
+        data = request.get_json()
+        id_deportista = data.get('id_deportista')
+        id_parentesco = data.get('id_parentesco')
+        es_responsable = data.get('es_responsable', False)
+        
+        # Validar que se proporcionen todos los datos requeridos
+        if not id_deportista or not id_parentesco:
+            return jsonify({
+                'success': False,
+                'error': 'Se requieren id_deportista e id_parentesco',
+                'status_code': 400
+            }), 400
+        
+        # Importar modelos necesarios
+        from src.models.acudientes.acudiente import Acudiente
+        from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+        from src.models.deportistas.deportista import Deportista
+        from src.models.acudientes.parentesco import Parentesco
+        from src.models.base import db
+        from datetime import date
+        
+        # Obtener el acudiente del usuario autenticado
+        id_persona = user.get('persona', {}).get('id_persona')
+        if not id_persona:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontró información de persona para el usuario',
+                'status_code': 400
+            }), 400
+        
+        acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
+        if not acudiente:
+            return jsonify({
+                'success': False,
+                'error': 'El usuario no está registrado como acudiente. Debe completar su perfil primero.',
+                'status_code': 400
+            }), 400
+        
+        # Validar que el deportista existe
+        deportista = Deportista.query.filter_by(id_deportista=int(id_deportista)).first()
+        if not deportista:
+            return jsonify({
+                'success': False,
+                'error': f'El deportista con ID {id_deportista} no existe',
+                'status_code': 404
+            }), 404
+        
+        # Validar que el parentesco existe
+        parentesco = Parentesco.query.filter_by(id_parentesco=int(id_parentesco)).first()
+        if not parentesco:
+            return jsonify({
+                'success': False,
+                'error': f'El parentesco con ID {id_parentesco} no existe',
+                'status_code': 404
+            }), 404
+        
+        # Validar que no exista ya esta relación
+        relacion_existente = DeportistaAcudiente.query.filter_by(
+            id_deportista=int(id_deportista),
+            id_acudiente=acudiente.id_acudiente
+        ).first()
+        
+        if relacion_existente:
+            return jsonify({
+                'success': False,
+                'error': 'Ya existe una relación entre este acudiente y este deportista',
+                'status_code': 400
+            }), 400
+        
+        # Validar que el acudiente no tenga más de 3 deportistas asociados
+        deportistas_acudiente = DeportistaAcudiente.query.filter_by(
+            id_acudiente=acudiente.id_acudiente
+        ).count()
+        
+        if deportistas_acudiente >= 3:
+            return jsonify({
+                'success': False,
+                'error': f'Un acudiente solo puede estar asociado a máximo 3 deportistas. '
+                        f'Este acudiente ya tiene {deportistas_acudiente} deportista(s) asociado(s).',
+                'status_code': 400
+            }), 400
+        
+        # Validar que el deportista no tenga más de 3 acudientes asociados
+        acudientes_deportista = DeportistaAcudiente.query.filter_by(
+            id_deportista=int(id_deportista)
+        ).count()
+        
+        if acudientes_deportista >= 3:
+            return jsonify({
+                'success': False,
+                'error': f'Un deportista solo puede estar asociado a máximo 3 acudientes. '
+                        f'Este deportista ya tiene {acudientes_deportista} acudiente(s) asociado(s).',
+                'status_code': 400
+            }), 400
+        
+        # Crear la relación DeportistaAcudiente
+        deportista_acudiente = DeportistaAcudiente(
+            id_deportista=int(id_deportista),
+            id_acudiente=acudiente.id_acudiente,
+            id_parentesco=int(id_parentesco),
+            es_responsable=bool(es_responsable),
+            fecha_registro=date.today()
+        )
+        
+        db.session.add(deportista_acudiente)
+        db.session.commit()
+        
+        logger.info(f'Relación creada: Acudiente {acudiente.id_acudiente} - Deportista {id_deportista}')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Deportista asociado exitosamente al acudiente',
+            'data': {
+                'id_deportista_acudiente': deportista_acudiente.id_deportista_acudiente,
+                'id_deportista': deportista_acudiente.id_deportista,
+                'id_acudiente': deportista_acudiente.id_acudiente,
+                'id_parentesco': deportista_acudiente.id_parentesco,
+                'es_responsable': deportista_acudiente.es_responsable,
+                'fecha_registro': deportista_acudiente.fecha_registro.isoformat() if deportista_acudiente.fecha_registro else None
+            },
+            'status_code': 201
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Error inesperado al asociar acudiente con deportista: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
 @deportistas_bp.route('/deportistas/acudiente/<int:id_acudiente>', methods=['GET'])
 @token_required()
 def obtener_deportistas_por_acudiente(id_acudiente):
