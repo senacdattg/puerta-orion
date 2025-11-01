@@ -86,3 +86,7 @@ config.env.local
 # ============ MIGRACIONES ============
 # NO ignorar - son necesarias para el equipo
 # migrations/
+
+# ============ UPLOADS / ARCHIVOS SUBIDOS ============
+# Archivos subidos por usuarios (imágenes, documentos, etc.)
+static/uploads/

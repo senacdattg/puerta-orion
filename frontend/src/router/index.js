@@ -5,7 +5,6 @@ import ActualizarDeportista from '@/views/actualizar-deportista.vue'
 import RegistrarDeportista from '@/views/registrar-deportista.vue'
 import VerDeportista from '@/views/ver-deportista.vue'
 import RegistrarGeneral from '@/views/registrar-general.vue'
-import VerGeneral from '@/views/ver-general.vue'
 import ActualizarGeneral from '@/views/actualizar-general.vue'
 import VerRoles from '@/views/vista-roles.vue'
 import TablaMensualidades from '@/views/mensualidades.vue'
@@ -14,6 +13,8 @@ import Galeria from '@/views/galeria-vista.vue'
 import RolesRegistroVista from '@/views/roles-registro-vista.vue'
 import Calendario from '@/views/calendario.vue'
 import Login from '@/views/login.vue'
+import ForgotPassword from '@/views/forgot-password.vue'
+import ResetPassword from '@/views/reset-password.vue'
 import panelAdmin from '@/views/admin-manager.vue'
 import CompletarPerfil from '@/views/completar-perfil.vue'
 import RegistrarAcudiente from '@/views/registrar-acudiente.vue'
@@ -33,6 +34,18 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: ForgotPassword,
+      meta: { requiresGuest: true }
+    },
+    {
+      path: '/auth/reset-password',
+      name: 'reset-password',
+      component: ResetPassword,
       meta: { requiresGuest: true }
     },
     {
@@ -68,12 +81,6 @@ const router = createRouter({
       name: 'registrar-general',
       component: RegistrarGeneral,
       meta: { requiresGuest: true }
-    },
-    {
-      path: '/ver-general',
-      name: 'ver-general',
-      component: VerGeneral,
-      meta: { requiresAuth: true }
     },
     {
       path: '/actualizar-general',

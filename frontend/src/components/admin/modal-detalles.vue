@@ -30,7 +30,7 @@
         <!-- Información general -->
         <div class="seccion-detalles">
           <h5>📋 Información General</h5>
-          
+
           <!-- Modo vista -->
           <div v-if="!editando" class="grid-detalles">
             <div class="detalle-item">
@@ -218,7 +218,7 @@
           </div>
         </div>
 
-       
+
 
         <!-- Historial de pagos -->
         <div class="seccion-historial" v-if="!editando">
@@ -237,12 +237,12 @@
                 <span class="resumen-label">Saldo Pendiente</span>
                 <span class="resumen-valor pendiente">${{ calcularSaldoPendienteHistorial().toLocaleString('es-CO') }}</span>
               </div>
-              <div class="resumen-item">
-                <span class="resumen-label">Estado Actual</span>
-                <span class="resumen-valor estado" :class="getClaseEstado()">{{ getEstadoPago() }}</span>
-              </div>
+            <div class="resumen-item">
+              <span class="resumen-label">Pagado</span>
+              <span class="resumen-valor pagado">${{ calcularPagadoMostrado().toLocaleString('es-CO') }}</span>
             </div>
-            
+            </div>
+
             <div class="lista-pagos">
               <h6>Fechas de pago y abonos</h6>
               <div v-if="listaPagosYAbonos().length > 0" class="pagos-list">
@@ -693,10 +693,30 @@ function obtenerMontoPago(pago) {
 }
 
 function calcularSaldoPendienteHistorial() {
+  // 1) Priorizar el valor proveniente del backend para mantener consistencia con la tarjeta
+  const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
+  if (spBackend !== undefined && spBackend !== null && spBackend !== '') {
+    const n = Number(spBackend);
+    if (!isNaN(n)) return Math.max(0, n);
+  }
+
+  // 2) Fallback: calcular con (valor total - total pagado) cuando no hay saldo del backend
   const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
   const totalPagado = calcularTotalPagado();
   const saldo = totalMensualidad - totalPagado;
   return Math.max(0, saldo);
+}
+
+function calcularPagadoMostrado() {
+  // Si tenemos saldo del backend y el total de la mensualidad, calcular pagado como (total - saldo)
+  const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
+  const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
+  if (!isNaN(totalMensualidad) && spBackend !== undefined && spBackend !== null && spBackend !== '') {
+    const n = Number(spBackend);
+    if (!isNaN(n)) return Math.max(0, totalMensualidad - n);
+  }
+  // Fallback al total de abonos/pagos registrados en el historial
+  return calcularTotalPagado();
 }
 
 const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());

@@ -384,7 +384,7 @@ async function cargarPagosRecientes() {
     if (!resp.ok) throw new Error('No se pudieron cargar');
     const json = await resp.json();
     pagosRecientes.value = json.transacciones || [];
-  } catch (e) {
+  } catch {
     pagosRecientes.value = [];
   } finally {
     cargandoPagos.value = false;

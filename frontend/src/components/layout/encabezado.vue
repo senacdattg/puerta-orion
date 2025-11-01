@@ -1,6 +1,10 @@
 <template>
   <header class="header-deportista">
+    <div class="header-inner container">
     <div class="header-left">
+      <button class="menu-trigger" @click="toggleMenu" :class="{ open: menuVisible }" :aria-expanded="menuVisible.toString()" aria-label="Alternar menú">
+        <i class="fas" :class="menuVisible ? 'fa-bars-staggered' : 'fa-bars'"></i>
+      </button>
       <img
         src="@/assets/imgs/logo.png"
         alt="Logo"
@@ -54,7 +58,8 @@
 
     <!-- Menú lateral (estático como en DeportistaDashboard) -->
     <aside
-      class="sidebar-deportista open"
+      class="sidebar-deportista"
+      :class="{ open: menuVisible }"
       v-show="!sinMenu"
     >
       <div class="sidebar-header">
@@ -74,7 +79,7 @@
           :to="op.link"
           class="nav-item"
           :class="{ active: isActiveRoute(op.link) }"
-          @click="closeMenu"
+          @click="handleMenuLinkClick"
         >
           <i :class="op.icono"></i>
           <span class="nav-text">{{ op.texto }}</span>
@@ -91,11 +96,12 @@
         </a>
       </nav>
     </aside>
+    </div>
   </header>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -175,29 +181,26 @@ function toggleProfileMenu() {
 }
 
 function toggleMenu() {
-  menuOpenedByClick.value = !menuVisible.value // Si se abre por click, marcar como tal
   menuVisible.value = !menuVisible.value
+  applyLayoutOffsets()
 }
 
 function closeMenu() {
   menuOpenedByClick.value = false
   menuVisible.value = false
-}
-
-function showMenuOnHover() {
-  // Mostrar inmediatamente al pasar el mouse sobre el logo o el sidebar en desktop
-  if (!isMobile.value) {
-    menuVisible.value = true
-  }
-}
-
-function hideMenuOnHover() {
-  // No cerrar por hover; se cierra con clic fuera o botón cerrar en móvil
+  applyLayoutOffsets()
 }
 
 function isActiveRoute(path) {
   const currentPath = route.path
   return currentPath === path || currentPath.startsWith(path + '/')
+}
+
+function handleMenuLinkClick() {
+  // Cerrar menú en móvil cuando se hace clic en un link
+  if (isMobile.value) {
+    closeMenu()
+  }
 }
 
 async function handleLogout() {
@@ -215,8 +218,10 @@ function handleOutsideClick(e) {
 
   // Cerrar menú si se hace clic fuera del header y sidebar
   if (header && sidebar) {
-    if (!header.contains(e.target) && !sidebar.contains(e.target)) {
+    // Solo cerrar automáticamente en móvil; en desktop se mantiene abierto
+    if (isMobile.value && !header.contains(e.target) && !sidebar.contains(e.target)) {
       menuVisible.value = false
+      applyLayoutOffsets()
     }
   }
 
@@ -230,20 +235,20 @@ function cargarOpciones() {
   const opcionesPorRol = {
     Usuario: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Entrenador: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
       { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Acudiente: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
       { texto: "Mis Deportistas", link: "/ver-acudidos", icono: "fas fa-child" },
       { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
@@ -259,12 +264,11 @@ function cargarOpciones() {
     ],
     Admin: [
       { texto: "Inicio", link: "/admin-manager", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/ver-general", icono: "fas fa-user" },
+      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
       { texto: "Deportistas", link: "/deportistas", icono: "fas fa-users" },
       { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
-      { texto: "Panel Admin", link: "/admin-manager", icono: "fas fa-cog" },
     ],
     UsuarioSinAuth: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
@@ -277,8 +281,24 @@ function cargarOpciones() {
   opciones.value = opcionesPorRol[rolActual] || opcionesPorRol['UsuarioSinAuth']
 }
 
-function checkMobile() {
+async function checkMobile() {
+  const wasMobile = isMobile.value
   isMobile.value = window.innerWidth < 768
+  // En móvil: menú cerrado por defecto. En desktop: abierto por defecto
+  if (!props.sinMenu) {
+    const shouldBeOpen = !isMobile.value
+    // Solo cambiar si el estado debe cambiar
+    if (menuVisible.value !== shouldBeOpen) {
+      menuVisible.value = shouldBeOpen
+      // Sincronizar offsets después del cambio de estado
+      await nextTick()
+      applyLayoutOffsets()
+    } else if (wasMobile !== isMobile.value) {
+      // Si cambió de móvil a desktop o viceversa pero el estado ya era correcto, aún así sincronizar
+      await nextTick()
+      applyLayoutOffsets()
+    }
+  }
 }
 
 // Watcher para recargar opciones cuando cambie el rol del usuario
@@ -295,15 +315,16 @@ watch(() => authStore.user, (newUser, oldUser) => {
   }
 }, { deep: true })
 
+// Watcher para sincronizar offsets cuando cambia la ruta (navegación entre páginas)
+watch(() => route.path, async () => {
+  await nextTick()
+  applyLayoutOffsets()
+})
+
 function verPerfil() {
   showProfileMenu.value = false
-  // Deportista usa /perfil, otros roles usan /ver-general
-  const rol = userRole.value
-  if (rol === 'Deportista') {
-    router.push('/perfil')
-  } else {
-    router.push('/ver-general')
-  }
+  // Usar siempre el nuevo perfil con selector de roles
+  router.push('/perfil')
 }
 
 function editarPerfil() {
@@ -322,15 +343,32 @@ async function cerrarSesion() {
 }
 
 // Ciclo de vida
-onMounted(() => {
+onMounted(async () => {
   if (!props.sinMenu) {
     checkMobile()
     cargarOpciones()
+    // Asegurar que los offsets se aplican después de que el estado inicial se establezca
+    await nextTick()
+    applyLayoutOffsets()
+
     document.addEventListener("click", handleOutsideClick)
-    window.addEventListener("resize", checkMobile)
+    window.addEventListener("resize", async () => {
+      checkMobile()
+      // Aplicar offsets después de resize también
+      await nextTick()
+      applyLayoutOffsets()
+    })
   } else {
     document.addEventListener("click", handleOutsideClick)
+    // Incluso sin menú, aplicar el offset del header
+    await nextTick()
+    applyLayoutOffsets()
   }
+})
+
+// Aplicar offsets después de cada actualización del componente
+onUpdated(() => {
+  applyLayoutOffsets()
 })
 
 onBeforeUnmount(() => {
@@ -342,6 +380,19 @@ onBeforeUnmount(() => {
     window.removeEventListener("resize", checkMobile)
   }
 })
+
+// Ajustes globales de layout: evita interferencias del header/menú con el contenido
+function applyLayoutOffsets() {
+  // Header fijo siempre presente
+  document.body.classList.add('has-fixed-header')
+
+  // Sidebar empuja contenido solo cuando está visible
+  if (!props.sinMenu && menuVisible.value) {
+    document.body.classList.add('has-static-sidebar')
+  } else {
+    document.body.classList.remove('has-static-sidebar')
+  }
+}
 </script>
 
 <style scoped>
@@ -361,14 +412,39 @@ onBeforeUnmount(() => {
   min-height: 70px;
 }
 
-.header-left {
+.header-inner {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: var(--espaciado-md);
+}
+
+.header-left {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px; /* 8–10px entre botón y logo */
+  white-space: nowrap;
   flex: 0 0 auto;
   padding-top: var(--espaciado-xs);
+  position: relative;
+  left: calc(-5.5 * (var(--espaciado-xl) + var(--espaciado-md)));
 }
+
+.menu-trigger {
+  background: transparent;
+  border: 2px solid #FFD600;
+  color: #FFD600;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 220ms ease, background 220ms ease;
+}
+.menu-trigger.open { transform: rotate(90deg); }
 
 .header-logo {
   height: 45px;
@@ -376,6 +452,7 @@ onBeforeUnmount(() => {
   object-fit: contain;
   cursor: pointer;
   transition: transform var(--transicion);
+  display: block;
 }
 
 .header-logo:hover {
@@ -408,6 +485,8 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--espaciado-md);
   flex: 0 0 auto;
+  position: relative;
+  right: calc(-5.5 * (var(--espaciado-xl) + var(--espaciado-md)));
 }
 
 .profile-menu-container {
@@ -532,7 +611,7 @@ onBeforeUnmount(() => {
 .sidebar-deportista {
   background: linear-gradient(180deg, #004AAD 0%, #003d8f 100%);
   width: 250px;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 70px); /* altura completa bajo el header */
   position: fixed;
   left: 0;
   top: 70px;
@@ -540,7 +619,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
-  transition: transform var(--transicion);
+  transition: transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 280ms ease;
   border-right: 1px solid rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transform: translateX(-100%);
@@ -597,6 +676,21 @@ onBeforeUnmount(() => {
   border-radius: 0 var(--radio-borde-pequeno) var(--radio-borde-pequeno) 0;
   white-space: nowrap;
   position: relative;
+}
+
+/* Animación de aparición escalonada para items del menú */
+.sidebar-deportista.open .nav-item { animation: fadeSlideIn 320ms ease both; }
+.sidebar-deportista.open .nav-item:nth-child(1) { animation-delay: 40ms; }
+.sidebar-deportista.open .nav-item:nth-child(2) { animation-delay: 80ms; }
+.sidebar-deportista.open .nav-item:nth-child(3) { animation-delay: 120ms; }
+.sidebar-deportista.open .nav-item:nth-child(4) { animation-delay: 160ms; }
+.sidebar-deportista.open .nav-item:nth-child(5) { animation-delay: 200ms; }
+.sidebar-deportista.open .nav-item:nth-child(6) { animation-delay: 240ms; }
+.sidebar-deportista.open .nav-item:nth-child(7) { animation-delay: 280ms; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .nav-item:hover {
@@ -690,6 +784,42 @@ onBeforeUnmount(() => {
   .sidebar-deportista.open {
     transform: translateX(0);
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+  }
+}
+</style>
+
+<!-- Estilos globales (no scoped) para aplicar offsets al layout general -->
+<style>
+body.has-fixed-header {
+  padding-top: 70px; /* altura del header fijo */
+  transition: padding-left 280ms ease; /* suaviza el ajuste cuando abre/cierra el menú */
+}
+
+@media (min-width: 768px) {
+  body.has-static-sidebar {
+    padding-left: 248px !important; /* ligero solape para evitar fisura visual - !important para evitar que sea sobreescrito */
+  }
+}
+
+@media (max-width: 767.98px) {
+  body.has-static-sidebar {
+    padding-left: 0;
+  }
+}
+
+/* Asegurar que el footer no quede debajo del sidebar en desktop */
+@media (min-width: 768px) {
+  body.has-static-sidebar .footer-enhanced {
+    padding-left: 250px;
+  }
+}
+
+/* Cuando el menú se está cerrando, animar el padding a 0 al mismo tiempo que el sidebar se cierra */
+@media (min-width: 768px) {
+  body.menu-closing {
+    /* El padding se reduce suavemente a 0 durante los 280ms que tarda el sidebar en cerrarse */
+    padding-left: 0 !important;
+    transition: padding-left 280ms cubic-bezier(0.22, 0.61, 0.36, 1) !important;
   }
 }
 </style>

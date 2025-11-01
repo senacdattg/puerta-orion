@@ -32,8 +32,8 @@
           </span>
         </div>
         <div class="detalle-item">
-          <span class="detalle-label">Fecha:</span>
-          <span class="detalle-valor">{{ mensualidad.fecha }}</span>
+          <span class="detalle-label">Pagado:</span>
+          <span class="detalle-valor precio">{{ totalPagadoTexto() }}</span>
         </div>
       </div>
     </div>
@@ -208,9 +208,9 @@ const claseVencimiento = computed(() => {
   if (esVencida.value) {
     return 'vencido';
   }
-  
+
   const dias = diasParaVencimiento.value;
-  
+
   if (dias === 0) return 'proximo-vencer';
   if (dias <= 3) {
     return 'proximo-vencer';
@@ -231,7 +231,7 @@ const textoVencimiento = computed(() => {
   }
 
   const dias = diasParaVencimiento.value;
-  
+
   if (dias === 0) return 'Vence hoy';
   if (dias <= 3) {
     return `Vence en ${dias} día${dias !== 1 ? 's' : ''}`;
@@ -290,6 +290,17 @@ function saldoPendienteTexto() {
   // Fallback si no viene del backend
   const monto = Number(props.mensualidad.monto_pago_raw || 0);
   return `$${monto.toLocaleString('es-CO')}`;
+}
+
+function totalPagadoTexto() {
+  const monto = Number(props.mensualidad.monto_pago_raw);
+  const saldo = Number(props.mensualidad.saldo_pendiente_raw);
+  if (!isNaN(monto) && !isNaN(saldo)) {
+    const pagado = Math.max(0, monto - saldo);
+    return `$${pagado.toLocaleString('es-CO')}`;
+  }
+  // Fallback: si no hay datos crudos, asumir 0
+  return `$${(0).toLocaleString('es-CO')}`;
 }
 
 async function pagarConMercadoPago() {

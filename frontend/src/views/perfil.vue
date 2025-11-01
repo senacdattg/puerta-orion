@@ -144,10 +144,6 @@
                 <label>Sexo:</label>
                 <span>{{ nombreSexo(detalle.persona.id_sexo) }}</span>
               </div>
-              <div class="info-row">
-                <label>Fecha nacimiento:</label>
-                <span>{{ detalle.persona.fecha_nacimiento || '—' }}</span>
-              </div>
             </div>
             <div class="card-content" v-else-if="detalle && !detalle.persona">
               <div class="alert alert-warning" style="padding: 15px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; color: #856404;">

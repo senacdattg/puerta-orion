@@ -40,6 +40,7 @@ from .roles_y_permisos.rol_permiso import RolPermiso
 from .roles_y_permisos.usuario_rol import UsuarioRol
 from .salud.tipo_enfermedad import TipoEnfermedad
 from .usuarios.usuario import Usuario
+from .usuarios.password_reset_token import PasswordResetToken
 from .acudientes.acudiente import Acudiente
 from .acudientes.deportista_acudiente import DeportistaAcudiente
 from .acudientes.parentesco import Parentesco
@@ -78,6 +79,7 @@ __all__ = [
     # Modelos principales
     'Persona',
     'Usuario',
+    'PasswordResetToken',
     'Deportista',
     'Acudiente',
     'DeportistaAcudiente',
