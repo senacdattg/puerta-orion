@@ -115,17 +115,15 @@
             </div>
 
             <div class="form-group">
-              <label for="fecha_nacimiento">Fecha de Nacimiento *</label>
+              <label for="fecha_nacimiento">Año de Nacimiento</label>
               <input
-                type="date"
+                type="number"
                 id="fecha_nacimiento"
                 v-model="formDeportista.fecha_nacimiento"
-                :max="new Date().toISOString().split('T')[0]"
-                :min="new Date('1900-01-01').toISOString().split('T')[0]"
+                min="1900"
+                :max="new Date().getFullYear()"
                 :disabled="cargando"
-                required
-                class="form-input"
-                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
+                placeholder="Ej: 2000"
               />
             </div>
 
@@ -305,7 +303,7 @@ const formDeportista = ref({
   id_categoria: '',
   peso: null,
   altura: null,
-  fecha_nacimiento: '',
+  fecha_nacimiento: null,
   id_tipo_sanguineo: '',
   id_eps: ''
 })
@@ -338,6 +336,7 @@ function volverAtras() {
   tipoPerfilSeleccionado.value = null
 }
 
+// Cambia aquí: Redirigir a dashboard de deportista después de completar el perfil
 async function completarPerfilDeportista() {
   if (!formDeportista.value.id_categoria) {
     mensajeError.value = 'Por favor selecciona una categoría'
@@ -374,32 +373,15 @@ async function completarPerfilDeportista() {
       }
     }
 
-    // Validar fecha de nacimiento (formato YYYY-MM-DD)
     if (formDeportista.value.fecha_nacimiento && formDeportista.value.fecha_nacimiento.trim() !== '') {
-      const fechaNacimiento = new Date(formDeportista.value.fecha_nacimiento)
-      const fechaActual = new Date()
-
-      // Validar que la fecha sea válida
-      if (isNaN(fechaNacimiento.getTime())) {
-        mensajeError.value = 'La fecha de nacimiento no es válida'
+      const año = parseInt(formDeportista.value.fecha_nacimiento)
+      const añoActual = new Date().getFullYear()
+      if (!isNaN(año) && año >= 1900 && año <= añoActual) {
+        datosDeportista.fecha_nacimiento = año
+      } else {
+        mensajeError.value = `El año de nacimiento debe estar entre 1900 y ${añoActual}`
         return
       }
-
-      // Validar que no sea una fecha futura
-      if (fechaNacimiento > fechaActual) {
-        mensajeError.value = 'La fecha de nacimiento no puede ser una fecha futura'
-        return
-      }
-
-      // Validar que no sea antes de 1900
-      const añoMinimo = new Date('1900-01-01')
-      if (fechaNacimiento < añoMinimo) {
-        mensajeError.value = 'La fecha de nacimiento debe ser posterior a 1900'
-        return
-      }
-
-      // Enviar la fecha en formato ISO (YYYY-MM-DD)
-      datosDeportista.fecha_nacimiento = formDeportista.value.fecha_nacimiento
     }
 
     if (formDeportista.value.id_tipo_sanguineo && formDeportista.value.id_tipo_sanguineo !== '') {
@@ -418,9 +400,9 @@ async function completarPerfilDeportista() {
       // Recargar datos del usuario
       await authStore.loadUserProfile()
 
-      // Redirigir a home después de 2 segundos
+      // Aquí cambiamos la redirección al dashboard de deportista:
       setTimeout(() => {
-        router.push('/home')
+        router.push('/deportista/dashboard')
       }, 2000)
     } else {
       mensajeError.value = resultado.error || 'Error al completar perfil'
