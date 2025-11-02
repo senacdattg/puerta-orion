@@ -14,11 +14,11 @@
           </div>
 
           <div class="filtros">
-            <select v-model="filtroCategoria" class="filtro-select">
+            <select v-model="filtroCategoria" class="filtro-select" :disabled="cargandoCategorias">
               <option value="">Todas las categorías</option>
-              <option value="infantil">Infantil</option>
-              <option value="juvenil">Juvenil</option>
-              <option value="adulto">Adulto</option>
+              <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="normalizarCategoria(categoria.nombre_categoria)">
+                {{ categoria.nombre_categoria }}
+              </option>
             </select>
 
             <select v-model="filtroEstado" class="filtro-select">
@@ -30,7 +30,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Estadísticas rápidas -->
       <div class="estadisticas">
         <div class="stat-card">
@@ -46,18 +46,18 @@
           <span class="stat-label">Inactivos</span>
         </div>
       </div>
-  
+
       <!-- Grid de tarjetas de deportistas -->
       <div class="grid-deportistas">
         <TarjetaDeportista v-for="deportista in deportistasFiltrados" :key="deportista.id" :deportista="deportista"
-          @editar="editarDeportista" @eliminar="eliminarDeportista" />
-        
-        <!-- Botón para agregar deportista -->
-        <div class="boton-agregar" @click="agregarDeportista">
+          @editar="editarDeportista" @eliminar="eliminarDeportista" @ver="verDeportista" />
+
+        <!-- Botón para agregar deportista - Oculto en modo solo visualización -->
+        <!-- <div class="boton-agregar" @click="agregarDeportista">
           +
-        </div>
+        </div> -->
       </div>
-  
+
       <!-- Mensaje cuando no hay resultados -->
       <div v-if="deportistasFiltrados.length === 0" class="sin-resultados">
         <p>No se encontraron deportistas con los filtros aplicados</p>
@@ -71,10 +71,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import TarjetaDeportista from './tarjeta-deportista.vue';
-
-
+import catalogosService from '@/services/catalogosService';
 
 // Props siguiendo SRP - solo recibe la lista de deportistas
 const props = defineProps({
@@ -86,25 +85,53 @@ const props = defineProps({
 });
 
 // Emits para comunicación con el componente padre
-const emit = defineEmits(['editar', 'eliminar', 'agregar']);
+const emit = defineEmits(['editar', 'eliminar', 'agregar', 'ver']);
 
 // Estado local para filtros (KISS - simple y directo)
 const busqueda = ref('');
 const filtroCategoria = ref('');
 const filtroEstado = ref('');
 
+// Categorías cargadas desde la base de datos
+const categorias = ref([]);
+const cargandoCategorias = ref(false);
+
+// Normalizar nombre de categoría para comparación (debe estar antes del computed)
+function normalizarCategoria(nombreCategoria) {
+  if (!nombreCategoria) return '';
+  return String(nombreCategoria).toLowerCase().trim();
+}
+
 // Computed properties para filtrado (DRY - lógica centralizada)
 const deportistasFiltrados = computed(() => {
-  return props.deportistas.filter(deportista => {
-    const cumpleBusqueda = !busqueda.value ||
-      deportista.nombre.toLowerCase().includes(busqueda.value.toLowerCase()) ||
-      deportista.categoria.toLowerCase().includes(busqueda.value.toLowerCase());
+  const filtroCategoriaNormalizado = normalizarCategoria(filtroCategoria.value);
 
+  return props.deportistas.filter(deportista => {
+    const nombreDeportista = (deportista.nombre || '').toLowerCase().trim();
+
+    // Normalizar categoría del deportista - puede venir en diferentes formatos
+    // El backend devuelve categoria en lowercase, pero categoria_info.nombre_categoria puede tener mayúsculas
+    let categoriaDeportista = '';
+    if (deportista.categoria_info?.nombre_categoria) {
+      // Preferir categoria_info si existe (más confiable)
+      categoriaDeportista = normalizarCategoria(deportista.categoria_info.nombre_categoria);
+    } else if (deportista.categoria) {
+      // Fallback a categoria directo (ya viene en lowercase del backend)
+      categoriaDeportista = normalizarCategoria(deportista.categoria);
+    }
+
+    const busquedaLower = busqueda.value.toLowerCase().trim();
+
+    const cumpleBusqueda = !busqueda.value ||
+      nombreDeportista.includes(busquedaLower) ||
+      categoriaDeportista.includes(busquedaLower);
+
+    // Comparar categorías normalizadas - debe ser exacta
     const cumpleCategoria = !filtroCategoria.value ||
-      deportista.categoria === filtroCategoria.value;
+      categoriaDeportista === filtroCategoriaNormalizado;
 
     const cumpleEstado = !filtroEstado.value ||
-      deportista.estado === filtroEstado.value;
+      (deportista.estado || '').toLowerCase().trim() === filtroEstado.value.toLowerCase().trim();
 
     return cumpleBusqueda && cumpleCategoria && cumpleEstado;
   });
@@ -134,9 +161,54 @@ function limpiarFiltros() {
   filtroEstado.value = '';
 }
 
-function agregarDeportista() {
-  emit('agregar');
+// Función deshabilitada - solo modo visualización
+// function agregarDeportista() {
+//   emit('agregar');
+// }
+
+function verDeportista(deportista) {
+  emit('ver', deportista);
 }
+
+// Cargar categorías desde la base de datos
+async function cargarCategorias() {
+  cargandoCategorias.value = true;
+  try {
+    const categoriasData = await catalogosService.getCategorias();
+    console.log('📦 Categorías recibidas del backend:', categoriasData);
+
+    // El backend ya devuelve solo categorías activas (estado=True)
+    // Ordenarlas por nombre
+    if (Array.isArray(categoriasData)) {
+      categorias.value = categoriasData
+        .filter(cat => {
+          // Asegurar que la categoría tenga nombre_categoria
+          return cat && cat.nombre_categoria;
+        })
+        .sort((a, b) => {
+          const nombreA = a.nombre_categoria || '';
+          const nombreB = b.nombre_categoria || '';
+          return nombreA.localeCompare(nombreB);
+        });
+      console.log('✅ Categorías procesadas y cargadas:', categorias.value);
+    } else {
+      console.warn('⚠️ Las categorías no son un array:', categoriasData);
+      categorias.value = [];
+    }
+  } catch (error) {
+    console.error('❌ Error al cargar categorías:', error);
+    console.error('❌ Detalles del error:', error.message);
+    // Mantener categorías vacías en caso de error
+    categorias.value = [];
+  } finally {
+    cargandoCategorias.value = false;
+  }
+}
+
+// Cargar categorías al montar el componente
+onMounted(() => {
+  cargarCategorias();
+});
 </script>
 
 

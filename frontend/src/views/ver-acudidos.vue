@@ -170,6 +170,25 @@
       </div>
     </div>
 
+    <!-- Modal para ver perfil completo del deportista -->
+    <div v-if="mostrarModalPerfil" class="modal-overlay" @click.self="cerrarModalPerfil">
+      <div class="modal-content modal-perfil">
+        <div class="modal-body">
+          <div v-if="cargandoPerfil" class="cargando">
+            <p>Cargando información...</p>
+          </div>
+          <PerfilDeportistaVista
+            v-else-if="deportistaSeleccionadoPerfil"
+            :datos="deportistaSeleccionadoPerfil"
+            @cerrar="cerrarModalPerfil"
+          />
+          <div v-else class="error">
+            <p>No se pudo cargar la información del deportista</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <FooterEnhanced />
   </main>
 </template>
@@ -184,6 +203,7 @@ import FooterEnhanced from '@/components/layout/pie.vue'
 import deportistasService from '@/services/deportistasService'
 import authService from '@/services/authService'
 import catalogosService from '@/services/catalogosService'
+import PerfilDeportistaVista from '@/components/deportistas/perfil-deportista-vista.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -257,8 +277,38 @@ const cargarAcudidos = async () => {
   }
 }
 
-const verDetalle = (acudido) => {
-  router.push(`/ver-deportista/${acudido.id}`)
+// Estado para el modal de perfil completo
+const mostrarModalPerfil = ref(false)
+const deportistaSeleccionadoPerfil = ref(null)
+const cargandoPerfil = ref(false)
+
+const verDetalle = async (acudido) => {
+  cargandoPerfil.value = true
+  mostrarModalPerfil.value = true
+  deportistaSeleccionadoPerfil.value = null
+  
+  try {
+    // Obtener información completa del deportista
+    const response = await deportistasService.obtenerDeportistaPorId(acudido.id)
+    
+    if (response.success && response.data) {
+      deportistaSeleccionadoPerfil.value = response.data
+    } else {
+      alert('Error al cargar la información del deportista')
+      mostrarModalPerfil.value = false
+    }
+  } catch (error) {
+    console.error('Error al obtener perfil del deportista:', error)
+    alert('Error al cargar la información del deportista')
+    mostrarModalPerfil.value = false
+  } finally {
+    cargandoPerfil.value = false
+  }
+}
+
+const cerrarModalPerfil = () => {
+  mostrarModalPerfil.value = false
+  deportistaSeleccionadoPerfil.value = null
 }
 
 const editarAcudido = (acudido) => {
@@ -337,6 +387,17 @@ const seleccionarDeportista = (deportista) => {
 const asociarDeportista = async () => {
   if (!deportistaSeleccionado.value || !idParentesco.value) {
     alert('Por favor, selecciona un deportista y un parentesco.')
+    return
+  }
+  
+  // Validar que el usuario no se esté acudiendo a sí mismo
+  const usuarioActual = authStore.user
+  const idPersonaUsuario = usuarioActual?.persona?.id_persona || usuarioActual?.id_persona
+  
+  // Verificar si el deportista seleccionado tiene el mismo id_persona que el usuario actual
+  if (deportistaSeleccionado.value.id_persona === idPersonaUsuario || 
+      deportistaSeleccionado.value.persona?.id_persona === idPersonaUsuario) {
+    alert('No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.')
     return
   }
   
@@ -630,6 +691,16 @@ const asociarDeportista = async () => {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content.modal-perfil {
+  overflow: visible;
+  max-height: none;
+}
+
+.modal-content.modal-perfil .modal-body {
+  overflow: visible;
+  padding: 0;
 }
 
 .modal-header {

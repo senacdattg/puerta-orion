@@ -168,45 +168,6 @@ def asignar_rol():
         }), 500
 
 
-# @auth_bp.route('/setup-permissions', methods=['POST'])
-# def setup_permissions():
-#     """
-#     Endpoint para configurar los permisos básicos del sistema.
-#     """
-#     try:
-#         from ..models.roles_y_permisos.permiso import Permiso
-#         from ..models.base import db
-#         
-#         # Verificar si ya existen permisos
-#         permisos_existentes = Permiso.query.count()
-#         if permisos_existentes > 0:
-#             return jsonify({
-#                 'success': True,
-#                 'message': 'Los permisos ya existen en el sistema',
-#                 'total_permisos': permisos_existentes
-#             }), 200
-#         
-#         # Ejecutar seeder de permisos
-#         from ..seeders.seed_permisos import run as seed_permisos
-#         seed_permisos()
-#         
-#         # Contar permisos creados
-#         total_permisos = Permiso.query.count()
-#         
-#         return jsonify({
-#             'success': True,
-#             'message': 'Permisos creados exitosamente',
-#             'total_permisos': total_permisos
-#         }), 201
-#         
-#     except Exception as e:
-#         logger.error(f"Error configurando permisos: {str(e)}")
-#         return jsonify({
-#             'success': False,
-#             'error': f'Error configurando permisos: {str(e)}',
-#             'status_code': 500
-#         }), 500
-
 
 @auth_bp.route('/user-permissions', methods=['GET'])
 @token_required()

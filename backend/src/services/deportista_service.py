@@ -223,7 +223,37 @@ class DeportistaService:
                 error_out=False
             )
 
-            deportistas = [deportista.to_dict() for deportista in paginacion.items]
+            # Enriquecer datos con información de persona y categoría
+            deportistas = []
+            for deportista in paginacion.items:
+                datos = deportista.to_dict()
+                
+                # Agregar datos de la persona si existe la relación
+                if deportista.persona:
+                    datos['persona'] = deportista.persona.to_dict()
+                    # Agregar nombre completo para facilitar el uso en frontend
+                    datos['nombre'] = deportista.persona.nombre_completo
+                    datos['nombre1'] = deportista.persona.primer_nombre
+                    datos['nombre2'] = deportista.persona.segundo_nombre
+                    datos['apellido1'] = deportista.persona.primer_apellido
+                    datos['apellido2'] = deportista.persona.segundo_apellido
+                    datos['correo'] = deportista.persona.correo_electronico
+                    datos['telefono'] = deportista.persona.telefono
+                    datos['direccion'] = deportista.persona.direccion
+                    datos['documento'] = deportista.persona.documento
+                    datos['estado'] = 'activo' if deportista.persona.estado else 'inactivo'
+                
+                # Agregar datos de la categoría si existe la relación
+                if deportista.categoria:
+                    datos['categoria'] = deportista.categoria.nombre_categoria.lower()
+                    datos['categoria_info'] = {
+                        'id_categoria': deportista.categoria.id_categoria,
+                        'nombre_categoria': deportista.categoria.nombre_categoria,
+                        'edad_minima': deportista.categoria.edad_minima,
+                        'edad_maxima': deportista.categoria.edad_maxima
+                    }
+                
+                deportistas.append(datos)
 
             return {
                 'success': True,

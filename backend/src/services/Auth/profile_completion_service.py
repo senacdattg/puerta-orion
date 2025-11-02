@@ -247,6 +247,10 @@ class AcudienteCreator(ProfileCreator):
         if not deportista:
             raise ProfileCompletionError(f"El deportista con ID {id_deportista} no existe")
         
+        # Validar que el deportista no se esté acudiendo a sí mismo
+        if deportista.id_persona == usuario.id_persona:
+            raise ProfileCompletionError("Un deportista no puede acudirse a sí mismo")
+        
         # Validar que el parentesco existe
         parentesco = Parentesco.query.filter_by(id_parentesco=int(id_parentesco)).first()
         if not parentesco:
@@ -502,24 +506,34 @@ class ProfileCompletionService:
         if not usuario:
             raise ProfileCompletionError("Usuario no encontrado")
 
+        # Verificar roles del usuario
+        roles_usuario = [rol.nombre_rol for rol in usuario.roles]
+        
         # Verificar que no esté intentando completar el mismo tipo que ya tiene
         deportista = Deportista.query.filter_by(id_persona=usuario.id_persona).first()
         acudiente = Acudiente.query.filter_by(id_persona=usuario.id_persona).first()
 
-        if profile_type == 'deportista' and deportista:
-            raise ProfileCompletionError("El usuario ya está registrado como deportista")
-        elif profile_type == 'acudiente' and acudiente:
-            raise ProfileCompletionError("El usuario ya está registrado como acudiente")
-        
-        # Validación específica para acudientes: deben ser mayores de 18 años
-        if profile_type == 'acudiente':
+        if profile_type == 'deportista':
+            # Validar que no tenga ya el rol de deportista
+            if 'Deportista' in roles_usuario:
+                raise ProfileCompletionError(
+                    "El usuario ya tiene el rol de deportista. No puede realizar el registro nuevamente."
+                )
+            # Validar que no exista ya un registro de deportista
+            if deportista:
+                raise ProfileCompletionError("El usuario ya está registrado como deportista")
+        elif profile_type == 'acudiente':
+            # Validar que no exista ya un registro de acudiente
+            if acudiente:
+                raise ProfileCompletionError("El usuario ya está registrado como acudiente")
+            
+            # Validación específica para acudientes: deben ser mayores de 18 años
             # Buscar fecha de nacimiento
             fecha_nacimiento = None
             
             # Intentar obtener de la persona si tiene deportista
             if deportista and deportista.fecha_nacimiento:
                 fecha_nacimiento = deportista.fecha_nacimiento
-            # TODO: Si no, buscar en otra fuente de datos
             
             if fecha_nacimiento:
                 año_actual = date.today().year
@@ -531,8 +545,10 @@ class ProfileCompletionService:
                     )
                 self.logger.info(f"Validación de edad para acudiente: {edad} años (OK)")
             else:
-                # Si no hay fecha de nacimiento registrada, no validamos por seguridad
-                self.logger.warning("No se pudo validar edad del usuario para acudiente")
+                # Si no hay fecha de nacimiento registrada, rechazar la solicitud
+                raise ProfileCompletionError(
+                    "Para ser acudiente debe tener edad válida registrada. Por favor, complete su registro como deportista primero o contacte al administrador."
+                )
 
 
 # Instancia global del servicio para uso en la aplicación

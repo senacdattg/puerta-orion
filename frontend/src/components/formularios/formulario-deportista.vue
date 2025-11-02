@@ -11,11 +11,10 @@
       <div class="fila-texto">
         <input
           v-model="form.fecha_nacimiento"
-          type="number"
-          placeholder="Año de nacimiento (ej: 2005)"
+          type="date"
+          placeholder="Fecha de nacimiento"
           required
-          min="1980"
-          :max="new Date().getFullYear()"
+          :max="new Date().toISOString().split('T')[0]"
           :readonly="modo === 'ver'"
         />
         <select
@@ -268,97 +267,20 @@
 
       <hr class="form-divider" />
 
-      <!-- Sección de Acudientes (Obligatorio) -->
-      <div class="seccion-titulo">Información de Acudiente *</div>
-
-      <div class="campo-busqueda-acudiente">
-        <label for="buscar-cedula">Buscar acudiente por número de cédula:</label>
-        <div class="busqueda-row">
-          <input
-            id="buscar-cedula"
-            v-model="cedulaBuscada"
-            type="text"
-            placeholder="Ingrese número de cédula (ej: 1234567890)"
-            :disabled="modo === 'ver' || isSearchingAcudiente"
-            @keyup.enter="buscarAcudientePorCedula"
-          />
-          <button
-            type="button"
-            @click="buscarAcudientePorCedula"
-            :disabled="modo === 'ver' || isSearchingAcudiente || !cedulaBuscada"
-            class="boton-buscar"
-          >
-            {{ isSearchingAcudiente ? 'Buscando...' : 'Buscar' }}
-          </button>
-        </div>
-
-        <!-- Mensaje de resultado de búsqueda -->
-        <div v-if="mensajeBusquedaAcudiente"
-             :class="['mensaje-busqueda', mensajeBusquedaAcudiente.tipo]">
-          <p><strong>{{ mensajeBusquedaAcudiente.titulo }}</strong></p>
-          <p>{{ mensajeBusquedaAcudiente.mensaje }}</p>
-          <p v-if="mensajeBusquedaAcudiente.sugerencia" class="sugerencia">
-            {{ mensajeBusquedaAcudiente.sugerencia }}
-          </p>
-        </div>
-
-        <!-- Información del acudiente encontrado -->
-        <div v-if="acudienteEncontrado" class="info-acudiente-encontrado">
-          <div class="acudiente-card">
-            <h4>✓ Acudiente encontrado:</h4>
-            <p><strong>Nombre:</strong> {{ acudienteEncontrado.persona?.nombre_completo }}</p>
-            <p><strong>Cédula:</strong> {{ acudienteEncontrado.persona?.documento }}</p>
-            <p><strong>Email:</strong> {{ acudienteEncontrado.persona?.correo_electronico }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Campos de parentesco y responsabilidad -->
-      <div v-if="acudienteEncontrado" class="campo-condicional">
-        <div class="fila-texto">
-          <select
-            v-model="form.id_parentesco"
-            required
-            :disabled="modo === 'ver'"
-          >
-            <option value="" disabled>Seleccione el parentesco *</option>
-            <option v-for="parentesco in catalogos.parentescos" :key="parentesco.id_parentesco" :value="parentesco.id_parentesco">
-              {{ parentesco.nombre }}
-            </option>
-          </select>
-        </div>
-
-        <div class="bloque-radio">
-          <label>¿Es el acudiente responsable? *</label>
-          <div class="opciones">
-            <input
-              type="radio"
-              id="es-responsable-si"
-              name="es-responsable"
-              :value="true"
-              v-model="form.es_responsable"
-              :disabled="modo === 'ver'"
-              required
-            />
-            <label for="es-responsable-si">Sí</label>
-            <input
-              type="radio"
-              id="es-responsable-no"
-              name="es-responsable"
-              :value="false"
-              v-model="form.es_responsable"
-              :disabled="modo === 'ver'"
-              required
-            />
-            <label for="es-responsable-no">No</label>
-          </div>
-        </div>
-      </div>
-
-      <hr class="form-divider" />
 
       <!-- Botones de acción -->
-      <div v-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
+      <!-- Solo mostrar en modo ver un botón para cerrar -->
+      <div v-if="modo === 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
+        <button
+          type="button"
+          class="boton-formulario"
+          style="width: 150px; background: #6c757d;"
+          @click="cancelar"
+        >
+          Cerrar
+        </button>
+      </div>
+      <div v-else-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
         <button type="submit" class="boton-formulario" :disabled="isSubmitting" style="width: 150px;">
           {{ isSubmitting ? 'Enviando...' : obtenerTextoBoton() }}
         </button>
@@ -387,13 +309,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useRoute } from 'vue-router';
 import catalogosService from '@/services/catalogosService';
 
-const router = useRouter();
 const route = useRoute();
-const authStore = useAuthStore();
 
 const props = defineProps({
   modo: {
@@ -413,10 +332,7 @@ const isSubmitting = ref(false);
 const showModal = ref(false);
 const modalTitle = ref('');
 const modalMessage = ref('');
-const isSearchingAcudiente = ref(false);
-const cedulaBuscada = ref('');
-const acudienteEncontrado = ref(null);
-const mensajeBusquedaAcudiente = ref(null);
+// Variables de acudiente eliminadas - ya no se usa en el registro
 
 const catalogos = ref({
   tiposDocumento: [],
@@ -502,14 +418,14 @@ async function cargarCatalogos() {
     // Catálogos específicos de deportistas
     const baseURL = 'http://localhost:5000';
     const endpoints = [
-      '/api/catalogos/grupos-sanguineos',
-      '/api/catalogos/ciudades-residencia',
-      '/api/catalogos/eps',
-      '/api/catalogos/deportes',
-      '/api/catalogos/escuelas',
-      '/api/catalogos/instituciones-registro',
+      '/api/deportistas/catalogos/grupos-sanguineos',
+      '/api/deportistas/catalogos/ciudades-residencia',
+      '/api/deportistas/catalogos/eps',
+      '/api/deportistas/catalogos/deportes',
+      '/api/deportistas/catalogos/escuelas',
+      '/api/deportistas/catalogos/instituciones-registro',
       '/api/catalogos/tipos-enfermedad',
-      '/api/catalogos/diagnosticos',
+      '/api/deportistas/catalogos/diagnosticos',
       '/api/catalogos/acudientes',
       '/api/catalogos/parentescos'
     ];
@@ -585,59 +501,7 @@ function seleccionarEnfermedades(tiene) {
   }
 }
 
-async function buscarAcudientePorCedula() {
-  if (!cedulaBuscada.value || !cedulaBuscada.value.trim()) {
-    mensajeBusquedaAcudiente.value = {
-      tipo: 'error',
-      titulo: 'Error',
-      mensaje: 'Por favor ingrese un número de cédula'
-    };
-    return;
-  }
-
-  isSearchingAcudiente.value = true;
-  mensajeBusquedaAcudiente.value = null;
-  acudienteEncontrado.value = null;
-
-  try {
-    const baseURL = 'http://localhost:5000';
-    const response = await fetch(`${baseURL}/api/catalogos/acudientes?cedula=${cedulaBuscada.value}`);
-    const result = await response.json();
-
-    if (response.ok && result.success) {
-      // Acudiente encontrado
-      acudienteEncontrado.value = result.data;
-      form.value.id_acudiente = result.data.id_acudiente;
-
-      mensajeBusquedaAcudiente.value = {
-        tipo: 'success',
-        titulo: '✓ Éxito',
-        mensaje: 'Acudiente encontrado exitosamente'
-      };
-    } else {
-      // Acudiente no encontrado
-      mensajeBusquedaAcudiente.value = {
-        tipo: 'warning',
-        titulo: '⚠ Acudiente no encontrado',
-        mensaje: result.message || 'No se encontró un acudiente con ese documento',
-        sugerencia: result.sugerencia || 'El acudiente debe registrarse primero en el sistema'
-      };
-      acudienteEncontrado.value = null;
-      form.value.id_acudiente = "";
-      form.value.id_parentesco = "";
-      form.value.es_responsable = null;
-    }
-  } catch (error) {
-    console.error('Error al buscar acudiente:', error);
-    mensajeBusquedaAcudiente.value = {
-      tipo: 'error',
-      titulo: 'Error',
-      mensaje: 'Error al buscar acudiente. Por favor, intente de nuevo.'
-    };
-  } finally {
-    isSearchingAcudiente.value = false;
-  }
-}
+// Funciones relacionadas con acudiente eliminadas - ya no se usan en el registro
 
 function mostrarModal(titulo, mensaje) {
   modalTitle.value = titulo;
@@ -699,30 +563,12 @@ async function manejarSubmit() {
       return;
     }
 
-    // Validación de acudiente (OBLIGATORIO)
-    if (!acudienteEncontrado.value || !form.value.id_acudiente) {
-      mostrarModal('Error', 'Debe buscar y encontrar un acudiente por número de cédula para continuar.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (!form.value.id_parentesco) {
-      mostrarModal('Error', 'Debe especificar el parentesco con el acudiente.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    // Validar que se haya seleccionado si es responsable o no
-    if (form.value.es_responsable === null || form.value.es_responsable === undefined || form.value.es_responsable === '') {
-      mostrarModal('Error', 'Debe indicar si el acudiente es responsable o no.');
-      isSubmitting.value = false;
-      return;
-    }
+    // La información de acudiente ya no es obligatoria en el registro
 
     // 2. Estructurar datos según el endpoint
     const datosEnvio = {
       datos_deportista: {
-        fecha_nacimiento: parseInt(form.value.fecha_nacimiento),
+        fecha_nacimiento: form.value.fecha_nacimiento, // Fecha completa en formato YYYY-MM-DD
         id_tipo_sanguineo: parseInt(form.value.id_tipo_sanguineo) || null,
         id_ciudad_recidencia: parseInt(form.value.id_ciudad_residencia) || null,
         id_eps: parseInt(form.value.id_eps) || null
@@ -747,15 +593,9 @@ async function manejarSubmit() {
       datosEnvio.diagnostico = [];
     }
 
-    // Agregar información de acudiente (OBLIGATORIO)
-    // Si viene de "Asignar Acudido", el acudiente será el usuario actual
-    const acudienteData = {
-      id_acudiente: parseInt(form.value.id_acudiente),
-      id_parentesco: parseInt(form.value.id_parentesco),
-      es_responsable: form.value.es_responsable
-    };
-
-    datosEnvio.acudientes = [acudienteData];
+    // La información de acudiente ya no se envía en el registro
+    // Se asignará posteriormente desde el perfil del deportista
+    datosEnvio.acudientes = [];
 
     // Agregar metadata para identificar contexto
     if (route.query.asignarAcudiente === 'true') {
@@ -797,9 +637,6 @@ async function manejarSubmit() {
             form.value[key] = '';
           }
         });
-        acudienteEncontrado.value = null;
-        cedulaBuscada.value = '';
-        mensajeBusquedaAcudiente.value = null;
       }, 3000);
     } else {
       // Manejo de errores del backend
@@ -823,27 +660,7 @@ function cancelar() {
 onMounted(async () => {
   await cargarCatalogos();
 
-  // Si viene de "Asignar Acudido", pre-cargar el acudiente del usuario actual
-  if (route.query.asignarAcudiente === 'true' && authStore.user?.id_usuario) {
-    try {
-      // Obtener el acudiente del usuario actual
-      const response = await fetch(`http://localhost:5000/api/catalogos/acudientes?cedula=${authStore.user?.persona?.documento || ''}`);
-      const result = await response.json();
-
-      if (response.ok && result.success && result.data) {
-        acudienteEncontrado.value = result.data;
-        form.value.id_acudiente = result.data.id_acudiente;
-
-        mensajeBusquedaAcudiente.value = {
-          tipo: 'success',
-          titulo: '✓ Tu información como acudiente',
-          mensaje: 'Se pre-cargó tu información como acudiente. Puedes editar el parentesco si es necesario.'
-        };
-      }
-    } catch (error) {
-      console.error('Error pre-cargando acudiente:', error);
-    }
-  }
+  // La información de acudiente ya no se carga en el registro del deportista
 
   if (props.datos && Object.keys(props.datos).length > 0) {
     Object.keys(props.datos).forEach(key => {

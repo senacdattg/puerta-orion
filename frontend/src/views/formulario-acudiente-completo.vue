@@ -170,6 +170,18 @@ async function completarRegistroAcudiente() {
     return;
   }
 
+  // Validar que el usuario no se esté acudiendo a sí mismo
+  // Obtener información del usuario actual
+  const usuarioActual = authStore.user;
+  const idPersonaUsuario = usuarioActual?.persona?.id_persona || usuarioActual?.id_persona;
+  
+  // Verificar si el deportista encontrado tiene el mismo id_persona que el usuario actual
+  if (deportistaEncontrado.value.id_persona === idPersonaUsuario || 
+      deportistaEncontrado.value.persona?.id_persona === idPersonaUsuario) {
+    alert('No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.');
+    return;
+  }
+
   cargando.value = true;
 
   try {

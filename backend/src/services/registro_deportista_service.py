@@ -40,12 +40,15 @@ class RegistroDeportistaService:
         return obtener_registrador('aplicacion')
 
     @staticmethod
-    def _calcular_categoria_por_fecha_nacimiento(fecha_nacimiento: int) -> Optional[int]:
+    def _calcular_categoria_por_fecha_nacimiento(fecha_nacimiento) -> Optional[int]:
         """
         Calcula la categoría del deportista basándose en su fecha de nacimiento.
         
         Args:
-            fecha_nacimiento: Año de nacimiento del deportista
+            fecha_nacimiento: Puede ser:
+                - int: Año de nacimiento (para compatibilidad)
+                - str: Fecha en formato ISO (YYYY-MM-DD)
+                - date: Objeto date de Python
             
         Returns:
             int: ID de la categoría correspondiente o None si no se encuentra
@@ -53,10 +56,31 @@ class RegistroDeportistaService:
         logger = RegistroDeportistaService._obtener_logger()
         
         try:
+            from datetime import date, datetime
+            
             # Calcular la edad actual
-            from datetime import date
-            año_actual = date.today().year
-            edad = año_actual - fecha_nacimiento
+            hoy = date.today()
+            
+            # Convertir fecha_nacimiento a objeto date
+            if isinstance(fecha_nacimiento, date):
+                fecha_nac = fecha_nacimiento
+            elif isinstance(fecha_nacimiento, str):
+                # Intentar parsear fecha ISO (YYYY-MM-DD)
+                try:
+                    fecha_nac = datetime.fromisoformat(fecha_nacimiento).date()
+                except ValueError:
+                    # Si falla, intentar parsear como año solo
+                    año = int(fecha_nacimiento)
+                    fecha_nac = date(año, 1, 1)  # Usar 1 de enero como fecha por defecto
+            elif isinstance(fecha_nacimiento, int):
+                # Compatibilidad con años antiguos
+                fecha_nac = date(fecha_nacimiento, 1, 1)
+            else:
+                logger.error(f'Tipo de fecha_nacimiento no reconocido: {type(fecha_nacimiento)}')
+                return None
+            
+            # Calcular edad exacta
+            edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
             
             # Buscar la categoría que corresponde a esta edad
             categoria = Categoria.query.filter(
@@ -218,6 +242,17 @@ class RegistroDeportistaService:
                     'status_code': 404
                 }
             
+            # Verificar que el usuario no tenga ya el rol "Deportista"
+            usuario = Usuario.query.filter_by(id_persona=datos_deportista['id_persona']).first()
+            if usuario:
+                roles_usuario = [rol.nombre_rol for rol in usuario.roles]
+                if 'Deportista' in roles_usuario:
+                    return {
+                        'success': False,
+                        'message': 'El usuario ya tiene el rol de deportista. No puede realizar el registro nuevamente.',
+                        'status_code': 409
+                    }
+            
             # Verificar que no existe ya un deportista
             deportista_existente = Deportista.query.filter_by(id_persona=datos_deportista['id_persona']).first()
             if deportista_existente:
@@ -250,14 +285,45 @@ class RegistroDeportistaService:
                             'status_code': 400
                         }
             
+            # Procesar fecha de nacimiento
+            fecha_nacimiento_raw = datos_deportista['fecha_nacimiento']
+            
+            # Convertir fecha de nacimiento a objeto date si viene como string
+            fecha_nacimiento_date = None
+            if isinstance(fecha_nacimiento_raw, str):
+                # Intentar parsear fecha ISO (YYYY-MM-DD)
+                try:
+                    fecha_nacimiento_date = datetime.fromisoformat(fecha_nacimiento_raw).date()
+                except ValueError:
+                    # Si falla, tratar como año solo (compatibilidad)
+                    try:
+                        año = int(fecha_nacimiento_raw)
+                        fecha_nacimiento_date = date(año, 1, 1)
+                    except ValueError:
+                        return {
+                            'success': False,
+                            'message': f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}',
+                            'status_code': 400
+                        }
+            elif isinstance(fecha_nacimiento_raw, int):
+                # Compatibilidad con años antiguos
+                fecha_nacimiento_date = date(fecha_nacimiento_raw, 1, 1)
+            elif isinstance(fecha_nacimiento_raw, date):
+                fecha_nacimiento_date = fecha_nacimiento_raw
+            else:
+                return {
+                    'success': False,
+                    'message': f'Tipo de fecha de nacimiento no válido: {type(fecha_nacimiento_raw)}',
+                    'status_code': 400
+                }
+            
             # Calcular categoría automáticamente
-            fecha_nacimiento = datos_deportista['fecha_nacimiento']
-            id_categoria = RegistroDeportistaService._calcular_categoria_por_fecha_nacimiento(fecha_nacimiento)
+            id_categoria = RegistroDeportistaService._calcular_categoria_por_fecha_nacimiento(fecha_nacimiento_date)
             
             if not id_categoria:
                 return {
                     'success': False,
-                    'message': f'No se pudo determinar la categoría para el año de nacimiento {fecha_nacimiento}',
+                    'message': f'No se pudo determinar la categoría para la fecha de nacimiento {fecha_nacimiento_date}',
                     'status_code': 400
                 }
             
@@ -291,7 +357,7 @@ class RegistroDeportistaService:
                 id_persona=datos_deportista['id_persona'],
                 id_categoria=id_categoria,
                 fecha_ingreso=date.today(),
-                fecha_nacimiento=fecha_nacimiento,
+                fecha_nacimiento=fecha_nacimiento_date,
                 id_tipo_sanguineo=datos_deportista.get('id_tipo_sanguineo'),
                 id_ciudad_recidencia=datos_deportista.get('id_ciudad_recidencia'),
                 id_informacion_deportiva=id_informacion_deportiva,
@@ -522,16 +588,24 @@ class RegistroDeportistaService:
                     'documento': persona.documento,
                     'correo_electronico': persona.correo_electronico,
                     'telefono': persona.telefono,
-                    'direccion': persona.direccion
+                    'direccion': persona.direccion,
+                    'id_tipo_documento': persona.id_tipo_documento
                 }
                 
                 # Agregar fecha de nacimiento si existe
                 if deportista.fecha_nacimiento:
-                    persona_data['fecha_nacimiento'] = deportista.fecha_nacimiento
-                    # Calcular edad aproximada
-                    from datetime import date
-                    año_actual = date.today().year
-                    persona_data['edad_aproximada'] = año_actual - deportista.fecha_nacimiento
+                    # Si es Date, convertir a ISO format
+                    if isinstance(deportista.fecha_nacimiento, date):
+                        persona_data['fecha_nacimiento'] = deportista.fecha_nacimiento.isoformat()
+                        # Calcular edad exacta
+                        hoy = date.today()
+                        edad = hoy.year - deportista.fecha_nacimiento.year - ((hoy.month, hoy.day) < (deportista.fecha_nacimiento.month, deportista.fecha_nacimiento.day))
+                        persona_data['edad_aproximada'] = edad
+                    else:
+                        # Mantener compatibilidad con años antiguos (número)
+                        persona_data['fecha_nacimiento'] = deportista.fecha_nacimiento
+                        año_actual = date.today().year
+                        persona_data['edad_aproximada'] = año_actual - deportista.fecha_nacimiento
                 
                 # Solo IDs de catálogos (el frontend mapeará los nombres)
                 persona_data['id_tipo_sanguineo'] = deportista.id_tipo_sanguineo
