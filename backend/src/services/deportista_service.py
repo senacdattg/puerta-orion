@@ -114,6 +114,32 @@ class DeportistaService:
                     'status_code': 409
                 }
 
+            # Procesar fecha de nacimiento - convertir string a date si es necesario
+            fecha_nacimiento_date = None
+            fecha_nacimiento_raw = datos.get('fecha_nacimiento')
+            
+            if fecha_nacimiento_raw:
+                if isinstance(fecha_nacimiento_raw, str):
+                    # Intentar parsear fecha ISO (YYYY-MM-DD)
+                    try:
+                        fecha_nacimiento_date = datetime.fromisoformat(fecha_nacimiento_raw).date()
+                    except ValueError:
+                        # Si falla, tratar como año solo (compatibilidad)
+                        try:
+                            año = int(fecha_nacimiento_raw)
+                            fecha_nacimiento_date = date(año, 1, 1)
+                        except ValueError:
+                            return {
+                                'success': False,
+                                'message': f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}',
+                                'status_code': 400
+                            }
+                elif isinstance(fecha_nacimiento_raw, int):
+                    # Compatibilidad con años antiguos
+                    fecha_nacimiento_date = date(fecha_nacimiento_raw, 1, 1)
+                elif isinstance(fecha_nacimiento_raw, date):
+                    fecha_nacimiento_date = fecha_nacimiento_raw
+            
             # Crear instancia de deportista
             # La fecha de ingreso se asigna automáticamente a la fecha actual
             deportista = Deportista(
@@ -122,7 +148,7 @@ class DeportistaService:
                 fecha_ingreso=datos.get('fecha_ingreso', date.today()),  # Automática por defecto
                 peso=datos.get('peso'),
                 altura=datos.get('altura'),
-                fecha_nacimiento=datos.get('fecha_nacimiento'),
+                fecha_nacimiento=fecha_nacimiento_date,
                 id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
                 id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
                 id_mensualidad=datos.get('id_mensualidad'),

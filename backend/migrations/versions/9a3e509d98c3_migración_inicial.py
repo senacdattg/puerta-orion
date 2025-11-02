@@ -290,7 +290,7 @@ def upgrade():
     sa.Column('peso', sa.Float(), nullable=True),
     sa.Column('altura', sa.Float(), nullable=True),
     sa.Column('fecha_ingreso', sa.Date(), nullable=False),
-    sa.Column('fecha_nacimiento', sa.SmallInteger(), nullable=True),
+    sa.Column('fecha_nacimiento', sa.Date(), nullable=True),
     sa.Column('id_categoria', sa.Integer(), nullable=False),
     sa.Column('id_persona', sa.Integer(), nullable=False),
     sa.Column('id_tipo_sanguineo', sa.Integer(), nullable=True),

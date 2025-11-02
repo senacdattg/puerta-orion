@@ -327,13 +327,36 @@ class UsuarioService:
                 if not datos or not datos.get('id_categoria'):
                     raise UsuarioServiceError("El campo 'id_categoria' es obligatorio para crear un deportista")
                 
+                # Procesar fecha de nacimiento - convertir string a date si es necesario
+                fecha_nacimiento_date = None
+                fecha_nacimiento_raw = datos.get('fecha_nacimiento')
+                
+                if fecha_nacimiento_raw:
+                    from datetime import datetime
+                    if isinstance(fecha_nacimiento_raw, str):
+                        # Intentar parsear fecha ISO (YYYY-MM-DD)
+                        try:
+                            fecha_nacimiento_date = datetime.fromisoformat(fecha_nacimiento_raw).date()
+                        except ValueError:
+                            # Si falla, tratar como año solo (compatibilidad)
+                            try:
+                                año = int(fecha_nacimiento_raw)
+                                fecha_nacimiento_date = date(año, 1, 1)
+                            except ValueError:
+                                raise UsuarioServiceError(f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}')
+                    elif isinstance(fecha_nacimiento_raw, int):
+                        # Compatibilidad con años antiguos
+                        fecha_nacimiento_date = date(fecha_nacimiento_raw, 1, 1)
+                    elif isinstance(fecha_nacimiento_raw, date):
+                        fecha_nacimiento_date = fecha_nacimiento_raw
+                
                 deportista = Deportista(
                     id_persona=id_persona,
                     id_categoria=datos['id_categoria'],
                     peso=datos.get('peso'),
                     altura=datos.get('altura'),
                     fecha_ingreso=datos.get('fecha_ingreso', date.today()),
-                    fecha_nacimiento=datos.get('fecha_nacimiento'),
+                    fecha_nacimiento=fecha_nacimiento_date,
                     id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
                     id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
                     id_mensualidad=datos.get('id_mensualidad'),

@@ -115,15 +115,17 @@
             </div>
 
             <div class="form-group">
-              <label for="fecha_nacimiento">Año de Nacimiento</label>
+              <label for="fecha_nacimiento">Fecha de Nacimiento *</label>
               <input
-                type="number"
+                type="date"
                 id="fecha_nacimiento"
                 v-model="formDeportista.fecha_nacimiento"
-                min="1900"
-                :max="new Date().getFullYear()"
+                :max="new Date().toISOString().split('T')[0]"
+                :min="new Date('1900-01-01').toISOString().split('T')[0]"
                 :disabled="cargando"
-                placeholder="Ej: 2000"
+                required
+                class="form-input"
+                style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;"
               />
             </div>
 
@@ -303,7 +305,7 @@ const formDeportista = ref({
   id_categoria: '',
   peso: null,
   altura: null,
-  fecha_nacimiento: null,
+  fecha_nacimiento: '',
   id_tipo_sanguineo: '',
   id_eps: ''
 })
@@ -372,15 +374,32 @@ async function completarPerfilDeportista() {
       }
     }
 
+    // Validar fecha de nacimiento (formato YYYY-MM-DD)
     if (formDeportista.value.fecha_nacimiento && formDeportista.value.fecha_nacimiento.trim() !== '') {
-      const año = parseInt(formDeportista.value.fecha_nacimiento)
-      const añoActual = new Date().getFullYear()
-      if (!isNaN(año) && año >= 1900 && año <= añoActual) {
-        datosDeportista.fecha_nacimiento = año
-      } else {
-        mensajeError.value = `El año de nacimiento debe estar entre 1900 y ${añoActual}`
+      const fechaNacimiento = new Date(formDeportista.value.fecha_nacimiento)
+      const fechaActual = new Date()
+
+      // Validar que la fecha sea válida
+      if (isNaN(fechaNacimiento.getTime())) {
+        mensajeError.value = 'La fecha de nacimiento no es válida'
         return
       }
+
+      // Validar que no sea una fecha futura
+      if (fechaNacimiento > fechaActual) {
+        mensajeError.value = 'La fecha de nacimiento no puede ser una fecha futura'
+        return
+      }
+
+      // Validar que no sea antes de 1900
+      const añoMinimo = new Date('1900-01-01')
+      if (fechaNacimiento < añoMinimo) {
+        mensajeError.value = 'La fecha de nacimiento debe ser posterior a 1900'
+        return
+      }
+
+      // Enviar la fecha en formato ISO (YYYY-MM-DD)
+      datosDeportista.fecha_nacimiento = formDeportista.value.fecha_nacimiento
     }
 
     if (formDeportista.value.id_tipo_sanguineo && formDeportista.value.id_tipo_sanguineo !== '') {
