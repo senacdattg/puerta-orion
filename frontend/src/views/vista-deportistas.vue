@@ -6,6 +6,7 @@ import Encabezado from '../components/layout/encabezado.vue';
 import tituloClub from '@/components/ui/titulo-club.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
 import PerfilDeportistaVista from '../components/deportistas/perfil-deportista-vista.vue';
+import FormularioDeportista from '../components/formularios/formulario-deportista.vue';
 import Pie from '../components/ui/pie.vue';
 import { ref, onMounted } from 'vue';
 import deportistasService from '@/services/deportistasService';
@@ -138,35 +139,37 @@ function cerrarFormulario() {
   deportistaEditando.value = null;
 }
 
-async function manejarSubmitFormulario(datos) {
+async function manejarSubmitFormulario(resultado) {
   try {
-    if (modoFormulario.value === 'registrar') {
-      // Crear nuevo deportista en el backend
-      const response = await deportistasService.crearDeportista(datos);
-      if (response.success) {
+    if (modoFormulario.value === 'actualizar') {
+      // Si el resultado indica éxito
+      if (resultado && resultado.success) {
         // Recargar la lista de deportistas
         await cargarDeportistas();
-        console.log('Deportista agregado exitosamente');
+        
+        // Cerrar el formulario y volver a modo ver
+        cerrarFormulario();
+        
+        // Mostrar mensaje de éxito
+        alert('Deportista actualizado exitosamente');
       } else {
-        alert(response.message || 'Error al agregar deportista');
-      }
-    } else if (modoFormulario.value === 'actualizar') {
-      // Actualizar deportista existente en el backend
-      const idDeportista = deportistaEditando.value.id_deportista || deportistaEditando.value.id;
-      const response = await deportistasService.actualizarDeportista(idDeportista, datos);
-      if (response.success) {
-        // Recargar la lista de deportistas
-        await cargarDeportistas();
-        console.log('Deportista actualizado exitosamente');
-      } else {
-        alert(response.message || 'Error al actualizar deportista');
+        // Manejar error si viene en el resultado
+        const mensajeError = resultado?.message || 'Error al actualizar deportista';
+        alert(mensajeError);
       }
     }
-    cerrarFormulario();
   } catch (err) {
     console.error('Error al guardar deportista:', err);
     alert('Error al guardar deportista. Por favor, intenta de nuevo.');
   }
+}
+
+function cambiarAModoActualizar() {
+  modoFormulario.value = 'actualizar';
+}
+
+function cambiarAModoVer() {
+  modoFormulario.value = 'ver';
 }
 
 </script>
@@ -282,10 +285,24 @@ async function manejarSubmitFormulario(datos) {
     <ListaDeportistas v-else :deportistas="deportistas" @editar="editarDeportista" @eliminar="eliminarDeportista"
       @agregar="agregarDeportista" @ver="verDeportista" />
 
-    <!-- Modal para ver perfil del deportista -->
+    <!-- Modal para ver/editar perfil del deportista -->
     <div v-if="mostrarFormulario" class="modal-overlay-deportistas">
       <div class="modal-perfil-wrapper" @click.stop>
-        <PerfilDeportistaVista :datos="deportistaEditando" @cerrar="cerrarFormulario" />
+        <!-- Mostrar perfil en modo ver -->
+        <PerfilDeportistaVista 
+          v-if="modoFormulario === 'ver'"
+          :datos="deportistaEditando" 
+          @cerrar="cerrarFormulario"
+          @editar="cambiarAModoActualizar"
+        />
+        <!-- Mostrar formulario en modo actualizar -->
+        <FormularioDeportista
+          v-else-if="modoFormulario === 'actualizar'"
+          :modo="'actualizar'"
+          :datos="deportistaEditando"
+          @submit="manejarSubmitFormulario"
+          @cancel="cambiarAModoVer"
+        />
       </div>
     </div>
 

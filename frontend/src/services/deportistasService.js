@@ -81,19 +81,29 @@ class DeportistasService {
   /**
    * Actualiza un deportista existente
    * @param {number} idDeportista - ID del deportista
-   * @param {Object} datos - Datos a actualizar
+   * @param {Object} datos - Datos a actualizar en formato { datos_deportista: {}, datos_informacion_deportiva: {} }
    * @returns {Promise<Object>} Respuesta de la actualización
    */
   async actualizarDeportista(idDeportista, datos) {
     try {
+      // Si los datos ya vienen en el formato correcto (con datos_deportista y datos_informacion_deportiva)
+      // los usamos directamente, si no, los enviamos tal cual (compatibilidad con método antiguo)
+      const datosEnvio = datos.datos_deportista || datos.datos_informacion_deportiva
+        ? datos
+        : {
+            datos_deportista: datos.datos_deportista || {},
+            datos_informacion_deportiva: datos.datos_informacion_deportiva || {}
+          }
+
       const response = await fetch(`${API_BASE_URL}/deportistas/${idDeportista}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(datos)
+        body: JSON.stringify(datosEnvio)
       })
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`)
       }
 
       const data = await response.json()

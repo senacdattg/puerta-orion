@@ -197,8 +197,11 @@
         </div>
       </div>
 
-      <!-- Botón de cerrar -->
+      <!-- Botones de acción -->
       <div class="perfil-actions">
+        <button class="btn-editar-perfil" @click="$emit('editar')">
+          <i class="fas fa-edit"></i> Editar Información
+        </button>
         <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
           Cerrar
         </button>
@@ -229,7 +232,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['cerrar']);
+const emit = defineEmits(['cerrar', 'editar']);
 
 // Catálogos para mapear IDs a nombres
 const catalogos = ref({
@@ -263,7 +266,7 @@ async function cargarCatalogos() {
   try {
     // Usar la variable de entorno correcta
     const baseURL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    
+
     console.log('🔗 Base URL para catálogos:', baseURL);
 
     // Cargar todos los catálogos necesarios desde las rutas de deportistas
@@ -324,7 +327,7 @@ async function cargarCatalogos() {
     catalogos.value.tiposEnfermedad = procesarCatalogo(tiposEnfermedad);
     catalogos.value.diagnosticos = procesarCatalogo(diagnosticos);
     catalogos.value.tiposDocumento = procesarCatalogo(tiposDocumento);
-    
+
     // Logs de debugging
     console.log('📋 ========== RESUMEN DE CATÁLOGOS CARGADOS ==========');
     console.log('📋 Tipos sanguíneos:', catalogos.value.tiposSanguineos.length);
@@ -337,7 +340,7 @@ async function cargarCatalogos() {
     console.log('📋 Tipos de enfermedad:', catalogos.value.tiposEnfermedad.length);
     console.log('📋 Diagnósticos:', catalogos.value.diagnosticos.length);
     console.log('📋 Tipos de documento:', catalogos.value.tiposDocumento.length);
-    
+
     if (catalogos.value.tiposEnfermedad.length > 0) {
       console.log('📋 Ejemplo tipo enfermedad:', catalogos.value.tiposEnfermedad[0]);
     }
@@ -347,7 +350,7 @@ async function cargarCatalogos() {
     if (catalogos.value.tiposDocumento.length > 0) {
       console.log('📋 Ejemplo tipo documento:', catalogos.value.tiposDocumento[0]);
     }
-    
+
     console.log('✅ Catálogos cargados completamente');
   } catch (error) {
     console.error('Error al cargar catálogos:', error);
@@ -470,7 +473,7 @@ const fechaNacimiento = computed(() => {
 // Función para formatear fecha de nacimiento
 function formatearFechaNacimiento(fecha) {
   if (!fecha) return null;
-  
+
   // Si es un número (año solo), convertir a fecha completa (1 de enero de ese año)
   if (typeof fecha === 'number') {
     // Si es un año válido (4 dígitos), mostrarlo como fecha completa
@@ -484,7 +487,7 @@ function formatearFechaNacimiento(fecha) {
     }
     return fecha.toString();
   }
-  
+
   // Si es un string (fecha completa o año)
   if (typeof fecha === 'string') {
     // Si es solo un año (4 dígitos)
@@ -494,7 +497,7 @@ function formatearFechaNacimiento(fecha) {
         return `01/01/${año}`;
       }
     }
-    
+
     // Intentar parsear como fecha ISO (YYYY-MM-DD) o otros formatos
     try {
       const dateObj = new Date(fecha);
@@ -510,7 +513,7 @@ function formatearFechaNacimiento(fecha) {
     }
     return fecha;
   }
-  
+
   // Si es un objeto Date
   if (fecha instanceof Date) {
     if (!isNaN(fecha.getTime())) {
@@ -520,34 +523,34 @@ function formatearFechaNacimiento(fecha) {
       return `${dia}/${mes}/${año}`;
     }
   }
-  
+
   return fecha;
 }
 
 function obtenerTipoEnfermedad(idTipoEnfermedad) {
   if (!idTipoEnfermedad) return null;
-  
+
   // Si los catálogos aún no están cargados, retornar null
   if (!catalogosCargados.value || !catalogos.value.tiposEnfermedad || catalogos.value.tiposEnfermedad.length === 0) {
     console.warn('⚠️ Catálogos de tipos de enfermedad aún no cargados');
     return null;
   }
-  
+
   // Convertir ID a número para comparación
   const idBuscado = Number(idTipoEnfermedad);
-  
+
   // Intentar encontrar el tipo de enfermedad por diferentes campos posibles
   const tipo = catalogos.value.tiposEnfermedad.find(t => {
     if (!t) return false;
     const idTipo = Number(t.id_tipo_enfermedad || t.id || 0);
     return idTipo === idBuscado;
   });
-  
+
   if (!tipo) {
     console.warn('⚠️ Tipo de enfermedad no encontrado para ID:', idTipoEnfermedad, 'Catálogos disponibles:', catalogos.value.tiposEnfermedad.map(t => ({ id: t.id_tipo_enfermedad || t.id, nombre: t.nombre || t.nombre_tipo_enfermedad })));
     return null;
   }
-  
+
   // El backend retorna el campo 'nombre' según el modelo TipoEnfermedad
   const nombre = tipo.nombre || tipo.nombre_tipo_enfermedad || tipo.tipo_enfermedad || tipo.tipo || tipo.descripcion || null;
   console.log('✅ Tipo de enfermedad encontrado:', { id: idBuscado, nombre });
@@ -556,28 +559,28 @@ function obtenerTipoEnfermedad(idTipoEnfermedad) {
 
 function obtenerDiagnostico(idDiagnostico) {
   if (!idDiagnostico) return null;
-  
+
   // Si los catálogos aún no están cargados, retornar null
   if (!catalogosCargados.value || !catalogos.value.diagnosticos || catalogos.value.diagnosticos.length === 0) {
     console.warn('⚠️ Catálogos de diagnósticos aún no cargados');
     return null;
   }
-  
+
   // Convertir ID a número para comparación
   const idBuscado = Number(idDiagnostico);
-  
+
   // Intentar encontrar el diagnóstico por diferentes campos posibles
   const diagnostico = catalogos.value.diagnosticos.find(d => {
     if (!d) return false;
     const idDiag = Number(d.id_diagnostico || d.id || 0);
     return idDiag === idBuscado;
   });
-  
+
   if (!diagnostico) {
     console.warn('⚠️ Diagnóstico no encontrado para ID:', idDiagnostico, 'Catálogos disponibles:', catalogos.value.diagnosticos.map(d => ({ id: d.id_diagnostico || d.id, nombre: d.nombre || d.nombre_diagnostico })));
     return null;
   }
-  
+
   // El backend retorna el campo 'nombre' según el modelo Diagnostico
   const nombre = diagnostico.nombre || diagnostico.nombre_diagnostico || diagnostico.diagnostico || diagnostico.descripcion || null;
   console.log('✅ Diagnóstico encontrado:', { id: idBuscado, nombre });
@@ -777,6 +780,29 @@ function obtenerTipoDocumento() {
   background: #5a6268;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-editar-perfil {
+  background: #004AAD;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 1rem;
+}
+
+.btn-editar-perfil:hover {
+  background: #003d8f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-editar-perfil i {
+  margin-right: 0.5rem;
 }
 
 .cargando {

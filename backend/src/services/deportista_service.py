@@ -39,12 +39,13 @@ Este módulo sigue los principios SRP, KISS, DRY, POO y SOLID.
 """
 
 from typing import Dict, Any, Optional, List
-from datetime import date
+from datetime import date, datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import and_
 
 from ..models.base import db
 from ..models.deportistas.deportista import Deportista
+from ..models.deportistas.informacion_deportiva import InformacionDeportiva
 from ..models.personas.persona import Persona
 from ..utils.logger import obtener_registrador
 
@@ -332,6 +333,330 @@ class DeportistaService:
         except Exception as e:
             db.session.rollback()
             logger.error(f'Error inesperado al actualizar deportista: {str(e)}')
+            return {
+                'success': False,
+                'message': f'Error al actualizar deportista: {str(e)}',
+                'status_code': 500
+            }
+
+    @staticmethod
+    def actualizar_deportista_completo(
+        id_deportista: int,
+        datos_deportista: Optional[Dict[str, Any]] = None,
+        datos_informacion_deportiva: Optional[Dict[str, Any]] = None,
+        usuario_actual: Optional[Dict[str, Any]] = None,
+        tipo_enfermedad: Optional[int] = None,
+        diagnosticos: Optional[List[int]] = None
+    ) -> Dict[str, Any]:
+        """
+        Actualiza completamente un deportista con todos sus campos relacionados.
+        
+        Permite actualizar:
+        - Campos del deportista (peso, altura, fecha_ingreso, fecha_nacimiento, etc.)
+        - Campos de información deportiva (deporte, escuela, recomendaciones, etc.)
+        
+        NOTA: Los campos de persona se actualizan a través del endpoint de personas (/personas/<id>).
+        
+        Args:
+            id_deportista: ID del deportista a actualizar
+            datos_deportista: Diccionario con campos del deportista a actualizar (opcional)
+            datos_informacion_deportiva: Diccionario con campos de información deportiva (opcional)
+            usuario_actual: Diccionario con información del usuario autenticado (opcional)
+            
+        Returns:
+            Dict: Respuesta con el resultado de la operación
+        """
+        logger = DeportistaService._obtener_logger()
+        
+        try:
+            # Validar que se proporcione al menos una sección de datos
+            if not datos_deportista and not datos_informacion_deportiva:
+                return {
+                    'success': False,
+                    'message': 'Debe proporcionar al menos datos_deportista o datos_informacion_deportiva',
+                    'status_code': 400
+                }
+            
+            # Obtener el deportista
+            deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
+            
+            if not deportista:
+                return {
+                    'success': False,
+                    'message': 'Deportista no encontrado',
+                    'status_code': 404
+                }
+            
+            # Actualizar campos del deportista
+            if datos_deportista:
+                # Validar permisos para actualizar peso y altura (solo Entrenador y Administrador)
+                campos_restrictos = ['peso', 'altura']
+                campos_intentados = [campo for campo in campos_restrictos if campo in datos_deportista]
+                
+                if campos_intentados and usuario_actual:
+                    # Obtener roles del usuario
+                    roles_usuario = []
+                    if 'roles' in usuario_actual and usuario_actual['roles']:
+                        # Extraer nombres de roles desde el diccionario
+                        for rol in usuario_actual['roles']:
+                            if isinstance(rol, dict):
+                                nombre_rol = rol.get('nombre_rol', '') or rol.get('nombre', '') or str(rol)
+                                if nombre_rol:
+                                    roles_usuario.append(nombre_rol)
+                            elif hasattr(rol, 'nombre_rol'):
+                                roles_usuario.append(rol.nombre_rol)
+                            elif isinstance(rol, str):
+                                roles_usuario.append(rol)
+                    
+                    # Roles permitidos para actualizar peso y altura
+                    roles_permitidos = ['Entrenador', 'Administrador', 'SuperAdmin']
+                    tiene_permiso = any(rol in roles_permitidos for rol in roles_usuario)
+                    
+                    if not tiene_permiso:
+                        return {
+                            'success': False,
+                            'message': f'No tiene permisos para actualizar los campos: {", ".join(campos_intentados)}. Solo Entrenador y Administrador pueden modificar peso y altura.',
+                            'status_code': 403
+                        }
+                
+                # Validar IDs relacionados si se proporcionan
+                from ..models.categorias.grupo_sanguineo import GrupoSanguineo
+                from ..models.categorias.ciudad_residencia import CiudadResidencia
+                from ..models.catalogos.eps import EPS
+                from ..models.categorias.categoria import Categoria
+                from ..models.pagos.mensualidad import Mensualidad
+                
+                # Validar categoría
+                if 'id_categoria' in datos_deportista and datos_deportista['id_categoria'] is not None:
+                    categoria = Categoria.query.filter_by(id_categoria=datos_deportista['id_categoria']).first()
+                    if not categoria:
+                        return {
+                            'success': False,
+                            'message': 'La categoría especificada no existe',
+                            'status_code': 400
+                        }
+                
+                # Validar tipo sanguíneo
+                if 'id_tipo_sanguineo' in datos_deportista and datos_deportista['id_tipo_sanguineo'] is not None:
+                    tipo_sangre = GrupoSanguineo.query.filter_by(id_tipo_sangre=datos_deportista['id_tipo_sanguineo']).first()
+                    if not tipo_sangre:
+                        return {
+                            'success': False,
+                            'message': 'El tipo sanguíneo especificado no existe',
+                            'status_code': 400
+                        }
+                
+                # Validar ciudad de residencia
+                if 'id_ciudad_recidencia' in datos_deportista and datos_deportista['id_ciudad_recidencia'] is not None:
+                    ciudad = CiudadResidencia.query.filter_by(id_ciudad=datos_deportista['id_ciudad_recidencia']).first()
+                    if not ciudad:
+                        return {
+                            'success': False,
+                            'message': 'La ciudad de residencia especificada no existe',
+                            'status_code': 400
+                        }
+                
+                # Validar EPS
+                if 'id_eps' in datos_deportista and datos_deportista['id_eps'] is not None:
+                    eps = EPS.query.filter_by(id_eps=datos_deportista['id_eps']).first()
+                    if not eps:
+                        return {
+                            'success': False,
+                            'message': 'La EPS especificada no existe',
+                            'status_code': 400
+                        }
+                
+                # Validar mensualidad
+                if 'id_mensualidad' in datos_deportista and datos_deportista['id_mensualidad'] is not None:
+                    mensualidad = Mensualidad.query.filter_by(id_mensualidad=datos_deportista['id_mensualidad']).first()
+                    if not mensualidad:
+                        return {
+                            'success': False,
+                            'message': 'La mensualidad especificada no existe',
+                            'status_code': 400
+                        }
+                
+                # Campos actualizables del deportista
+                campos_deportista_actualizables = [
+                    'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
+                    'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_mensualidad',
+                    'id_informacion_deportiva', 'id_eps', 'id_categoria'
+                ]
+                
+                for campo in campos_deportista_actualizables:
+                    if campo in datos_deportista:
+                        valor = datos_deportista[campo]
+                        # Convertir fecha_nacimiento si viene como string
+                        if campo == 'fecha_nacimiento' and isinstance(valor, str):
+                            try:
+                                valor = datetime.fromisoformat(valor).date()
+                            except ValueError:
+                                return {
+                                    'success': False,
+                                    'message': 'Formato de fecha_nacimiento inválido. Use YYYY-MM-DD',
+                                    'status_code': 400
+                                }
+                        # Convertir fecha_ingreso si viene como string
+                        if campo == 'fecha_ingreso' and isinstance(valor, str):
+                            try:
+                                valor = datetime.fromisoformat(valor).date()
+                            except ValueError:
+                                return {
+                                    'success': False,
+                                    'message': 'Formato de fecha_ingreso inválido. Use YYYY-MM-DD',
+                                    'status_code': 400
+                                }
+                        setattr(deportista, campo, valor)
+            
+            # Actualizar campos de información deportiva
+            if datos_informacion_deportiva:
+                # Obtener o crear información deportiva
+                if deportista.id_informacion_deportiva:
+                    info_deportiva = InformacionDeportiva.query.filter_by(
+                        id_informacion_deportiva=deportista.id_informacion_deportiva
+                    ).first()
+                    if not info_deportiva:
+                        # Si el ID existe pero no se encuentra el registro, crear uno nuevo
+                        info_deportiva = None
+                else:
+                    info_deportiva = None
+                
+                if not info_deportiva:
+                    # Crear nueva información deportiva
+                    info_deportiva = InformacionDeportiva(
+                        id_persona=deportista.id_persona,
+                        practica_otro_deporte=datos_informacion_deportiva.get('practica_otro_deporte', False),
+                        participa_escuela=datos_informacion_deportiva.get('participa_escuela', False),
+                        recomendacion_medica=datos_informacion_deportiva.get('recomendacion_medica', False),
+                        descripcion_recomendacion=datos_informacion_deportiva.get('descripcion_recomendacion'),
+                        id_escuela=datos_informacion_deportiva.get('id_escuela'),
+                        id_deporte=datos_informacion_deportiva.get('id_deporte'),
+                        id_institucion_registro=datos_informacion_deportiva.get('id_institucion_registro')
+                    )
+                    db.session.add(info_deportiva)
+                    db.session.flush()  # Para obtener el ID
+                    deportista.id_informacion_deportiva = info_deportiva.id_informacion_deportiva
+                else:
+                    # Validar IDs relacionados si se proporcionan
+                    from ..models.categorias.escuela import Escuela
+                    from ..models.categorias.deporte import Deporte
+                    from ..models.categorias.institucion_registro import InstitucionRegistro
+                    
+                    # Validar escuela
+                    if 'id_escuela' in datos_informacion_deportiva and datos_informacion_deportiva['id_escuela'] is not None:
+                        escuela = Escuela.query.filter_by(id_escuela=datos_informacion_deportiva['id_escuela']).first()
+                        if not escuela:
+                            return {
+                                'success': False,
+                                'message': 'La escuela especificada no existe',
+                                'status_code': 400
+                            }
+                    
+                    # Validar deporte
+                    if 'id_deporte' in datos_informacion_deportiva and datos_informacion_deportiva['id_deporte'] is not None:
+                        deporte = Deporte.query.filter_by(id_deporte=datos_informacion_deportiva['id_deporte']).first()
+                        if not deporte:
+                            return {
+                                'success': False,
+                                'message': 'El deporte especificado no existe',
+                                'status_code': 400
+                            }
+                    
+                    # Validar institución de registro
+                    if 'id_institucion_registro' in datos_informacion_deportiva and datos_informacion_deportiva['id_institucion_registro'] is not None:
+                        institucion = InstitucionRegistro.query.filter_by(
+                            id_institucion=datos_informacion_deportiva['id_institucion_registro']
+                        ).first()
+                        if not institucion:
+                            return {
+                                'success': False,
+                                'message': 'La institución de registro especificada no existe',
+                                'status_code': 400
+                            }
+                    
+                    # Campos actualizables de información deportiva
+                    campos_info_deportiva = [
+                        'practica_otro_deporte', 'participa_escuela', 'recomendacion_medica',
+                        'descripcion_recomendacion', 'id_escuela', 'id_deporte', 'id_institucion_registro'
+                    ]
+                    
+                    for campo in campos_info_deportiva:
+                        if campo in datos_informacion_deportiva:
+                            setattr(info_deportiva, campo, datos_informacion_deportiva[campo])
+            
+            # Actualizar diagnósticos si se proporcionan
+            if tipo_enfermedad is not None or diagnosticos is not None:
+                from ..models.salud.diagnostico_deportista import DiagnosticoDeportista
+                from ..models.salud.diagnostico import Diagnostico
+                
+                # Eliminar diagnósticos existentes del deportista
+                DiagnosticoDeportista.query.filter_by(id_deportista=id_deportista).delete()
+                
+                # Si se proporcionan nuevos diagnósticos, validar y agregar
+                if diagnosticos and len(diagnosticos) > 0:
+                    # Validar tipo de enfermedad si se proporciona
+                    if tipo_enfermedad:
+                        # Validar que los diagnósticos pertenecen al tipo de enfermedad seleccionado
+                        for id_diagnostico in diagnosticos:
+                            diagnostico = Diagnostico.query.filter_by(id_diagnostico=id_diagnostico).first()
+                            if not diagnostico:
+                                db.session.rollback()
+                                return {
+                                    'success': False,
+                                    'message': f'El diagnóstico con ID {id_diagnostico} no existe',
+                                    'status_code': 400
+                                }
+                            if diagnostico.id_tipo_enfermedad != tipo_enfermedad:
+                                db.session.rollback()
+                                return {
+                                    'success': False,
+                                    'message': f'El diagnóstico con ID {id_diagnostico} no corresponde al tipo de enfermedad seleccionado',
+                                    'status_code': 400
+                                }
+                    
+                    # Agregar nuevos diagnósticos
+                    from datetime import date
+                    for id_diagnostico in diagnosticos:
+                        diagnostico_deportista = DiagnosticoDeportista(
+                            id_deportista=id_deportista,
+                            id_diagnostico=id_diagnostico,
+                            fecha=date.today()
+                        )
+                        db.session.add(diagnostico_deportista)
+                    logger.info(f'{len(diagnosticos)} diagnóstico(s) actualizados para el deportista {id_deportista}')
+            
+            # Confirmar todos los cambios
+            db.session.commit()
+            
+            logger.info(f'Deportista actualizado completamente: ID {id_deportista}')
+            
+            # Construir respuesta con datos actualizados
+            respuesta = deportista.to_dict()
+            if deportista.persona:
+                respuesta['persona'] = deportista.persona.to_dict()
+            if deportista.informacion_deportiva:
+                respuesta['informacion_deportiva'] = deportista.informacion_deportiva.to_dict()
+            
+            return {
+                'success': True,
+                'message': 'Deportista actualizado exitosamente',
+                'data': respuesta,
+                'status_code': 200
+            }
+            
+        except IntegrityError as e:
+            db.session.rollback()
+            logger.error(f'Error de integridad al actualizar deportista completo: {str(e)}')
+            return {
+                'success': False,
+                'message': 'Error de duplicación de datos',
+                'status_code': 409
+            }
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f'Error inesperado al actualizar deportista completo: {str(e)}')
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 'success': False,
                 'message': f'Error al actualizar deportista: {str(e)}',

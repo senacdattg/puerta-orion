@@ -223,7 +223,7 @@
               </div>
               <div class="card-content deportista-section">
                 <div class="info-grid">
-                  <div class="info-row"><label>Fecha nacimiento:</label><span>{{ detalle.deportista.fecha_nacimiento ?? '—' }}</span></div>
+                  <div class="info-row"><label>Fecha nacimiento:</label><span>{{ formatearFechaNacimiento(detalle.deportista?.fecha_nacimiento) || '—' }}</span></div>
                   <div class="info-row"><label>Tipo sanguíneo:</label><span>{{ nombreSangre(detalle.deportista.id_tipo_sanguineo) }}</span></div>
                   <div class="info-row"><label>Ciudad residencia:</label><span>{{ nombreCiudad(detalle.deportista.id_ciudad_recidencia) }}</span></div>
                   <div class="info-row"><label>EPS:</label><span>{{ nombreEPS(detalle.deportista.id_eps) }}</span></div>
@@ -652,6 +652,63 @@ const nombreDiagnostico = (id) => {
   if (!id) return '—'
   const item = catalogos.value.diagnosticos.find(x => x.id_diagnostico === id || x.id === id)
   return item?.nombre || item?.nombre_diagnostico || '—'
+}
+
+// Función para formatear fecha de nacimiento
+function formatearFechaNacimiento(fecha) {
+  if (!fecha) return null
+  
+  // Si es un número (año solo), convertir a fecha completa (1 de enero de ese año)
+  if (typeof fecha === 'number') {
+    // Si es un año válido (4 dígitos), mostrarlo como fecha completa
+    if (fecha >= 1900 && fecha <= new Date().getFullYear()) {
+      // Crear fecha con 1 de enero del año dado
+      const fechaCompleta = new Date(fecha, 0, 1) // Mes 0 = enero, día 1
+      const dia = fechaCompleta.getDate().toString().padStart(2, '0')
+      const mes = (fechaCompleta.getMonth() + 1).toString().padStart(2, '0')
+      const año = fechaCompleta.getFullYear()
+      return `${dia}/${mes}/${año}`
+    }
+    return fecha.toString()
+  }
+  
+  // Si es un string (fecha completa o año)
+  if (typeof fecha === 'string') {
+    // Si es solo un año (4 dígitos)
+    if (/^\d{4}$/.test(fecha)) {
+      const año = parseInt(fecha)
+      if (año >= 1900 && año <= new Date().getFullYear()) {
+        return `01/01/${año}`
+      }
+    }
+    
+    // Intentar parsear como fecha ISO (YYYY-MM-DD) o otros formatos
+    try {
+      const dateObj = new Date(fecha)
+      if (!isNaN(dateObj.getTime())) {
+        // Formatear como DD/MM/YYYY
+        const dia = dateObj.getDate().toString().padStart(2, '0')
+        const mes = (dateObj.getMonth() + 1).toString().padStart(2, '0')
+        const año = dateObj.getFullYear()
+        return `${dia}/${mes}/${año}`
+      }
+    } catch (error) {
+      console.warn('Error al formatear fecha:', error)
+    }
+    return fecha
+  }
+  
+  // Si es un objeto Date
+  if (fecha instanceof Date) {
+    if (!isNaN(fecha.getTime())) {
+      const dia = fecha.getDate().toString().padStart(2, '0')
+      const mes = (fecha.getMonth() + 1).toString().padStart(2, '0')
+      const año = fecha.getFullYear()
+      return `${dia}/${mes}/${año}`
+    }
+  }
+  
+  return fecha
 }
 
 // Cargar acudientes del deportista

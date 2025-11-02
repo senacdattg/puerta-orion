@@ -554,16 +554,119 @@ def obtener_deportistas_por_acudiente(id_acudiente):
         }), 500
 
 @deportistas_bp.route('/<int:id_deportista>', methods=['PATCH', 'PUT'])
+@token_required()
 def actualizar_deportista(id_deportista):
+    """
+    Endpoint para actualizar un deportista.
+    
+    Permite actualizar completamente un deportista con todos sus campos relacionados.
+    Puede actualizar SOLO datos_deportista, SOLO datos_informacion_deportiva, o ambos.
+    
+    NOTA: Los campos de persona se actualizan a través del endpoint de personas: PUT /personas/<id_persona>
+    
+    Body JSON estructurado (todos los campos son opcionales):
+    {
+        "datos_deportista": {
+            "peso": 65.5,
+            "altura": 1.75,
+            "fecha_ingreso": "2024-01-15",
+            "fecha_nacimiento": "2010-05-20",
+            "id_categoria": 1,
+            "id_tipo_sanguineo": 2,
+            "id_ciudad_recidencia": 1,
+            "id_mensualidad": 1,
+            "id_eps": 3
+        },
+        "datos_informacion_deportiva": {
+            "practica_otro_deporte": true,
+            "participa_escuela": true,
+            "recomendacion_medica": false,
+            "descripcion_recomendacion": "Ninguna",
+            "id_escuela": 5,
+            "id_deporte": 8,
+            "id_institucion_registro": 2
+        }
+    }
+    
+    Campos disponibles en datos_deportista:
+    - peso (float): Peso en kilogramos
+    - altura (float): Altura en metros
+    - fecha_ingreso (string): Fecha de ingreso (formato: YYYY-MM-DD)
+    - fecha_nacimiento (string): Fecha de nacimiento (formato: YYYY-MM-DD)
+    - id_categoria (int): ID de la categoría deportiva
+    - id_tipo_sanguineo (int): ID del grupo sanguíneo
+    - id_ciudad_recidencia (int): ID de la ciudad de residencia
+    - id_mensualidad (int): ID de la mensualidad
+    - id_eps (int): ID de la EPS
+    
+    Campos disponibles en datos_informacion_deportiva:
+    - practica_otro_deporte (bool): Si practica otro deporte
+    - participa_escuela (bool): Si participa en una escuela deportiva
+    - recomendacion_medica (bool): Si tiene recomendaciones médicas
+    - descripcion_recomendacion (string): Descripción de recomendaciones médicas
+    - id_escuela (int): ID de la escuela deportiva
+    - id_deporte (int): ID del deporte que practica
+    - id_institucion_registro (int): ID de la institución de registro
+    
+    NOTA: Si se usa PATCH, solo actualiza los campos proporcionados (actualización parcial).
+          Si se usa PUT, actualiza todos los campos proporcionados (actualización completa).
+          Ambos métodos aceptan la misma estructura JSON.
+    
+    Returns:
+        JSON: Deportista actualizado con toda su información relacionada
+    """
     try:
         if not request.is_json:
-            return jsonify({'success': False, 'message': 'El contenido debe ser JSON', 'status_code': 400}), 400
+            return jsonify({
+                'success': False,
+                'message': 'El contenido debe ser JSON',
+                'status_code': 400
+            }), 400
+        
         datos = request.get_json()
-        result = DeportistaService.actualizar_deportista(id_deportista, datos)
+        
+        # Obtener usuario autenticado
+        usuario_actual = get_current_user()
+        
+        if not usuario_actual:
+            return jsonify({
+                'success': False,
+                'message': 'Usuario no autenticado',
+                'status_code': 401
+            }), 401
+        
+        # Extraer secciones de datos (todas opcionales)
+        datos_deportista = datos.get('datos_deportista')
+        datos_informacion_deportiva = datos.get('datos_informacion_deportiva')
+        tipo_enfermedad = datos.get('tipo_enfermedad')
+        diagnosticos = datos.get('diagnostico', datos.get('diagnosticos', None))
+        
+        # Si no hay ninguna sección, intentar actualización parcial (compatibilidad con endpoint anterior)
+        if not datos_deportista and not datos_informacion_deportiva and tipo_enfermedad is None and diagnosticos is None:
+            # Usar método antiguo para mantener compatibilidad
+            result = DeportistaService.actualizar_deportista(id_deportista, datos)
+        else:
+            # Usar método completo (deportista, información deportiva y diagnósticos)
+            result = DeportistaService.actualizar_deportista_completo(
+                id_deportista=id_deportista,
+                datos_deportista=datos_deportista,
+                datos_informacion_deportiva=datos_informacion_deportiva,
+                usuario_actual=usuario_actual,
+                tipo_enfermedad=tipo_enfermedad,
+                diagnosticos=diagnosticos
+            )
+        
         return jsonify(result), result.get("status_code", 200)
+        
     except Exception as e:
         logger.error(f"Error inesperado al actualizar deportista: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'message': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
 
 
 # ---- Rutas CATÁLOGOS de datos relacionados ----
