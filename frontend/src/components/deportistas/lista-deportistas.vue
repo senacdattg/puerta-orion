@@ -32,20 +32,22 @@
       </div>
 
       <!-- Estadísticas rápidas -->
-      <div class="estadisticas">
-        <div class="stat-card">
+      <div class="estadisticas ordenadas">
+        <div id="statCard" class="stat-card stat-total">
           <span class="stat-numero">{{ deportistasFiltrados.length }}</span>
-          <span class="stat-label">Total</span>
+          <span class="stat-label">TOTAL</span>
         </div>
-        <div class="stat-card">
+        <div id="statCard" class="stat-card stat-activos">
           <span class="stat-numero">{{ deportistasActivos }}</span>
-          <span class="stat-label">Activos</span>
+          <span class="stat-label">ACTIVOS</span>
         </div>
-        <div class="stat-card">
+        <div id="statCard" class="stat-card stat-inactivos">
           <span class="stat-numero">{{ deportistasInactivos }}</span>
-          <span class="stat-label">Inactivos</span>
+          <span class="stat-label">INACTIVOS</span>
         </div>
       </div>
+
+      <div class="linea-abajo"></div>
 
       <!-- Grid de tarjetas de deportistas -->
       <div class="grid-deportistas">
