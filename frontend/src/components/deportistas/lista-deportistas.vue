@@ -61,11 +61,16 @@
       </div>
 
       <!-- Mensaje cuando no hay resultados -->
-      <div v-if="deportistasFiltrados.length === 0" class="sin-resultados">
-        <p>No se encontraron deportistas con los filtros aplicados</p>
-        <button @click="limpiarFiltros" class="boton-limpiar">
-          Limpiar filtros
-        </button>
+      <div v-if="deportistasFiltrados.length === 0" class="sin-resultados mejorado">
+        <div class="empty-card">
+          <div class="empty-icon">🗂️</div>
+          <h4 class="empty-title">No se encontraron deportistas</h4>
+          <p class="empty-sub">Prueba limpiar los filtros o crea un nuevo deportista.</p>
+          <div class="empty-actions">
+            <button @click="limpiarFiltros" class="btn btn-primary">Limpiar filtros</button>
+            <button @click="agregarDeportista" class="btn btn-secondary">Nuevo deportista</button>
+          </div>
+        </div>
       </div>
     </div>
 

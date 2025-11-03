@@ -280,11 +280,29 @@
 /* ===== ESTADO SIN RESULTADOS ===== */
 .sin-resultados {
   text-align: center;
-  padding: 3rem;
+  padding: 2rem;
   background: var(--color-blanco);
-  border-radius: var(--radio-borde);
+  border-radius: 16px;
   box-shadow: var(--sombra-suave);
 }
+
+.sin-resultados.mejorado { display: flex; justify-content: center; }
+.sin-resultados.mejorado .empty-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.empty-icon { font-size: 36px; opacity: .75; }
+.empty-title { margin: 0; font-size: 20px; color: #0b4fb3; }
+.empty-sub { margin: 0; color: #6b7280; font-size: 14px; }
+.empty-actions { display: flex; gap: 12px; margin-top: 8px; }
 
 .sin-resultados p {
   color: var(--color-gris);
