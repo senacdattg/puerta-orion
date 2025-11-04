@@ -84,6 +84,7 @@ import CardDeportista from '@/components/deportistas/CardDeportista.vue'
 import PerfilModal from '@/components/deportistas/PerfilModal.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import calendarioService from '@/services/calendarioService'
 
 defineOptions({
   name: 'DeportistaDashboard'
@@ -92,6 +93,8 @@ defineOptions({
 const sidebarOpen = ref(false)
 const isMobile = ref(false)
 const showPerfilModal = ref(false)
+const eventosProximos = ref([])
+const cargandoEventos = ref(false)
 
 const estadoMensualidad = computed(() => {
   // Aquí se podría obtener el estado real de la mensualidad desde un servicio
@@ -99,8 +102,10 @@ const estadoMensualidad = computed(() => {
 })
 
 const eventosProximosCount = computed(() => {
-  // Aquí se podría obtener el conteo real de eventos próximos
-  return '3'
+  if (cargandoEventos.value) {
+    return '...'
+  }
+  return eventosProximos.value.length > 0 ? eventosProximos.value.length.toString() : '0'
 })
 
 
@@ -119,9 +124,23 @@ const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
 
+const cargarEventosProximos = async () => {
+  cargandoEventos.value = true
+  try {
+    const eventos = await calendarioService.obtenerEventosProximos()
+    eventosProximos.value = eventos || []
+  } catch (error) {
+    console.error('Error al cargar eventos próximos:', error)
+    eventosProximos.value = []
+  } finally {
+    cargandoEventos.value = false
+  }
+}
+
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  cargarEventosProximos()
 })
 
 onBeforeUnmount(() => {

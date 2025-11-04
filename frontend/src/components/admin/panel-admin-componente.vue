@@ -121,6 +121,7 @@
     </section>
 
     <!-- Modal de Registro de Usuario -->
+
     <ModalRegistroUsuario :mostrar="mostrarModalRegistro" @cerrar="cerrarModalRegistro"
       @usuario-registrado="manejarUsuarioRegistrado" />
 
@@ -259,9 +260,7 @@ onMounted(async () => {
 
 // Funciones
 function abrirModalRegistro() {
-  console.log('Abriendo modal de registro...');
   mostrarModalRegistro.value = true;
-  console.log('Estado del modal:', mostrarModalRegistro.value);
 }
 
 function cerrarModalRegistro() {
@@ -353,8 +352,11 @@ async function onGuardarDato(payload) {
 
 function manejarUsuarioRegistrado(datosUsuario) {
   console.log('Usuario registrado desde admin-manager:', datosUsuario);
+  // Cerrar el modal después del registro exitoso
+  cerrarModalRegistro();
   // Aquí puedes agregar lógica adicional como actualizar la lista de usuarios
   // o mostrar notificaciones
+  alert('Usuario registrado exitosamente');
 }
 
 // Handlers para eventos del hijo
@@ -396,3 +398,140 @@ function formatearFecha(fecha) {
   try { return new Date(fecha).toLocaleString('es-CO'); } catch { return String(fecha); }
 }
 </script>
+
+<style scoped>
+/* Estilos para el modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
+  color: white;
+  padding: 25px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-cerrar {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.modal-body-form {
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 400px;
+}
+
+.modal-body-form :deep(.formulario-datos) {
+  width: 100% !important;
+  max-width: 700px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.modal-body-form :deep(.seccion-formulario) {
+  margin: 0 auto;
+  width: 100%;
+}
+
+.modal-body-form :deep(.seccion-formulario h3) {
+  text-align: center;
+}
+
+.modal-body-form :deep(.fila-texto) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.modal-body-form :deep(.fila-texto input),
+.modal-body-form :deep(.fila-texto select) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Campos que ocupan todo el ancho */
+.modal-body-form :deep(.fila-texto:has(input[placeholder*="Número de documento"])),
+.modal-body-form :deep(.fila-texto:has(input[placeholder*="Dirección"])),
+.modal-body-form :deep(.fila-texto:has(input[placeholder*="Nombre de usuario"])) {
+  grid-column: 1 / -1;
+}
+
+/* Botones centrados */
+.modal-body-form :deep(.botones-formulario) {
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+/* Ocultar el botón "Volver al login" en el modal del admin */
+.modal-body-form :deep(.boton-secundario) {
+  display: none;
+}
+</style>

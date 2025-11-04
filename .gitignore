@@ -69,3 +69,6 @@ build/
 *.log
 logs/
 backend/logs/
+
+# ============ DOCUMENTACIÓN TEMPORAL ============
+PENDIENTES_PROYECTO.md

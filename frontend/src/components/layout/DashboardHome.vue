@@ -1,4 +1,4 @@
-lll<template>
+<template>
   <div class="dashboard-home">
     <!-- Banner de registro incompleto para usuarios base -->
     <RegistrationBanner v-if="showRegistrationBanner" />
@@ -6,7 +6,11 @@ lll<template>
     <!-- Panel principal según rol -->
     <div class="main-dashboard">
       <!-- Panel para Acudiente -->
-      <AcudienteDashboard v-if="isAcudiente" />
+      <!-- Nota: AcudienteDashboard se renderiza en su propia ruta /acudiente/dashboard -->
+      <!-- Si llegamos aquí, es porque el usuario aún no ha sido redirigido -->
+      <div v-if="isAcudiente" class="loading-redirect">
+        <p>Redirigiendo a tu panel...</p>
+      </div>
 
       <!-- Panel para Entrenador (no para Administradores) -->
       <AdminDashboard v-if="userRole === 'Entrenador'" />
@@ -22,7 +26,6 @@ import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserRole } from '@/composables/useUserRole'
 import RegistrationBanner from '@/components/ui/registration-banner.vue'
-import AcudienteDashboard from '@/views/AcudienteDashboard.vue'
 import AdminDashboard from '@/components/admin/admin-dashboard.vue'
 import BasicDashboard from '@/components/ui/basic-dashboard.vue'
 

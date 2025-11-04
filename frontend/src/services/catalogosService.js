@@ -77,6 +77,48 @@ class CatalogosService {
   }
 
   /**
+   * Obtener categorías
+   */
+  async getCategorias() {
+    try {
+      console.log('🔄 Obteniendo categorías desde:', `${this.baseURL}/api/catalogos/categorias`);
+
+      const response = await fetch(`${this.baseURL}/api/catalogos/categorias`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      console.log('📡 Respuesta categorías:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error del servidor categorías:', errorText);
+        throw new Error(`Error al obtener categorías: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json();
+      console.log('📦 Datos categorías recibidos:', data);
+
+      // El backend puede retornar { success: true, data: [...] } o directamente el array
+      if (data.success && Array.isArray(data.data)) {
+        return data.data;
+      } else if (Array.isArray(data.data)) {
+        return data.data;
+      } else if (Array.isArray(data)) {
+        return data;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('❌ Error al obtener categorías:', error)
+      throw error
+    }
+  }
+
+  /**
    * Obtener todos los catálogos en una sola petición
    */
   async getCatalogosCompletos() {

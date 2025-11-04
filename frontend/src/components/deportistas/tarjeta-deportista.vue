@@ -14,21 +14,9 @@
         {{ deportista.estado }}
       </p>
     </div>
-    <div class="acciones-deportista">
-      <button
-        class="boton-accion editar"
-        @click.stop="editarDeportista"
-        title="Editar deportista"
-      >
-        ✏️
-      </button>
-      <button
-        class="boton-accion eliminar"
-        @click.stop="eliminarDeportista"
-        title="Eliminar deportista"
-      >
-        🗑️
-      </button>
+    <!-- Botones de acción deshabilitados - solo vista -->
+    <div class="acciones-deportista" style="display: none;">
+      <!-- Los botones están ocultos para permitir solo visualización -->
     </div>
   </div>
 </template>
@@ -54,11 +42,11 @@ const props = defineProps({
 });
 
 // Emits para comunicación con el componente padre
-const emit = defineEmits(['editar', 'eliminar']);
+const emit = defineEmits(['editar', 'eliminar', 'ver']);
 
 // Funciones simples y específicas (KISS)
 function verDetalle() {
-  router.push(`/ver-deportista/${props.deportista.id}`);
+  emit('ver', props.deportista);
 }
 
 function editarDeportista() {

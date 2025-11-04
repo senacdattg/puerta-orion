@@ -2,7 +2,14 @@
   <header class="header-deportista">
     <div class="header-inner container">
     <div class="header-left">
-      <button class="menu-trigger" @click="toggleMenu" :class="{ open: menuVisible }" :aria-expanded="menuVisible.toString()" aria-label="Alternar menú">
+      <button
+        v-if="!sinMenu"
+        class="menu-trigger"
+        @click="toggleMenu"
+        :class="{ open: menuVisible }"
+        :aria-expanded="menuVisible.toString()"
+        aria-label="Alternar menú"
+      >
         <i class="fas" :class="menuVisible ? 'fa-bars-staggered' : 'fa-bars'"></i>
       </button>
       <img
@@ -181,6 +188,7 @@ function toggleProfileMenu() {
 }
 
 function toggleMenu() {
+  if (props.sinMenu) return // No hacer nada si el menú está deshabilitado
   menuVisible.value = !menuVisible.value
   applyLayoutOffsets()
 }
@@ -247,12 +255,13 @@ function cargarOpciones() {
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Acudiente: [
-      { texto: "Inicio", link: "/home", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
-      { texto: "Mis Deportistas", link: "/ver-acudidos", icono: "fas fa-child" },
-      { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
-      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Inicio", link: "/acudiente/dashboard", icono: "fas fa-home" },
+      { texto: "Mis Acudidos", link: "/ver-acudidos", icono: "fas fa-users" },
+      { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-money-bill-wave" },
+      { texto: "Eventos", link: "/eventos", icono: "fas fa-calendar-check" },
+      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar-alt" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
+      { texto: "Configuración", link: "/perfil", icono: "fas fa-cog" },
     ],
     Deportista: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },

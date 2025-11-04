@@ -244,6 +244,53 @@
   background: #dd6b20;
 }
 
+/* Botón para agregar evento en cada día */
+.btn-agregar-dia {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  background: #0047ab;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.4);
+  z-index: 10;
+  opacity: 0.9;
+  font-weight: bold;
+}
+
+.btn-agregar-dia:hover {
+  opacity: 1;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.6);
+  background: #0056cc;
+}
+
+/* Cuando está en un día amarillo (hoy), usar color blanco o azul oscuro para contraste */
+.dia-calendario.dia-hoy .btn-agregar-dia {
+  background: #0047ab;
+  border-color: #ffffff;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dia-calendario.dia-hoy .btn-agregar-dia:hover {
+  background: #0056cc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.dia-calendario:hover .btn-agregar-dia {
+  opacity: 1;
+}
+
 /* Botón flotante */
 .btn-flotante {
   position: fixed;

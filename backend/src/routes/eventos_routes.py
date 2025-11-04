@@ -2,14 +2,84 @@
 Rutas para la gestión de eventos deportivos.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from flask_cors import cross_origin
 from src.models.base import db
 from src.models import Evento, Sesion, TipoEvento, Categoria
+from src.models.deportistas.deportista import Deportista
+from src.models.acudientes.acudiente import Acudiente
+from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+from src.middleware.auth_decorator import get_current_user, token_required
 from datetime import datetime, date, time
+from sqlalchemy import or_
 import re
+import traceback
 
 eventos_bp = Blueprint('eventos', __name__)
+
+
+# ============================================================================
+# FUNCIONES HELPER
+# ============================================================================
+
+def obtener_categorias_permitidas_usuario():
+    """
+    Obtiene las categorías permitidas para el usuario autenticado según su rol.
+    
+    Returns:
+        list: Lista de IDs de categorías permitidas. Si es None, se muestran todos los eventos.
+    
+    Lógica:
+        - Deportista: Solo eventos de su categoría
+        - Acudiente: Eventos de las categorías de los deportistas que acude
+        - Entrenador/Administrador: Todos los eventos (None = sin filtro)
+    """
+    try:
+        usuario_data = get_current_user()
+        if not usuario_data:
+            # Si no hay usuario autenticado, no devolver eventos
+            return []
+        
+        # Obtener roles del usuario
+        roles_usuario = [rol.get('nombre_rol', '') for rol in usuario_data.get('roles', [])]
+        id_persona = usuario_data.get('persona', {}).get('id_persona')
+        
+        if not id_persona:
+            return []
+        
+        # Si es Administrador o Entrenador, mostrar todos los eventos (retornar None)
+        if any(rol in ['Administrador', 'SuperAdmin', 'Entrenador'] for rol in roles_usuario):
+            return None  # None significa "sin filtro"
+        
+        categorias_permitidas = []
+        
+        # Si es Deportista, obtener su categoría
+        if 'Deportista' in roles_usuario:
+            deportista = Deportista.query.filter_by(id_persona=id_persona).first()
+            if deportista and deportista.id_categoria:
+                categorias_permitidas.append(deportista.id_categoria)
+        
+        # Si es Acudiente, obtener categorías de los deportistas que acude
+        if 'Acudiente' in roles_usuario:
+            acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
+            if acudiente:
+                # Obtener todas las relaciones con deportistas
+                relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=acudiente.id_acudiente).all()
+                for relacion in relaciones:
+                    deportista = Deportista.query.get(relacion.id_deportista)
+                    if deportista and deportista.id_categoria:
+                        if deportista.id_categoria not in categorias_permitidas:
+                            categorias_permitidas.append(deportista.id_categoria)
+        
+        # Si no se encontraron categorías permitidas, retornar lista vacía (no eventos)
+        return categorias_permitidas if categorias_permitidas else []
+        
+    except Exception as e:
+        from src.utils.logger import obtener_registrador
+        logger = obtener_registrador('aplicacion')
+        logger.error(f'Error al obtener categorías permitidas: {str(e)}')
+        # En caso de error, retornar lista vacía por seguridad
+        return []
 
 
 # ============================================================================
@@ -42,26 +112,132 @@ def validar_lugar(lugar_str):
         return False
     return True
 
+def validar_solapamiento_horario(fecha_evento, hora_inicio, hora_fin, id_evento_excluir=None, id_categoria=None):
+    """
+    Valida que no haya solapamiento de horarios con otros eventos del mismo día y misma categoría.
+    
+    Args:
+        fecha_evento (date): Fecha del evento
+        hora_inicio (time): Hora de inicio
+        hora_fin (time): Hora de fin
+        id_evento_excluir (int, optional): ID del evento a excluir de la validación (para actualizaciones)
+        id_categoria (int, optional): ID de la categoría del evento. Si se proporciona, solo se validan eventos de la misma categoría.
+    
+    Returns:
+        tuple: (bool, str) - (True si no hay solapamiento, mensaje de error si hay solapamiento)
+    """
+    try:
+        # Buscar eventos del mismo día
+        query = Evento.query.filter_by(fecha_evento=fecha_evento)
+        
+        # Si se especifica categoría, solo validar contra eventos de la misma categoría
+        # Esto permite que eventos de diferentes categorías coexistan en el mismo horario
+        if id_categoria is not None:
+            query = query.filter_by(id_categoria=id_categoria)
+        
+        eventos_mismo_dia = query.all()
+        
+        # Excluir el evento actual si se está actualizando
+        if id_evento_excluir:
+            eventos_mismo_dia = [e for e in eventos_mismo_dia if e.id_evento != id_evento_excluir]
+        
+        # Validar solapamiento con cada evento existente
+        for evento_existente in eventos_mismo_dia:
+            # Convertir a datetime para comparar fácilmente
+            inicio_existente = datetime.combine(fecha_evento, evento_existente.hora_inicio)
+            fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            inicio_nuevo = datetime.combine(fecha_evento, hora_inicio)
+            fin_nuevo = datetime.combine(fecha_evento, hora_fin)
+            
+            # Verificar solapamiento:
+            # Dos eventos se solapan si:
+            # (inicio_nuevo < fin_existente) AND (fin_nuevo > inicio_existente)
+            if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
+                # Formatear horarios para el mensaje de error
+                hora_inicio_str = evento_existente.hora_inicio.strftime('%H:%M')
+                hora_fin_str = evento_existente.hora_fin.strftime('%H:%M')
+                hora_nuevo_inicio_str = hora_inicio.strftime('%H:%M')
+                hora_nuevo_fin_str = hora_fin.strftime('%H:%M')
+                
+                # Determinar qué parte se solapa para un mensaje más específico
+                if inicio_nuevo < inicio_existente:
+                    # El nuevo evento empieza antes del existente
+                    if fin_nuevo <= inicio_existente:
+                        # No debería llegar aquí porque ya validamos el solapamiento
+                        mensaje = f"El horario del nuevo evento se solapa con el evento '{evento_existente.nombre}'."
+                    else:
+                        # El nuevo evento empieza antes y se solapa
+                        mensaje = f"El horario de fin del nuevo evento ({hora_nuevo_fin_str}) se solapa con el inicio del evento '{evento_existente.nombre}' que inicia a las {hora_inicio_str}."
+                elif inicio_nuevo >= inicio_existente and fin_nuevo <= fin_existente:
+                    # El nuevo evento está completamente dentro del evento existente
+                    mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) está completamente dentro del evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
+                elif inicio_nuevo >= inicio_existente and inicio_nuevo < fin_existente:
+                    # El nuevo evento empieza durante el evento existente
+                    if fin_nuevo <= fin_existente:
+                        # Está completamente dentro (ya cubierto arriba)
+                        mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) está completamente dentro del evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
+                    else:
+                        # Empieza durante y termina después
+                        mensaje = f"El horario de inicio del nuevo evento ({hora_nuevo_inicio_str}) se solapa con el evento '{evento_existente.nombre}' que está en curso de {hora_inicio_str} a {hora_fin_str}."
+                else:
+                    # Caso general (nuevo evento empieza después del fin del existente pero se solapa - no debería pasar)
+                    mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) se solapa con el evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
+                
+                return (False, mensaje)
+        
+        return (True, None)
+        
+    except Exception as e:
+        from src.utils.logger import obtener_registrador
+        logger = obtener_registrador('aplicacion')
+        logger.error(f'Error al validar solapamiento de horario: {str(e)}')
+        # En caso de error, permitir el evento (mejor permitir de más que bloquear)
+        return (True, None)
+
 
 # ============================================================================
 # CRUD DE EVENTOS
 # ============================================================================
 
 @eventos_bp.route('/calendario', methods=['GET'])
+@token_required()
 def listar_eventos():
     """
-    Listar todos los eventos con filtros opcionales.
+    Listar eventos con filtros opcionales, filtrando por categoría según el rol del usuario.
+    
+    Filtrado automático por rol:
+        - Deportista: Solo eventos de su categoría
+        - Acudiente: Eventos de las categorías de los deportistas que acude
+        - Entrenador/Administrador: Todos los eventos
     
     Query params:
         - page: número de página (default: 1)
         - per_page: registros por página (default: 10)
         - search: búsqueda por nombre
-        - categoria_id: filtrar por categoría
+        - categoria_id: filtrar por categoría (se combina con el filtro automático por rol)
         - tipo_evento_id: filtrar por tipo de evento
         - fecha_desde: filtrar desde fecha (YYYY-MM-DD)
         - fecha_hasta: filtrar hasta fecha (YYYY-MM-DD)
     """
     try:
+        # Obtener categorías permitidas según el rol del usuario
+        categorias_permitidas = obtener_categorias_permitidas_usuario()
+        
+        # Si categorias_permitidas es None, significa que el usuario puede ver todos los eventos
+        # Si es una lista vacía, no puede ver ningún evento
+        if categorias_permitidas == []:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'pagination': {
+                    'page': 1,
+                    'per_page': 10,
+                    'total': 0,
+                    'pages': 0
+                },
+                'message': 'No tienes eventos asignados a tus categorías'
+            }), 200
+        
         # Parámetros de consulta
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -74,13 +250,53 @@ def listar_eventos():
         # Construir consulta base
         query = Evento.query
         
-        # Filtros
+        # Obtener el ID de la categoría "Todos" para incluir eventos globales
+        categoria_todos = Categoria.query.filter_by(nombre_categoria='Todos').first()
+        id_categoria_todos = categoria_todos.id_categoria if categoria_todos else None
+        
+        # Filtro automático por categorías permitidas (si aplica)
+        # Incluir eventos de categoría "Todos" además de las categorías permitidas
+        if categorias_permitidas is not None:
+            # Si hay categoría "Todos", incluirla en el filtro
+            if id_categoria_todos:
+                # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
+                query = query.filter(
+                    or_(
+                        Evento.id_categoria.in_(categorias_permitidas),
+                        Evento.id_categoria == id_categoria_todos
+                    )
+                )
+            else:
+                query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
+        
+        # Filtros adicionales del usuario
         if search:
             search_filter = f"%{search}%"
             query = query.filter(Evento.nombre.ilike(search_filter))
         
+        # Si el usuario especifica categoria_id, combinarlo con el filtro automático
         if categoria_id:
-            query = query.filter_by(id_categoria=categoria_id)
+            # Permitir también la categoría "Todos" siempre
+            categoria_permitida = (
+                categorias_permitidas is None or 
+                categoria_id in categorias_permitidas or 
+                categoria_id == id_categoria_todos
+            )
+            if categoria_permitida:
+                query = query.filter_by(id_categoria=categoria_id)
+            else:
+                # Si el usuario intenta filtrar por una categoría no permitida, no devolver resultados
+                return jsonify({
+                    'success': True,
+                    'data': [],
+                    'pagination': {
+                        'page': 1,
+                        'per_page': 10,
+                        'total': 0,
+                        'pages': 0
+                    },
+                    'message': 'No tienes acceso a eventos de esta categoría'
+                }), 200
         
         if tipo_evento_id:
             query = query.filter_by(id_tipo_evento=tipo_evento_id)
@@ -272,6 +488,16 @@ def crear_evento():
                 'error': 'El lugar debe tener al menos 3 caracteres'
             }), 400
         
+        # Validar que no haya solapamiento con otros eventos del mismo día Y misma categoría
+        validacion_horario, mensaje_error = validar_solapamiento_horario(
+            fecha_evento, hora_inicio, hora_fin, id_categoria=data.get('id_categoria')
+        )
+        if not validacion_horario:
+            return jsonify({
+                'success': False,
+                'error': mensaje_error
+            }), 400
+        
         # Validar que existan las relaciones
         categoria = Categoria.query.get(data['id_categoria'])
         if not categoria:
@@ -398,6 +624,52 @@ def actualizar_evento(id):
                     'error': 'El lugar debe tener al menos 3 caracteres'
                 }), 400
             evento.lugar = data['lugar'].strip()
+        
+        # Validar solapamiento de horarios si se modificó la fecha o las horas
+        fecha_para_validar = evento.fecha_evento
+        hora_inicio_para_validar = evento.hora_inicio
+        hora_fin_para_validar = evento.hora_fin
+        
+        if 'fecha_evento' in data:
+            fecha_para_validar = validar_fecha(data['fecha_evento'])
+            if not fecha_para_validar:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
+                }), 400
+        
+        if 'hora_inicio' in data:
+            hora_inicio_para_validar = validar_hora(data['hora_inicio'])
+            if not hora_inicio_para_validar:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS'
+                }), 400
+        
+        if 'hora_fin' in data:
+            hora_fin_para_validar = validar_hora(data['hora_fin'])
+            if not hora_fin_para_validar:
+                return jsonify({
+                    'success': False,
+                    'error': 'Formato de hora de fin inválido. Use HH:MM o HH:MM:SS'
+                }), 400
+        
+        # Validar solapamiento solo si se modificó algo relacionado con el horario
+        # Usar la categoría actual del evento o la nueva si se está modificando
+        categoria_para_validar = evento.id_categoria
+        if 'id_categoria' in data:
+            categoria_para_validar = data['id_categoria']
+        
+        if 'fecha_evento' in data or 'hora_inicio' in data or 'hora_fin' in data or 'id_categoria' in data:
+            validacion_horario, mensaje_error = validar_solapamiento_horario(
+                fecha_para_validar, hora_inicio_para_validar, hora_fin_para_validar, 
+                id_evento_excluir=id, id_categoria=categoria_para_validar
+            )
+            if not validacion_horario:
+                return jsonify({
+                    'success': False,
+                    'error': mensaje_error
+                }), 400
         
         # Actualizar descripcion
         if 'descripcion' in data:
@@ -918,31 +1190,95 @@ def eliminar_tipo_evento(id):
 # ============================================================================
 
 @eventos_bp.route('/eventos/proximos', methods=['GET'])
+@token_required()
 def eventos_proximos():
-    """Listar eventos próximos (desde hoy en adelante)"""
+    """
+    Listar eventos próximos (desde hoy en adelante), filtrando por categoría según el rol del usuario.
+    
+    Filtrado automático por rol:
+        - Deportista: Solo eventos de su categoría
+        - Acudiente: Eventos de las categorías de los deportistas que acude
+        - Entrenador/Administrador: Todos los eventos
+    """
     try:
+        # Obtener categorías permitidas según el rol del usuario
+        categorias_permitidas = obtener_categorias_permitidas_usuario()
+        
+        # Si categorias_permitidas es una lista vacía, no puede ver ningún evento
+        if categorias_permitidas == []:
+            return jsonify({
+                'success': True,
+                'data': [],
+                'total': 0,
+                'message': 'No tienes eventos próximos asignados a tus categorías'
+            }), 200
+        
         limit = request.args.get('limit', 10, type=int)
         categoria_id = request.args.get('categoria_id', type=int)
         
         query = Evento.query.filter(Evento.fecha_evento >= date.today())
         
+        # Obtener el ID de la categoría "Todos" para incluir eventos globales
+        categoria_todos = Categoria.query.filter_by(nombre_categoria='Todos').first()
+        id_categoria_todos = categoria_todos.id_categoria if categoria_todos else None
+        
+        # Filtro automático por categorías permitidas (si aplica)
+        # Incluir eventos de categoría "Todos" además de las categorías permitidas
+        if categorias_permitidas is not None:
+            # Si hay categoría "Todos", incluirla en el filtro
+            if id_categoria_todos:
+                # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
+                query = query.filter(
+                    or_(
+                        Evento.id_categoria.in_(categorias_permitidas),
+                        Evento.id_categoria == id_categoria_todos
+                    )
+                )
+            else:
+                query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
+        
         if categoria_id:
-            query = query.filter_by(id_categoria=categoria_id)
+            # Verificar que la categoría esté permitida
+            # Permitir también la categoría "Todos" siempre
+            categoria_permitida = (
+                categorias_permitidas is None or 
+                categoria_id in categorias_permitidas or 
+                categoria_id == id_categoria_todos
+            )
+            if categoria_permitida:
+                query = query.filter_by(id_categoria=categoria_id)
+            else:
+                return jsonify({
+                    'success': True,
+                    'data': [],
+                    'total': 0,
+                    'message': 'No tienes acceso a eventos de esta categoría'
+                }), 200
         
         query = query.order_by(Evento.fecha_evento.asc()).limit(limit)
         eventos = query.all()
         
         eventos_data = []
         for evento in eventos:
-            evento_dict = evento.to_dict()
-            if evento.categoria:
-                evento_dict['categoria'] = evento.categoria.to_dict()
-            if evento.sesion:
-                evento_dict['sesion'] = evento.sesion.to_dict()
-            tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-            if tipo_evento:
-                evento_dict['tipo_evento'] = tipo_evento.to_dict()
-            eventos_data.append(evento_dict)
+            try:
+                evento_dict = evento.to_dict()
+                
+                # Agregar información de categoría si existe
+                if evento.categoria:
+                    evento_dict['categoria'] = evento.categoria.to_dict()
+                
+                # Agregar información de tipo de evento si existe
+                tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
+                if tipo_evento:
+                    evento_dict['tipo_evento'] = tipo_evento.to_dict()
+                
+                eventos_data.append(evento_dict)
+            except Exception as e:
+                print(f"⚠️ Error procesando evento {evento.id_evento}: {str(e)}")
+                import traceback
+                print(traceback.format_exc())
+                # Continuar con el siguiente evento en lugar de fallar completamente
+                continue
         
         return jsonify({
             'success': True,
@@ -951,9 +1287,14 @@ def eventos_proximos():
         }), 200
         
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error en eventos_proximos: {str(e)}")
+        print(f"📋 Traceback completo:\n{error_trace}")
         return jsonify({
             'success': False,
-            'error': f'Error al obtener eventos próximos: {str(e)}'
+            'error': f'Error al obtener eventos próximos: {str(e)}',
+            'traceback': error_trace if __debug__ else None
         }), 500
 
 

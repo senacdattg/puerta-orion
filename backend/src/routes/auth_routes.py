@@ -168,45 +168,6 @@ def asignar_rol():
         }), 500
 
 
-# @auth_bp.route('/setup-permissions', methods=['POST'])
-# def setup_permissions():
-#     """
-#     Endpoint para configurar los permisos básicos del sistema.
-#     """
-#     try:
-#         from ..models.roles_y_permisos.permiso import Permiso
-#         from ..models.base import db
-#         
-#         # Verificar si ya existen permisos
-#         permisos_existentes = Permiso.query.count()
-#         if permisos_existentes > 0:
-#             return jsonify({
-#                 'success': True,
-#                 'message': 'Los permisos ya existen en el sistema',
-#                 'total_permisos': permisos_existentes
-#             }), 200
-#         
-#         # Ejecutar seeder de permisos
-#         from ..seeders.seed_permisos import run as seed_permisos
-#         seed_permisos()
-#         
-#         # Contar permisos creados
-#         total_permisos = Permiso.query.count()
-#         
-#         return jsonify({
-#             'success': True,
-#             'message': 'Permisos creados exitosamente',
-#             'total_permisos': total_permisos
-#         }), 201
-#         
-#     except Exception as e:
-#         logger.error(f"Error configurando permisos: {str(e)}")
-#         return jsonify({
-#             'success': False,
-#             'error': f'Error configurando permisos: {str(e)}',
-#             'status_code': 500
-#         }), 500
-
 
 @auth_bp.route('/user-permissions', methods=['GET'])
 @token_required()
@@ -1154,13 +1115,20 @@ def completar_perfil_acudiente():
         # Obtener datos del JSON (puede ser vacío para acudientes)
         data = request.get_json() if request.is_json else {}
         
-        # Validar edad mínima para acudientes (18 años)
+        # Validar edad mínima para acudientes (18 años) solo si es deportista
+        # Si el usuario no es deportista, no se requiere validación de edad
         from src.models.deportistas.deportista import Deportista
         from datetime import date
         
         deportista = Deportista.query.filter_by(id_persona=user.get('persona', {}).get('id_persona')).first()
         if deportista and deportista.fecha_nacimiento:
-            edad = date.today().year - deportista.fecha_nacimiento
+            # Calcular edad correctamente
+            if isinstance(deportista.fecha_nacimiento, date):
+                edad = (date.today() - deportista.fecha_nacimiento).days // 365
+            else:
+                # Si es solo año, calcular edad aproximada
+                edad = date.today().year - deportista.fecha_nacimiento
+            
             if edad < 18:
                 return jsonify({
                     'success': False,
