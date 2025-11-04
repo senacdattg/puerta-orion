@@ -8,7 +8,9 @@ from src.models import (
     CiudadResidencia,
     InstitucionRegistro,
     TipoEvento,
-    TipoEnfermedad
+    TipoEnfermedad,
+    TipoDocumento,
+    Sexo
 )
 from src.models.pagos.metodo_pago import MetodoPago
 from src.models.roles_y_permisos.rol import Rol
@@ -26,7 +28,9 @@ TEMA_MODELOS = {
     'tipo-evento': TipoEvento,
     'tipo-enfermedad': TipoEnfermedad,
     'roles': Rol,
-    'metodo-pago': MetodoPago
+    'metodo-pago': MetodoPago,
+    'tipo-documento': TipoDocumento,
+    'sexo': Sexo
 }
 
 # Mapeo de temas a nombres de campos
@@ -40,7 +44,9 @@ TEMA_CAMPOS = {
     'tipo-evento': 'nombre',
     'tipo-enfermedad': 'nombre',
     'roles': 'nombre_rol',
-    'metodo-pago': 'nombre_metodo'
+    'metodo-pago': 'nombre_metodo',
+    'tipo-documento': 'nombre_documento',
+    'sexo': 'nombre'
 }
 
 def validar_tema(tema):

@@ -281,6 +281,8 @@ async function onGuardarDato(payload) {
     
     // Mapear entidad del frontend al tema del backend en dynamic-data
     const temaMap = {
+      'tipo_documento': 'tipo-documento',
+      'sexo': 'sexo',
       'ciudad': 'ciudad-residencia',
       'eps': 'eps',
       'tipo-evento': 'tipo-evento',
@@ -307,6 +309,12 @@ async function onGuardarDato(payload) {
       } else {
         datos.estado = true // Por defecto activo
       }
+    } else if (entidad === 'tipo_documento') {
+      // Para tipo documento, el campo es nombre_documento
+      datos.nombre_documento = nombre.trim()
+    } else if (entidad === 'sexo') {
+      // Para sexo, el campo es nombre
+      datos.nombre = nombre.trim()
     } else {
       datos.nombre = nombre.trim()
       // Campos adicionales según entidad
