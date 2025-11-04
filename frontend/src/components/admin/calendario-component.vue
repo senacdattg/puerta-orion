@@ -162,13 +162,29 @@
                     </div>
 
                     <div class="botones-modal">
-                        <button type="button" @click="cerrarModal" class="btn-secundario">
+                        <button 
+                            type="button" 
+                            @click="cerrarModal" 
+                            class="btn-secundario"
+                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        >
                             Cerrar
                         </button>
-                        <button v-if="puedeEliminar && modoEdicion" type="button" @click="eliminarEvento" class="btn-eliminar">
+                        <button 
+                            v-if="puedeEliminar && modoEdicion" 
+                            type="button" 
+                            @click="eliminarEvento" 
+                            class="btn-eliminar"
+                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        >
                             Eliminar
                         </button>
-                        <button v-if="puedeCrear || (puedeEditar && modoEdicion)" type="submit" class="btn-principal">
+                        <button 
+                            v-if="puedeCrear || (puedeEditar && modoEdicion)" 
+                            type="submit" 
+                            class="btn-principal"
+                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        >
                             {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
                         </button>
                     </div>

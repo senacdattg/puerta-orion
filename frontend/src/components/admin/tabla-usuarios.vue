@@ -208,7 +208,7 @@
                 @click="toggleEstadoUsuario(usuarioDetalle)"
                 :disabled="loading || usuarioDetalle.usuario?.id_usuario === currentUserId || usuarioDetalle.id_usuario === currentUserId"
                 :class="['btn-accion-detalle', usuarioDetalle.usuario?.estado !== false ? 'btn-desactivar' : 'btn-activar']"
-                style="flex: 0 0 240px !important; width: 240px !important; min-width: 240px !important; max-width: 240px !important; box-sizing: border-box !important;"
+                style="flex: 0 0 250px !important; width: 250px !important; min-width: 250px !important; max-width: 250px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 14px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
               >
                 <i :class="usuarioDetalle.usuario?.estado !== false ? 'fas fa-ban' : 'fas fa-check-circle'"></i>
                 {{ usuarioDetalle.usuario?.estado !== false ? 'Desactivar' : 'Activar' }} Usuario
@@ -218,7 +218,7 @@
                 @click="abrirModalEdicion(usuarioDetalle)"
                 :disabled="loading"
                 class="btn-accion-detalle btn-editar"
-                style="flex: 0 0 240px !important; width: 240px !important; min-width: 240px !important; max-width: 240px !important; box-sizing: border-box !important;"
+                style="flex: 0 0 250px !important; width: 250px !important; min-width: 250px !important; max-width: 250px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 14px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
               >
                 <i class="fas fa-edit"></i>
                 Editar Usuario
@@ -228,7 +228,7 @@
                 @click="abrirGestionRoles(usuarioDetalle)"
                 :disabled="loading"
                 class="btn-accion-detalle btn-roles"
-                style="flex: 0 0 240px !important; width: 240px !important; min-width: 240px !important; max-width: 240px !important; box-sizing: border-box !important;"
+                style="flex: 0 0 250px !important; width: 250px !important; min-width: 250px !important; max-width: 250px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 14px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
               >
                 <i class="fas fa-user-tag"></i>
                 Gestionar Roles
@@ -1548,47 +1548,72 @@ select:hover {
 }
 
 .botones-acciones-detalle {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 12px;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
   margin-top: 16px;
-  justify-content: center;
-  align-items: stretch;
-  width: 100%;
+  justify-content: center !important;
+  align-items: stretch !important;
+  width: 100% !important;
 }
 
-/* Forzar que todos los botones tengan exactamente el mismo tamaño */
+/* Forzar que todos los botones tengan exactamente el mismo tamaño - MÁXIMA ESPECIFICIDAD */
 .botones-acciones-detalle button,
+.botones-acciones-detalle > button,
+.botones-acciones-detalle button.btn-accion-detalle,
 .botones-acciones-detalle .btn-accion-detalle,
 .seccion-acciones-detalle .botones-acciones-detalle button,
+.seccion-acciones-detalle .botones-acciones-detalle > button,
 .seccion-acciones-detalle button.btn-accion-detalle,
-.seccion-acciones-detalle button.btn-editar {
-  flex: 0 0 240px !important;
-  width: 240px !important;
-  min-width: 240px !important;
-  max-width: 240px !important;
+.seccion-acciones-detalle button.btn-editar,
+.seccion-acciones-detalle button.btn-roles,
+.seccion-acciones-detalle button.btn-activar,
+.seccion-acciones-detalle button.btn-desactivar,
+.seccion-acciones-detalle .botones-acciones-detalle button.btn-editar {
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
   box-sizing: border-box !important;
+  padding: 14px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.btn-accion-detalle {
-  flex: 0 0 240px !important;
-  width: 240px !important;
-  min-width: 240px !important;
-  max-width: 240px !important;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: white;
-  white-space: nowrap;
+.btn-accion-detalle,
+button.btn-accion-detalle,
+button.btn-editar,
+button.btn-roles,
+button.btn-activar,
+button.btn-desactivar,
+.seccion-acciones-detalle button,
+.seccion-acciones-detalle .btn-accion-detalle {
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 14px 24px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  color: white !important;
+  white-space: nowrap !important;
   box-sizing: border-box !important;
+  line-height: 1.5 !important;
 }
 
 .btn-accion-detalle:disabled {
@@ -1609,8 +1634,24 @@ select:hover {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
-.btn-editar {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+.btn-editar,
+button.btn-editar,
+.btn-accion-detalle.btn-editar,
+.seccion-acciones-detalle button.btn-editar,
+.botones-acciones-detalle button.btn-editar {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 14px 24px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .btn-roles {
