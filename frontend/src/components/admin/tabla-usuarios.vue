@@ -79,6 +79,19 @@
       </tbody>
       </table>
 
+      <!-- Botón para cargar más usuarios -->
+      <div v-if="!loading && !error && hasMore" class="cargar-mas-container">
+        <button @click="cargarMasUsuarios" :disabled="cargandoMas" class="btn-cargar-mas">
+          <i class="fas" :class="cargandoMas ? 'fa-spinner fa-spin' : 'fa-chevron-down'"></i>
+          {{ cargandoMas ? 'Cargando...' : `Cargar más (${totalUsuarios - users.length} restantes)` }}
+        </button>
+      </div>
+
+      <!-- Mensaje cuando no hay más usuarios -->
+      <div v-if="!loading && !error && !hasMore && users.length > 0" class="sin-mas-usuarios">
+        <p>Mostrando todos los {{ users.length }} usuarios</p>
+      </div>
+
   <!-- Modal de Detalle de Usuario -->
   <div v-if="mostrarModalDetalle" class="modal-overlay-detalle" @click.self="cerrarModalDetalle">
     <div class="modal-content-detalle" @click.stop>
@@ -413,6 +426,13 @@ const loading = ref(false);
 const error = ref(null);
 const authStore = useAuthStore();
 
+// Estado de paginación
+const usuariosPorPagina = 3;
+const offset = ref(0);
+const totalUsuarios = ref(0);
+const hasMore = ref(false);
+const cargandoMas = ref(false);
+
 // Estado del modal de detalle
 const mostrarModalDetalle = ref(false);
 const usuarioDetalle = ref(null);
@@ -458,16 +478,21 @@ onMounted(async () => {
 async function cargarDatos() {
   loading.value = true;
   error.value = null;
+  offset.value = 0; // Resetear offset al cargar inicialmente
 
   try {
-    // Cargar usuarios y roles en paralelo (todos los usuarios, incluyendo inactivos)
+    // Cargar usuarios y roles en paralelo
     const [usuariosResponse, rolesResponse] = await Promise.all([
-      usuariosService.listarUsuarios('todos'),
+      usuariosService.listarUsuarios('todos', usuariosPorPagina, 0),
       usuariosService.listarRoles()
     ]);
 
     if (usuariosResponse.success) {
       users.value = usuariosResponse.data;
+      totalUsuarios.value = usuariosResponse.total || 0;
+      hasMore.value = usuariosResponse.has_more || false;
+      offset.value = usuariosPorPagina;
+
       // Resetear selecciones cuando se cargan nuevos usuarios
       userRolesSelections.value = {};
       emit('usuarios-cargados', users.value);
@@ -497,6 +522,35 @@ async function cargarDatos() {
     loading.value = false;
   }
 }
+
+// Cargar más usuarios
+async function cargarMasUsuarios() {
+  if (cargandoMas.value || !hasMore.value) return;
+
+  cargandoMas.value = true;
+  error.value = null;
+
+  try {
+    const usuariosResponse = await usuariosService.listarUsuarios('todos', usuariosPorPagina, offset.value);
+
+    if (usuariosResponse.success && usuariosResponse.data.length > 0) {
+      // Agregar nuevos usuarios a la lista existente
+      users.value = [...users.value, ...usuariosResponse.data];
+      hasMore.value = usuariosResponse.has_more || false;
+      offset.value += usuariosResponse.data.length;
+
+      emit('usuarios-cargados', users.value);
+    } else {
+      hasMore.value = false;
+    }
+  } catch (err) {
+    error.value = err.message;
+    console.error('Error al cargar más usuarios:', err);
+  } finally {
+    cargandoMas.value = false;
+  }
+}
+
 
 // Obtener IDs de roles del usuario (todos)
 function userRolesIds(user) {
@@ -1837,6 +1891,57 @@ button.btn-editar,
   font-size: 12px;
   font-weight: 600;
   text-transform: capitalize;
+}
+
+/* Estilos para cargar más usuarios */
+.cargar-mas-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 20px 0;
+}
+
+.btn-cargar-mas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-cargar-mas:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-cargar-mas:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sin-mas-usuarios {
+  text-align: center;
+  padding: 20px 0;
+  color: #6b7280;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sin-mas-usuarios p {
+  margin: 0;
+  font-style: italic;
 }
 </style>
 

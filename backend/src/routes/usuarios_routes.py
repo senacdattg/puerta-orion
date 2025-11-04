@@ -37,21 +37,41 @@ def listar_usuarios():
     
     Query params opcionales:
     - estado: 'activo', 'inactivo' o 'todos' (default: 'todos')
+    - limit: Número de usuarios a retornar (default: 4)
+    - offset: Número de usuarios a saltar (default: 0)
     
     Returns:
-        JSON: Lista de usuarios con sus roles
+        JSON: Lista de usuarios con sus roles y información de paginación
     """
     try:
+        # Obtener parámetros de paginación
+        limit = request.args.get('limit', 3, type=int)
+        offset = request.args.get('offset', 0, type=int)
+        
+        # Validar parámetros
+        if limit < 1:
+            limit = 3
+        if limit > 100:  # Límite máximo
+            limit = 100
+        if offset < 0:
+            offset = 0
+        
         # Obtener parámetro de estado (opcional)
         estado_filter = request.args.get('estado', 'todos')
         
-        # Obtener usuarios según el filtro de estado
+        # Construir query base según el filtro de estado
         if estado_filter == 'activo':
-            usuarios = Usuario.query.filter_by(estado=True).all()
+            query = Usuario.query.filter_by(estado=True)
         elif estado_filter == 'inactivo':
-            usuarios = Usuario.query.filter_by(estado=False).all()
+            query = Usuario.query.filter_by(estado=False)
         else:  # 'todos' por defecto
-            usuarios = Usuario.query.all()
+            query = Usuario.query
+        
+        # Obtener total de usuarios (antes de paginación)
+        total_usuarios = query.count()
+        
+        # Aplicar paginación
+        usuarios = query.offset(offset).limit(limit).all()
         
         usuarios_data = []
         for usuario in usuarios:
@@ -80,11 +100,17 @@ def listar_usuarios():
                 }
             })
         
+        # Calcular si hay más usuarios
+        has_more = (offset + limit) < total_usuarios
+        
         return jsonify({
             'success': True,
             'message': 'Usuarios obtenidos exitosamente',
             'data': usuarios_data,
-            'total': len(usuarios_data),
+            'total': total_usuarios,
+            'limit': limit,
+            'offset': offset,
+            'has_more': has_more,
             'status_code': 200
         }), 200
         

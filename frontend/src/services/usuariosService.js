@@ -28,12 +28,19 @@ class UsuariosService {
   /**
    * Lista todos los usuarios con sus roles
    * @param {string} estado - 'activo', 'inactivo' o 'todos' (default: 'todos')
+   * @param {number} limit - Número de usuarios a retornar (default: 3)
+   * @param {number} offset - Número de usuarios a saltar (default: 0)
    */
-  async listarUsuarios(estado = 'todos') {
+  async listarUsuarios(estado = 'todos', limit = 3, offset = 0) {
     try {
-      const url = estado !== 'todos' 
-        ? `${API_BASE_URL}/usuarios/?estado=${estado}`
-        : `${API_BASE_URL}/usuarios/`
+      const params = new URLSearchParams()
+      if (estado !== 'todos') {
+        params.append('estado', estado)
+      }
+      params.append('limit', limit)
+      params.append('offset', offset)
+      
+      const url = `${API_BASE_URL}/usuarios/?${params.toString()}`
       
       const response = await fetch(url, {
         method: 'GET',
