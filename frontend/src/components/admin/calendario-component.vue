@@ -55,9 +55,9 @@
                 </div>
 
                 <!-- Botón para agregar evento (siempre visible si hay permisos) -->
-                <button v-if="puedeCrear && dia.esMesActual" 
-                    @click="agregarEventoADia(dia, $event)" 
-                    class="btn-agregar-dia" 
+                <button v-if="puedeCrear && dia.esMesActual"
+                    @click="agregarEventoADia(dia, $event)"
+                    class="btn-agregar-dia"
                     title="Agregar evento">
                     <i class="fas fa-plus"></i>
                 </button>
@@ -163,17 +163,13 @@
 
                     <div class="botones-modal">
                         <button type="button" @click="cerrarModal" class="btn-secundario">
-                            <i class="fas fa-times"></i>
                             Cerrar
                         </button>
-                        <button v-if="puedeEliminar && modoEdicion" type="button" @click="eliminarEvento"
-                            class="btn-eliminar">
-                            <i class="fas fa-trash"></i>
+                        <button v-if="puedeEliminar && modoEdicion" type="button" @click="eliminarEvento" class="btn-eliminar">
                             Eliminar
                         </button>
                         <button v-if="puedeCrear || (puedeEditar && modoEdicion)" type="submit" class="btn-principal">
-                            <i :class="modoEdicion ? 'fas fa-save' : 'fas fa-plus'"></i>
-                            {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+                            {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
                         </button>
                     </div>
                 </form>
@@ -593,19 +589,19 @@ export default {
                     }
                     await calendarioService.crearEvento(this.nuevoEvento);
                     this.mostrarNotificacion('Evento creado exitosamente', 'success');
-                    
+
                     // Recargar eventos del calendario
                     await calendarioService.cargarEventos();
                     this.actualizarCalendario();
-                    
+
                     // Verificar si hay eventos en esa fecha antes de preguntar
                     const fechaActual = this.nuevoEvento.fecha;
                     const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
-                    
+
                     // Solo preguntar si ya hay eventos en ese día (más de 1 porque acabamos de crear uno)
                     if (eventosDelDia && eventosDelDia.length > 1) {
                         const quiereAgregarOtro = confirm('¿Deseas agregar otro evento en este mismo día?');
-                        
+
                         if (quiereAgregarOtro) {
                             // Limpiar formulario pero mantener la fecha y el modal abierto
                             this.limpiarFormulario();
@@ -614,7 +610,7 @@ export default {
                             return;
                         }
                     }
-                    
+
                     // Cerrar el modal si no quiere agregar otro o si no hay eventos previos
                     this.cerrarModal();
                     return;
