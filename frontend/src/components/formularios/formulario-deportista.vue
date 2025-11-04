@@ -281,6 +281,17 @@
         </button>
       </div>
       <div v-else-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
+        <button
+          v-if="modo === 'registrar'"
+          type="button"
+          class="boton-formulario"
+          style="width: 150px; background: #6c757d;"
+          @click="volverAtras"
+          :disabled="isSubmitting"
+        >
+          <i class="fas fa-arrow-left" style="margin-right: 5px;"></i>
+          Volver
+        </button>
         <button type="submit" class="boton-formulario" :disabled="isSubmitting" style="width: 150px;">
           {{ isSubmitting ? 'Enviando...' : obtenerTextoBoton() }}
         </button>
@@ -309,11 +320,14 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import catalogosService from '@/services/catalogosService';
 import deportistasService from '@/services/deportistasService';
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 
 const props = defineProps({
   modo: {
@@ -522,17 +536,17 @@ async function manejarSubmit(event) {
     event.preventDefault();
     event.stopPropagation();
   }
-  
+
   console.log('🚀 Iniciando manejarSubmit');
   console.log('📋 Estado del formulario:', JSON.parse(JSON.stringify(form.value)));
-  
+
   isSubmitting.value = true;
 
   try {
     // Requiere sesión iniciada: el backend obtiene id_persona desde el token
     const token = localStorage.getItem('token');
     console.log('🔑 Token encontrado:', token ? 'Sí' : 'No');
-    
+
     if (!token || token === 'null' || token === 'undefined') {
       console.error('❌ No hay token válido');
       mostrarModal('Error', 'Debe iniciar sesión para realizar esta acción.');
@@ -680,7 +694,7 @@ async function manejarSubmit(event) {
         },
         body: JSON.stringify(datosEnvio)
       });
-      
+
       console.log('📥 Respuesta recibida, status:', response.status);
 
       const result = await response.json();
@@ -713,7 +727,7 @@ async function manejarSubmit(event) {
           statusText: response.statusText,
           result: result
         });
-        
+
         let mensajeError = 'Error al registrar deportista';
         if (result.message) {
           mensajeError = result.message;
@@ -722,7 +736,7 @@ async function manejarSubmit(event) {
         } else if (result.status === 'error') {
           mensajeError = result.message || 'Error desconocido del servidor';
         }
-        
+
         throw new Error(mensajeError);
       }
     }
@@ -741,6 +755,21 @@ async function manejarSubmit(event) {
 
 function cancelar() {
   emit('cancel');
+}
+
+// Función para volver atrás
+function volverAtras() {
+  // Si hay una ruta anterior en el historial, volver
+  if (window.history.length > 1) {
+    router.go(-1);
+  } else {
+    // Si no hay historial, redirigir a home o login según el caso
+    if (authStore.isAuthenticated) {
+      router.push('/home');
+    } else {
+      router.push('/login');
+    }
+  }
 }
 
 onMounted(async () => {

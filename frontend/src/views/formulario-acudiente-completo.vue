@@ -1,8 +1,5 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-import Encabezado from '../components/layout/encabezado.vue';
-import Titulo from '../components/ui/titulo-club.vue';
-import Pie from '../components/layout/pie.vue';
 import { useRouter } from 'vue-router';
 import authService from '@/services/authService';
 import { API_CONFIG } from '@/config/environment';
@@ -221,15 +218,69 @@ async function completarRegistroAcudiente() {
 // Función para manejar la cancelación
 function manejarCancelacion() {
   if (confirm("¿Está seguro de que desea cancelar el registro? Se perderá toda la información ingresada.")) {
-    router.push('/completar-perfil');
+    // Determinar la ruta de redirección según el rol del usuario
+    const userRoles = authStore.userRoles || [];
+    const roleNames = userRoles.map(role => typeof role === 'string' ? role : role.nombre_rol);
+    
+    // Si tiene rol activo, usar ese
+    if (authStore.activeRole) {
+      switch(authStore.activeRole) {
+        case 'SuperAdmin':
+        case 'Administrador':
+          router.push('/admin-manager');
+          return;
+        case 'Entrenador':
+          router.push('/home');
+          return;
+        case 'Deportista':
+          router.push('/deportista/dashboard');
+          return;
+        case 'Acudiente':
+          router.push('/acudiente/dashboard');
+          return;
+        default:
+          router.push('/home');
+          return;
+      }
+    }
+    
+    // Si no hay rol activo, verificar roles del usuario
+    if (roleNames.length === 1) {
+      const singleRole = roleNames[0];
+      switch(singleRole) {
+        case 'SuperAdmin':
+        case 'Administrador':
+          router.push('/admin-manager');
+          return;
+        case 'Entrenador':
+          router.push('/home');
+          return;
+        case 'Deportista':
+          router.push('/deportista/dashboard');
+          return;
+        case 'Acudiente':
+          router.push('/acudiente/dashboard');
+          return;
+        default:
+          router.push('/home');
+          return;
+      }
+    }
+    
+    // Si tiene múltiples roles, redirigir a selección de rol
+    if (roleNames.length > 1) {
+      router.push('/seleccionar-rol');
+      return;
+    }
+    
+    // Por defecto, ir a home
+    router.push('/home');
   }
 }
 </script>
 
 <template>
   <main>
-    <Encabezado :sinMenu="false"/>
-    <Titulo />
     <div class="contenido-principal-tarjetas">
       <div class="card-formulario">
         <h2 class="titulo-formulario">Registro como Acudiente</h2>
@@ -337,7 +388,6 @@ function manejarCancelacion() {
         </div>
       </div>
     </div>
-    <Pie />
   </main>
 </template>
 
