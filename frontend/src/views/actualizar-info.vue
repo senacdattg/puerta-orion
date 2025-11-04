@@ -1,7 +1,6 @@
 <template>
   <main class="actualizar-info-page">
     <Encabezado />
-    <TituloClub />
     <div class="actualizar-container">
       <div class="actualizar-header">
         <h1 class="actualizar-title">
@@ -532,7 +531,7 @@
                       :disabled="!puedeEditarCampo.antecedentesMedicos"
                       style="margin-right: 8px;"
                     />
-                    <label :for="`diag-${diagnostico.id_diagnostico}`" 
+                    <label :for="`diag-${diagnostico.id_diagnostico}`"
                            :style="puedeEditarCampo.antecedentesMedicos ? 'cursor: pointer; margin: 0;' : 'cursor: not-allowed; margin: 0;'">
                       {{ diagnostico.nombre }}
                     </label>
@@ -611,7 +610,6 @@ import deportistasService from '@/services/deportistasService'
 import catalogosService from '@/services/catalogosService'
 import { API_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
-import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 
 const router = useRouter()
@@ -692,7 +690,7 @@ const categoriaNombre = computed(() => {
 
 // Computed para verificar si el usuario es deportista
 const esDeportista = computed(() => {
-  return authStore.userDetail?.deportista?.id_deportista || 
+  return authStore.userDetail?.deportista?.id_deportista ||
          authStore.user?.deportista?.id_deportista ||
          false
 })
@@ -701,19 +699,19 @@ const esDeportista = computed(() => {
 const rolUsuario = computed(() => {
   const activeRole = authStore.activeRole
   const userRoles = authStore.userRoles
-  
+
   // Si hay un rol activo, usarlo
   if (activeRole) {
     return activeRole
   }
-  
+
   // Extraer nombres de roles
   const nombresRoles = userRoles.map(rol => {
     if (typeof rol === 'string') return rol
     if (rol.nombre_rol) return rol.nombre_rol
     return rol.toString()
   })
-  
+
   // Prioridad: Entrenador > Deportista > Acudiente
   if (nombresRoles.includes('Entrenador') || nombresRoles.includes('Administrador') || nombresRoles.includes('SuperAdmin')) {
     return 'Entrenador'
@@ -724,7 +722,7 @@ const rolUsuario = computed(() => {
   if (nombresRoles.includes('Acudiente')) {
     return 'Acudiente'
   }
-  
+
   return null
 })
 
@@ -738,7 +736,7 @@ const puedeEditarPesoAltura = computed(() => {
 // Computed para verificar qué campos puede editar según el rol
 const puedeEditarCampo = computed(() => {
   const rol = rolUsuario.value
-  
+
   if (rol === 'Deportista') {
     return {
       // Datos personales
@@ -827,7 +825,7 @@ const puedeEditarCampo = computed(() => {
       antecedentesMedicos: true
     }
   }
-  
+
   // Por defecto, permitir edición si no hay rol específico (Administrador, etc.)
   return {
     tipoDocumento: false,
@@ -1045,7 +1043,7 @@ async function cargarDatosUsuario() {
         formDataDeportista.value.tiene_enfermedades = true
       }
       if (salud.diagnosticos && Array.isArray(salud.diagnosticos)) {
-        formDataDeportista.value.diagnostico = salud.diagnosticos.map(d => 
+        formDataDeportista.value.diagnostico = salud.diagnosticos.map(d =>
           typeof d === 'object' ? d.id_diagnostico : d
         )
       }
@@ -1081,13 +1079,13 @@ const actualizarInformacion = async () => {
     if (puedeEditarCampo.value.direccion && formData.value.direccion?.trim()) {
       datosPersona.direccion = formData.value.direccion.trim()
     }
-    
+
     // Campos que solo Entrenador puede editar
     if (rolUsuario.value === 'Entrenador') {
       datosPersona.primer_nombre = formData.value.primer_nombre.trim()
       datosPersona.primer_apellido = formData.value.primer_apellido.trim()
       datosPersona.id_sexo = formData.value.id_sexo
-      
+
       if (formData.value.segundo_nombre?.trim()) {
         datosPersona.segundo_nombre = formData.value.segundo_nombre.trim()
       }
@@ -1095,7 +1093,7 @@ const actualizarInformacion = async () => {
         datosPersona.segundo_apellido = formData.value.segundo_apellido.trim()
       }
     }
-    
+
     // Tipo y número de documento nunca se pueden editar (ningún rol)
     // No se incluyen en datosPersona
 
@@ -1118,7 +1116,7 @@ const actualizarInformacion = async () => {
 
       if (idDeportista) {
         // Validar que solo Entrenador y Administrador puedan actualizar peso y altura
-        if ((formDataDeportista.value.peso !== null || formDataDeportista.value.altura !== null) && 
+        if ((formDataDeportista.value.peso !== null || formDataDeportista.value.altura !== null) &&
             !puedeEditarPesoAltura.value) {
           // No permitir actualizar peso y altura si no tiene permisos
           // Solo enviar los campos permitidos
@@ -1137,28 +1135,28 @@ const actualizarInformacion = async () => {
           datos_informacion_deportiva: {
             // Solo incluir campos que el usuario tiene permiso para editar
             ...(puedeEditarCampo.value.deporte && { id_deporte: formDataDeportista.value.id_deporte || null }),
-            ...(puedeEditarCampo.value.escuela && formDataDeportista.value.participa_escuela && formDataDeportista.value.id_escuela 
-                ? { id_escuela: formDataDeportista.value.id_escuela } 
+            ...(puedeEditarCampo.value.escuela && formDataDeportista.value.participa_escuela && formDataDeportista.value.id_escuela
+                ? { id_escuela: formDataDeportista.value.id_escuela }
                 : {}),
             ...(puedeEditarCampo.value.institucionRegistro && { id_institucion_registro: formDataDeportista.value.id_institucion_registro || null }),
-            ...(puedeEditarCampo.value.practicaOtroDeporte !== undefined && { 
+            ...(puedeEditarCampo.value.practicaOtroDeporte !== undefined && {
               practica_otro_deporte: puedeEditarCampo.value.practicaOtroDeporte ? (formDataDeportista.value.practica_otro_deporte || false) : undefined
             }),
-            ...(puedeEditarCampo.value.participaEscuela !== undefined && { 
+            ...(puedeEditarCampo.value.participaEscuela !== undefined && {
               participa_escuela: puedeEditarCampo.value.participaEscuela ? (formDataDeportista.value.participa_escuela || false) : undefined
             }),
             ...(puedeEditarCampo.value.antecedentesMedicos && {
-              recomendacion_medica: formDataDeportista.value.tiene_enfermedades === true 
-                                    ? formDataDeportista.value.recomendacion_medica 
+              recomendacion_medica: formDataDeportista.value.tiene_enfermedades === true
+                                    ? formDataDeportista.value.recomendacion_medica
                                     : false,
-              descripcion_recomendacion: formDataDeportista.value.tiene_enfermedades === true 
-                                         && formDataDeportista.value.recomendacion_medica 
-                                         ? formDataDeportista.value.descripcion_recomendacion 
+              descripcion_recomendacion: formDataDeportista.value.tiene_enfermedades === true
+                                         && formDataDeportista.value.recomendacion_medica
+                                         ? formDataDeportista.value.descripcion_recomendacion
                                          : null
             })
           }
         }
-        
+
         // Limpiar objetos vacíos después de agregar campos condicionalmente
         Object.keys(datosDeportistaActualizar.datos_deportista).forEach(key => {
           if (datosDeportistaActualizar.datos_deportista[key] === undefined) {
@@ -1214,7 +1212,7 @@ const actualizarInformacion = async () => {
     }
 
     mensajeExito.value = 'Información actualizada correctamente'
-    
+
     // Recargar datos del usuario
     await authStore.loadUserProfileDetail()
     await authStore.loadUserProfile()
@@ -1253,11 +1251,25 @@ onMounted(async () => {
   min-height: 100vh;
   background-color: #f8f9fa;
   padding: 2rem 1rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .actualizar-container {
   max-width: 900px;
   margin: 0 auto;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+  flex: 1;
+}
+
+/* Hacer que el footer se salga del padding del main y se comporte como footer */
+.actualizar-info-page :deep(.footer-enhanced) {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
+  margin-top: auto;
 }
 
 .actualizar-header {
@@ -1442,6 +1454,13 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .actualizar-info-page {
     padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page :deep(.footer-enhanced) {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
   }
 
   .actualizar-title {
