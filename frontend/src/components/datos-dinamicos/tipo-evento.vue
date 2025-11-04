@@ -4,7 +4,7 @@
       <input 
         v-model.trim="localForm.nombre" 
         type="text" 
-        placeholder="Nombre *" 
+        placeholder="Nombre" 
         required 
       />
       <textarea 
