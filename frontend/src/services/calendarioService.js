@@ -100,6 +100,25 @@ class CalendarioService {
     try {
       // Mapear evento de frontend a backend
       const eventoBackend = this.mapearEventoFrontendABackend(evento);
+      
+      // Validar que las horas estén en formato correcto antes de enviar
+      if (eventoBackend.hora_inicio && !/^\d{2}:\d{2}(:\d{2})?$/.test(eventoBackend.hora_inicio)) {
+        console.error('⚠️ Formato de hora_inicio inválido:', eventoBackend.hora_inicio);
+        throw new Error('Formato de hora de inicio inválido. Debe ser HH:MM');
+      }
+      
+      if (eventoBackend.hora_fin && !/^\d{2}:\d{2}(:\d{2})?$/.test(eventoBackend.hora_fin)) {
+        console.error('⚠️ Formato de hora_fin inválido:', eventoBackend.hora_fin);
+        throw new Error('Formato de hora de fin inválido. Debe ser HH:MM');
+      }
+      
+      console.log('📤 Enviando evento al backend:', {
+        nombre: eventoBackend.nombre,
+        fecha: eventoBackend.fecha_evento,
+        hora_inicio: eventoBackend.hora_inicio,
+        hora_fin: eventoBackend.hora_fin,
+        categoria: eventoBackend.id_categoria
+      });
 
       const response = await fetch(`${this.baseURL}/calendario`, {
         method: 'POST',
@@ -338,6 +357,41 @@ class CalendarioService {
   /**
    * Mapear evento del frontend al formato del backend
    */
+  /**
+   * Convierte una hora a formato 24 horas (HH:MM o HH:MM:SS)
+   * Asegura que el formato sea correcto para el backend
+   */
+  normalizarHora(hora) {
+    if (!hora) return null;
+    
+    // Si ya está en formato HH:MM o HH:MM:SS, retornarlo
+    if (typeof hora === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(hora)) {
+      return hora;
+    }
+    
+    // Si viene en formato 12 horas con AM/PM, convertir
+    if (typeof hora === 'string' && (hora.includes('AM') || hora.includes('PM') || hora.includes('a.') || hora.includes('p.'))) {
+      // Convertir formato 12 horas a 24 horas
+      const match = hora.match(/(\d{1,2}):(\d{2})\s*(AM|PM|a\.m\.|p\.m\.)/i);
+      if (match) {
+        let horas = parseInt(match[1]);
+        const minutos = match[2];
+        const periodo = match[3].toUpperCase();
+        
+        if (periodo.includes('PM') || periodo.includes('P.')) {
+          if (horas !== 12) horas += 12;
+        } else if (periodo.includes('AM') || periodo.includes('A.')) {
+          if (horas === 12) horas = 0;
+        }
+        
+        return `${horas.toString().padStart(2, '0')}:${minutos}`;
+      }
+    }
+    
+    // Si no se puede convertir, retornar null
+    return null;
+  }
+
   mapearEventoFrontendABackend(eventoFrontend, esActualizacion = false) {
     const eventoBackend = {};
 
@@ -351,11 +405,13 @@ class CalendarioService {
     }
 
     if (eventoFrontend.hora !== undefined || eventoFrontend.horaInicio !== undefined) {
-      eventoBackend.hora_inicio = eventoFrontend.horaInicio || eventoFrontend.hora;
+      const horaNormalizada = this.normalizarHora(eventoFrontend.horaInicio || eventoFrontend.hora);
+      eventoBackend.hora_inicio = horaNormalizada || (eventoFrontend.horaInicio || eventoFrontend.hora);
     }
 
     if (eventoFrontend.horaFin !== undefined) {
-      eventoBackend.hora_fin = eventoFrontend.horaFin;
+      const horaNormalizada = this.normalizarHora(eventoFrontend.horaFin);
+      eventoBackend.hora_fin = horaNormalizada || eventoFrontend.horaFin;
     }
 
     if (eventoFrontend.lugar !== undefined) {

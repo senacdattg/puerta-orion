@@ -598,21 +598,26 @@ export default {
                     await calendarioService.cargarEventos();
                     this.actualizarCalendario();
                     
-                    // Preguntar si quiere agregar otro evento en el mismo día
+                    // Verificar si hay eventos en esa fecha antes de preguntar
                     const fechaActual = this.nuevoEvento.fecha;
-                    const quiereAgregarOtro = confirm('¿Deseas agregar otro evento en este mismo día?');
+                    const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
                     
-                    if (quiereAgregarOtro) {
-                        // Limpiar formulario pero mantener la fecha y el modal abierto
-                        this.limpiarFormulario();
-                        this.nuevoEvento.fecha = fechaActual;
-                        // El modal permanece abierto para agregar otro evento
-                        return;
-                    } else {
-                        // Cerrar el modal si no quiere agregar otro
-                        this.cerrarModal();
-                        return;
+                    // Solo preguntar si ya hay eventos en ese día (más de 1 porque acabamos de crear uno)
+                    if (eventosDelDia && eventosDelDia.length > 1) {
+                        const quiereAgregarOtro = confirm('¿Deseas agregar otro evento en este mismo día?');
+                        
+                        if (quiereAgregarOtro) {
+                            // Limpiar formulario pero mantener la fecha y el modal abierto
+                            this.limpiarFormulario();
+                            this.nuevoEvento.fecha = fechaActual;
+                            // El modal permanece abierto para agregar otro evento
+                            return;
+                        }
                     }
+                    
+                    // Cerrar el modal si no quiere agregar otro o si no hay eventos previos
+                    this.cerrarModal();
+                    return;
                 }
 
                 // Esto solo se ejecuta si es edición

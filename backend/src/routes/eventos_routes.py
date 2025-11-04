@@ -157,9 +157,31 @@ def validar_solapamiento_horario(fecha_evento, hora_inicio, hora_fin, id_evento_
                 hora_nuevo_inicio_str = hora_inicio.strftime('%H:%M')
                 hora_nuevo_fin_str = hora_fin.strftime('%H:%M')
                 
-                return (False, f"El horario del evento se solapa con el evento '{evento_existente.nombre}' "
-                               f"que está programado de {hora_inicio_str} a {hora_fin_str}. "
-                               f"Tu evento está programado de {hora_nuevo_inicio_str} a {hora_nuevo_fin_str}.")
+                # Determinar qué parte se solapa para un mensaje más específico
+                if inicio_nuevo < inicio_existente:
+                    # El nuevo evento empieza antes del existente
+                    if fin_nuevo <= inicio_existente:
+                        # No debería llegar aquí porque ya validamos el solapamiento
+                        mensaje = f"El horario del nuevo evento se solapa con el evento '{evento_existente.nombre}'."
+                    else:
+                        # El nuevo evento empieza antes y se solapa
+                        mensaje = f"El horario de fin del nuevo evento ({hora_nuevo_fin_str}) se solapa con el inicio del evento '{evento_existente.nombre}' que inicia a las {hora_inicio_str}."
+                elif inicio_nuevo >= inicio_existente and fin_nuevo <= fin_existente:
+                    # El nuevo evento está completamente dentro del evento existente
+                    mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) está completamente dentro del evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
+                elif inicio_nuevo >= inicio_existente and inicio_nuevo < fin_existente:
+                    # El nuevo evento empieza durante el evento existente
+                    if fin_nuevo <= fin_existente:
+                        # Está completamente dentro (ya cubierto arriba)
+                        mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) está completamente dentro del evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
+                    else:
+                        # Empieza durante y termina después
+                        mensaje = f"El horario de inicio del nuevo evento ({hora_nuevo_inicio_str}) se solapa con el evento '{evento_existente.nombre}' que está en curso de {hora_inicio_str} a {hora_fin_str}."
+                else:
+                    # Caso general (nuevo evento empieza después del fin del existente pero se solapa - no debería pasar)
+                    mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) se solapa con el evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
+                
+                return (False, mensaje)
         
         return (True, None)
         
