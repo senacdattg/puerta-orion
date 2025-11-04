@@ -388,9 +388,42 @@ class AuthService {
    }
 
   /**
-    * Completar perfil como acudiente
-    */
-   async completarPerfilAcudiente(datosAcudiente = {}) {
+   * Asociar acudiente existente con un deportista
+   */
+  async asociarAcudienteDeportista(datosAsociacion) {
+    try {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/deportistas/asociar-acudiente`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(datosAsociacion)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al asociar acudiente con deportista')
+      }
+
+      return { success: true, data: data.data, message: data.message }
+    } catch (error) {
+      console.error('Error al asociar acudiente con deportista:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
+
+  /**
+   * Completar perfil como acudiente
+   */
+  async completarPerfilAcudiente(datosAcudiente = {}) {
      try {
        const token = localStorage.getItem('token')
 

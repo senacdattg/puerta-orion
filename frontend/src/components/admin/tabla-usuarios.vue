@@ -155,8 +155,7 @@ watch(
 
     filteredUsers.value = users.value.filter(user => {
       const matchesText = !text ||
-        user.usuario.toLowerCase().includes(text) ||
-        user.persona.nombre_completo.toLowerCase().includes(text);
+        user.usuario.toLowerCase().includes(text);
 
       const matchesRole = roleFilter === 'todos' ||
         user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
@@ -273,6 +272,7 @@ function roleColor(role) {
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  table-layout: fixed;
 }
 
 .tabla-usuarios thead tr {
@@ -289,6 +289,18 @@ function roleColor(role) {
   letter-spacing: 0.5px;
   border-bottom: 2px solid #d1d5db;
   text-align: center;
+}
+
+.tabla-usuarios th:nth-child(1) {
+  width: 30%;
+}
+
+.tabla-usuarios th:nth-child(2) {
+  width: 30%;
+}
+
+.tabla-usuarios th:nth-child(3) {
+  width: 40%;
 }
 
 .tabla-usuarios tbody tr {
@@ -312,6 +324,8 @@ function roleColor(role) {
   color: #374151;
   vertical-align: middle;
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tabla-usuarios td:first-child {
@@ -352,6 +366,9 @@ function roleColor(role) {
 .user-action {
   text-align: center;
   vertical-align: middle;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .role-select {
@@ -430,6 +447,7 @@ function roleColor(role) {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin: 0 auto;
 }
 
 .role-checkbox-label {

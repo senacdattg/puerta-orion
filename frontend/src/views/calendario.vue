@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import Encabezado from '../components/layout/encabezado.vue';
-import Titulo from '../components/ui/titulo-club.vue';
 import CalendarioComponent from '../components/admin/calendario-component.vue';
 import Pie from '../components/layout/pie.vue';
 
@@ -48,7 +47,6 @@ const rolUsuario = computed(() => {
 <template>
   <main>
     <Encabezado />
-    <Titulo />
     <CalendarioComponent :rol="rolUsuario" />
     <Pie />
   </main>

@@ -327,12 +327,16 @@ def cambiar_rol_usuario(id_usuario):
         # Normalizar a lista: si viene id_rol único, convertirlo a lista
         if id_rol is not None and not id_roles:
             id_roles = [id_rol]
-        elif not id_rol and not id_roles:
+        elif not id_rol and id_roles is None:
             return jsonify({
                 'success': False,
-                'error': 'Debe proporcionar id_rol o id_roles (array)',
+                'error': 'Debe proporcionar id_rol o id_roles (array). Puede enviar un array vacío [] para remover todos los roles gestionables.',
                 'status_code': 400
             }), 400
+        
+        # Asegurar que id_roles sea una lista (puede ser vacía para remover todos los roles gestionables)
+        if not isinstance(id_roles, list):
+            id_roles = [id_roles] if id_roles is not None else []
         
         # Verificar que el usuario existe
         usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
@@ -344,6 +348,7 @@ def cambiar_rol_usuario(id_usuario):
             }), 404
         
         # Validar y obtener roles (solo permitir Entrenador y Administrador)
+        # NOTA: Si id_roles está vacío [], se permitirá para remover todos los roles gestionables
         roles_permitidos = ['entrenador', 'administrador']
         roles_excluidos = ['superadmin', 'super_admin', 'usuario', 'deportista', 'acudiente']
         roles_validos = []
@@ -362,12 +367,9 @@ def cambiar_rol_usuario(id_usuario):
                 elif nombre_lower in roles_excluidos:
                     logger.warning(f"Intento de asignar rol {rol.nombre_rol} a usuario {id_usuario}, ignorado (rol automático o no permitido)")
         
-        if not roles_validos:
-            return jsonify({
-                'success': False,
-                'error': 'Solo se pueden asignar los roles Entrenador y Administrador manualmente',
-                'status_code': 400
-            }), 400
+        # PERMITIR array vacío: si id_roles está vacío o roles_validos está vacío,
+        # simplemente se eliminarán todos los roles gestionables y el usuario quedará
+        # solo con los roles automáticos (usuario, deportista, acudiente) que se preservan
         
         # Obtener roles actuales del usuario
         roles_actuales_usuario = UsuarioRol.query.filter_by(id_usuario=id_usuario).all()

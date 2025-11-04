@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import DashboardHome from '@/components/layout/DashboardHome.vue'
@@ -8,11 +10,19 @@ import FooterEnhanced from '@/components/layout/pie.vue'
 defineOptions({
   name: 'InicioPage'
 })
+
+const authStore = useAuthStore()
+
+// Determinar si ocultar el menú (para acudientes y deportistas que tienen su propio dashboard)
+const ocultarMenu = computed(() => {
+  const activeRole = authStore.activeRole
+  return activeRole === 'Acudiente' || activeRole === 'Deportista'
+})
 </script>
 
 <template>
   <main class="inicio-page">
-    <Encabezado />
+    <Encabezado :sinMenu="ocultarMenu" />
     <TituloClub />
     <DashboardHome />
     <FooterEnhanced />

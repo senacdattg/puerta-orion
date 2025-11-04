@@ -1,9 +1,6 @@
 <template>
   <main class="contenedor-galeria">
 
-    <!-- Heading principal -->
-    <h1 class="titulo-principal-galeria">Eventos del Club</h1>
-
     <!-- Sección de contenido con cuadrícula -->
     <div class="seccion-contenido grande">
 
@@ -47,6 +44,19 @@
 
         <div v-if="puedeCrearFoto" class="boton-agregar" @click="abrirFormulario">
           +
+        </div>
+      </div>
+
+      <!-- Mensaje cuando no hay resultados -->
+      <div v-if="!cargando && eventosFiltrados.length === 0" class="sin-resultados mejorado">
+        <div class="empty-card">
+          <div class="empty-icon">🗂️</div>
+          <h4 class="empty-title">No se encontraron fotos</h4>
+          <p class="empty-sub">Prueba limpiar los filtros o sube una nueva foto.</p>
+          <div class="empty-actions">
+            <button @click="limpiarFiltros" class="btn btn-primary">Limpiar filtros</button>
+            <button v-if="puedeCrearFoto" @click="abrirFormulario" class="btn btn-secondary">Nueva foto</button>
+          </div>
         </div>
       </div>
 

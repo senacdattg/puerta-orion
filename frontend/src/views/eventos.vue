@@ -1,7 +1,6 @@
 <template>
   <main class="eventos-page">
     <Encabezado />
-    <TituloClub />
     <div class="eventos-container">
       <div class="eventos-header">
         <h1 class="eventos-title">
@@ -12,31 +11,9 @@
       </div>
 
       <div class="eventos-content">
-        <div class="filters-section">
-          <div class="filter-group">
-            <label for="categoria">Categoría:</label>
-            <select id="categoria" v-model="filtroCategoria" class="filter-select">
-              <option value="">Todas las categorías</option>
-              <option value="Fútbol">Fútbol</option>
-              <option value="Voleibol">Voleibol</option>
-              <option value="Básquetbol">Básquetbol</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label for="estado">Estado:</label>
-            <select id="estado" v-model="filtroEstado" class="filter-select">
-              <option value="">Todos los estados</option>
-              <option value="activo">Activos</option>
-              <option value="finalizado">Finalizados</option>
-              <option value="proximo">Próximos</option>
-            </select>
-          </div>
-        </div>
-
         <div class="eventos-grid">
           <div
-            v-for="evento in eventosFiltrados"
+            v-for="evento in eventos"
             :key="evento.id"
             class="evento-card"
             :class="getEventoClass(evento.estado)"
@@ -66,7 +43,7 @@
                 <i class="fas fa-map-marker-alt"></i>
                 <span>{{ evento.lugar }}</span>
               </div>
-              <div class="info-item">
+              <div class="info-item" v-if="evento.participantes > 0">
                 <i class="fas fa-users"></i>
                 <span>{{ evento.participantes }} participantes</span>
               </div>
@@ -76,42 +53,23 @@
               </div>
             </div>
 
-            <div class="card-actions">
-              <button
-                v-if="evento.estado === 'activo'"
-                class="btn-participate"
-                @click="participarEvento(evento)"
-                :disabled="inscribiendo"
-              >
-                <i class="fas fa-user-plus"></i>
-                {{ inscribiendo ? 'Inscribiendo...' : 'Participar' }}
-              </button>
-              <button
-                v-else-if="evento.estado === 'proximo'"
-                class="btn-notify"
-                @click="notificarEvento(evento)"
-              >
-                <i class="fas fa-bell"></i>
-                Notificar
-              </button>
-              <button
-                v-else
-                class="btn-view"
-                @click="verDetalle(evento)"
-              >
-                <i class="fas fa-eye"></i>
-                Ver Detalle
-              </button>
-            </div>
           </div>
         </div>
 
-        <div v-if="eventosFiltrados.length === 0" class="empty-state">
+        <div v-if="cargando" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <h3>Cargando eventos...</h3>
+          <p>Por favor espera mientras cargamos los eventos</p>
+        </div>
+
+        <div v-else-if="eventos.length === 0" class="empty-state">
           <div class="empty-icon">
             <i class="fas fa-calendar-times"></i>
           </div>
-          <h3>No hay eventos disponibles</h3>
-          <p>No se encontraron eventos con los filtros seleccionados</p>
+          <h3>No hay eventos próximos</h3>
+          <p>No se encontraron eventos próximos en el calendario</p>
         </div>
       </div>
     </div>
@@ -120,90 +78,117 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
 import Encabezado from '@/components/layout/encabezado.vue'
-import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import calendarioService from '@/services/calendarioService'
 
 // Definir nombre del componente para evitar error del linter
 defineOptions({
   name: 'EventosView'
 })
 
-const router = useRouter()
-const filtroCategoria = ref('')
-const filtroEstado = ref('')
-const inscribiendo = ref(false)
 const eventos = ref([])
+const cargando = ref(false)
+
+const meses = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+
+// Función para formatear hora de HH:MM:SS a HH:MM
+const formatearHora = (hora) => {
+  if (!hora) return '00:00'
+  // Si viene en formato HH:MM:SS, tomar solo HH:MM
+  if (hora.includes(':') && hora.split(':').length === 3) {
+    const partes = hora.split(':')
+    return `${partes[0]}:${partes[1]}`
+  }
+  return hora
+}
 
 onMounted(() => {
-  cargarEventos()
+  cargarDatos()
 })
 
-const cargarEventos = async () => {
+const cargarDatos = async () => {
+  cargando.value = true
   try {
-    // Aquí se implementaría la llamada al backend
-    // Por ahora usamos datos de ejemplo
-    eventos.value = [
-      {
-        id: 1,
-        titulo: 'Torneo de Fútbol Sub-15',
-        categoria: 'Fútbol',
-        estado: 'activo',
-        dia: '25',
-        mes: 'OCT',
-        hora_inicio: '09:00',
-        hora_fin: '17:00',
-        lugar: 'Cancha Principal',
-        participantes: 24,
-        descripcion: 'Torneo eliminatorio para categoría Sub-15'
-      },
-      {
-        id: 2,
-        titulo: 'Entrenamiento de Voleibol',
-        categoria: 'Voleibol',
-        estado: 'proximo',
-        dia: '28',
-        mes: 'OCT',
-        hora_inicio: '16:00',
-        hora_fin: '18:00',
-        lugar: 'Coliseo',
-        participantes: 12,
-        descripcion: 'Entrenamiento técnico y táctico'
-      },
-      {
-        id: 3,
-        titulo: 'Clínica de Básquetbol',
-        categoria: 'Básquetbol',
-        estado: 'finalizado',
-        dia: '20',
-        mes: 'OCT',
-        hora_inicio: '10:00',
-        hora_fin: '12:00',
-        lugar: 'Cancha Auxiliar',
-        participantes: 18,
-        descripcion: 'Clínica de fundamentos básicos'
-      }
-    ]
+    await cargarEventos()
   } catch (error) {
-    console.error('Error cargando eventos:', error)
+    console.error('Error cargando datos:', error)
+  } finally {
+    cargando.value = false
   }
 }
 
-const eventosFiltrados = computed(() => {
-  let filtrados = eventos.value
+const cargarEventos = async () => {
+  try {
+    // Obtener solo eventos próximos (futuros)
+    const eventosCalendario = await calendarioService.obtenerEventosProximos()
 
-  if (filtroCategoria.value) {
-    filtrados = filtrados.filter(evento => evento.categoria === filtroCategoria.value)
+    console.log('📅 Eventos próximos recibidos:', eventosCalendario)
+
+    // Mapear eventos del calendario al formato esperado por el componente
+    eventos.value = eventosCalendario.map(evento => {
+      // El evento ya viene mapeado del servicio, pero necesitamos asegurarnos de que tenga todos los campos
+      const fechaStr = evento.fecha || evento.fecha_evento
+      const fecha = new Date(fechaStr)
+
+      // Validar que la fecha sea válida
+      if (isNaN(fecha.getTime())) {
+        console.warn('⚠️ Fecha inválida para evento:', evento)
+        return null
+      }
+
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      const fechaEvento = new Date(fecha)
+      fechaEvento.setHours(0, 0, 0, 0)
+
+      // Filtrar eventos pasados: solo incluir eventos de hoy en adelante
+      // Si el evento es de ayer o antes, no incluirlo
+      if (fechaEvento < hoy) {
+        console.log('📅 Evento pasado excluido:', evento.titulo || evento.nombre, fechaStr)
+        return null
+      }
+
+      // Determinar estado basado en la fecha (solo eventos próximos, pero pueden ser activos si es hoy)
+      let estado = 'proximo'
+      if (fechaEvento.getTime() === hoy.getTime()) {
+        estado = 'activo'
+      }
+
+      return {
+        id: evento.id,
+        titulo: evento.titulo || evento.nombre || 'Evento sin título',
+        categoria: evento.categoria?.nombre_categoria || evento.categoria?.nombre || 'Sin categoría',
+        id_categoria: evento.idCategoria || evento.id_categoria,
+        estado: estado,
+        dia: fecha.getDate().toString().padStart(2, '0'),
+        mes: meses[fecha.getMonth()],
+        hora_inicio: formatearHora(evento.horaInicio || evento.hora_inicio || evento.hora || '00:00'),
+        hora_fin: formatearHora(evento.horaFin || evento.hora_fin || '00:00'),
+        lugar: evento.lugar || 'No especificado',
+        participantes: 0, // Este dato no está disponible en el backend actualmente
+        descripcion: evento.descripcion || '',
+        fecha_evento: fechaStr
+      }
+    }).filter(evento => evento !== null) // Filtrar eventos con fechas inválidas o pasadas
+
+    console.log('✅ Eventos procesados (futuros únicamente):', eventos.value.length, eventos.value)
+
+    // Ordenar eventos: activos primero, luego próximos (por fecha)
+    eventos.value.sort((a, b) => {
+      const ordenEstados = { 'activo': 0, 'proximo': 1 }
+      if (ordenEstados[a.estado] !== ordenEstados[b.estado]) {
+        return ordenEstados[a.estado] - ordenEstados[b.estado]
+      }
+      // Si tienen el mismo estado, ordenar por fecha
+      return new Date(a.fecha_evento) - new Date(b.fecha_evento)
+    })
+  } catch (error) {
+    console.error('❌ Error cargando eventos próximos:', error)
+    eventos.value = []
   }
-
-  if (filtroEstado.value) {
-    filtrados = filtrados.filter(evento => evento.estado === filtroEstado.value)
-  }
-
-  return filtrados
-})
+}
 
 const getEventoClass = (estado) => {
   const classes = {
@@ -223,33 +208,6 @@ const getEstadoClass = (estado) => {
   return classes[estado] || ''
 }
 
-const participarEvento = async (evento) => {
-  inscribiendo.value = true
-
-  try {
-    // Aquí se implementaría la llamada al backend
-    console.log('Participando en evento:', evento.id)
-
-    // Simular llamada API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    alert('Te has inscrito exitosamente en el evento')
-
-  } catch (error) {
-    console.error('Error participando en evento:', error)
-    alert('Error al inscribirse en el evento')
-  } finally {
-    inscribiendo.value = false
-  }
-}
-
-const notificarEvento = (evento) => {
-  alert(`Te notificaremos sobre el evento: ${evento.titulo}`)
-}
-
-const verDetalle = (evento) => {
-  router.push(`/evento/${evento.id}`)
-}
 </script>
 
 <style scoped>
@@ -257,11 +215,24 @@ const verDetalle = (evento) => {
   min-height: 100vh;
   background-color: #f8f9fa;
   padding: 2rem 1rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .eventos-container {
   max-width: 1200px;
   margin: 0 auto;
+  margin-bottom: 2rem;
+  flex: 1;
+}
+
+/* Hacer que el footer se salga del padding del main y se comporte como footer */
+.eventos-page :deep(.footer-enhanced) {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
+  margin-top: auto;
 }
 
 .eventos-header {

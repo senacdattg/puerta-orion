@@ -49,7 +49,7 @@ def upgrade():
         sa.Column('id_eps', sa.Integer(), nullable=True)
     )
     op.add_column('puerta_orion_deportista', 
-        sa.Column('fecha_nacimiento', sa.SmallInteger(), nullable=True)
+        sa.Column('fecha_nacimiento', sa.Date(), nullable=True)
     )
     
     # Crear claves foráneas

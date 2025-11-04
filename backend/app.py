@@ -113,7 +113,7 @@ def create_app(config_name=None):
     app.register_blueprint(personas_bp, url_prefix='/api')
     app.register_blueprint(eventos_bp, url_prefix='/api')
     app.register_blueprint(usuarios_bp)  # Ya tiene url_prefix='/api/usuarios'
-    app.register_blueprint(deportistas_bp, url_prefix='/api')
+    app.register_blueprint(deportistas_bp, url_prefix='/api/deportistas')
     app.register_blueprint(galeria_bp)  # Ya tiene url_prefix='/api/galeria'
     app.register_blueprint(archivos_bp)  # Ya tiene url_prefix='/api/archivos'
     app.register_blueprint(mensualidades_bp)  # url_prefix en el blueprint

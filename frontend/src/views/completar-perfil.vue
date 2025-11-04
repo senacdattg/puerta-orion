@@ -23,6 +23,7 @@
 
           <div class="opciones-perfil">
             <button
+              v-if="!yaEsDeportista"
               class="opcion-btn opcion-deportista"
               @click="seleccionarTipoPerfil('deportista')"
               :disabled="cargando"
@@ -33,6 +34,7 @@
             </button>
 
             <button
+              v-if="mostrarOpcionAcudiente"
               class="opcion-btn opcion-acudiente"
               @click="seleccionarTipoPerfil('acudiente')"
               :disabled="cargando"
@@ -41,6 +43,15 @@
               <h3>Soy Acudiente</h3>
               <p>Acompaño y apoyo a un deportista</p>
             </button>
+
+            <!-- Mensaje si es deportista menor de edad -->
+            <div v-if="yaEsDeportista && !esMayorDeEdad && edadDeportista !== null" class="mensaje-info">
+              <p>Debes ser mayor de edad (18 años) para registrarte como acudiente. Tu edad actual es {{ edadDeportista }} años.</p>
+            </div>
+
+            <div v-if="yaEsDeportista && yaEsAcudiente" class="mensaje-info">
+              <p>Ya tienes los roles de Deportista y Acudiente registrados.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -212,7 +223,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/authService'
@@ -228,6 +239,64 @@ const tipoPerfilSeleccionado = ref(null)
 const cargando = ref(false)
 const mensajeError = ref('')
 const mensajeExito = ref('')
+
+// Verificar si el usuario ya tiene los roles
+const yaEsDeportista = computed(() => {
+  const roles = authStore.userRoles || []
+  return roles.includes('Deportista')
+})
+
+const yaEsAcudiente = computed(() => {
+  const roles = authStore.userRoles || []
+  return roles.includes('Acudiente')
+})
+
+// Calcular edad del deportista basándose en fecha_nacimiento
+const edadDeportista = computed(() => {
+  try {
+    // Buscar fecha_nacimiento en diferentes lugares del store
+    const userDetail = authStore.userDetail
+    const deportista = userDetail?.deportista || authStore.user?.deportista
+
+    if (!deportista) return null
+
+    const fechaNacimiento = deportista.fecha_nacimiento
+
+    if (!fechaNacimiento) return null
+
+    // Si fecha_nacimiento es solo el año (número)
+    const añoActual = new Date().getFullYear()
+    const añoNacimiento = typeof fechaNacimiento === 'number' ? fechaNacimiento : new Date(fechaNacimiento).getFullYear()
+    const edad = añoActual - añoNacimiento
+
+    return edad
+  } catch (error) {
+    console.error('Error al calcular edad:', error)
+    return null
+  }
+})
+
+// Verificar si el deportista es mayor de edad (>= 18 años)
+const esMayorDeEdad = computed(() => {
+  const edad = edadDeportista.value
+  if (edad === null) return false // Si no se puede calcular la edad, por defecto no mostrar
+  return edad >= 18
+})
+
+// Mostrar opción de acudiente solo si:
+// 1. No es ya acudiente
+// 2. Y es mayor de edad (si es deportista)
+const mostrarOpcionAcudiente = computed(() => {
+  if (yaEsAcudiente.value) return false
+
+  // Si es deportista, solo mostrar si es mayor de edad
+  if (yaEsDeportista.value) {
+    return esMayorDeEdad.value
+  }
+
+  // Si no es deportista, mostrar la opción (el backend validará la edad)
+  return true
+})
 
 // Datos para formulario de deportista
 const formDeportista = ref({
@@ -267,6 +336,7 @@ function volverAtras() {
   tipoPerfilSeleccionado.value = null
 }
 
+// Cambia aquí: Redirigir a dashboard de deportista después de completar el perfil
 async function completarPerfilDeportista() {
   if (!formDeportista.value.id_categoria) {
     mensajeError.value = 'Por favor selecciona una categoría'
@@ -330,9 +400,9 @@ async function completarPerfilDeportista() {
       // Recargar datos del usuario
       await authStore.loadUserProfile()
 
-      // Redirigir a home después de 2 segundos
+      // Aquí cambiamos la redirección al dashboard de deportista:
       setTimeout(() => {
-        router.push('/home')
+        router.push('/deportista/dashboard')
       }, 2000)
     } else {
       mensajeError.value = resultado.error || 'Error al completar perfil'
@@ -398,7 +468,15 @@ async function cargarCatalogos() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Cargar perfil del usuario si no está cargado
+  if (!authStore.user) {
+    await authStore.loadUserProfile()
+  }
+  // Cargar detalle del usuario para obtener información del deportista (fecha_nacimiento)
+  if (!authStore.userDetail) {
+    await authStore.loadUserProfileDetail()
+  }
   cargarCatalogos()
 })
 </script>
@@ -627,6 +705,22 @@ onMounted(() => {
   margin-bottom: 1rem;
   text-align: center;
   border: 1px solid #cfc;
+}
+
+.mensaje-info {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+  text-align: center;
+  border: 1px solid #90caf9;
+  grid-column: 1 / -1;
+}
+
+.mensaje-info p {
+  margin: 0;
+  font-size: 1.1rem;
 }
 
 @media (max-width: 768px) {

@@ -71,6 +71,14 @@ def run():
             'edad_maxima': 99,
             'estado': True
         },
+        {
+            'id_categoria': 8,
+            'nombre_categoria': 'Todos',
+            'codigo_categoria': 8,
+            'edad_minima': 0,
+            'edad_maxima': 999,
+            'estado': True
+        },
     ]
     
     insertados = 0

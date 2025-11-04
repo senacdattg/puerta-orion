@@ -109,7 +109,7 @@
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	margin: auto;
   }
-  
+
   .boton-agregar:hover {
 	transform: scale(1.1);
 	/* 🔹 Efecto al pasar el mouse */
@@ -339,4 +339,69 @@
 	.seccion-contenido {
 		padding: 20px;
 	}
+}
+
+/* ===== ESTADO SIN RESULTADOS ===== */
+.sin-resultados {
+  text-align: center;
+  padding: 2rem;
+  background: var(--color-blanco);
+  border-radius: 16px;
+  box-shadow: var(--sombra-suave);
+}
+
+.sin-resultados.mejorado { display: flex; justify-content: center; }
+.sin-resultados.mejorado .empty-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.empty-icon { font-size: 36px; opacity: .75; }
+.empty-title { margin: 0; font-size: 20px; color: #0b4fb3; }
+.empty-sub { margin: 0; color: #6b7280; font-size: 14px; }
+.empty-actions { display: flex; gap: 12px; margin-top: 8px; }
+
+/* ===== BOTONES ===== */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+  background: #0047ab;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #0056cc;
+}
+
+.btn-secondary {
+  background: #dc3545;
+  color: #ffffff;
+}
+
+.btn-secondary:hover {
+  background: #ed3245;
 }

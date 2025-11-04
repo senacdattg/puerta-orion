@@ -6,8 +6,8 @@
 
 /* ===== COMPONENTE LISTA DEPORTISTAS ===== */
 .lista-deportistas {
-  padding: 2rem;
-  background: linear-gradient(135deg, var(--color-primario) 0%, 100%);
+  padding: 24px;
+  background: #f6f7fb;
   min-height: 100vh;
 }
 
@@ -61,43 +61,94 @@
   box-shadow: var(--sombra-media);
 }
 
+/* ===== FILTROS Y BÚSQUEDA (igual que mensualidades) ===== */
+.contenedor-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #eef0f2;
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--sombra-suave);
+}
+
+.buscador {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+}
+
 /* ===== ESTADÍSTICAS ===== */
 .estadisticas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.estadisticas.ordenadas {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
+  justify-content: center;
 }
 
 .stat-card {
   background: var(--color-blanco);
-  padding: 1.5rem;
-  border-radius: var(--radio-borde);
+  padding: 16px 12px;
+  border-radius: 16px;
   text-align: center;
   box-shadow: var(--sombra-suave);
   transition: var(--transicion);
   border: 2px solid transparent;
+  width: 220px;
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
   box-shadow: var(--sombra-media);
-  border-color: var(--color-secundario);
+}
+
+/* Centrar contenido interno de stat cards */
+.estadisticas .stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .stat-numero {
   display: block;
-  font-size: 2.5rem;
+  font-size: 36px;
   font-weight: bold;
   color: var(--color-primario);
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
-  color: var(--color-gris);
-  font-size: 0.9rem;
+  font-size: 13px;
+  color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+#statCard { border: none !important; }
+#statCard:hover {
+  transform: scale(1.04);
+  border: 2px solid #FFD700 !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+}
+
+/* Separador reutilizable */
+.linea-abajo {
+  width: 100%;
+  height: 1px;
+  background: var(--color-gris-medio);
+  opacity: 0.6;
+  margin: 12px 0;
 }
 
 /* ===== GRID DE DEPORTISTAS ===== */
@@ -229,11 +280,29 @@
 /* ===== ESTADO SIN RESULTADOS ===== */
 .sin-resultados {
   text-align: center;
-  padding: 3rem;
+  padding: 2rem;
   background: var(--color-blanco);
-  border-radius: var(--radio-borde);
+  border-radius: 16px;
   box-shadow: var(--sombra-suave);
 }
+
+.sin-resultados.mejorado { display: flex; justify-content: center; }
+.sin-resultados.mejorado .empty-card {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.empty-icon { font-size: 36px; opacity: .75; }
+.empty-title { margin: 0; font-size: 20px; color: #0b4fb3; }
+.empty-sub { margin: 0; color: #6b7280; font-size: 14px; }
+.empty-actions { display: flex; gap: 12px; margin-top: 8px; }
 
 .sin-resultados p {
   color: var(--color-gris);

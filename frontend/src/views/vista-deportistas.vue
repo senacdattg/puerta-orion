@@ -1,254 +1,84 @@
 <script setup>
-// Sí, puedes cambiar el nombre directamente al archivo para cumplir con la convención de nombres de Vue.
-// Por ejemplo, en vez de "deportistas.vue", usa "vista-deportistas.vue" o "lista-deportistas-vista.vue".
-// Además, es recomendable definir el nombre del componente dentro del script para mayor claridad:
 defineOptions({
   name: 'VistaDeportistas'
 });
 import Encabezado from '../components/layout/encabezado.vue';
 import tituloClub from '@/components/ui/titulo-club.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
+import PerfilDeportistaVista from '../components/deportistas/perfil-deportista-vista.vue';
 import FormularioDeportista from '../components/formularios/formulario-deportista.vue';
 import Pie from '../components/ui/pie.vue';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import deportistasService from '@/services/deportistasService';
 
-// Datos de ejemplo para demostrar la funcionalidad
-const deportistas = ref([
-  {
-    id: 1,
-    nombre: 'Carlos Alberto Rodríguez Martínez',
-    categoria: 'juvenil',
-    estado: 'activo',
-    imagen: null,
-    // Datos completos para el perfil
-    nombre1: "Carlos",
-    nombre2: "Alberto",
-    apellido1: "Rodríguez",
-    apellido2: "Martínez",
-    tipoDocumento: "Cédula",
-    numeroDocumento: "12345678",
-    fechaNacimiento: "2000-05-15",
-    genero: "Masculino",
-    correo: "carlos.rodriguez@email.com",
-    telefono: "3001234567",
-    ciudad: "Retorno",
-    direccion: "Calle 5 #10-20",
-    eps: "Nueva EPS",
-    grupoSanguineo: "A+",
-    recomendacionMedica: "no",
-    descripcionRecomendacion: "",
-    institucion: "SENA",
-    practicaOtroDeporte: "si",
-    deporteCual: "Fútbol",
-    participaEscuela: "no",
-    escuelaCual: "",
-    acudienteNombre1: "María",
-    acudienteNombre2: "Elena",
-    acudienteApellido1: "Rodríguez",
-    acudienteApellido2: "Gómez",
-    parentesco: "Madre",
-    acudienteFechaNac: "1975-03-20",
-    acudienteTipoDoc: "Cédula",
-    acudienteNumeroDoc: "87654321",
-    acudienteCorreo: "maria.rodriguez@email.com",
-    acudienteTelefono: "3009876543"
-  },
-  {
-    id: 2,
-    nombre: 'Ana María Martínez López',
-    categoria: 'infantil',
-    estado: 'activo',
-    imagen: null,
-    // Datos completos para el perfil
-    nombre1: "Ana",
-    nombre2: "María",
-    apellido1: "Martínez",
-    apellido2: "López",
-    tipoDocumento: "Tarjeta de identidad",
-    numeroDocumento: "98765432",
-    fechaNacimiento: "2002-08-22",
-    genero: "Femenino",
-    correo: "ana.martinez@email.com",
-    telefono: "3005551234",
-    ciudad: "San Jose",
-    direccion: "Carrera 8 #12-34",
-    eps: "PONAL",
-    grupoSanguineo: "O+",
-    recomendacionMedica: "si",
-    descripcionRecomendacion: "Evitar ejercicios de alto impacto por lesión en rodilla",
-    institucion: "SANTANDER",
-    practicaOtroDeporte: "no",
-    deporteCual: "",
-    participaEscuela: "si",
-    escuelaCual: "Escuela de Voleibol San José",
-    acudienteNombre1: "Ana",
-    acudienteNombre2: "Sofía",
-    acudienteApellido1: "Martínez",
-    acudienteApellido2: "Gómez",
-    parentesco: "Madre",
-    acudienteFechaNac: "1975-12-10",
-    acudienteTipoDoc: "Cédula",
-    acudienteNumeroDoc: "54321678",
-    acudienteCorreo: "ana.martinez@email.com",
-    acudienteTelefono: "3004445678"
-  },
-  {
-    id: 3,
-    nombre: 'Luis Fernando García Pérez',
-    categoria: 'adulto',
-    estado: 'inactivo',
-    imagen: null,
-    // Datos completos para el perfil
-    nombre1: "Luis",
-    nombre2: "Fernando",
-    apellido1: "García",
-    apellido2: "Pérez",
-    tipoDocumento: "Cédula",
-    numeroDocumento: "11223344",
-    fechaNacimiento: "1995-03-10",
-    genero: "Masculino",
-    correo: "luis.garcia@email.com",
-    telefono: "3007778888",
-    ciudad: "Retorno",
-    direccion: "Carrera 3 #15-25",
-    eps: "Nueva EPS",
-    grupoSanguineo: "B+",
-    recomendacionMedica: "no",
-    descripcionRecomendacion: "",
-    institucion: "SENA",
-    practicaOtroDeporte: "si",
-    deporteCual: "Básquetbol",
-    participaEscuela: "no",
-    escuelaCual: "",
-    acudienteNombre1: "Carmen",
-    acudienteNombre2: "Rosa",
-    acudienteApellido1: "García",
-    acudienteApellido2: "Hernández",
-    parentesco: "Esposa",
-    acudienteFechaNac: "1990-07-15",
-    acudienteTipoDoc: "Cédula",
-    acudienteNumeroDoc: "99887766",
-    acudienteCorreo: "carmen.garcia@email.com",
-    acudienteTelefono: "3009998888"
-  },
-  {
-    id: 4,
-    nombre: 'María Fernanda López Silva',
-    categoria: 'juvenil',
-    estado: 'suspendido',
-    imagen: null,
-    // Datos completos para el perfil
-    nombre1: "María",
-    nombre2: "Fernanda",
-    apellido1: "López",
-    apellido2: "Silva",
-    tipoDocumento: "Tarjeta de identidad",
-    numeroDocumento: "55667788",
-    fechaNacimiento: "2001-11-30",
-    genero: "Femenino",
-    correo: "maria.lopez@email.com",
-    telefono: "3006665555",
-    ciudad: "San Jose",
-    direccion: "Calle 7 #20-30",
-    eps: "PONAL",
-    grupoSanguineo: "AB+",
-    recomendacionMedica: "si",
-    descripcionRecomendacion: "Suspensión temporal por lesión en hombro",
-    institucion: "SANTANDER",
-    practicaOtroDeporte: "no",
-    deporteCual: "",
-    participaEscuela: "si",
-    escuelaCual: "Escuela de Voleibol San José",
-    acudienteNombre1: "Roberto",
-    acudienteNombre2: "Carlos",
-    acudienteApellido1: "López",
-    acudienteApellido2: "Mendoza",
-    parentesco: "Padre",
-    acudienteFechaNac: "1970-04-12",
-    acudienteTipoDoc: "Cédula",
-    acudienteNumeroDoc: "44556677",
-    acudienteCorreo: "roberto.lopez@email.com",
-    acudienteTelefono: "3005556666"
-  },
-  {
-    id: 5,
-    nombre: 'Juan David Pérez Torres',
-    categoria: 'infantil',
-    estado: 'activo',
-    imagen: null,
-    // Datos completos para el perfil
-    nombre1: "Juan",
-    nombre2: "David",
-    apellido1: "Pérez",
-    apellido2: "Torres",
-    tipoDocumento: "Tarjeta de identidad",
-    numeroDocumento: "33445566",
-    fechaNacimiento: "2008-06-18",
-    genero: "Masculino",
-    correo: "juan.perez@email.com",
-    telefono: "3004443333",
-    ciudad: "Retorno",
-    direccion: "Carrera 1 #5-10",
-    eps: "Nueva EPS",
-    grupoSanguineo: "O-",
-    recomendacionMedica: "no",
-    descripcionRecomendacion: "",
-    institucion: "SENA",
-    practicaOtroDeporte: "si",
-    deporteCual: "Fútbol",
-    participaEscuela: "no",
-    escuelaCual: "",
-    acudienteNombre1: "Patricia",
-    acudienteNombre2: "Isabel",
-    acudienteApellido1: "Pérez",
-    acudienteApellido2: "Vega",
-    parentesco: "Madre",
-    acudienteFechaNac: "1980-09-25",
-    acudienteTipoDoc: "Cédula",
-    acudienteNumeroDoc: "22334455",
-    acudienteCorreo: "patricia.perez@email.com",
-    acudienteTelefono: "3003334444"
-  },
-  {
-    id: 6,
-    nombre: 'Sofia Alejandra Torres Ramírez',
-    categoria: 'adulto',
-    estado: 'activo',
-    imagen: null,
-    // Datos completos para el perfil
-    nombre1: "Sofia",
-    nombre2: "Alejandra",
-    apellido1: "Torres",
-    apellido2: "Ramírez",
-    tipoDocumento: "Cédula",
-    numeroDocumento: "77889900",
-    fechaNacimiento: "1998-12-05",
-    genero: "Femenino",
-    correo: "sofia.torres@email.com",
-    telefono: "3002221111",
-    ciudad: "San Jose",
-    direccion: "Calle 9 #25-35",
-    eps: "PONAL",
-    grupoSanguineo: "A-",
-    recomendacionMedica: "no",
-    descripcionRecomendacion: "",
-    institucion: "SANTANDER",
-    practicaOtroDeporte: "si",
-    deporteCual: "Tenis",
-    participaEscuela: "no",
-    escuelaCual: "",
-    acudienteNombre1: "Alejandro",
-    acudienteNombre2: "Miguel",
-    acudienteApellido1: "Torres",
-    acudienteApellido2: "Castro",
-    parentesco: "Padre",
-    acudienteFechaNac: "1965-01-20",
-    acudienteTipoDoc: "Cédula",
-    acudienteNumeroDoc: "11223344",
-    acudienteCorreo: "alejandro.torres@email.com",
-    acudienteTelefono: "3001112222"
+// Estado de deportistas cargados desde el backend
+const deportistas = ref([]);
+const cargando = ref(false);
+const error = ref(null);
+
+// Cargar deportistas desde el backend
+const cargarDeportistas = async () => {
+  cargando.value = true;
+  error.value = null;
+  try {
+    const response = await deportistasService.listarDeportistas(1, 100);
+    if (response.success) {
+      // Mapear datos del backend al formato esperado por el componente
+      deportistas.value = response.data.map(deportista => {
+        // Normalizar categoría - puede venir de categoria_info o categoria directo
+        let categoria = 'sin categoria';
+        if (deportista.categoria_info?.nombre_categoria) {
+          categoria = deportista.categoria_info.nombre_categoria.toLowerCase().trim();
+        } else if (deportista.categoria) {
+          categoria = deportista.categoria.toLowerCase().trim();
+        }
+
+        // Normalizar estado
+        let estado = deportista.estado ? deportista.estado.toLowerCase().trim() : 'activo';
+        // Si el estado es booleano, convertirlo a string
+        if (typeof deportista.persona?.estado === 'boolean') {
+          estado = deportista.persona.estado ? 'activo' : 'inactivo';
+        }
+
+        return {
+          id: deportista.id_deportista,
+          id_deportista: deportista.id_deportista,
+          nombre: deportista.nombre || 'Sin nombre',
+          categoria: categoria,
+          estado: estado,
+          imagen: null,
+          // Mantener información de categoría completa para comparación
+          categoria_info: deportista.categoria_info,
+          // Datos completos para el perfil y edición
+          nombre1: deportista.nombre1 || deportista.persona?.primer_nombre || '',
+          nombre2: deportista.nombre2 || deportista.persona?.segundo_nombre || '',
+          apellido1: deportista.apellido1 || deportista.persona?.primer_apellido || '',
+          apellido2: deportista.apellido2 || deportista.persona?.segundo_apellido || '',
+          documento: deportista.documento || deportista.persona?.documento || '',
+          correo: deportista.correo || deportista.persona?.correo_electronico || '',
+          telefono: deportista.telefono || deportista.persona?.telefono || '',
+          direccion: deportista.direccion || deportista.persona?.direccion || '',
+          // Datos del deportista completos para edición
+          ...deportista
+        };
+      });
+    } else {
+      error.value = response.message || 'Error al cargar deportistas';
+      deportistas.value = [];
+    }
+  } catch (err) {
+    console.error('Error al cargar deportistas:', err);
+    error.value = 'No se pudo cargar la lista de deportistas. Por favor, intenta más tarde.';
+    deportistas.value = [];
+  } finally {
+    cargando.value = false;
   }
-]);
+};
+
+// Cargar deportistas al montar el componente
+onMounted(() => {
+  cargarDeportistas();
+});
 
 // Estado para controlar el modal del formulario
 const mostrarFormulario = ref(false);
@@ -256,38 +86,51 @@ const modoFormulario = ref('registrar');
 const deportistaEditando = ref(null);
 
 // Funciones para manejar eventos de deportistas
+// Solo modo visualización - edición y eliminación deshabilitadas
 function editarDeportista(deportista) {
-  console.log('Editar deportista:', deportista);
+  // Función deshabilitada - solo se puede ver la información
+  // Al intentar editar, se abre en modo ver
+  verDeportista(deportista);
+}
 
-  // Configurar el modal para edición
-  modoFormulario.value = 'actualizar';
-  deportistaEditando.value = deportista;
+async function verDeportista(deportista) {
+  console.log('Ver detalles de deportista:', deportista);
+  // Siempre abrir en modo ver - solo visualización
+  modoFormulario.value = 'ver';
+
+  try {
+    // Cargar información completa del deportista desde el backend
+    const idDeportista = deportista.id_deportista || deportista.id;
+    const response = await deportistasService.obtenerDeportistaPorId(idDeportista);
+
+    // El backend puede devolver 'status: success' o 'success: true'
+    if ((response.status === 'success' || response.success) && response.data) {
+      console.log('Datos completos del deportista:', response.data);
+      // Usar los datos completos del backend
+      deportistaEditando.value = response.data;
+    } else {
+      console.warn('No se recibieron datos completos, usando datos básicos:', deportista);
+      // Si falla, usar los datos que ya tenemos
+      deportistaEditando.value = deportista;
+    }
+  } catch (error) {
+    console.error('Error al cargar detalles del deportista:', error);
+    // Si hay error, usar los datos que ya tenemos
+    deportistaEditando.value = deportista;
+  }
+
   mostrarFormulario.value = true;
 }
 
 function eliminarDeportista(deportista) {
-  console.log('Eliminar deportista:', deportista);
-
-  const confirmacion = confirm(
-    `¿Estás seguro de eliminar a ${deportista.nombre}?\n\nEsta acción no se puede deshacer.`
-  );
-
-  if (confirmacion) {
-    const index = deportistas.value.findIndex(d => d.id === deportista.id);
-    if (index !== -1) {
-      deportistas.value.splice(index, 1);
-      console.log('Deportista eliminado');
-    }
-  }
+  // Función deshabilitada - solo se puede ver la información
+  console.log('Eliminación deshabilitada - solo modo visualización');
 }
 
 function agregarDeportista() {
-  console.log('Abrir formulario para agregar deportista');
-
-  // Configurar el modal para registro
-  modoFormulario.value = 'registrar';
-  deportistaEditando.value = null;
-  mostrarFormulario.value = true;
+  // Función deshabilitada - solo modo visualización
+  console.log('Agregar deportista deshabilitado - solo modo visualización');
+  alert('La funcionalidad de agregar deportistas está deshabilitada. Solo se permite visualizar información.');
 }
 
 // Funciones para manejar el formulario
@@ -296,32 +139,37 @@ function cerrarFormulario() {
   deportistaEditando.value = null;
 }
 
-function manejarSubmitFormulario(datos) {
-  if (modoFormulario.value === 'registrar') {
-    // Agregar nuevo deportista
-    const nuevoDeportista = {
-      id: Date.now(), // ID temporal
-      nombre: `${datos.nombre1} ${datos.apellido1}`,
-      categoria: 'juvenil', // Categoría por defecto
-      estado: 'activo',
-      imagen: null,
-      ...datos
-    };
-    deportistas.value.push(nuevoDeportista);
-    console.log('Deportista agregado:', nuevoDeportista);
-  } else if (modoFormulario.value === 'actualizar') {
-    // Actualizar deportista existente
-    const index = deportistas.value.findIndex(d => d.id === deportistaEditando.value.id);
-    if (index !== -1) {
-      deportistas.value[index] = {
-        ...deportistas.value[index],
-        nombre: `${datos.nombre1} ${datos.apellido1}`,
-        ...datos
-      };
-      console.log('Deportista actualizado:', deportistas.value[index]);
+async function manejarSubmitFormulario(resultado) {
+  try {
+    if (modoFormulario.value === 'actualizar') {
+      // Si el resultado indica éxito
+      if (resultado && resultado.success) {
+        // Recargar la lista de deportistas
+        await cargarDeportistas();
+        
+        // Cerrar el formulario y volver a modo ver
+        cerrarFormulario();
+        
+        // Mostrar mensaje de éxito
+        alert('Deportista actualizado exitosamente');
+      } else {
+        // Manejar error si viene en el resultado
+        const mensajeError = resultado?.message || 'Error al actualizar deportista';
+        alert(mensajeError);
+      }
     }
+  } catch (err) {
+    console.error('Error al guardar deportista:', err);
+    alert('Error al guardar deportista. Por favor, intenta de nuevo.');
   }
-  cerrarFormulario();
+}
+
+function cambiarAModoActualizar() {
+  modoFormulario.value = 'actualizar';
+}
+
+function cambiarAModoVer() {
+  modoFormulario.value = 'ver';
 }
 
 </script>
@@ -374,26 +222,87 @@ function manejarSubmitFormulario(datos) {
   justify-content: center;
   align-items: center;
   z-index: 100;
-  padding: 0.5rem;
+  padding: 1rem;
+}
+
+.modal-perfil-wrapper {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.mensaje-error {
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem;
+  text-align: center;
+  color: #c33;
+}
+
+.btn-reintentar {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btn-reintentar:hover {
+  background: #0056b3;
+}
+
+.cargando {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
 }
 </style>
 <template>
   <main class="vista-deportistas">
     <Encabezado rol="Admin" />
     <tituloClub></tituloClub>
-    <ListaDeportistas :deportistas="deportistas" @editar="editarDeportista" @eliminar="eliminarDeportista"
-      @agregar="agregarDeportista" />
 
-    <!-- Modal para formulario de deportista -->
+    <!-- Mensaje de error -->
+    <div v-if="error" class="mensaje-error">
+      <p>{{ error }}</p>
+      <button @click="cargarDeportistas" class="btn-reintentar">Reintentar</button>
+    </div>
+
+    <!-- Indicador de carga -->
+    <div v-if="cargando" class="cargando">
+      <p>Cargando deportistas...</p>
+    </div>
+
+    <!-- Lista de deportistas -->
+    <ListaDeportistas v-else :deportistas="deportistas" @editar="editarDeportista" @eliminar="eliminarDeportista"
+      @agregar="agregarDeportista" @ver="verDeportista" />
+
+    <!-- Modal para ver/editar perfil del deportista -->
     <div v-if="mostrarFormulario" class="modal-overlay-deportistas">
-      <div class="modal-deportistas" @click.stop>
-        <button class="btn-cerrar-deportista" title="Cerrar" @click="cerrarFormulario">
-          <i class="fas fa-times"></i>
-        </button>
-        <div class="modal-body">
-          <FormularioDeportista :modo="modoFormulario" :datos="deportistaEditando" @submit="manejarSubmitFormulario"
-            @cancel="cerrarFormulario" />
-        </div>
+      <div class="modal-perfil-wrapper" @click.stop>
+        <!-- Mostrar perfil en modo ver -->
+        <PerfilDeportistaVista 
+          v-if="modoFormulario === 'ver'"
+          :datos="deportistaEditando" 
+          @cerrar="cerrarFormulario"
+          @editar="cambiarAModoActualizar"
+        />
+        <!-- Mostrar formulario en modo actualizar -->
+        <FormularioDeportista
+          v-else-if="modoFormulario === 'actualizar'"
+          :modo="'actualizar'"
+          :datos="deportistaEditando"
+          @submit="manejarSubmitFormulario"
+          @cancel="cambiarAModoVer"
+        />
       </div>
     </div>
 

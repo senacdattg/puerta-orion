@@ -2,8 +2,6 @@
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { computed } from 'vue';
-import Encabezado from '../components/layout/encabezado.vue';
-import Pie from '../components/layout/pie.vue';
 import FormularioDeportista from '../components/formularios/formulario-deportista.vue';
 
 const router = useRouter();
@@ -49,30 +47,30 @@ async function manejarRegistroDeportista(datos) {
             console.log('🚀 Redirigiendo a /ver-acudidos');
             router.push('/ver-acudidos');
           } else {
-            console.log('🚀 Redirigiendo a /home con rol Deportista');
-            router.push('/home');
+            console.log('🚀 Redirigiendo a /deportista/dashboard con rol Deportista');
+            router.push('/deportista/dashboard');
           }
         }, 500);
       } else {
         console.warn('⚠️ El rol Deportista no está presente, redirigiendo de todas formas');
-        alert('¡Registro completado! Redirigiendo al inicio...');
+        alert('¡Registro completado! Redirigiendo al dashboard...');
         setTimeout(() => {
-          router.push('/home');
+          router.push('/deportista/dashboard');
         }, 1000);
       }
     } else {
       console.warn('⚠️ No se pudo actualizar el perfil, pero el registro fue exitoso');
-      alert('¡Registro completado! Redirigiendo al inicio...');
+      alert('¡Registro completado! Redirigiendo al dashboard...');
       setTimeout(() => {
-        router.push('/home');
+        router.push('/deportista/dashboard');
       }, 1500);
     }
   } catch (error) {
     console.error('❌ Error al recargar perfil:', error);
     // Redirigir de todas formas después de un delay
-    alert('¡Registro completado! Redirigiendo al inicio...');
+    alert('¡Registro completado! Redirigiendo al dashboard...');
     setTimeout(() => {
-      router.push('/home');
+      router.push('/deportista/dashboard');
     }, 2000);
   }
 }
@@ -113,7 +111,6 @@ function manejarCancelacion() {
 
 <template>
   <main>
-    <Encabezado :sinMenu="true"/>
     <div class="contenido-principal-tarjetas">
       <!-- Mensaje informativo si se asignará automáticamente -->
       <div v-if="asignarAcudienteAuto" class="info-banner">
@@ -127,7 +124,6 @@ function manejarCancelacion() {
         @cancel="manejarCancelacion"
       />
     </div>
-    <Pie />
   </main>
 </template>
 

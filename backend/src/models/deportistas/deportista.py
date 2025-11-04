@@ -42,7 +42,7 @@ class Deportista(BaseModel):
     peso = Column(Float, nullable=True)
     altura = Column(Float, nullable=True)
     fecha_ingreso = Column(Date, nullable=False)
-    fecha_nacimiento = Column(SmallInteger, nullable=True)  # tinyint en MER
+    fecha_nacimiento = Column(Date, nullable=True)  # Cambiado de SmallInteger a Date para fecha completa
     
     # Claves foráneas según el MER
     id_categoria = Column(Integer, ForeignKey('puerta_orion_categoria.id_categoria'), nullable=False)
@@ -110,7 +110,7 @@ class Deportista(BaseModel):
             'peso': self.peso,
             'altura': self.altura,
             'fecha_ingreso': self.fecha_ingreso.isoformat() if self.fecha_ingreso else None,
-            'fecha_nacimiento': self.fecha_nacimiento,
+            'fecha_nacimiento': self.fecha_nacimiento.isoformat() if (self.fecha_nacimiento and isinstance(self.fecha_nacimiento, date)) else (self.fecha_nacimiento if self.fecha_nacimiento else None),
             'imc': self.imc,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
