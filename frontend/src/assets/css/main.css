@@ -534,6 +534,11 @@ body {
   gap: 30px;
   margin-bottom: 30px;
   width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
 }
 
 .footer-section {

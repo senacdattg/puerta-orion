@@ -1,7 +1,6 @@
 <template>
   <main class="ver-acudidos-page">
     <Encabezado />
-    <TituloClub />
     <div class="ver-acudidos-container">
       <div class="ver-acudidos-header">
         <h1 class=" ver-acudidos-title">
@@ -198,7 +197,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Encabezado from '@/components/layout/encabezado.vue'
-import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import deportistasService from '@/services/deportistasService'
 import authService from '@/services/authService'
@@ -445,19 +443,23 @@ const asociarDeportista = async () => {
   background: linear-gradient(to bottom, #f0f8ff 0%, #e3f2fd 100%);
   padding: 2rem 1rem;
   padding-bottom: 0;
-}
-
-/* Hacer que el footer se salga del padding del main */
-.ver-acudidos-page :deep(.footer-enhanced) {
-  margin-left: -1rem;
-  margin-right: -1rem;
-  width: calc(100% + 2rem);
+  display: flex;
+  flex-direction: column;
 }
 
 .ver-acudidos-container {
   max-width: 1200px;
   margin: 0 auto;
   margin-bottom: 2rem;
+  flex: 1;
+}
+
+/* Hacer que el footer se salga del padding del main y se comporte como footer */
+.ver-acudidos-page :deep(.footer-enhanced) {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
+  margin-top: auto;
 }
 
 .ver-acudidos-header {

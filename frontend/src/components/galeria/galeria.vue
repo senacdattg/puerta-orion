@@ -1,9 +1,6 @@
 <template>
   <main class="contenedor-galeria">
 
-    <!-- Heading principal -->
-    <h1 class="titulo-principal-galeria">Eventos del Club</h1>
-
     <!-- Sección de contenido con cuadrícula -->
     <div class="seccion-contenido grande">
 

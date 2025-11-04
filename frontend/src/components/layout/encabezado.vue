@@ -2,7 +2,14 @@
   <header class="header-deportista">
     <div class="header-inner container">
     <div class="header-left">
-      <button class="menu-trigger" @click="toggleMenu" :class="{ open: menuVisible }" :aria-expanded="menuVisible.toString()" aria-label="Alternar menú">
+      <button
+        v-if="!sinMenu"
+        class="menu-trigger"
+        @click="toggleMenu"
+        :class="{ open: menuVisible }"
+        :aria-expanded="menuVisible.toString()"
+        aria-label="Alternar menú"
+      >
         <i class="fas" :class="menuVisible ? 'fa-bars-staggered' : 'fa-bars'"></i>
       </button>
       <img
@@ -176,6 +183,7 @@ function toggleProfileMenu() {
 }
 
 function toggleMenu() {
+  if (props.sinMenu) return // No hacer nada si el menú está deshabilitado
   menuVisible.value = !menuVisible.value
   applyLayoutOffsets()
 }

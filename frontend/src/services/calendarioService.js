@@ -94,6 +94,55 @@ class CalendarioService {
   }
 
   /**
+   * Obtener eventos próximos (futuros)
+   */
+  async obtenerEventosProximos() {
+    try {
+      console.log('🔄 Obteniendo eventos próximos desde:', `${this.baseURL}/eventos/proximos`);
+      
+      const response = await fetch(`${this.baseURL}/eventos/proximos`, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      });
+
+      console.log('📡 Respuesta eventos próximos:', response.status, response.statusText);
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Error de autenticación: Token inválido o expirado');
+        } else if (response.status === 500) {
+          throw new Error('Error interno del servidor al cargar eventos próximos');
+        } else {
+          const errorText = await response.text();
+          console.error('❌ Error del servidor:', errorText);
+          throw new Error(`Error al cargar eventos próximos: ${response.statusText}`);
+        }
+      }
+
+      const data = await response.json();
+      console.log('📦 Datos eventos próximos recibidos:', data);
+
+      if (data.success && data.data) {
+        console.log('✅ Eventos próximos encontrados:', data.data.length);
+        // Mapear eventos del backend al formato del frontend
+        const eventosMapeados = data.data.map(evento => {
+          const eventoMapeado = this.mapearEventoBackendAFrontend(evento);
+          console.log('📅 Evento mapeado:', eventoMapeado);
+          return eventoMapeado;
+        });
+        console.log('✅ Total eventos mapeados:', eventosMapeados.length);
+        return eventosMapeados;
+      }
+
+      console.warn('⚠️ No se encontraron eventos próximos en la respuesta');
+      return [];
+    } catch (error) {
+      console.error('❌ Error al cargar eventos próximos:', error);
+      return [];
+    }
+  }
+
+  /**
    * Crear un nuevo evento
    */
   async crearEvento(evento) {

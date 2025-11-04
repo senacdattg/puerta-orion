@@ -11,7 +11,9 @@ from src.models.acudientes.acudiente import Acudiente
 from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
 from src.middleware.auth_decorator import get_current_user, token_required
 from datetime import datetime, date, time
+from sqlalchemy import or_
 import re
+import traceback
 
 eventos_bp = Blueprint('eventos', __name__)
 
@@ -258,7 +260,6 @@ def listar_eventos():
             # Si hay categoría "Todos", incluirla en el filtro
             if id_categoria_todos:
                 # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
-                from sqlalchemy import or_
                 query = query.filter(
                     or_(
                         Evento.id_categoria.in_(categorias_permitidas),
@@ -1227,7 +1228,6 @@ def eventos_proximos():
             # Si hay categoría "Todos", incluirla en el filtro
             if id_categoria_todos:
                 # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
-                from sqlalchemy import or_
                 query = query.filter(
                     or_(
                         Evento.id_categoria.in_(categorias_permitidas),
@@ -1260,15 +1260,25 @@ def eventos_proximos():
         
         eventos_data = []
         for evento in eventos:
-            evento_dict = evento.to_dict()
-            if evento.categoria:
-                evento_dict['categoria'] = evento.categoria.to_dict()
-            if evento.sesion:
-                evento_dict['sesion'] = evento.sesion.to_dict()
-            tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-            if tipo_evento:
-                evento_dict['tipo_evento'] = tipo_evento.to_dict()
-            eventos_data.append(evento_dict)
+            try:
+                evento_dict = evento.to_dict()
+                
+                # Agregar información de categoría si existe
+                if evento.categoria:
+                    evento_dict['categoria'] = evento.categoria.to_dict()
+                
+                # Agregar información de tipo de evento si existe
+                tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
+                if tipo_evento:
+                    evento_dict['tipo_evento'] = tipo_evento.to_dict()
+                
+                eventos_data.append(evento_dict)
+            except Exception as e:
+                print(f"⚠️ Error procesando evento {evento.id_evento}: {str(e)}")
+                import traceback
+                print(traceback.format_exc())
+                # Continuar con el siguiente evento en lugar de fallar completamente
+                continue
         
         return jsonify({
             'success': True,
@@ -1277,9 +1287,14 @@ def eventos_proximos():
         }), 200
         
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"❌ Error en eventos_proximos: {str(e)}")
+        print(f"📋 Traceback completo:\n{error_trace}")
         return jsonify({
             'success': False,
-            'error': f'Error al obtener eventos próximos: {str(e)}'
+            'error': f'Error al obtener eventos próximos: {str(e)}',
+            'traceback': error_trace if __debug__ else None
         }), 500
 
 

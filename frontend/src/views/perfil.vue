@@ -425,18 +425,18 @@ const detalle = ref(null)
 const edadDeportista = computed(() => {
   try {
     const deportista = detalle.value?.deportista || authStore.userDetail?.deportista || authStore.user?.deportista
-    
+
     if (!deportista) return null
-    
+
     const fechaNacimiento = deportista.fecha_nacimiento
-    
+
     if (!fechaNacimiento) return null
-    
+
     // Si fecha_nacimiento es solo el año (número)
     const añoActual = new Date().getFullYear()
     const añoNacimiento = typeof fechaNacimiento === 'number' ? fechaNacimiento : new Date(fechaNacimiento).getFullYear()
     const edad = añoActual - añoNacimiento
-    
+
     return edad
   } catch (error) {
     console.error('Error al calcular edad:', error)
@@ -476,7 +476,7 @@ const yaEsAcudiente = computed(() => {
 // Filtrar roles asignados para ocultar "Usuario" según la lógica
 const rolesAsignadosFiltrados = computed(() => {
   if (!usuario.value?.roles) return []
-  
+
   // Si el usuario es deportista:
   // - Si es menor de edad: ocultar "Usuario"
   // - Si es mayor de edad pero ya es acudiente: ocultar "Usuario"
@@ -499,7 +499,7 @@ const rolesAsignadosFiltrados = computed(() => {
     // Si es mayor de edad y NO es acudiente, mostrar "Usuario"
     return usuario.value.roles
   }
-  
+
   // Si no es deportista, mostrar todos los roles
   return usuario.value.roles
 })
@@ -657,7 +657,7 @@ const nombreDiagnostico = (id) => {
 // Función para formatear fecha de nacimiento
 function formatearFechaNacimiento(fecha) {
   if (!fecha) return null
-  
+
   // Si es un número (año solo), convertir a fecha completa (1 de enero de ese año)
   if (typeof fecha === 'number') {
     // Si es un año válido (4 dígitos), mostrarlo como fecha completa
@@ -671,7 +671,7 @@ function formatearFechaNacimiento(fecha) {
     }
     return fecha.toString()
   }
-  
+
   // Si es un string (fecha completa o año)
   if (typeof fecha === 'string') {
     // Si es solo un año (4 dígitos)
@@ -681,7 +681,7 @@ function formatearFechaNacimiento(fecha) {
         return `01/01/${año}`
       }
     }
-    
+
     // Intentar parsear como fecha ISO (YYYY-MM-DD) o otros formatos
     try {
       const dateObj = new Date(fecha)
@@ -697,7 +697,7 @@ function formatearFechaNacimiento(fecha) {
     }
     return fecha
   }
-  
+
   // Si es un objeto Date
   if (fecha instanceof Date) {
     if (!isNaN(fecha.getTime())) {
@@ -707,7 +707,7 @@ function formatearFechaNacimiento(fecha) {
       return `${dia}/${mes}/${año}`
     }
   }
-  
+
   return fecha
 }
 
@@ -969,10 +969,20 @@ const getRolId = (rol) => {
 </script>
 
 <style scoped>
+.perfil-page {
+  min-height: 100vh;
+}
+
 .perfil-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
+}
+
+/* Reducir el margen del TituloClub en el perfil */
+.perfil-page :deep(.titulo-club) {
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .perfil-header {

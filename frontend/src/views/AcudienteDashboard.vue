@@ -1,28 +1,11 @@
 <template>
   <div class="acudiente-dashboard-page">
-    <Encabezado :sinMenu="true" />
+    <Encabezado />
 
     <TituloClub />
 
     <div class="dashboard-layout">
-      <SidebarAcudiente
-        :isOpen="sidebarOpen"
-        @close="sidebarOpen = false"
-      />
-
-      <button
-        class="mobile-sidebar-toggle"
-        @click="sidebarOpen = !sidebarOpen"
-        v-if="isMobile"
-      >
-        <i class="fas fa-bars"></i>
-      </button>
-
-      <div
-        class="dashboard-main"
-        :class="{ 'sidebar-open': sidebarOpen && isMobile }"
-        @click="handleMainClick"
-      >
+      <div class="dashboard-main">
         <div class="main-content">
           <div class="welcome-section">
             <h1 class="welcome-title">Panel del Acudiente</h1>
@@ -50,6 +33,7 @@
               title="Eventos"
               description="Participa en los próximos eventos y actividades deportivas"
               icon="fas fa-calendar-check"
+              :value="eventosProximosCount"
               to="/eventos"
             />
 
@@ -76,38 +60,43 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Encabezado from '@/components/layout/encabezado.vue'
-import SidebarAcudiente from '@/components/acudientes/SidebarAcudiente.vue'
 import CardDeportista from '@/components/deportistas/CardDeportista.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import calendarioService from '@/services/calendarioService'
 
 defineOptions({
   name: 'AcudienteDashboard'
 })
 
-const sidebarOpen = ref(false)
-const isMobile = ref(false)
+const eventosProximos = ref([])
+const cargandoEventos = ref(false)
 
-const handleMainClick = () => {
-  if (isMobile.value && sidebarOpen.value) {
-    sidebarOpen.value = false
+const eventosProximosCount = computed(() => {
+  if (cargandoEventos.value) {
+    return '...'
   }
-}
+  return eventosProximos.value.length > 0 ? eventosProximos.value.length.toString() : '0'
+})
 
-const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768
+const cargarEventosProximos = async () => {
+  cargandoEventos.value = true
+  try {
+    const eventos = await calendarioService.obtenerEventosProximos()
+    eventosProximos.value = eventos || []
+  } catch (error) {
+    console.error('Error al cargar eventos próximos:', error)
+    eventosProximos.value = []
+  } finally {
+    cargandoEventos.value = false
+  }
 }
 
 onMounted(() => {
   console.log('✅ AcudienteDashboard montado')
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobile)
+  cargarEventosProximos()
 })
 </script>
 
@@ -128,8 +117,6 @@ onBeforeUnmount(() => {
 
 .dashboard-main {
   flex: 1;
-  margin-left: 250px;
-  transition: margin-left var(--transicion);
   min-height: calc(100vh - 70px);
 }
 
@@ -138,27 +125,6 @@ onBeforeUnmount(() => {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
-}
-
-.mobile-sidebar-toggle {
-  display: none;
-  position: fixed;
-  top: 80px;
-  left: var(--espaciado-md);
-  z-index: calc(var(--z-fixed) + 1);
-  background: #004AAD;
-  color: var(--color-blanco);
-  border: none;
-  border-radius: var(--radio-borde);
-  padding: var(--espaciado-sm) var(--espaciado-md);
-  cursor: pointer;
-  box-shadow: var(--sombra-media);
-  transition: var(--transicion);
-}
-
-.mobile-sidebar-toggle:hover {
-  background: #003d8f;
-  transform: scale(1.05);
 }
 
 .welcome-section {
@@ -204,18 +170,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
-  .dashboard-main {
-    margin-left: 0;
-  }
-
-  .dashboard-main.sidebar-open {
-    margin-left: 0;
-  }
-
-  .mobile-sidebar-toggle {
-    display: block;
-  }
-
   .main-content {
     padding: var(--espaciado-md);
   }
@@ -231,19 +185,6 @@ onBeforeUnmount(() => {
   .cards-grid {
     grid-template-columns: 1fr;
     gap: var(--espaciado-md);
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-main.sidebar-open::before {
-    content: '';
-    position: fixed;
-    top: 70px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: calc(var(--z-fixed) - 1);
   }
 }
 </style>
