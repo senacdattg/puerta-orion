@@ -55,8 +55,6 @@
               v-model="form"
             />
 
-            <hr class="form-divider" />
-
             <div class="botones-formulario" style="justify-content: center; gap: 10px;">
               <button type="submit" class="boton-formulario" style="width: 150px;">Guardar</button>
             </div>
@@ -78,7 +76,6 @@
 import { ref, watch, computed } from 'vue'
 import TipoDocumento from '../datos-dinamicos/tipo-documento.vue'
 import Sexo from '../datos-dinamicos/sexo.vue'
-import Categoria from '../datos-dinamicos/categoria.vue'
 import Ciudad from '../datos-dinamicos/ciudad.vue'
 import Eps from '../datos-dinamicos/eps.vue'
 import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
@@ -93,7 +90,6 @@ const emit = defineEmits(['cerrar','guardar-dato'])
 const items = ref([
   { id: 'tipo_documento', nombre: 'Tipos de Documento', icono: 'fas fa-id-card', descripcion: 'Gestiona los tipos de documento' },
   { id: 'sexo', nombre: 'Sexo', icono: 'fas fa-venus-mars', descripcion: 'Gestiona valores de sexo' },
-  { id: 'categoria', nombre: 'Categorías', icono: 'fas fa-layer-group', descripcion: 'Gestiona categorías deportivas' },
   { id: 'ciudad', nombre: 'Ciudades', icono: 'fas fa-city', descripcion: 'Gestiona ciudades de residencia' },
   { id: 'eps', nombre: 'EPS', icono: 'fas fa-hospital', descripcion: 'Gestiona entidades de salud' },
   { id: 'metodo_pago', nombre: 'Métodos de Pago', icono: 'fas fa-money-check-alt', descripcion: 'Gestiona métodos de pago' },
@@ -106,9 +102,6 @@ const form = ref({
   nombre: '', 
   codigo: '',
   descripcion: '',
-  nombre_categoria: '',
-  edad_minima: null,
-  edad_maxima: null,
   estado: true
 })
 
@@ -116,7 +109,6 @@ const form = ref({
 const componentes = {
   'tipo_documento': TipoDocumento,
   'sexo': Sexo,
-  'categoria': Categoria,
   'ciudad': Ciudad,
   'eps': Eps,
   'metodo_pago': MetodoPago,
@@ -137,9 +129,6 @@ function cerrar() {
     nombre: '', 
     codigo: '',
     descripcion: '',
-    nombre_categoria: '',
-    edad_minima: null,
-    edad_maxima: null,
     estado: true
   }
   emit('cerrar')
@@ -154,9 +143,6 @@ watch(() => props.mostrar, (nuevoValor) => {
       nombre: '', 
       codigo: '',
       descripcion: '',
-      nombre_categoria: '',
-      edad_minima: null,
-      edad_maxima: null,
       estado: true
     }
   }
@@ -165,26 +151,11 @@ watch(() => props.mostrar, (nuevoValor) => {
 function seleccionar(item){
   seleccionado.value = item
   // Inicializar form según el tipo seleccionado
-  if (item.id === 'categoria') {
-    form.value = {
-      nombre_categoria: '',
-      edad_minima: null,
-      edad_maxima: null,
-      estado: true,
-      nombre: '',
-      codigo: '',
-      descripcion: ''
-    }
-  } else {
-    form.value = {
-      nombre: '',
-      codigo: '',
-      descripcion: '',
-      nombre_categoria: '',
-      edad_minima: null,
-      edad_maxima: null,
-      estado: true
-    }
+  form.value = {
+    nombre: '',
+    codigo: '',
+    descripcion: '',
+    estado: true
   }
 }
 
@@ -194,9 +165,6 @@ function volverPaso1(){
     nombre: '', 
     codigo: '',
     descripcion: '',
-    nombre_categoria: '',
-    edad_minima: null,
-    edad_maxima: null,
     estado: true
   }
 }

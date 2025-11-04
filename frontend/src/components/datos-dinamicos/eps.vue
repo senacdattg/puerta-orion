@@ -1,25 +1,27 @@
 <template>
   <div>
-    <div class="fila-texto campo-nombre-centrado">
+    <div class="fila-texto">
       <input 
         v-model.trim="localForm.nombre" 
         type="text" 
         placeholder="Nombre *" 
         required 
       />
-    </div>
-    <div class="fila-texto campo-nombre-centrado">
       <input 
         v-model.trim="localForm.codigo" 
         type="text" 
         placeholder="Código EPS" 
       />
+    </div>
+    <hr class="form-divider" />
+    <div class="fila-texto campo-nombre-centrado">
       <select v-model="localForm.estado" required>
         <option value="" disabled>Estado *</option>
         <option :value="true">Activo</option>
         <option :value="false">Inactivo</option>
       </select>
     </div>
+    <hr class="form-divider" />
   </div>
 </template>
 
@@ -61,7 +63,7 @@ watch(localForm, (newVal) => {
   grid-template-columns: 1fr;
 }
 
-.campo-nombre-centrado input {
+.campo-nombre-centrado select {
   text-align: center;
 }
 </style>

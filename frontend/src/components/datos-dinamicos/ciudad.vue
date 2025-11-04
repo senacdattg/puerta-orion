@@ -1,11 +1,14 @@
 <template>
-  <div class="fila-texto campo-nombre-centrado">
-    <input 
-      v-model.trim="localForm.nombre" 
-      type="text" 
-      placeholder="Nombre *" 
-      required 
-    />
+  <div>
+    <div class="fila-texto campo-nombre-centrado">
+      <input 
+        v-model.trim="localForm.nombre" 
+        type="text" 
+        placeholder="Nombre *" 
+        required 
+      />
+    </div>
+    <hr class="form-divider" />
   </div>
 </template>
 

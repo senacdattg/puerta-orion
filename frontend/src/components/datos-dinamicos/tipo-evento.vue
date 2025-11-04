@@ -1,21 +1,19 @@
 <template>
   <div>
-    <div class="fila-texto campo-nombre-centrado">
+    <div class="fila-texto">
       <input 
         v-model.trim="localForm.nombre" 
         type="text" 
         placeholder="Nombre *" 
         required 
       />
-    </div>
-    <div class="fila-texto">
       <textarea 
         v-model.trim="localForm.descripcion" 
         placeholder="Descripción (opcional)" 
         rows="3" 
-        style="grid-column: 1 / -1;"
       ></textarea>
     </div>
+    <hr class="form-divider" />
   </div>
 </template>
 
@@ -49,20 +47,23 @@ watch(localForm, (newVal) => {
 </script>
 
 <style scoped>
-.campo-nombre-centrado {
-  max-width: 400px;
-  margin: 0 auto;
-  grid-template-columns: 1fr;
+.fila-texto {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 20px;
+  align-items: start;
 }
 
-.campo-nombre-centrado input {
-  text-align: center;
+.fila-texto input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .fila-texto textarea {
-  grid-column: 1 / -1;
+  width: 100%;
   min-height: 80px;
   resize: vertical;
+  box-sizing: border-box;
 }
 </style>
 
