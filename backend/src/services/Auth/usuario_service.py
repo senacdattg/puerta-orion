@@ -886,6 +886,15 @@ class UsuarioService:
             if deportista_temp and deportista_temp.fecha_nacimiento:
                 fecha_nacimiento_persona = deportista_temp.fecha_nacimiento
 
+            # Obtener roles del usuario
+            roles_usuario = []
+            if hasattr(usuario, 'roles') and usuario.roles:
+                roles_usuario = [{
+                    'id_rol': rol.id_rol,
+                    'nombre_rol': rol.nombre_rol,
+                    'descripcion': rol.descripcion
+                } for rol in usuario.roles]
+
             # Construir resultado base con estructura solicitada
             resultado: Dict[str, Any] = {
                 'persona': {
@@ -899,11 +908,16 @@ class UsuarioService:
                     'telefono': persona.telefono,
                     'fecha_nacimiento': fecha_nacimiento_persona,
                     'id_tipo_documento': persona.id_tipo_documento,
-                    'id_sexo': persona.id_sexo
+                    'id_sexo': persona.id_sexo,
+                    'nombre_completo': persona.nombre_completo
                 },
                 'usuario': {
-                    'usuario': usuario.usuario
-                }
+                    'id_usuario': usuario.id_usuario,
+                    'usuario': usuario.usuario,
+                    'estado': usuario.estado,
+                    'id_persona': usuario.id_persona
+                },
+                'roles': roles_usuario
             }
 
             # Deportista - información completa

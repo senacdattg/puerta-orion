@@ -27,10 +27,15 @@ class UsuariosService {
 
   /**
    * Lista todos los usuarios con sus roles
+   * @param {string} estado - 'activo', 'inactivo' o 'todos' (default: 'todos')
    */
-  async listarUsuarios() {
+  async listarUsuarios(estado = 'todos') {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/`, {
+      const url = estado !== 'todos' 
+        ? `${API_BASE_URL}/usuarios/?estado=${estado}`
+        : `${API_BASE_URL}/usuarios/`
+      
+      const response = await fetch(url, {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
@@ -91,6 +96,78 @@ class UsuariosService {
       return data
     } catch (error) {
       console.error('Error al cambiar roles de usuario:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Cambia el estado (activo/inactivo) de un usuario
+   */
+  async cambiarEstadoUsuario(idUsuario, estado) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/estado`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ estado: estado })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Error ${response.status}: ${errorData.error || response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error al cambiar estado de usuario:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Obtiene el detalle completo de un usuario
+   */
+  async obtenerDetalleUsuario(idUsuario) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/detalle`, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Error ${response.status}: ${errorData.error || response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error al obtener detalle de usuario:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Actualiza datos del usuario/persona
+   * body: { datos_usuario?: { usuario }, datos_persona?: { primer_nombre, ... } }
+   */
+  async actualizarUsuario(idUsuario, body) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(body)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Error ${response.status}: ${errorData.error || response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error al actualizar usuario:', error)
       throw error
     }
   }

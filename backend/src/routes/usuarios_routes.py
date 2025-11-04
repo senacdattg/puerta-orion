@@ -35,12 +35,23 @@ def listar_usuarios():
     Headers requeridos:
     Authorization: Bearer <token>
     
+    Query params opcionales:
+    - estado: 'activo', 'inactivo' o 'todos' (default: 'todos')
+    
     Returns:
         JSON: Lista de usuarios con sus roles
     """
     try:
-        # Obtener todos los usuarios activos con sus roles
-        usuarios = Usuario.query.filter_by(estado=True).all()
+        # Obtener parámetro de estado (opcional)
+        estado_filter = request.args.get('estado', 'todos')
+        
+        # Obtener usuarios según el filtro de estado
+        if estado_filter == 'activo':
+            usuarios = Usuario.query.filter_by(estado=True).all()
+        elif estado_filter == 'inactivo':
+            usuarios = Usuario.query.filter_by(estado=False).all()
+        else:  # 'todos' por defecto
+            usuarios = Usuario.query.all()
         
         usuarios_data = []
         for usuario in usuarios:
@@ -424,6 +435,107 @@ def cambiar_rol_usuario(id_usuario):
     except Exception as e:
         db.session.rollback()
         logger.error(f"Error inesperado al cambiar rol de usuario: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@usuarios_bp.route('/<int:id_usuario>/estado', methods=['PUT', 'OPTIONS'])
+@cross_origin(methods=['PUT', 'OPTIONS'])
+@token_required()
+def cambiar_estado_usuario(id_usuario):
+    """
+    Endpoint para activar o desactivar un usuario.
+    
+    Headers requeridos:
+    Authorization: Bearer <token>
+    
+    Body JSON esperado:
+    {
+        "estado": true  // true para activar, false para desactivar
+    }
+    
+    Returns:
+        JSON: Usuario actualizado o error
+    """
+    try:
+        # Validar que la petición sea JSON
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type debe ser application/json',
+                'status_code': 400
+            }), 400
+        
+        # Obtener datos del JSON
+        data = request.get_json()
+        
+        if not data or 'estado' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Se requiere el campo "estado" (true/false)',
+                'status_code': 400
+            }), 400
+        
+        nuevo_estado = data.get('estado')
+        
+        # Validar que estado sea booleano
+        if not isinstance(nuevo_estado, bool):
+            return jsonify({
+                'success': False,
+                'error': 'El campo "estado" debe ser true o false',
+                'status_code': 400
+            }), 400
+        
+        # Verificar que el usuario existe
+        usuario = Usuario.query.filter_by(id_usuario=id_usuario).first()
+        if not usuario:
+            return jsonify({
+                'success': False,
+                'error': f'Usuario con ID {id_usuario} no encontrado',
+                'status_code': 404
+            }), 404
+        
+        # Verificar que no se está desactivando a sí mismo
+        from ..middleware.auth_decorator import get_current_user
+        usuario_actual = get_current_user()
+        if usuario_actual and usuario_actual.get('id_usuario') == id_usuario and not nuevo_estado:
+            return jsonify({
+                'success': False,
+                'error': 'No puedes desactivar tu propio usuario',
+                'status_code': 400
+            }), 400
+        
+        # Actualizar estado del usuario
+        usuario.estado = nuevo_estado
+        db.session.commit()
+        
+        # Obtener roles actualizados del usuario
+        roles_usuario = []
+        for rol in usuario.roles:
+            roles_usuario.append({
+                'id_rol': rol.id_rol,
+                'nombre_rol': rol.nombre_rol,
+                'descripcion': rol.descripcion
+            })
+        
+        return jsonify({
+            'success': True,
+            'message': f'Usuario {"activado" if nuevo_estado else "desactivado"} exitosamente',
+            'data': {
+                'id_usuario': usuario.id_usuario,
+                'usuario': usuario.usuario,
+                'estado': usuario.estado,
+                'roles': roles_usuario
+            },
+            'status_code': 200
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error al cambiar estado de usuario: {str(e)}")
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor',
