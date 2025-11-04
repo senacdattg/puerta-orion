@@ -171,9 +171,9 @@ async function completarRegistroAcudiente() {
   // Obtener información del usuario actual
   const usuarioActual = authStore.user;
   const idPersonaUsuario = usuarioActual?.persona?.id_persona || usuarioActual?.id_persona;
-  
+
   // Verificar si el deportista encontrado tiene el mismo id_persona que el usuario actual
-  if (deportistaEncontrado.value.id_persona === idPersonaUsuario || 
+  if (deportistaEncontrado.value.id_persona === idPersonaUsuario ||
       deportistaEncontrado.value.persona?.id_persona === idPersonaUsuario) {
     alert('No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.');
     return;
@@ -198,13 +198,13 @@ async function completarRegistroAcudiente() {
       // Recargar el perfil del usuario para actualizar los roles en el store
       try {
         await authStore.loadUserProfile();
-        
+
         // Establecer automáticamente el rol activo como 'Acudiente' si el usuario tiene ese rol
         const roles = authStore.userRoles || [];
         if (roles.includes('Acudiente')) {
           await authStore.setActiveRole('Acudiente');
           console.log('✅ Rol activo establecido como Acudiente');
-          
+
           // Verificar que el activeRole se estableció correctamente antes de redirigir
           if (authStore.activeRole === 'Acudiente') {
             // Redirigir al dashboard del acudiente
@@ -245,7 +245,7 @@ function manejarCancelacion() {
     // Determinar la ruta de redirección según el rol del usuario
     const userRoles = authStore.userRoles || [];
     const roleNames = userRoles.map(role => typeof role === 'string' ? role : role.nombre_rol);
-    
+
     // Si tiene rol activo, usar ese
     if (authStore.activeRole) {
       switch(authStore.activeRole) {
@@ -267,7 +267,7 @@ function manejarCancelacion() {
           return;
       }
     }
-    
+
     // Si no hay rol activo, verificar roles del usuario
     if (roleNames.length === 1) {
       const singleRole = roleNames[0];
@@ -290,13 +290,13 @@ function manejarCancelacion() {
           return;
       }
     }
-    
+
     // Si tiene múltiples roles, redirigir a selección de rol
     if (roleNames.length > 1) {
       router.push('/seleccionar-rol');
       return;
     }
-    
+
     // Por defecto, ir a home
     router.push('/home');
   }

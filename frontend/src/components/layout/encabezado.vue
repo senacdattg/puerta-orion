@@ -242,12 +242,13 @@ function cargarOpciones() {
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
     ],
     Acudiente: [
-      { texto: "Inicio", link: "/home", icono: "fas fa-home" },
-      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
-      { texto: "Mis Deportistas", link: "/ver-acudidos", icono: "fas fa-child" },
-      { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-wallet" },
-      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar" },
+      { texto: "Inicio", link: "/acudiente/dashboard", icono: "fas fa-home" },
+      { texto: "Mis Acudidos", link: "/ver-acudidos", icono: "fas fa-users" },
+      { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-money-bill-wave" },
+      { texto: "Eventos", link: "/eventos", icono: "fas fa-calendar-check" },
+      { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar-alt" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
+      { texto: "Configuración", link: "/perfil", icono: "fas fa-cog" },
     ],
     Deportista: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },

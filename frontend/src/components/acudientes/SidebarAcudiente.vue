@@ -10,25 +10,36 @@
       </button>
     </div>
 
-    <nav class="sidebar-nav">
-      <router-link
-        v-for="item in menuItems"
-        :key="item.path"
-        :to="item.path"
-        class="nav-item"
-        :class="{ active: isActive(item.path) }"
-        @click="handleNavClick"
-      >
-        <i :class="item.icon"></i>
-        <span class="nav-text">{{ item.label }}</span>
-      </router-link>
-    </nav>
+      <nav class="sidebar-nav">
+        <router-link
+          v-for="item in menuItems"
+          :key="item.path"
+          :to="item.path"
+          class="nav-item"
+          :class="{ active: isActive(item.path) }"
+          @click="handleNavClick"
+        >
+          <i :class="item.icon"></i>
+          <span class="nav-text">{{ item.label }}</span>
+        </router-link>
+        
+        <!-- Opción de cerrar sesión -->
+        <a
+          v-if="authStore.estaAutenticado"
+          @click="handleLogout"
+          class="nav-item logout-nav"
+        >
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="nav-text">Cerrar Sesión</span>
+        </a>
+      </nav>
   </aside>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 defineOptions({
   name: 'SidebarAcudiente'
@@ -44,6 +55,8 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 const isMobile = ref(false)
 
 const menuItems = [
@@ -83,6 +96,14 @@ const menuItems = [
     icon: 'fas fa-cog'
   }
 ]
+
+async function handleLogout() {
+  const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
+  if (confirmar) {
+    await authStore.logout()
+    router.replace('/login')
+  }
+}
 
 const isActive = (path) => {
   return route.path === path || route.path.startsWith(path + '/')

@@ -1,6 +1,6 @@
 <template>
   <div class="acudiente-dashboard-page">
-    <Encabezado />
+    <Encabezado :sinMenu="true" />
 
     <TituloClub />
 
