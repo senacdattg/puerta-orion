@@ -248,9 +248,25 @@ def listar_eventos():
         # Construir consulta base
         query = Evento.query
         
+        # Obtener el ID de la categoría "Todos" para incluir eventos globales
+        categoria_todos = Categoria.query.filter_by(nombre_categoria='Todos').first()
+        id_categoria_todos = categoria_todos.id_categoria if categoria_todos else None
+        
         # Filtro automático por categorías permitidas (si aplica)
+        # Incluir eventos de categoría "Todos" además de las categorías permitidas
         if categorias_permitidas is not None:
-            query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
+            # Si hay categoría "Todos", incluirla en el filtro
+            if id_categoria_todos:
+                # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
+                from sqlalchemy import or_
+                query = query.filter(
+                    or_(
+                        Evento.id_categoria.in_(categorias_permitidas),
+                        Evento.id_categoria == id_categoria_todos
+                    )
+                )
+            else:
+                query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
         
         # Filtros adicionales del usuario
         if search:
@@ -259,7 +275,13 @@ def listar_eventos():
         
         # Si el usuario especifica categoria_id, combinarlo con el filtro automático
         if categoria_id:
-            if categorias_permitidas is None or categoria_id in categorias_permitidas:
+            # Permitir también la categoría "Todos" siempre
+            categoria_permitida = (
+                categorias_permitidas is None or 
+                categoria_id in categorias_permitidas or 
+                categoria_id == id_categoria_todos
+            )
+            if categoria_permitida:
                 query = query.filter_by(id_categoria=categoria_id)
             else:
                 # Si el usuario intenta filtrar por una categoría no permitida, no devolver resultados
@@ -1195,13 +1217,35 @@ def eventos_proximos():
         
         query = Evento.query.filter(Evento.fecha_evento >= date.today())
         
+        # Obtener el ID de la categoría "Todos" para incluir eventos globales
+        categoria_todos = Categoria.query.filter_by(nombre_categoria='Todos').first()
+        id_categoria_todos = categoria_todos.id_categoria if categoria_todos else None
+        
         # Filtro automático por categorías permitidas (si aplica)
+        # Incluir eventos de categoría "Todos" además de las categorías permitidas
         if categorias_permitidas is not None:
-            query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
+            # Si hay categoría "Todos", incluirla en el filtro
+            if id_categoria_todos:
+                # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
+                from sqlalchemy import or_
+                query = query.filter(
+                    or_(
+                        Evento.id_categoria.in_(categorias_permitidas),
+                        Evento.id_categoria == id_categoria_todos
+                    )
+                )
+            else:
+                query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
         
         if categoria_id:
             # Verificar que la categoría esté permitida
-            if categorias_permitidas is None or categoria_id in categorias_permitidas:
+            # Permitir también la categoría "Todos" siempre
+            categoria_permitida = (
+                categorias_permitidas is None or 
+                categoria_id in categorias_permitidas or 
+                categoria_id == id_categoria_todos
+            )
+            if categoria_permitida:
                 query = query.filter_by(id_categoria=categoria_id)
             else:
                 return jsonify({

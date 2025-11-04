@@ -551,16 +551,24 @@ class ProfileCompletionService:
                 raise ProfileCompletionError("El usuario ya está registrado como acudiente")
             
             # Validación específica para acudientes: deben ser mayores de 18 años
-            # Buscar fecha de nacimiento
+            # Solo validar si el usuario tiene fecha de nacimiento registrada como deportista
+            # Si no es deportista, permitir el registro como acudiente sin validación de edad
             fecha_nacimiento = None
             
             # Intentar obtener de la persona si tiene deportista
             if deportista and deportista.fecha_nacimiento:
                 fecha_nacimiento = deportista.fecha_nacimiento
             
+            # Solo validar edad si tiene fecha de nacimiento registrada
+            # Si no tiene fecha de nacimiento (no es deportista), permitir registro como acudiente
             if fecha_nacimiento:
                 año_actual = date.today().year
-                edad = año_actual - fecha_nacimiento
+                # Calcular edad correctamente (manejar fecha completa)
+                if isinstance(fecha_nacimiento, date):
+                    edad = (date.today() - fecha_nacimiento).days // 365
+                else:
+                    # Si es solo año, calcular edad aproximada
+                    edad = año_actual - fecha_nacimiento
                 
                 if edad < 18:
                     raise ProfileCompletionError(
@@ -568,10 +576,9 @@ class ProfileCompletionService:
                     )
                 self.logger.info(f"Validación de edad para acudiente: {edad} años (OK)")
             else:
-                # Si no hay fecha de nacimiento registrada, rechazar la solicitud
-                raise ProfileCompletionError(
-                    "Para ser acudiente debe tener edad válida registrada. Por favor, complete su registro como deportista primero o contacte al administrador."
-                )
+                # Si no hay fecha de nacimiento registrada, permitir el registro como acudiente
+                # (No todos los acudientes necesitan ser deportistas primero)
+                self.logger.info("Registro como acudiente sin validación de edad (usuario no es deportista)")
 
 
 # Instancia global del servicio para uso en la aplicación

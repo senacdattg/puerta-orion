@@ -1115,13 +1115,20 @@ def completar_perfil_acudiente():
         # Obtener datos del JSON (puede ser vacío para acudientes)
         data = request.get_json() if request.is_json else {}
         
-        # Validar edad mínima para acudientes (18 años)
+        # Validar edad mínima para acudientes (18 años) solo si es deportista
+        # Si el usuario no es deportista, no se requiere validación de edad
         from src.models.deportistas.deportista import Deportista
         from datetime import date
         
         deportista = Deportista.query.filter_by(id_persona=user.get('persona', {}).get('id_persona')).first()
         if deportista and deportista.fecha_nacimiento:
-            edad = date.today().year - deportista.fecha_nacimiento
+            # Calcular edad correctamente
+            if isinstance(deportista.fecha_nacimiento, date):
+                edad = (date.today() - deportista.fecha_nacimiento).days // 365
+            else:
+                # Si es solo año, calcular edad aproximada
+                edad = date.today().year - deportista.fecha_nacimiento
+            
             if edad < 18:
                 return jsonify({
                     'success': False,

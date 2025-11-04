@@ -198,12 +198,36 @@ async function completarRegistroAcudiente() {
       // Recargar el perfil del usuario para actualizar los roles en el store
       try {
         await authStore.loadUserProfile();
+        
+        // Establecer automáticamente el rol activo como 'Acudiente' si el usuario tiene ese rol
+        const roles = authStore.userRoles || [];
+        if (roles.includes('Acudiente')) {
+          await authStore.setActiveRole('Acudiente');
+          console.log('✅ Rol activo establecido como Acudiente');
+          
+          // Verificar que el activeRole se estableció correctamente antes de redirigir
+          if (authStore.activeRole === 'Acudiente') {
+            // Redirigir al dashboard del acudiente
+            router.push('/acudiente/dashboard');
+          } else {
+            // Si no se estableció, esperar un momento y redirigir de todas formas
+            setTimeout(() => {
+              router.push('/acudiente/dashboard');
+            }, 500);
+          }
+        } else {
+          // Si no tiene el rol de Acudiente aún, redirigir de todas formas
+          setTimeout(() => {
+            router.push('/acudiente/dashboard');
+          }, 500);
+        }
       } catch (error) {
         console.warn('No se pudo recargar el perfil en el store, pero el registro fue exitoso:', error);
+        // Redirigir de todas formas en caso de error
+        setTimeout(() => {
+          router.push('/acudiente/dashboard');
+        }, 500);
       }
-
-      // Redirigir al dashboard del acudiente
-      router.push('/acudiente/dashboard');
     } else {
       alert(`Error: ${resultado.error}`);
     }

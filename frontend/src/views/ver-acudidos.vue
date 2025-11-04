@@ -4,7 +4,7 @@
     <TituloClub />
     <div class="ver-acudidos-container">
       <div class="ver-acudidos-header">
-        <h1 class="ver-acudidos-title">
+        <h1 class=" ver-acudidos-title">
           <i class="fas fa-users"></i>
           Gestión de Acudidos
         </h1>
@@ -92,9 +92,9 @@
           <div class="busqueda-deportista">
             <label>Buscar deportista:</label>
             <div class="input-busqueda">
-              <input 
-                type="text" 
-                v-model="busquedaDeportista" 
+              <input
+                type="text"
+                v-model="busquedaDeportista"
                 @input="buscarDeportistas"
                 placeholder="Buscar por nombre o documento..."
                 class="input-text"
@@ -109,8 +109,8 @@
           <!-- Lista de deportistas encontrados -->
           <div v-if="deportistasEncontrados.length > 0" class="deportistas-lista">
             <h3>Deportistas encontrados:</h3>
-            <div 
-              v-for="deportista in deportistasEncontrados" 
+            <div
+              v-for="deportista in deportistasEncontrados"
               :key="deportista.id_deportista"
               class="deportista-item"
               :class="{ 'seleccionado': deportistaSeleccionado?.id_deportista === deportista.id_deportista }"
@@ -136,9 +136,9 @@
               <label>Parentesco:</label>
               <select v-model="idParentesco" class="select-input" required>
                 <option value="">Seleccione un parentesco</option>
-                <option 
-                  v-for="parentesco in parentescos" 
-                  :key="parentesco.id_parentesco" 
+                <option
+                  v-for="parentesco in parentescos"
+                  :key="parentesco.id_parentesco"
                   :value="parentesco.id_parentesco"
                 >
                   {{ parentesco.nombre }}
@@ -158,8 +158,8 @@
           <button class="btn-cancelar" @click="cerrarModalAcudir">
             Cancelar
           </button>
-          <button 
-            class="btn-confirmar" 
+          <button
+            class="btn-confirmar"
             @click="asociarDeportista"
             :disabled="!deportistaSeleccionado || !idParentesco || asociando"
           >
@@ -286,11 +286,11 @@ const verDetalle = async (acudido) => {
   cargandoPerfil.value = true
   mostrarModalPerfil.value = true
   deportistaSeleccionadoPerfil.value = null
-  
+
   try {
     // Obtener información completa del deportista
     const response = await deportistasService.obtenerDeportistaPorId(acudido.id)
-    
+
     if (response.success && response.data) {
       deportistaSeleccionadoPerfil.value = response.data
     } else {
@@ -323,7 +323,7 @@ const abrirModalAcudir = async () => {
   deportistaSeleccionado.value = null
   idParentesco.value = ''
   esResponsable.value = false
-  
+
   // Cargar parentescos
   try {
     parentescos.value = await catalogosService.getParentescos()
@@ -345,27 +345,27 @@ const cerrarModalAcudir = () => {
 
 const buscarDeportistas = async () => {
   const busqueda = busquedaDeportista.value.trim()
-  
+
   if (!busqueda || busqueda.length < 2) {
     deportistasEncontrados.value = []
     return
   }
-  
+
   buscando.value = true
   try {
     // Buscar todos los deportistas (paginación alta para buscar)
     const response = await deportistasService.listarDeportistas(1, 1000)
-    
+
     if (response.success && response.data) {
       // Filtrar por nombre o documento
       deportistasEncontrados.value = response.data.filter(deportista => {
         const nombre = (deportista.nombre || '').toLowerCase()
         const documento = (deportista.documento || deportista.persona?.documento || '').toString().toLowerCase()
         const busquedaLower = busqueda.toLowerCase()
-        
+
         return nombre.includes(busquedaLower) || documento.includes(busquedaLower)
       })
-      
+
       console.log(`✅ ${deportistasEncontrados.value.length} deportista(s) encontrado(s)`)
     } else {
       deportistasEncontrados.value = []
@@ -389,18 +389,18 @@ const asociarDeportista = async () => {
     alert('Por favor, selecciona un deportista y un parentesco.')
     return
   }
-  
+
   // Validar que el usuario no se esté acudiendo a sí mismo
   const usuarioActual = authStore.user
   const idPersonaUsuario = usuarioActual?.persona?.id_persona || usuarioActual?.id_persona
-  
+
   // Verificar si el deportista seleccionado tiene el mismo id_persona que el usuario actual
-  if (deportistaSeleccionado.value.id_persona === idPersonaUsuario || 
+  if (deportistaSeleccionado.value.id_persona === idPersonaUsuario ||
       deportistaSeleccionado.value.persona?.id_persona === idPersonaUsuario) {
     alert('No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.')
     return
   }
-  
+
   asociando.value = true
   try {
     const datos = {
@@ -408,18 +408,18 @@ const asociarDeportista = async () => {
       id_parentesco: parseInt(idParentesco.value),
       es_responsable: esResponsable.value
     }
-    
+
     console.log('🔄 Asociando deportista con datos:', datos)
-    
+
     // Primero intentar asociar como acudiente existente
     let response = await authService.asociarAcudienteDeportista(datos)
-    
+
     // Si falla porque no es acudiente, intentar completar perfil
     if (!response.success && response.error && response.error.includes('no está registrado como acudiente')) {
       console.log('🔄 Usuario no es acudiente, completando perfil...')
       response = await authService.completarPerfilAcudiente(datos)
     }
-    
+
     if (response.success) {
       alert('✅ Deportista asociado exitosamente')
       cerrarModalAcudir()
@@ -441,14 +441,23 @@ const asociarDeportista = async () => {
 
 <style scoped>
 .ver-acudidos-page {
-  min-height: calc(100vh - 300px);
+  min-height: 100vh;
   background: linear-gradient(to bottom, #f0f8ff 0%, #e3f2fd 100%);
   padding: 2rem 1rem;
+  padding-bottom: 0;
+}
+
+/* Hacer que el footer se salga del padding del main */
+.ver-acudidos-page :deep(.footer-enhanced) {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
 }
 
 .ver-acudidos-container {
   max-width: 1200px;
   margin: 0 auto;
+  margin-bottom: 2rem;
 }
 
 .ver-acudidos-header {
