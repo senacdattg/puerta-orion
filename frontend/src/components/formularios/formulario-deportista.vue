@@ -1,6 +1,6 @@
 <!-- src/components/formulario-deportista.vue -->
 <template>
-  <form class="formulario-datos" @submit.prevent="manejarSubmit">
+  <form class="formulario-datos" @submit.prevent="manejarSubmit" novalidate>
     <!-- Formulario Unificado -->
     <section class="seccion-formulario">
       <h3>{{ obtenerTitulo() }}</h3>
@@ -511,16 +511,30 @@ function mostrarModal(titulo, mensaje) {
 }
 
 function cerrarModal() {
+  console.log('🔒 Cerrando modal');
   showModal.value = false;
+  // NO resetear el formulario aquí
 }
 
-async function manejarSubmit() {
+async function manejarSubmit(event) {
+  // Prevenir el comportamiento por defecto del formulario
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  console.log('🚀 Iniciando manejarSubmit');
+  console.log('📋 Estado del formulario:', JSON.parse(JSON.stringify(form.value)));
+  
   isSubmitting.value = true;
 
   try {
     // Requiere sesión iniciada: el backend obtiene id_persona desde el token
     const token = localStorage.getItem('token');
+    console.log('🔑 Token encontrado:', token ? 'Sí' : 'No');
+    
     if (!token || token === 'null' || token === 'undefined') {
+      console.error('❌ No hay token válido');
       mostrarModal('Error', 'Debe iniciar sesión para realizar esta acción.');
       isSubmitting.value = false;
       return;
@@ -654,7 +668,8 @@ async function manejarSubmit() {
         };
       }
 
-      console.log('Datos a registrar:', datosEnvio);
+      console.log('📤 Datos a registrar:', datosEnvio);
+      console.log('🌐 Enviando a: http://localhost:5000/api/deportistas/registrar');
 
       // Enviar al endpoint de registro
       const response = await fetch('http://localhost:5000/api/deportistas/registrar', {
@@ -665,8 +680,12 @@ async function manejarSubmit() {
         },
         body: JSON.stringify(datosEnvio)
       });
+      
+      console.log('📥 Respuesta recibida, status:', response.status);
 
       const result = await response.json();
+
+      console.log('Respuesta del servidor:', response.status, result);
 
       if (response.ok && result.status === 'success') {
         mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
@@ -688,15 +707,33 @@ async function manejarSubmit() {
           });
         }, 3000);
       } else {
-        const mensajeError = result.message || result.error || 'Error al registrar deportista';
+        // Log detallado del error
+        console.error('Error en respuesta:', {
+          status: response.status,
+          statusText: response.statusText,
+          result: result
+        });
+        
+        let mensajeError = 'Error al registrar deportista';
+        if (result.message) {
+          mensajeError = result.message;
+        } else if (result.error) {
+          mensajeError = result.error;
+        } else if (result.status === 'error') {
+          mensajeError = result.message || 'Error desconocido del servidor';
+        }
+        
         throw new Error(mensajeError);
       }
     }
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error completo:', error);
+    console.error('Stack:', error.stack);
     const mensajeError = error.message || 'Error al procesar la solicitud. Por favor, intente de nuevo.';
+    console.error('Mostrando modal con error:', mensajeError);
     mostrarModal('Error', mensajeError);
+    // NO redirigir ni resetear el formulario aquí - solo mostrar el error
   } finally {
     isSubmitting.value = false;
   }

@@ -1,7 +1,7 @@
 """add_password_reset
 
 Revision ID: fb54dee06167
-Revises: merge_fecha_nacimiento
+Revises: 607d95db0456
 Create Date: 2025-11-02 15:38:21.330558
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
 revision = 'fb54dee06167'
-down_revision = 'merge_fecha_nacimiento'
+down_revision = '607d95db0456'  # Cambiado de 'merge_fecha_nacimiento' (no existe) a la última migración válida
 branch_labels = None
 depends_on = None
 

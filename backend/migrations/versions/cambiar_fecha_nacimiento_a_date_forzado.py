@@ -13,7 +13,7 @@ from sqlalchemy import inspect
 
 # revision identifiers, used by Alembic.
 revision = 'force_fecha_nacimiento_date'
-down_revision = 'fb54dee06167'  # Después de la última migración
+down_revision = 'fb54dee06167'  # Después de add_password_reset
 branch_labels = None
 depends_on = None
 
@@ -47,33 +47,33 @@ def upgrade():
     
     # Si ya es DATE, no hacer nada
     if 'DATE' in col_type_str:
-        print(f"✓ fecha_nacimiento ya es de tipo DATE ({col_type_str}). No se requiere cambio.")
+        print(f"[OK] fecha_nacimiento ya es de tipo DATE ({col_type_str}). No se requiere cambio.")
         return
     
-    print(f"\n🔧 DETECTADO: fecha_nacimiento es {col_type_str}, necesitamos cambiarlo a DATE")
+    print(f"\n[!] DETECTADO: fecha_nacimiento es {col_type_str}, necesitamos cambiarlo a DATE")
     print("=== EJECUTANDO CONVERSIÓN FORZADA ===\n")
     
     # Verificar si existe columna temporal de intentos anteriores
     temp_cols = [col['name'] for col in inspector.get_columns('puerta_orion_deportista')]
     if 'fecha_nacimiento_temp' in temp_cols:
-        print("⚠ Limpiando columna temporal anterior...")
+        print("[!] Limpiando columna temporal anterior...")
         try:
             op.drop_column('puerta_orion_deportista', 'fecha_nacimiento_temp')
-            print("✓ Columna temporal anterior eliminada")
+            print("[OK] Columna temporal anterior eliminada")
         except Exception as e:
-            print(f"⚠ Error al eliminar columna temporal anterior: {e}")
+            print(f"[!] Error al eliminar columna temporal anterior: {e}")
     
     # Método seguro: columna temporal
     print("\n[PASO 1/4] Creando columna temporal fecha_nacimiento_temp (DATE)...")
     try:
         op.add_column('puerta_orion_deportista',
                      sa.Column('fecha_nacimiento_temp', sa.Date(), nullable=True))
-        print("✓ Columna temporal creada")
+        print("[OK] Columna temporal creada")
     except Exception as e:
-        print(f"✗ ERROR: {e}")
+        print(f"[ERROR] {e}")
         raise Exception(f"No se pudo crear columna temporal: {e}")
     
-    print("\n[PASO 2/4] Convirtiendo y copiando datos (años SMALLINT → fechas DATE)...")
+    print("\n[PASO 2/4] Convirtiendo y copiando datos (anos SMALLINT -> fechas DATE)...")
     try:
         # Convertir años a fechas 01-01-YYYY
         op.execute("""
@@ -82,9 +82,9 @@ def upgrade():
             WHERE fecha_nacimiento IS NOT NULL
             AND fecha_nacimiento BETWEEN 1900 AND 2100
         """)
-        print("✓ Datos convertidos y copiados exitosamente")
+        print("[OK] Datos convertidos y copiados exitosamente")
     except Exception as e:
-        print(f"✗ ERROR: {e}")
+        print(f"[ERROR] {e}")
         try:
             op.drop_column('puerta_orion_deportista', 'fecha_nacimiento_temp')
         except:
@@ -94,9 +94,9 @@ def upgrade():
     print("\n[PASO 3/4] Eliminando columna antigua fecha_nacimiento (SMALLINT)...")
     try:
         op.drop_column('puerta_orion_deportista', 'fecha_nacimiento')
-        print("✓ Columna antigua eliminada")
+        print("[OK] Columna antigua eliminada")
     except Exception as e:
-        print(f"✗ ERROR: {e}")
+        print(f"[ERROR] {e}")
         try:
             op.drop_column('puerta_orion_deportista', 'fecha_nacimiento_temp')
         except:
@@ -109,13 +109,13 @@ def upgrade():
             ALTER TABLE puerta_orion_deportista 
             CHANGE COLUMN fecha_nacimiento_temp fecha_nacimiento DATE NULL
         """)
-        print("✓ Columna renombrada exitosamente")
+        print("[OK] Columna renombrada exitosamente")
     except Exception as e:
-        print(f"✗ ERROR: {e}")
+        print(f"[ERROR] {e}")
         raise Exception(f"Error al renombrar columna: {e}")
     
     print("\n" + "="*60)
-    print("✓✓✓ MIGRACIÓN COMPLETADA EXITOSAMENTE ✓✓✓")
+    print("[OK][OK][OK] MIGRACION COMPLETADA EXITOSAMENTE [OK][OK][OK]")
     print("="*60)
     print("fecha_nacimiento ahora es de tipo DATE")
     
@@ -125,15 +125,15 @@ def upgrade():
         fecha_col_final = [col for col in inspector_final.get_columns('puerta_orion_deportista') 
                           if col['name'] == 'fecha_nacimiento'][0]
         col_type_final = str(fecha_col_final['type']).upper()
-        print(f"\n✅ VERIFICACIÓN: Tipo de columna final: {col_type_final}")
+        print(f"\n[OK] VERIFICACION: Tipo de columna final: {col_type_final}")
         
         if 'DATE' in col_type_final:
-            print("✅✅✅ CONFIRMADO: fecha_nacimiento es ahora DATE ✅✅✅")
+            print("[OK][OK][OK] CONFIRMADO: fecha_nacimiento es ahora DATE [OK][OK][OK]")
         else:
-            print(f"⚠⚠⚠ ADVERTENCIA: El tipo sigue siendo {col_type_final}")
+            print(f"[!][!][!] ADVERTENCIA: El tipo sigue siendo {col_type_final}")
             print("Ejecuta manualmente: ALTER TABLE puerta_orion_deportista MODIFY fecha_nacimiento DATE NULL;")
     except Exception as e:
-        print(f"⚠ No se pudo verificar el tipo final: {e}")
+        print(f"[!] No se pudo verificar el tipo final: {e}")
         print("Verifica manualmente con: DESCRIBE puerta_orion_deportista;")
 
 
