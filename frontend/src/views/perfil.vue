@@ -1,7 +1,7 @@
 <template>
   <main class="perfil-page">
     <Encabezado />
-    <TituloClub />
+
 
     <div class="perfil-container">
       <div class="perfil-header">
@@ -408,7 +408,6 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { API_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
-import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import SelectorRoles from '@/components/layout/selector-roles.vue'
 
