@@ -99,7 +99,7 @@ class CalendarioService {
   async obtenerEventosProximos() {
     try {
       console.log('🔄 Obteniendo eventos próximos desde:', `${this.baseURL}/eventos/proximos`);
-      
+
       const response = await fetch(`${this.baseURL}/eventos/proximos`, {
         method: 'GET',
         headers: this.getAuthHeaders()
@@ -149,18 +149,18 @@ class CalendarioService {
     try {
       // Mapear evento de frontend a backend
       const eventoBackend = this.mapearEventoFrontendABackend(evento);
-      
+
       // Validar que las horas estén en formato correcto antes de enviar
       if (eventoBackend.hora_inicio && !/^\d{2}:\d{2}(:\d{2})?$/.test(eventoBackend.hora_inicio)) {
         console.error('⚠️ Formato de hora_inicio inválido:', eventoBackend.hora_inicio);
         throw new Error('Formato de hora de inicio inválido. Debe ser HH:MM');
       }
-      
+
       if (eventoBackend.hora_fin && !/^\d{2}:\d{2}(:\d{2})?$/.test(eventoBackend.hora_fin)) {
         console.error('⚠️ Formato de hora_fin inválido:', eventoBackend.hora_fin);
         throw new Error('Formato de hora de fin inválido. Debe ser HH:MM');
       }
-      
+
       console.log('📤 Enviando evento al backend:', {
         nombre: eventoBackend.nombre,
         fecha: eventoBackend.fecha_evento,
@@ -412,12 +412,12 @@ class CalendarioService {
    */
   normalizarHora(hora) {
     if (!hora) return null;
-    
+
     // Si ya está en formato HH:MM o HH:MM:SS, retornarlo
     if (typeof hora === 'string' && /^\d{2}:\d{2}(:\d{2})?$/.test(hora)) {
       return hora;
     }
-    
+
     // Si viene en formato 12 horas con AM/PM, convertir
     if (typeof hora === 'string' && (hora.includes('AM') || hora.includes('PM') || hora.includes('a.') || hora.includes('p.'))) {
       // Convertir formato 12 horas a 24 horas
@@ -426,17 +426,17 @@ class CalendarioService {
         let horas = parseInt(match[1]);
         const minutos = match[2];
         const periodo = match[3].toUpperCase();
-        
+
         if (periodo.includes('PM') || periodo.includes('P.')) {
           if (horas !== 12) horas += 12;
         } else if (periodo.includes('AM') || periodo.includes('A.')) {
           if (horas === 12) horas = 0;
         }
-        
+
         return `${horas.toString().padStart(2, '0')}:${minutos}`;
       }
     }
-    
+
     // Si no se puede convertir, retornar null
     return null;
   }
