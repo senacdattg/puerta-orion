@@ -120,13 +120,55 @@
       </div>
     </section>
 
+    <!-- Sección de Gestión de Datos Dinámicos -->
+    <section class="main-content">
+      <div class="container">
+        <div class="content-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">
+              <i class="fas fa-database"></i>
+              Gestión de Datos Base
+            </h2>
+            <div class="panel-actions">
+              <button class="btn btn--small btn-primary" @click="abrirModalDatos">
+                <i class="fas fa-plus"></i>
+                Añadir Dato
+              </button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <TablaDatosDinamicos 
+              :recargar="recargarTablaDatos"
+              @editar-dato="abrirModalEdicion"
+              @crear-nuevo="abrirModalDatosConTema"
+              @dato-eliminado="onDatoEliminado"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Modal de Registro de Usuario -->
 
     <ModalRegistroUsuario :mostrar="mostrarModalRegistro" @cerrar="cerrarModalRegistro"
       @usuario-registrado="manejarUsuarioRegistrado" />
 
     <!-- Modal Añadir Datos -->
-    <ModalAnadirDatos :mostrar="mostrarModalDatos" @cerrar="cerrarModalDatos" @guardar-dato="onGuardarDato" />
+    <ModalAnadirDatos 
+      :mostrar="mostrarModalDatos" 
+      :tema-inicial="temaParaCrear"
+      @cerrar="cerrarModalDatos" 
+      @guardar-dato="onGuardarDato" 
+    />
+
+    <!-- Modal Editar Dato -->
+    <ModalEditarDato 
+      :mostrar="mostrarModalEdicion"
+      :tema="temaEdicion"
+      :dato="datoEdicion"
+      @cerrar="cerrarModalEdicion"
+      @guardado="onDatoGuardado"
+    />
   </main>
 </template>
 <script setup>
@@ -134,12 +176,19 @@ import { ref, onMounted, computed } from 'vue';
 import { API_CONFIG } from '@/config/environment';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
 import ModalAnadirDatos from '@/components/admin/modal-anadir-datos.vue';
+import ModalEditarDato from '@/components/admin/modal-editar-dato.vue';
 import TablaUsuarios from '@/components/admin/tabla-usuarios.vue';
+import TablaDatosDinamicos from '@/components/admin/tabla-datos-dinamicos.vue';
 import usuariosService from '@/services/usuariosService';
 
 // Estado del modal
 const mostrarModalRegistro = ref(false);
 const mostrarModalDatos = ref(false);
+const mostrarModalEdicion = ref(false);
+const temaParaCrear = ref('');
+const temaEdicion = ref('');
+const datoEdicion = ref({});
+const recargarTablaDatos = ref(false);
 const mostrarFiltros = ref(false);
 const mostrarBusqueda = ref(false);
 const terminoBusqueda = ref('');
@@ -273,6 +322,34 @@ function abrirModalDatos() {
 
 function cerrarModalDatos() {
   mostrarModalDatos.value = false;
+  temaParaCrear.value = '';
+}
+
+function abrirModalDatosConTema(tema) {
+  temaParaCrear.value = tema;
+  mostrarModalDatos.value = true;
+}
+
+function abrirModalEdicion({ tema, dato }) {
+  temaEdicion.value = tema;
+  datoEdicion.value = dato;
+  mostrarModalEdicion.value = true;
+}
+
+function cerrarModalEdicion() {
+  mostrarModalEdicion.value = false;
+  temaEdicion.value = '';
+  datoEdicion.value = {};
+}
+
+function onDatoGuardado() {
+  // Recargar la tabla después de guardar
+  recargarTablaDatos.value = !recargarTablaDatos.value
+  cerrarModalEdicion();
+}
+
+function onDatoEliminado() {
+  // La tabla ya se recarga automáticamente en el componente
 }
 
 async function onGuardarDato(payload) {
@@ -315,23 +392,30 @@ async function onGuardarDato(payload) {
     } else if (entidad === 'sexo') {
       // Para sexo, el campo es nombre
       datos.nombre = nombre.trim()
-    } else {
+    } else if (entidad === 'ciudad') {
+      // Para ciudad, el campo es nombre_ciudad
+      datos.nombre_ciudad = nombre.trim()
+    } else if (entidad === 'eps') {
+      // Para EPS, el campo es nombre_eps
+      datos.nombre_eps = nombre.trim()
+      if (codigo) {
+        datos.codigo_eps = codigo.trim()
+      }
+      // El estado se envía automáticamente si está en el payload
+      if (payload.estado !== undefined) {
+        datos.estado = payload.estado
+      } else {
+        datos.estado = true // Por defecto activo
+      }
+    } else if (entidad === 'tipo-evento') {
+      // Para tipo evento, el campo es nombre
       datos.nombre = nombre.trim()
-      // Campos adicionales según entidad
-      if (entidad === 'tipo-evento' && payload.descripcion) {
+      if (payload.descripcion) {
         datos.descripcion = payload.descripcion.trim()
       }
-      if (entidad === 'eps') {
-        if (codigo) {
-          datos.codigo_eps = codigo.trim()
-        }
-        // El estado se envía automáticamente si está en el payload
-        if (payload.estado !== undefined) {
-          datos.estado = payload.estado
-        } else {
-          datos.estado = true // Por defecto activo
-        }
-      }
+    } else {
+      // Por defecto, usar nombre
+      datos.nombre = nombre.trim()
     }
     
     const base = API_CONFIG.baseURL || ''
@@ -348,7 +432,9 @@ async function onGuardarDato(payload) {
     
     if (result.success) {
       alert(`✅ ${payload.entidad} creado exitosamente`)
-      // Aquí puedes recargar datos si es necesario
+      // Recargar la tabla de datos
+      recargarTablaDatos.value = !recargarTablaDatos.value
+      cerrarModalDatos()
     } else {
       alert(`❌ Error: ${result.error || 'No se pudo crear el registro'}`)
     }

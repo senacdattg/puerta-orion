@@ -82,7 +82,8 @@ import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
 import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
 
 const props = defineProps({
-  mostrar: { type: Boolean, default: false }
+  mostrar: { type: Boolean, default: false },
+  temaInicial: { type: String, default: '' }
 })
 
 const emit = defineEmits(['cerrar','guardar-dato'])
@@ -137,8 +138,30 @@ function cerrar() {
 // Limpiar selección cuando se abre el modal
 watch(() => props.mostrar, (nuevoValor) => {
   if (nuevoValor) {
-    seleccionado.value = null
-    paso.value = 1
+    // Si hay un tema inicial, seleccionarlo automáticamente
+    if (props.temaInicial) {
+      // Mapear temas del backend a IDs del frontend
+      const temaMap = {
+        'tipo-documento': 'tipo_documento',
+        'ciudad-residencia': 'ciudad',
+        'metodo-pago': 'metodo_pago',
+        'tipo-evento': 'tipo-evento',
+        'eps': 'eps',
+        'sexo': 'sexo'
+      }
+      const idFrontend = temaMap[props.temaInicial] || props.temaInicial
+      const item = items.value.find(i => i.id === idFrontend)
+      if (item) {
+        seleccionar(item)
+        paso.value = 2
+      } else {
+        seleccionado.value = null
+        paso.value = 1
+      }
+    } else {
+      seleccionado.value = null
+      paso.value = 1
+    }
     form.value = { 
       nombre: '', 
       codigo: '',

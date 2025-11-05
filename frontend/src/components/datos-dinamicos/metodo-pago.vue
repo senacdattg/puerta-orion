@@ -34,16 +34,29 @@ const localForm = ref({
   estado: props.modelValue?.estado ?? true
 })
 
+// Solo actualizar localForm si el valor realmente cambió desde el padre
 watch(() => props.modelValue, (newVal) => {
-  localForm.value = {
-    nombre: newVal?.nombre || '',
-    estado: newVal?.estado ?? true
+  const nuevoNombre = newVal?.nombre || ''
+  const nuevoEstado = newVal?.estado ?? true
+  
+  if (localForm.value.nombre !== nuevoNombre || localForm.value.estado !== nuevoEstado) {
+    localForm.value = {
+      nombre: nuevoNombre,
+      estado: nuevoEstado
+    }
   }
 }, { deep: true })
 
-watch(localForm, (newVal) => {
-  emit('update:modelValue', newVal)
-}, { deep: true })
+// Solo emitir si el valor realmente cambió
+watch([() => localForm.value.nombre, () => localForm.value.estado], 
+  ([nombre, estado]) => {
+    const valorActual = props.modelValue
+    if (nombre !== (valorActual?.nombre || '') || 
+        estado !== (valorActual?.estado ?? true)) {
+      emit('update:modelValue', { nombre, estado })
+    }
+  }
+)
 </script>
 
 <style scoped>
