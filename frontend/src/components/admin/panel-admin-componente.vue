@@ -149,7 +149,6 @@
     </section>
 
     <!-- Modal de Registro de Usuario -->
-
     <ModalRegistroUsuario :mostrar="mostrarModalRegistro" @cerrar="cerrarModalRegistro"
       @usuario-registrado="manejarUsuarioRegistrado" />
 
@@ -355,7 +354,7 @@ function onDatoEliminado() {
 async function onGuardarDato(payload) {
   try {
     const { entidad, nombre, codigo } = payload
-    
+
     // Mapear entidad del frontend al tema del backend en dynamic-data
     const temaMap = {
       'tipo_documento': 'tipo-documento',
@@ -365,18 +364,18 @@ async function onGuardarDato(payload) {
       'tipo-evento': 'tipo-evento',
       'metodo_pago': 'metodo-pago'
     }
-    
+
     const tema = temaMap[entidad]
-    
+
     // Si no está en el mapeo, mostrar mensaje de que no está disponible
     if (!tema) {
       alert(`⚠️ La creación de "${payload.entidad}" aún no está disponible mediante esta interfaz.`)
       return
     }
-    
+
     // Preparar datos según el tipo
     let datos = {}
-    
+
     if (entidad === 'metodo_pago') {
       // Para método de pago, el campo es nombre_metodo
       datos.nombre_metodo = nombre.trim()
@@ -417,7 +416,7 @@ async function onGuardarDato(payload) {
       // Por defecto, usar nombre
       datos.nombre = nombre.trim()
     }
-    
+
     const base = API_CONFIG.baseURL || ''
     const response = await fetch(`${base}/api/dynamic-data/${tema}`, {
       method: 'POST',
@@ -427,9 +426,9 @@ async function onGuardarDato(payload) {
       },
       body: JSON.stringify(datos)
     })
-    
+
     const result = await response.json()
-    
+
     if (result.success) {
       alert(`✅ ${payload.entidad} creado exitosamente`)
       // Recargar la tabla de datos
