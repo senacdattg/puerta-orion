@@ -195,9 +195,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import { useAuthStore } from '@/stores/auth'
 import deportistasService from '@/services/deportistasService'
 import authService from '@/services/authService'
 import catalogosService from '@/services/catalogosService'

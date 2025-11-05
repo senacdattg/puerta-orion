@@ -8,8 +8,11 @@ from src.models import (
     CiudadResidencia,
     InstitucionRegistro,
     TipoEvento,
-    TipoEnfermedad
+    TipoEnfermedad,
+    TipoDocumento,
+    Sexo
 )
+from src.models.pagos.metodo_pago import MetodoPago
 from src.models.roles_y_permisos.rol import Rol
 
 dynamic_data_bp = Blueprint('dynamic_data', __name__)
@@ -24,7 +27,10 @@ TEMA_MODELOS = {
     'institucion-registro': InstitucionRegistro,
     'tipo-evento': TipoEvento,
     'tipo-enfermedad': TipoEnfermedad,
-    'roles': Rol
+    'roles': Rol,
+    'metodo-pago': MetodoPago,
+    'tipo-documento': TipoDocumento,
+    'sexo': Sexo
 }
 
 # Mapeo de temas a nombres de campos
@@ -37,7 +43,10 @@ TEMA_CAMPOS = {
     'institucion-registro': 'nombre_institucion',
     'tipo-evento': 'nombre',
     'tipo-enfermedad': 'nombre',
-    'roles': 'nombre_rol'
+    'roles': 'nombre_rol',
+    'metodo-pago': 'nombre_metodo',
+    'tipo-documento': 'nombre_documento',
+    'sexo': 'nombre'
 }
 
 def validar_tema(tema):
@@ -140,7 +149,8 @@ def crear_dato_dinamico(tema):
         nuevo_registro = modelo()
         setattr(nuevo_registro, campo_nombre, nombre)
         if hasattr(nuevo_registro, 'estado'):
-            nuevo_registro.estado = True
+            # Usar el estado del request si está presente, sino usar True por defecto
+            nuevo_registro.estado = data.get('estado', True)
         
         # Manejar campos adicionales específicos por modelo
         if tema == 'eps' and 'codigo_eps' in data:

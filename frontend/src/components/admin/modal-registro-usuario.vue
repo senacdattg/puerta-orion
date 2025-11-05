@@ -460,9 +460,9 @@ function resetearModal() {
 }
 
 .btn--primary:hover:not(:disabled) {
-  background-color: #003d91;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 71, 171, 0.3);
+  background-color: #0047ab !important;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn--primary:disabled {
