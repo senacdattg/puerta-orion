@@ -81,15 +81,15 @@
 
       <!-- Botón para cargar más usuarios -->
       <div v-if="!loading && !error && hasMore" class="cargar-mas-container">
-        <button @click="cargarMasUsuarios" :disabled="cargandoMas" class="btn-cargar-mas">
-          <i class="fas" :class="cargandoMas ? 'fa-spinner fa-spin' : 'fa-chevron-down'"></i>
-          {{ cargandoMas ? 'Cargando...' : `Cargar más (${totalUsuarios - users.length} restantes)` }}
+        <button @click="cargarMasUsuarios" class="btn-cargar-mas">
+          <i class="fas fa-chevron-down"></i>
+          Cargar más ({{ filteredUsersCompletos.length - usuariosVisibles }} restantes)
         </button>
       </div>
 
       <!-- Mensaje cuando no hay más usuarios -->
-      <div v-if="!loading && !error && !hasMore && users.length > 0" class="sin-mas-usuarios">
-        <p>Mostrando todos los {{ users.length }} usuarios</p>
+      <div v-if="!loading && !error && !hasMore && filteredUsersCompletos.length > 0" class="sin-mas-usuarios">
+        <p>Mostrando todos los {{ filteredUsersCompletos.length }} usuarios</p>
       </div>
 
   <!-- Modal de Detalle de Usuario -->
@@ -426,8 +426,9 @@ const loading = ref(false);
 const error = ref(null);
 const authStore = useAuthStore();
 
-// Estado de paginación
-const usuariosPorPagina = 3;
+// Estado de paginación y visualización
+const usuariosPorPagina = 100; // Cargar muchos usuarios del backend
+const usuariosVisibles = ref(4); // Mostrar solo 4 usuarios inicialmente en la vista
 const offset = ref(0);
 const totalUsuarios = ref(0);
 const hasMore = ref(false);
@@ -478,28 +479,13 @@ onMounted(async () => {
 async function cargarDatos() {
   loading.value = true;
   error.value = null;
-  offset.value = 0; // Resetear offset al cargar inicialmente
+  offset.value = 0;
+  usuariosVisibles.value = 4; // Resetear usuarios visibles a 4
 
   try {
-    // Cargar usuarios y roles en paralelo
-    const [usuariosResponse, rolesResponse] = await Promise.all([
-      usuariosService.listarUsuarios('todos', usuariosPorPagina, 0),
-      usuariosService.listarRoles()
-    ]);
-
-    if (usuariosResponse.success) {
-      users.value = usuariosResponse.data;
-      totalUsuarios.value = usuariosResponse.total || 0;
-      hasMore.value = usuariosResponse.has_more || false;
-      offset.value = usuariosPorPagina;
-
-      // Resetear selecciones cuando se cargan nuevos usuarios
-      userRolesSelections.value = {};
-      emit('usuarios-cargados', users.value);
-    } else {
-      throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
-    }
-
+    // Cargar roles primero
+    const rolesResponse = await usuariosService.listarRoles();
+    
     if (rolesResponse.success) {
       // Solo mostrar Entrenador y Administrador (excluir SuperAdmin, Usuario, Deportista, Acudiente)
       const rolesPermitidos = ['entrenador', 'administrador'];
@@ -515,6 +501,45 @@ async function cargarDatos() {
     } else {
       throw new Error(rolesResponse.error || 'Error al cargar roles');
     }
+
+    // Cargar TODOS los usuarios del backend
+    let todosUsuarios = [];
+    let currentOffset = 0;
+    let hayMas = true;
+    let total = 0;
+
+    while (hayMas) {
+      const usuariosResponse = await usuariosService.listarUsuarios('todos', usuariosPorPagina, currentOffset);
+      
+      if (usuariosResponse.success) {
+        todosUsuarios = [...todosUsuarios, ...usuariosResponse.data];
+        total = usuariosResponse.total || todosUsuarios.length;
+        
+        // Si la respuesta tiene menos usuarios que el límite, no hay más
+        if (usuariosResponse.data.length < usuariosPorPagina) {
+          hayMas = false;
+        } else {
+          // Verificar si hay más según el total
+          hayMas = todosUsuarios.length < total;
+        }
+        
+        currentOffset += usuariosResponse.data.length;
+      } else {
+        throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
+      }
+    }
+
+    // Guardar todos los usuarios cargados
+    users.value = todosUsuarios;
+    totalUsuarios.value = total;
+    offset.value = currentOffset;
+    
+    // hasMore se calculará basado en usuariosVisibles vs total
+    hasMore.value = usuariosVisibles.value < users.value.length;
+
+    // Resetear selecciones cuando se cargan nuevos usuarios
+    userRolesSelections.value = {};
+    emit('usuarios-cargados', users.value);
   } catch (err) {
     error.value = err.message;
     console.error('Error al cargar datos:', err);
@@ -523,32 +548,14 @@ async function cargarDatos() {
   }
 }
 
-// Cargar más usuarios
-async function cargarMasUsuarios() {
-  if (cargandoMas.value || !hasMore.value) return;
-
-  cargandoMas.value = true;
-  error.value = null;
-
-  try {
-    const usuariosResponse = await usuariosService.listarUsuarios('todos', usuariosPorPagina, offset.value);
-
-    if (usuariosResponse.success && usuariosResponse.data.length > 0) {
-      // Agregar nuevos usuarios a la lista existente
-      users.value = [...users.value, ...usuariosResponse.data];
-      hasMore.value = usuariosResponse.has_more || false;
-      offset.value += usuariosResponse.data.length;
-
-      emit('usuarios-cargados', users.value);
-    } else {
-      hasMore.value = false;
-    }
-  } catch (err) {
-    error.value = err.message;
-    console.error('Error al cargar más usuarios:', err);
-  } finally {
-    cargandoMas.value = false;
-  }
+// Mostrar más usuarios (solo incrementa la visualización, no hace petición)
+function cargarMasUsuarios() {
+  if (!hasMore.value) return;
+  
+  // Incrementar usuarios visibles en 4
+  usuariosVisibles.value += 4;
+  
+  // hasMore se actualizará automáticamente por el watch
 }
 
 
@@ -566,25 +573,56 @@ function userGestionableRolesIds(user) {
 }
 
 // Filtrar usuarios localmente
-const filteredUsers = ref([]);
+const filteredUsers = computed(() => {
+  const text = props.searchTerm.trim().toLowerCase();
+  const roleFilter = props.roleFilter;
 
+  // Filtrar todos los usuarios según búsqueda y rol
+  const usuariosFiltrados = users.value.filter(user => {
+    const matchesText = !text ||
+      user.usuario.toLowerCase().includes(text);
+
+    const matchesRole = roleFilter === 'todos' ||
+      user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
+
+    return matchesText && matchesRole;
+  });
+
+  // Retornar solo los primeros usuariosVisibles para mostrar
+  return usuariosFiltrados.slice(0, usuariosVisibles.value);
+});
+
+// Usuarios filtrados completos (para calcular hasMore)
+const filteredUsersCompletos = computed(() => {
+  const text = props.searchTerm.trim().toLowerCase();
+  const roleFilter = props.roleFilter;
+
+  return users.value.filter(user => {
+    const matchesText = !text ||
+      user.usuario.toLowerCase().includes(text);
+
+    const matchesRole = roleFilter === 'todos' ||
+      user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
+
+    return matchesText && matchesRole;
+  });
+});
+
+// Actualizar hasMore reactivamente
 watch(
-  () => [props.searchTerm, props.roleFilter, users.value],
+  () => [usuariosVisibles.value, filteredUsersCompletos.value.length],
   () => {
-    const text = props.searchTerm.trim().toLowerCase();
-    const roleFilter = props.roleFilter;
-
-    filteredUsers.value = users.value.filter(user => {
-      const matchesText = !text ||
-        user.usuario.toLowerCase().includes(text);
-
-      const matchesRole = roleFilter === 'todos' ||
-        user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
-
-      return matchesText && matchesRole;
-    });
+    hasMore.value = usuariosVisibles.value < filteredUsersCompletos.value.length;
   },
   { immediate: true }
+);
+
+// Resetear usuarios visibles cuando cambian los filtros de búsqueda
+watch(
+  () => [props.searchTerm, props.roleFilter],
+  () => {
+    usuariosVisibles.value = 4; // Resetear a 4 cuando se cambia el filtro
+  }
 );
 
 // Roles filtrados (sin SuperAdmin)
