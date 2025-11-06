@@ -47,6 +47,7 @@ from ..models.base import db
 from ..models.deportistas.deportista import Deportista
 from ..models.deportistas.informacion_deportiva import InformacionDeportiva
 from ..models.personas.persona import Persona
+from ..models.usuarios.usuario import Usuario
 from ..utils.logger import obtener_registrador
 
 
@@ -268,7 +269,23 @@ class DeportistaService:
                     datos['telefono'] = deportista.persona.telefono
                     datos['direccion'] = deportista.persona.direccion
                     datos['documento'] = deportista.persona.documento
-                    datos['estado'] = 'activo' if deportista.persona.estado else 'inactivo'
+                    
+                    # Determinar el estado: priorizar el estado del usuario si existe
+                    # Si la persona tiene un usuario asociado, usar el estado del usuario
+                    # Si no tiene usuario, usar el estado de la persona
+                    estado_final = deportista.persona.estado
+                    
+                    # Buscar si existe un usuario asociado a esta persona
+                    usuario = Usuario.query.filter_by(id_persona=deportista.persona.id_persona).first()
+                    if usuario:
+                        # Si existe usuario, usar su estado (tiene prioridad)
+                        estado_final = usuario.estado
+                        # Agregar id_usuario para que el frontend pueda cambiar el estado
+                        datos['id_usuario'] = usuario.id_usuario
+                    else:
+                        datos['id_usuario'] = None
+                    
+                    datos['estado'] = 'activo' if estado_final else 'inactivo'
                 
                 # Agregar datos de la categoría si existe la relación
                 if deportista.categoria:

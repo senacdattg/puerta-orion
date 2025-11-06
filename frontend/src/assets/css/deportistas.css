@@ -234,6 +234,9 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .estado-deportista.activo {
@@ -241,14 +244,32 @@
   color: var(--color-blanco);
 }
 
+.estado-deportista.activo:hover:not(:disabled) {
+  background: #28a745;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
 .estado-deportista.inactivo {
   background: var(--color-gris);
   color: var(--color-blanco);
 }
 
+.estado-deportista.inactivo:hover:not(:disabled) {
+  background: #6c757d;
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
 .estado-deportista.suspendido {
   background: var(--color-peligro);
   color: var(--color-blanco);
+}
+
+.estado-deportista:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ===== ACCIONES ===== */

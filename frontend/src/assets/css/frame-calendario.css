@@ -312,10 +312,24 @@
 }
 
 .evento-hora,
-.evento-lugar {
+.evento-lugar,
+.evento-categoria {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.evento-categoria {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  background: #e6fffa;
+  color: #234e52;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.evento-categoria i {
+  font-size: 0.7rem;
 }
 
         .evento-item i.fa-edit,

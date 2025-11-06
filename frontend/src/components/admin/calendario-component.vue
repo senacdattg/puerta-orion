@@ -212,6 +212,10 @@
                                 <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
                                     {{ evento.tipo }}
                                 </span>
+                                <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
+                                    <i class="fas fa-tag"></i>
+                                    {{ evento.categoria.nombre_categoria }}
+                                </span>
                                 <span class="evento-hora">
                                     <i class="fas fa-clock"></i>
                                     {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}

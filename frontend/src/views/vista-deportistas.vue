@@ -6,10 +6,10 @@ import Encabezado from '../components/layout/encabezado.vue';
 import tituloClub from '@/components/ui/titulo-club.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
 import PerfilDeportistaVista from '../components/deportistas/perfil-deportista-vista.vue';
-import FormularioDeportista from '../components/formularios/formulario-deportista.vue';
 import Pie from '../components/ui/pie.vue';
 import { ref, onMounted } from 'vue';
 import deportistasService from '@/services/deportistasService';
+import usuariosService from '@/services/usuariosService';
 
 // Estado de deportistas cargados desde el backend
 const deportistas = ref([]);
@@ -142,21 +142,22 @@ function cerrarFormulario() {
 async function manejarSubmitFormulario(resultado) {
   try {
     if (modoFormulario.value === 'actualizar') {
-      // Si el resultado indica éxito
-      if (resultado && resultado.success) {
-        // Recargar la lista de deportistas
-        await cargarDeportistas();
-        
-        // Cerrar el formulario y volver a modo ver
-        cerrarFormulario();
-        
-        // Mostrar mensaje de éxito
-        alert('Deportista actualizado exitosamente');
-      } else {
-        // Manejar error si viene en el resultado
-        const mensajeError = resultado?.message || 'Error al actualizar deportista';
-        alert(mensajeError);
+      // Recargar la lista de deportistas
+      await cargarDeportistas();
+      
+      // Recargar los datos del deportista actualizado
+      if (deportistaEditando.value) {
+        const idDeportista = deportistaEditando.value.id_deportista || deportistaEditando.value.id;
+        if (idDeportista) {
+          const response = await deportistasService.obtenerDeportistaPorId(idDeportista);
+          if ((response.status === 'success' || response.success) && response.data) {
+            deportistaEditando.value = response.data;
+          }
+        }
       }
+      
+      // Volver a modo ver (no cerrar el modal)
+      cambiarAModoVer();
     }
   } catch (err) {
     console.error('Error al guardar deportista:', err);
@@ -170,6 +171,61 @@ function cambiarAModoActualizar() {
 
 function cambiarAModoVer() {
   modoFormulario.value = 'ver';
+}
+
+// Función para cambiar el estado del deportista (usuario)
+async function cambiarEstadoDeportista(deportista) {
+  // Verificar que el deportista tenga un usuario asociado
+  if (!deportista.id_usuario) {
+    alert('⚠️ Este deportista no tiene un usuario asociado. No se puede cambiar el estado.');
+    return;
+  }
+
+  // Confirmar el cambio
+  const nuevoEstado = deportista.estado === 'activo' ? false : true;
+  const accion = nuevoEstado ? 'activar' : 'desactivar';
+  const confirmar = confirm(`¿Estás seguro de que deseas ${accion} a ${deportista.nombre}?`);
+  
+  if (!confirmar) {
+    return;
+  }
+
+  // Encontrar el índice del deportista en la lista
+  const index = deportistas.value.findIndex(d => d.id === deportista.id);
+  if (index === -1) {
+    alert('❌ Error: No se encontró el deportista en la lista');
+    return;
+  }
+
+  // Guardar el estado anterior por si hay error
+  const estadoAnterior = deportistas.value[index].estado;
+
+  try {
+    // Actualizar el estado local inmediatamente para feedback visual
+    deportistas.value[index].estado = nuevoEstado ? 'activo' : 'inactivo';
+    
+    // Llamar al servicio para cambiar el estado del usuario
+    const response = await usuariosService.cambiarEstadoUsuario(deportista.id_usuario, nuevoEstado);
+    
+    if (response.success || response.status === 'success') {
+      // Mostrar mensaje de éxito
+      alert(`✅ Usuario ${accion}ado exitosamente`);
+      
+      // Recargar la lista para asegurar que los datos estén sincronizados
+      await cargarDeportistas();
+    } else {
+      // Revertir el cambio si hubo error
+      deportistas.value[index].estado = estadoAnterior;
+      throw new Error(response.message || 'Error al cambiar el estado');
+    }
+  } catch (error) {
+    // Revertir el cambio si hubo error
+    if (index !== -1) {
+      deportistas.value[index].estado = estadoAnterior;
+    }
+    console.error('Error al cambiar estado:', error);
+    alert(`❌ Error al ${accion} el usuario: ${error.message || 'Error desconocido'}`);
+  }
 }
 
 </script>
@@ -221,8 +277,9 @@ function cambiarAModoVer() {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 100;
+  z-index: 9999;
   padding: 1rem;
+  padding-top: 80px; /* Espacio para el header (70px + 10px de margen) */
 }
 
 .modal-perfil-wrapper {
@@ -231,7 +288,7 @@ function cambiarAModoVer() {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  max-height: 90vh;
+  max-height: calc(100vh - 100px); /* Altura máxima considerando el header */
   overflow: auto;
 }
 
@@ -283,25 +340,19 @@ function cambiarAModoVer() {
 
     <!-- Lista de deportistas -->
     <ListaDeportistas v-else :deportistas="deportistas" @editar="editarDeportista" @eliminar="eliminarDeportista"
-      @agregar="agregarDeportista" @ver="verDeportista" />
+      @agregar="agregarDeportista" @ver="verDeportista" @cambiar-estado="cambiarEstadoDeportista" />
 
     <!-- Modal para ver/editar perfil del deportista -->
     <div v-if="mostrarFormulario" class="modal-overlay-deportistas">
       <div class="modal-perfil-wrapper" @click.stop>
-        <!-- Mostrar perfil en modo ver -->
+        <!-- Mostrar perfil en modo ver o edición -->
         <PerfilDeportistaVista 
-          v-if="modoFormulario === 'ver'"
           :datos="deportistaEditando" 
+          :modoEdicion="modoFormulario === 'actualizar'"
           @cerrar="cerrarFormulario"
           @editar="cambiarAModoActualizar"
-        />
-        <!-- Mostrar formulario en modo actualizar -->
-        <FormularioDeportista
-          v-else-if="modoFormulario === 'actualizar'"
-          :modo="'actualizar'"
-          :datos="deportistaEditando"
-          @submit="manejarSubmitFormulario"
-          @cancel="cambiarAModoVer"
+          @guardar="manejarSubmitFormulario"
+          @cancelar="cambiarAModoVer"
         />
       </div>
     </div>
