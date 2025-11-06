@@ -549,15 +549,16 @@ watch(
 onMounted(async () => {
   try {
     await cargarCatalogos();
-    catalogosCargados.value = true;
+    // catalogosCargados se establece dentro de cargarCatalogos()
     // Si ya estamos en modo edición y hay datos, inicializar
     if (props.modoEdicion && props.datos) {
       console.log('🔄 onMounted: Inicializando formulario en modo edición');
       inicializarFormulario();
     }
   } catch (error) {
-    console.error('Error al cargar catálogos:', error);
-    catalogosCargados.value = false;
+    console.error('Error crítico al cargar catálogos:', error);
+    // Aún así, permitir que se muestre el componente
+    catalogosCargados.value = true;
   }
 });
 
@@ -581,17 +582,50 @@ async function cargarCatalogos() {
       { url: `${baseURL}/api/catalogos/tipos-documento`, name: 'tipos-documento' }
     ];
 
+    // Obtener token de autenticación
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const resultados = await Promise.all(
       endpoints.map(async (endpoint) => {
         try {
           console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
-          const response = await fetch(endpoint.url);
+          const response = await fetch(endpoint.url, {
+            method: 'GET',
+            headers: headers
+          });
+          
+          if (!response.ok) {
+            console.warn(`⚠️ ${endpoint.name} retornó ${response.status}: ${response.statusText}`);
+            // Si es 401, puede ser que no requiera autenticación, intentar sin token
+            if (response.status === 401 && token) {
+              const responseWithoutAuth = await fetch(endpoint.url, {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
+                }
+              });
+              if (responseWithoutAuth.ok) {
+                const data = await responseWithoutAuth.json();
+                return { name: endpoint.name, ok: true, data };
+              }
+            }
+            return { name: endpoint.name, ok: false, data: null, error: `HTTP ${response.status}` };
+          }
+          
           const data = await response.json();
-          console.log(`✅ ${endpoint.name} cargado:`, response.ok, data);
+          console.log(`✅ ${endpoint.name} cargado:`, response.ok);
           return { name: endpoint.name, ok: response.ok, data };
         } catch (error) {
           console.error(`❌ Error al cargar ${endpoint.name}:`, error);
-          return { name: endpoint.name, ok: false, data: null, error };
+          return { name: endpoint.name, ok: false, data: null, error: error.message };
         }
       })
     );
@@ -651,8 +685,13 @@ async function cargarCatalogos() {
     }
 
     console.log('✅ Catálogos cargados completamente');
+    // Marcar como cargado incluso si algunos catálogos fallaron
+    catalogosCargados.value = true;
   } catch (error) {
     console.error('Error al cargar catálogos:', error);
+    // Aún así, marcar como cargado para que el componente se muestre
+    // El perfil puede funcionar sin todos los catálogos
+    catalogosCargados.value = true;
   }
 }
 

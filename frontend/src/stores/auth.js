@@ -288,7 +288,12 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('📥 Respuesta del servicio:', response)
 
       if (response && response.success) {
-        userDetail.value = response.data
+        // La respuesta puede venir como { success: true, data: {...} } o directamente { success: true, ...data }
+        userDetail.value = response.data || (() => {
+          // Si no hay response.data, tomar todos los campos excepto success
+          const { success, ...rest } = response
+          return rest
+        })()
         console.log('✅ userDetail actualizado:', userDetail.value)
 
         // Si hay un warning, solo lo logueamos pero no fallamos
@@ -297,16 +302,24 @@ export const useAuthStore = defineStore('auth', () => {
         }
         return true
       } else {
-        console.warn('❌ Error al cargar detalle del perfil:', response?.error || 'Respuesta sin éxito')
+        // Si el token expiró, solo mostrar warning, no error crítico
+        if (response?.expired) {
+          console.warn('⚠️ Token expirado. Por favor, cierra sesión y vuelve a iniciar sesión.')
+        } else {
+          console.warn('❌ Error al cargar detalle del perfil:', response?.error || 'Respuesta sin éxito')
+        }
         userDetail.value = null
         return false
       }
     } catch (err) {
-      console.error('❌ Excepción al cargar detalle del perfil:', err)
-      console.error('📋 Detalles del error:', {
-        message: err.message,
-        stack: err.stack
-      })
+      // No loguear errores de token expirado como errores críticos
+      if (!err.message?.includes('expirado') && !err.message?.includes('401')) {
+        console.error('❌ Excepción al cargar detalle del perfil:', err)
+        console.error('📋 Detalles del error:', {
+          message: err.message,
+          stack: err.stack
+        })
+      }
 
       userDetail.value = null
 
