@@ -110,7 +110,7 @@ class CatalogosService {
       } else if (Array.isArray(data)) {
         return data;
       }
-      
+
       return [];
     } catch (error) {
       console.error('❌ Error al obtener categorías:', error)
