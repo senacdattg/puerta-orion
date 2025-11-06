@@ -76,7 +76,6 @@ class DeportistaService:
                 - fecha_nacimiento (int, opcional): Año de nacimiento
                 - id_tipo_sanguineo (int, opcional): ID del grupo sanguíneo
                 - id_ciudad_recidencia (int, opcional): ID de la ciudad de residencia
-                - id_mensualidad (int, opcional): ID de la mensualidad
                 - id_informacion_deportiva (int, opcional): ID de información deportiva
                 - id_eps (int, opcional): ID de la EPS
 
@@ -152,7 +151,6 @@ class DeportistaService:
                 fecha_nacimiento=fecha_nacimiento_date,
                 id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
                 id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
-                id_mensualidad=datos.get('id_mensualidad'),
                 id_informacion_deportiva=datos.get('id_informacion_deportiva'),
                 id_eps=datos.get('id_eps')
             )
@@ -346,7 +344,7 @@ class DeportistaService:
             # Actualizar campos permitidos
             campos_permitidos = [
                 'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
-                'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_mensualidad',
+                'id_tipo_sanguineo', 'id_ciudad_recidencia',
                 'id_informacion_deportiva', 'id_eps', 'id_categoria'
             ]
 
@@ -509,20 +507,10 @@ class DeportistaService:
                             'status_code': 400
                         }
                 
-                # Validar mensualidad
-                if 'id_mensualidad' in datos_deportista and datos_deportista['id_mensualidad'] is not None:
-                    mensualidad = Mensualidad.query.filter_by(id_mensualidad=datos_deportista['id_mensualidad']).first()
-                    if not mensualidad:
-                        return {
-                            'success': False,
-                            'message': 'La mensualidad especificada no existe',
-                            'status_code': 400
-                        }
-                
                 # Campos actualizables del deportista
                 campos_deportista_actualizables = [
                     'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
-                    'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_mensualidad',
+                    'id_tipo_sanguineo', 'id_ciudad_recidencia',
                     'id_informacion_deportiva', 'id_eps', 'id_categoria'
                 ]
                 

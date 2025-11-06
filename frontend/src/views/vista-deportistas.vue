@@ -3,7 +3,6 @@ defineOptions({
   name: 'VistaDeportistas'
 });
 import Encabezado from '../components/layout/encabezado.vue';
-import tituloClub from '@/components/ui/titulo-club.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
 import PerfilDeportistaVista from '../components/deportistas/perfil-deportista-vista.vue';
 import Pie from '../components/ui/pie.vue';
@@ -144,7 +143,7 @@ async function manejarSubmitFormulario(resultado) {
     if (modoFormulario.value === 'actualizar') {
       // Recargar la lista de deportistas
       await cargarDeportistas();
-      
+
       // Recargar los datos del deportista actualizado
       if (deportistaEditando.value) {
         const idDeportista = deportistaEditando.value.id_deportista || deportistaEditando.value.id;
@@ -155,7 +154,7 @@ async function manejarSubmitFormulario(resultado) {
           }
         }
       }
-      
+
       // Volver a modo ver (no cerrar el modal)
       cambiarAModoVer();
     }
@@ -185,7 +184,7 @@ async function cambiarEstadoDeportista(deportista) {
   const nuevoEstado = deportista.estado === 'activo' ? false : true;
   const accion = nuevoEstado ? 'activar' : 'desactivar';
   const confirmar = confirm(`¿Estás seguro de que deseas ${accion} a ${deportista.nombre}?`);
-  
+
   if (!confirmar) {
     return;
   }
@@ -203,14 +202,14 @@ async function cambiarEstadoDeportista(deportista) {
   try {
     // Actualizar el estado local inmediatamente para feedback visual
     deportistas.value[index].estado = nuevoEstado ? 'activo' : 'inactivo';
-    
+
     // Llamar al servicio para cambiar el estado del usuario
     const response = await usuariosService.cambiarEstadoUsuario(deportista.id_usuario, nuevoEstado);
-    
+
     if (response.success || response.status === 'success') {
       // Mostrar mensaje de éxito
       alert(`✅ Usuario ${accion}ado exitosamente`);
-      
+
       // Recargar la lista para asegurar que los datos estén sincronizados
       await cargarDeportistas();
     } else {
@@ -325,7 +324,6 @@ async function cambiarEstadoDeportista(deportista) {
 <template>
   <main class="vista-deportistas">
     <Encabezado rol="Admin" />
-    <tituloClub></tituloClub>
 
     <!-- Mensaje de error -->
     <div v-if="error" class="mensaje-error">
@@ -346,8 +344,8 @@ async function cambiarEstadoDeportista(deportista) {
     <div v-if="mostrarFormulario" class="modal-overlay-deportistas">
       <div class="modal-perfil-wrapper" @click.stop>
         <!-- Mostrar perfil en modo ver o edición -->
-        <PerfilDeportistaVista 
-          :datos="deportistaEditando" 
+        <PerfilDeportistaVista
+          :datos="deportistaEditando"
           :modoEdicion="modoFormulario === 'actualizar'"
           @cerrar="cerrarFormulario"
           @editar="cambiarAModoActualizar"

@@ -412,7 +412,6 @@ def registrar_usuario():
             "fecha_nacimiento": 2000,  // opcional (año)
             "id_tipo_sanguineo": 1,  // opcional
             "id_ciudad_recidencia": 1,  // opcional
-            "id_mensualidad": 1,  // opcional
             "id_informacion_deportiva": 1,  // opcional
             "id_eps": 1  // opcional
         }

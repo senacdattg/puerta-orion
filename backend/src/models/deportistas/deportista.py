@@ -28,7 +28,6 @@ class Deportista(BaseModel):
         id_tipo_sanguineo (int): Clave foránea al grupo sanguíneo.
         id_diagnosco_deportista (int): Clave foránea al diagnóstico del deportista.
         id_ciudad_recidencia (int): Clave foránea a la ciudad de residencia.
-        id_mensualidad (int): Clave foránea a la mensualidad.
         id_informacion_deportiva (int): Clave foránea a información deportiva adicional.
         id_eps (int): Clave foránea a la EPS.
         fecha_nacimiento (int): Fecha de nacimiento (tinyint en MER).
@@ -50,7 +49,6 @@ class Deportista(BaseModel):
     id_tipo_sanguineo = Column(Integer, ForeignKey('puerta_orion_grupo_sanguineo.id_tipo_sangre'), nullable=True)
     # id_diagnostico_deportista = Column(Integer, ForeignKey('diagnostico.id_diagnostico'), nullable=True)  # Relación eliminada
     id_ciudad_recidencia = Column(Integer, ForeignKey('puerta_orion_ciudad_residencia.id_ciudad'), nullable=True)
-    id_mensualidad = Column(Integer, ForeignKey('puerta_orion_mensualidad.id_mensualidad'), nullable=True)
     id_informacion_deportiva = Column(Integer, ForeignKey('informaciondeportiva.id_informacion_deportiva'), nullable=True)
     id_eps = Column(Integer, ForeignKey('puerta_orion_eps.id_eps'), nullable=True)
     
@@ -60,7 +58,6 @@ class Deportista(BaseModel):
     tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], lazy=True)
     # diagnostico = relationship('Diagnostico', foreign_keys=[id_diagnostico_deportista], backref='deportistas_diagnostico', lazy=True)  # Relación eliminada
     ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], lazy=True)
-    mensualidad = relationship('Mensualidad', foreign_keys=[id_mensualidad], lazy=True)
     informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], lazy=True)
     eps = relationship('EPS', foreign_keys=[id_eps], lazy=True)
     
@@ -104,7 +101,6 @@ class Deportista(BaseModel):
             'id_categoria': self.id_categoria,
             'id_tipo_sanguineo': self.id_tipo_sanguineo,
             'id_ciudad_recidencia': self.id_ciudad_recidencia,
-            'id_mensualidad': self.id_mensualidad,
             'id_informacion_deportiva': self.id_informacion_deportiva,
             'id_eps': self.id_eps,
             'peso': self.peso,

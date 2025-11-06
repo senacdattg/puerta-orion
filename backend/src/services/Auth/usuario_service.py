@@ -359,7 +359,6 @@ class UsuarioService:
                     fecha_nacimiento=fecha_nacimiento_date,
                     id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
                     id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
-                    id_mensualidad=datos.get('id_mensualidad'),
                     id_informacion_deportiva=datos.get('id_informacion_deportiva'),
                     id_eps=datos.get('id_eps')
                 )

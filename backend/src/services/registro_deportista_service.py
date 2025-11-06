@@ -28,6 +28,7 @@ from ..models.acudientes.parentesco import Parentesco
 from ..models.roles_y_permisos.usuario_rol import UsuarioRol
 from ..models.roles_y_permisos.rol import Rol
 from ..models.usuarios.usuario import Usuario
+from ..models.pagos.mensualidad import Mensualidad
 from ..utils.logger import obtener_registrador
 
 
@@ -676,12 +677,17 @@ class RegistroDeportistaService:
             if deportista.fecha_ingreso:
                 datos_deportista_adicionales['fecha_ingreso'] = deportista.fecha_ingreso.isoformat()
             
-            # Información de mensualidad
-            if deportista.mensualidad:
+            # Información de mensualidad (obtener a través de id_persona)
+            mensualidad = Mensualidad.query.filter_by(
+                id_persona=deportista.id_persona,
+                activo=True
+            ).order_by(Mensualidad.created_at.desc()).first()
+            
+            if mensualidad:
                 datos_deportista_adicionales['mensualidad'] = {
-                    'monto': float(deportista.mensualidad.monto_pago) if deportista.mensualidad.monto_pago else None,
-                    'fecha_pago': deportista.mensualidad.fecha_pago.isoformat() if deportista.mensualidad.fecha_pago else None,
-                    'estado': deportista.mensualidad.estado
+                    'monto': float(mensualidad.monto_pago) if mensualidad.monto_pago else None,
+                    'fecha_pago': mensualidad.fecha_pago.isoformat() if mensualidad.fecha_pago else None,
+                    'estado': mensualidad.estado
                 }
             
             logger.info(f'Información completa obtenida para deportista ID {id_deportista}')
