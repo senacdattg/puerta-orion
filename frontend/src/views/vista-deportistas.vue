@@ -5,7 +5,7 @@ defineOptions({
 import Encabezado from '../components/layout/encabezado.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
 import PerfilDeportistaVista from '../components/deportistas/perfil-deportista-vista.vue';
-import Pie from '../components/ui/pie.vue';
+import Pie from '../components/layout/pie.vue';
 import { ref, onMounted } from 'vue';
 import deportistasService from '@/services/deportistasService';
 import usuariosService from '@/services/usuariosService';
