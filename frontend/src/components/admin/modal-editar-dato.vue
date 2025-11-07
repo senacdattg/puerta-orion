@@ -66,22 +66,26 @@ function validarDatos() {
   }
 
   if (props.tema === 'eps') {
-    if (formData.value.codigo && !REGEX_CODIGO_EPS.test(formData.value.codigo)) {
+    if (!formData.value.codigo || !REGEX_CODIGO_EPS.test(formData.value.codigo)) {
       errores.push('El código de la EPS debe contener entre 2 y 20 caracteres alfanuméricos (puede incluir guiones)')
     }
-    if (formData.value.estado === '' || formData.value.estado === undefined || formData.value.estado === null) {
+    if (formData.value.estado !== true && formData.value.estado !== false) {
       errores.push('Debes seleccionar un estado para la EPS')
     }
   }
 
   if (props.tema === 'metodo-pago') {
-    if (formData.value.estado === '' || formData.value.estado === undefined || formData.value.estado === null) {
+    if (formData.value.estado !== true && formData.value.estado !== false) {
       errores.push('Debes seleccionar un estado para el método de pago')
     }
   }
 
-  if (props.tema === 'tipo-evento' && formData.value.descripcion && formData.value.descripcion.length > 500) {
-    errores.push('La descripción no puede exceder los 500 caracteres')
+  if (props.tema === 'tipo-evento') {
+    if (!formData.value.descripcion || formData.value.descripcion.trim().length === 0) {
+      errores.push('La descripción es obligatoria para el tipo de evento')
+    } else if (formData.value.descripcion.length > 500) {
+      errores.push('La descripción no puede exceder los 500 caracteres')
+    }
   }
 
   return errores
@@ -183,20 +187,12 @@ async function guardar() {
 
     // Campos adicionales según el tipo
     if (props.tema === 'eps') {
-      if (formData.value.codigo) {
-        datos.codigo_eps = formData.value.codigo.trim()
-      }
-      if (formData.value.estado !== undefined) {
-        datos.estado = formData.value.estado
-      }
+      datos.codigo_eps = formData.value.codigo.trim()
+      datos.estado = formData.value.estado
     } else if (props.tema === 'metodo-pago') {
-      if (formData.value.estado !== undefined) {
-        datos.estado = formData.value.estado
-      }
+      datos.estado = formData.value.estado
     } else if (props.tema === 'tipo-evento') {
-      if (formData.value.descripcion) {
-        datos.descripcion = formData.value.descripcion.trim()
-      }
+      datos.descripcion = formData.value.descripcion.trim()
     }
 
     const base = API_CONFIG.baseURL || ''

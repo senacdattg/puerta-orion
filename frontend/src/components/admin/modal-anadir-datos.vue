@@ -134,23 +134,27 @@ function validarFormulario() {
   }
 
   if (seleccionado.value?.id === 'eps') {
-    if (!form.value.estado && form.value.estado !== false) {
-      errores.push('Debes seleccionar un estado para la EPS')
+    if (!form.value.codigo || !REGEX_CODIGO_EPS.test(form.value.codigo)) {
+      errores.push('Debes ingresar un código de EPS válido (2 a 20 caracteres alfanuméricos, puede incluir guiones)')
     }
 
-    if (form.value.codigo && !REGEX_CODIGO_EPS.test(form.value.codigo)) {
-      errores.push('El código de la EPS debe contener entre 2 y 20 caracteres alfanuméricos (puede incluir guiones)')
+    if (form.value.estado !== true && form.value.estado !== false) {
+      errores.push('Debes seleccionar un estado para la EPS')
     }
   }
 
   if (seleccionado.value?.id === 'metodo_pago') {
-    if (form.value.estado === '' || form.value.estado === undefined || form.value.estado === null) {
+    if (form.value.estado !== true && form.value.estado !== false) {
       errores.push('Debes seleccionar un estado para el método de pago')
     }
   }
 
-  if (seleccionado.value?.id === 'tipo-evento' && form.value.descripcion && form.value.descripcion.length > 500) {
-    errores.push('La descripción no puede exceder los 500 caracteres')
+  if (seleccionado.value?.id === 'tipo-evento') {
+    if (!form.value.descripcion || form.value.descripcion.trim().length === 0) {
+      errores.push('La descripción es obligatoria para el tipo de evento')
+    } else if (form.value.descripcion.length > 500) {
+      errores.push('La descripción no puede exceder los 500 caracteres')
+    }
   }
 
   return errores

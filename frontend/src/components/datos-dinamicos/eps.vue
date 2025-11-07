@@ -11,6 +11,7 @@
         v-model.trim="localForm.codigo"
         type="text"
         placeholder="Código EPS"
+        required
       />
     </div>
     <hr class="form-divider" />
@@ -27,6 +28,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+
+defineOptions({ name: 'DatosDinamicosEps' })
 
 const props = defineProps({
   modelValue: {
@@ -48,7 +51,7 @@ function normalizarNombre(valor = '') {
 function normalizarCodigo(valor = '') {
   if (!valor) return ''
   const mayus = valor.toLocaleUpperCase(LOCALE_COL)
-  return mayus.replace(/[^A-Z0-9\-]/g, '').slice(0, MAX_CODIGO)
+  return mayus.replace(/[^A-Z0-9-]/g, '').slice(0, MAX_CODIGO)
 }
 
 const localForm = ref({

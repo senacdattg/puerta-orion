@@ -205,22 +205,29 @@ def crear_dato_dinamico(tema):
         # Crear nuevo registro
         nuevo_registro = modelo()
         setattr(nuevo_registro, campo_nombre, nombre)
-        if hasattr(nuevo_registro, 'estado'):
-            nuevo_registro.estado = normalizar_estado_bool(data.get('estado'), True)
-        
-        # Manejar campos adicionales específicos por modelo
         if tema == 'eps':
             codigo_raw = data.get('codigo_eps') or data.get('codigo')
-            if codigo_raw:
-                try:
-                    nuevo_registro.codigo_eps = normalizar_codigo_eps(codigo_raw)
-                except ValidationError as e:
-                    return jsonify({'success': False, 'error': str(e)}), 400
-        elif tema == 'tipo-evento' and 'descripcion' in data:
-            nuevo_registro.descripcion = normalizar_descripcion(data.get('descripcion'))
-        elif tema == 'roles' and 'descripcion' in data:
-            nuevo_registro.descripcion = normalizar_descripcion(data.get('descripcion'), max_length=300)
-        
+            if not codigo_raw:
+                return jsonify({'success': False, 'error': 'El código de la EPS es obligatorio'}), 400
+            try:
+                nuevo_registro.codigo_eps = normalizar_codigo_eps(codigo_raw)
+            except ValidationError as e:
+                return jsonify({'success': False, 'error': str(e)}), 400
+            if data.get('estado') is None:
+                return jsonify({'success': False, 'error': 'El estado es obligatorio para la EPS'}), 400
+            nuevo_registro.estado = normalizar_estado_bool(data.get('estado'), True)
+        elif tema == 'metodo-pago':
+            if data.get('estado') is None:
+                return jsonify({'success': False, 'error': 'El estado es obligatorio para el método de pago'}), 400
+            nuevo_registro.estado = normalizar_estado_bool(data.get('estado'), True)
+        elif tema == 'tipo-evento':
+            descripcion_raw = data.get('descripcion')
+            if not descripcion_raw:
+                return jsonify({'success': False, 'error': 'La descripción es obligatoria para el tipo de evento'}), 400
+            nuevo_registro.descripcion = normalizar_descripcion(descripcion_raw)
+        elif hasattr(nuevo_registro, 'estado'):
+            nuevo_registro.estado = normalizar_estado_bool(data.get('estado'), True)
+
         # Guardar en base de datos
         db.session.add(nuevo_registro)
         db.session.commit()
@@ -305,20 +312,24 @@ def actualizar_dato_dinamico(tema, id):
         # Manejar campos adicionales específicos por modelo
         if tema == 'eps':
             codigo_raw = data.get('codigo_eps') or data.get('codigo')
-            if codigo_raw is not None:
-                if codigo_raw == '':
-                    registro.codigo_eps = None
-                else:
-                    try:
-                        registro.codigo_eps = normalizar_codigo_eps(codigo_raw)
-                    except ValidationError as e:
-                        return jsonify({'success': False, 'error': str(e)}), 400
-            if 'estado' in data:
-                registro.estado = normalizar_estado_bool(data.get('estado'), registro.estado)
-        elif tema == 'metodo-pago' and 'estado' in data:
+            if codigo_raw is None or codigo_raw == '':
+                return jsonify({'success': False, 'error': 'El código de la EPS es obligatorio'}), 400
+            try:
+                registro.codigo_eps = normalizar_codigo_eps(codigo_raw)
+            except ValidationError as e:
+                return jsonify({'success': False, 'error': str(e)}), 400
+            if data.get('estado') is None:
+                return jsonify({'success': False, 'error': 'El estado es obligatorio para la EPS'}), 400
             registro.estado = normalizar_estado_bool(data.get('estado'), registro.estado)
-        elif tema == 'tipo-evento' and 'descripcion' in data:
-            registro.descripcion = normalizar_descripcion(data.get('descripcion'))
+        elif tema == 'metodo-pago':
+            if data.get('estado') is None:
+                return jsonify({'success': False, 'error': 'El estado es obligatorio para el método de pago'}), 400
+            registro.estado = normalizar_estado_bool(data.get('estado'), registro.estado)
+        elif tema == 'tipo-evento':
+            descripcion_raw = data.get('descripcion')
+            if descripcion_raw is None or descripcion_raw == '':
+                return jsonify({'success': False, 'error': 'La descripción es obligatoria para el tipo de evento'}), 400
+            registro.descripcion = normalizar_descripcion(descripcion_raw)
         elif tema == 'roles' and 'descripcion' in data:
             registro.descripcion = normalizar_descripcion(data.get('descripcion'), max_length=300)
         

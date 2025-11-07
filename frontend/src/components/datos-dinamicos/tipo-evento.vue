@@ -9,8 +9,9 @@
       />
       <textarea 
         v-model.trim="localForm.descripcion" 
-        placeholder="Descripción (opcional)" 
+        placeholder="Descripción"
         rows="3" 
+        required
       ></textarea>
     </div>
     <hr class="form-divider" />
@@ -19,6 +20,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+
+defineOptions({ name: 'DatosDinamicosTipoEvento' })
 
 const props = defineProps({
   modelValue: { 
