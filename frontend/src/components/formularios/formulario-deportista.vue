@@ -12,7 +12,7 @@
         <input
           v-model="form.fecha_nacimiento"
           type="date"
-          placeholder="Fecha de nacimiento"
+          placeholder="Fecha de nacimiento *"
           required
           :max="new Date().toISOString().split('T')[0]"
           :readonly="modo === 'ver'"
@@ -22,7 +22,7 @@
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>Tipo sanguíneo</option>
+          <option value="" disabled>Tipo sanguíneo *</option>
           <option v-for="tipo in catalogos.tiposSanguineos" :key="tipo.id_tipo_sangre" :value="tipo.id_tipo_sangre">
             {{ tipo.tipo_sangre }}
           </option>
@@ -35,7 +35,7 @@
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>Ciudad de residencia</option>
+          <option value="" disabled>Ciudad de residencia *</option>
           <option v-for="ciudad in catalogos.ciudades" :key="ciudad.id_ciudad" :value="ciudad.id_ciudad">
             {{ ciudad.nombre_ciudad }}
           </option>
@@ -45,7 +45,7 @@
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>EPS</option>
+          <option value="" disabled>EPS *</option>
           <option v-for="eps in catalogos.eps" :key="eps.id_eps" :value="eps.id_eps">
             {{ eps.nombre_eps }}
           </option>
@@ -63,7 +63,7 @@
           required
           :disabled="modo === 'ver'"
         >
-          <option value="" disabled>Institución de registro</option>
+          <option value="" disabled>Institución de registro *</option>
           <option v-for="inst in catalogos.institucionesRegistro" :key="inst.id_institucion" :value="inst.id_institucion">
             {{ inst.nombre_institucion }}
           </option>
@@ -556,7 +556,25 @@ async function manejarSubmit(event) {
 
     // Validaciones básicas
     if (!form.value.fecha_nacimiento) {
-      mostrarModal('Error', 'El año de nacimiento es obligatorio.');
+      mostrarModal('Error', 'La fecha de nacimiento es obligatoria.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!form.value.id_tipo_sanguineo) {
+      mostrarModal('Error', 'Debe seleccionar un tipo sanguíneo.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!form.value.id_ciudad_residencia) {
+      mostrarModal('Error', 'Debe seleccionar una ciudad de residencia.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!form.value.id_eps) {
+      mostrarModal('Error', 'Debe seleccionar una EPS.');
       isSubmitting.value = false;
       return;
     }

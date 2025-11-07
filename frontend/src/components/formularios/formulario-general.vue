@@ -133,8 +133,7 @@
         v-model="form.telefono"
         name="telefono"
         autocomplete="tel"
-        placeholder="Número telefónico *"
-        required
+        placeholder="Número telefónico"
         :readonly="modo === 'ver'"
         :disabled="cargando"
         @input="manejarTelefono"
@@ -147,8 +146,7 @@
         v-model="form.direccion"
         name="direccion"
         autocomplete="address-line1"
-        placeholder="Dirección *"
-        required
+        placeholder="Dirección"
         :readonly="modo === 'ver'"
         :disabled="cargando"
         @input="(event) => manejarEntradaDireccion(event)"
@@ -437,8 +435,8 @@ function validarFormulario() {
   }
 
   // Validar teléfono (solo números)
-  if (!/^\d{10}$/.test(form.value.telefono)) {
-    mensajeError.value = 'El teléfono debe contener exactamente 10 dígitos'
+  if (form.value.telefono && !/^\d{10}$/.test(form.value.telefono)) {
+    mensajeError.value = 'El teléfono debe contener exactamente 10 dígitos cuando se proporciona'
     return false
   }
 
@@ -491,8 +489,8 @@ async function registrarUsuario() {
       segundo_apellido: form.value.apellido2 || null,
       documento: form.value.numeroDocumento,
       correo_electronico: form.value.correo,
-      direccion: form.value.direccion,
-      telefono: form.value.telefono,
+      direccion: form.value.direccion || null,
+      telefono: form.value.telefono || null,
       id_tipo_documento: parseInt(form.value.idTipoDocumento),
       id_sexo: parseInt(form.value.idSexo)
     }

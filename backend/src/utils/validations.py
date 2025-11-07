@@ -61,9 +61,11 @@ def validate_document(field: str, value: Optional[str], *, min_length: int = 6, 
     return digits
 
 
-def validate_phone(field: str, value: Optional[str], *, min_length: int = 10, max_length: int = 10) -> str:
+def validate_phone(field: str, value: Optional[str], *, min_length: int = 10, max_length: int = 10, required: bool = True) -> str:
     if not value:
-        raise ValidationError(f"El campo '{field}' es obligatorio")
+        if required:
+            raise ValidationError(f"El campo '{field}' es obligatorio")
+        return ""
 
     digits = re.sub(r"\D", "", str(value))
 

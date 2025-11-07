@@ -211,21 +211,37 @@ class RegistroDeportistaService:
                 }
             
             datos_deportista = datos['datos_deportista']
-            
+            informacion_deportiva = datos.get('informacion_deportiva') or {}
+            datos['informacion_deportiva'] = informacion_deportiva
+ 
             # Validar campos obligatorios
-            campos_requeridos = ['id_persona', 'fecha_nacimiento']
+            campos_requeridos = ['id_persona', 'fecha_nacimiento', 'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_eps']
             campos_faltantes = [
                 campo for campo in campos_requeridos
-                if campo not in datos_deportista or datos_deportista[campo] is None
+                if campo not in datos_deportista or datos_deportista[campo] in (None, '', [])
             ]
-            
+ 
             if campos_faltantes:
                 return {
                     'success': False,
                     'message': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}',
                     'status_code': 400
                 }
-            
+
+            # Validar campos obligatorios de información deportiva
+            campos_info_requeridos = ['id_deporte', 'id_institucion_registro']
+            campos_info_faltantes = [
+                campo for campo in campos_info_requeridos
+                if campo not in informacion_deportiva or informacion_deportiva[campo] in (None, '', [])
+            ]
+
+            if campos_info_faltantes:
+                return {
+                    'success': False,
+                    'message': f'Campos requeridos faltantes en informacion_deportiva: {", ".join(campos_info_faltantes)}',
+                    'status_code': 400
+                }
+ 
             # Validar que todos los IDs existen
             es_valido, mensaje_error = RegistroDeportistaService._validar_ids(datos)
             if not es_valido:

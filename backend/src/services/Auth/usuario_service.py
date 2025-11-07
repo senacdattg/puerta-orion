@@ -119,9 +119,11 @@ class UsuarioService:
             datos['segundo_apellido'] = validate_name('segundo_apellido', datos.get('segundo_apellido'), required=False)
 
             datos['documento'] = validate_document('documento', datos.get('documento'))
-            datos['telefono'] = validate_phone('telefono', datos.get('telefono'))
+            telefono_normalizado = validate_phone('telefono', datos.get('telefono'), required=False)
+            datos['telefono'] = telefono_normalizado or None
             datos['correo_electronico'] = validate_email('correo_electronico', datos.get('correo_electronico'))
-            datos['direccion'] = sanitize_address('direccion', datos.get('direccion'))
+            direccion_normalizada = sanitize_address('direccion', datos.get('direccion'), required=False)
+            datos['direccion'] = direccion_normalizada or None
 
             # Normalizar observaciones u otros campos textuales si vienen
             if 'observaciones' in datos:
