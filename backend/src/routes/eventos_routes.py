@@ -14,6 +14,7 @@ from datetime import datetime, date, time
 from sqlalchemy import or_
 import re
 import traceback
+from src.utils.validations import sanitize_free_text, sanitize_address, ValidationError
 
 eventos_bp = Blueprint('eventos', __name__)
 
@@ -443,7 +444,13 @@ def crear_evento():
             }), 400
         
         # Validar nombre
-        nombre = data['nombre'].strip()
+        try:
+            nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
+        except ValidationError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 400
         if len(nombre) < 3:
             return jsonify({
                 'success': False,
@@ -482,12 +489,14 @@ def crear_evento():
             }), 400
         
         # Validar lugar
-        if not validar_lugar(data['lugar']):
+        try:
+            lugar_sanitizado = sanitize_address('lugar', data['lugar'], max_length=120)
+        except ValidationError as e:
             return jsonify({
                 'success': False,
-                'error': 'El lugar debe tener al menos 3 caracteres'
+                'error': str(e)
             }), 400
-        
+
         # Validar que no haya solapamiento con otros eventos del mismo día Y misma categoría
         validacion_horario, mensaje_error = validar_solapamiento_horario(
             fecha_evento, hora_inicio, hora_fin, id_categoria=data.get('id_categoria')
@@ -519,8 +528,8 @@ def crear_evento():
             fecha_evento=fecha_evento,
             hora_inicio=hora_inicio,
             hora_fin=hora_fin,
-            lugar=data['lugar'].strip(),
-            descripcion=data.get('descripcion', '').strip() if data.get('descripcion') else None,
+            lugar=lugar_sanitizado,
+            descripcion=sanitize_free_text('descripcion', data.get('descripcion'), max_length=500) if data.get('descripcion') else None,
             id_categoria=data['id_categoria'],
             id_tipo_evento=data['id_tipo_evento']
         )
@@ -571,7 +580,13 @@ def actualizar_evento(id):
         
         # Actualizar nombre
         if 'nombre' in data:
-            nombre = data['nombre'].strip()
+            try:
+                nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
+            except ValidationError as e:
+                return jsonify({
+                    'success': False,
+                    'error': str(e)
+                }), 400
             if len(nombre) < 3:
                 return jsonify({
                     'success': False,
@@ -618,12 +633,19 @@ def actualizar_evento(id):
         
         # Actualizar lugar
         if 'lugar' in data:
-            if not validar_lugar(data['lugar']):
+            try:
+                lugar_sanitizado = sanitize_address('lugar', data['lugar'], max_length=120)
+            except ValidationError as e:
+                return jsonify({
+                    'success': False,
+                    'error': str(e)
+                }), 400
+            if not validar_lugar(lugar_sanitizado):
                 return jsonify({
                     'success': False,
                     'error': 'El lugar debe tener al menos 3 caracteres'
                 }), 400
-            evento.lugar = data['lugar'].strip()
+            evento.lugar = lugar_sanitizado
         
         # Validar solapamiento de horarios si se modificó la fecha o las horas
         fecha_para_validar = evento.fecha_evento
@@ -673,7 +695,7 @@ def actualizar_evento(id):
         
         # Actualizar descripcion
         if 'descripcion' in data:
-            evento.descripcion = data['descripcion'].strip() if data['descripcion'] else None
+            evento.descripcion = sanitize_free_text('descripcion', data['descripcion'], max_length=500) if data['descripcion'] else None
         
         # Actualizar categoría
         if 'id_categoria' in data:

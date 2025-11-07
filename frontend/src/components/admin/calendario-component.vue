@@ -82,7 +82,7 @@
                         </label>
                         <input id="titulo" v-model="nuevoEvento.titulo" type="text"
                             placeholder="Ej: Entrenamiento de fuerza" required class="input-evento"
-                            :disabled="!puedeCrear && !modoEdicion" />
+                            :disabled="!puedeCrear && !modoEdicion" @input="manejarTitulo" />
                     </div>
 
                     <div class="campo-formulario">
@@ -105,7 +105,7 @@
                             Fecha *
                         </label>
                         <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
-                            :disabled="!puedeCrear && !modoEdicion" />
+                            :disabled="true" readonly />
                     </div>
 
                     <div class="fila-dos-columnas">
@@ -148,7 +148,7 @@
                             Lugar *
                         </label>
                         <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
-                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" />
+                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
                     </div>
 
                     <div class="campo-formulario">
@@ -158,7 +158,7 @@
                         </label>
                         <textarea id="descripcion" v-model="nuevoEvento.descripcion"
                             placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento"
-                            :disabled="!puedeCrear && !modoEdicion"></textarea>
+                            :disabled="!puedeCrear && !modoEdicion" @input="manejarDescripcion"></textarea>
                     </div>
 
                     <div class="botones-modal">
@@ -262,6 +262,11 @@
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
 
+const LOCALE_COL = 'es-CO';
+const MAX_TITULO = 120;
+const MAX_LUGAR = 120;
+const MAX_DESCRIPCION = 500;
+
 export default {
     name: 'CalendarioComponent',
     props: {
@@ -347,6 +352,52 @@ export default {
     },
 
     methods: {
+        normalizarEspacios(valor = '') {
+            return valor ? valor.replace(/\s+/g, ' ').trim() : '';
+        },
+
+        normalizarTitulo(valor = '') {
+            if (!valor) return '';
+            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, '');
+            return this.normalizarEspacios(limpio).slice(0, MAX_TITULO);
+        },
+
+        normalizarLugar(valor = '') {
+            if (!valor) return '';
+            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '');
+            return this.normalizarEspacios(limpio).slice(0, MAX_LUGAR);
+        },
+
+        normalizarDescripcion(valor = '') {
+            if (!valor) return '';
+            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, '');
+            return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION);
+        },
+
+        manejarTitulo(event) {
+            const valor = event?.target?.value ?? this.nuevoEvento.titulo;
+            this.nuevoEvento.titulo = this.normalizarTitulo(valor);
+        },
+
+        manejarLugar(event) {
+            const valor = event?.target?.value ?? this.nuevoEvento.lugar;
+            this.nuevoEvento.lugar = this.normalizarLugar(valor);
+        },
+
+        manejarDescripcion(event) {
+            const valor = event?.target?.value ?? this.nuevoEvento.descripcion;
+            this.nuevoEvento.descripcion = this.normalizarDescripcion(valor);
+        },
+
+        normalizarCamposEvento() {
+            this.nuevoEvento.titulo = this.normalizarTitulo(this.nuevoEvento.titulo);
+            this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
+            this.nuevoEvento.descripcion = this.normalizarDescripcion(this.nuevoEvento.descripcion);
+        },
+
         async inicializarComponente() {
             try {
                 this.cargando = true;
@@ -525,6 +576,7 @@ export default {
             this.modalVisible = true;
             this.modoEdicion = false;
             this.limpiarFormulario();
+            this.normalizarCamposEvento();
 
             if (!this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
@@ -563,6 +615,7 @@ export default {
                 idTipoEvento: evento.idTipoEvento || evento.tipo,
                 idCategoria: evento.idCategoria || evento.id_categoria
             };
+            this.normalizarCamposEvento();
             this.modoEdicion = true;
             this.selectorEventosVisible = false;
             this.modalVisible = true;
@@ -571,6 +624,7 @@ export default {
         verEvento(evento) {
             this.eventoSeleccionado = evento;
             this.nuevoEvento = { ...evento };
+            this.normalizarCamposEvento();
             this.modoEdicion = false;
             this.selectorEventosVisible = false;
             this.modalVisible = true;
@@ -585,6 +639,7 @@ export default {
         async guardarEvento() {
             if (!this.puedeCrear && !this.puedeEditar) return; // Verificar permisos
 
+            this.normalizarCamposEvento();
             // Validar datos del evento
             const errores = calendarioService.validarEvento(this.nuevoEvento);
             if (errores.length > 0) {
@@ -677,6 +732,7 @@ export default {
                 descripcion: '',
                 fecha: this.nuevoEvento.fecha || this.obtenerFechaActual()
             };
+            this.normalizarCamposEvento();
             this.eventoSeleccionado = null;
             this.modoEdicion = false;
         },
