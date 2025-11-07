@@ -49,6 +49,7 @@ from ..models.deportistas.informacion_deportiva import InformacionDeportiva
 from ..models.personas.persona import Persona
 from ..models.usuarios.usuario import Usuario
 from ..utils.logger import obtener_registrador
+from ..utils.validations import sanitize_free_text
 
 
 class DeportistaService:
@@ -554,12 +555,21 @@ class DeportistaService:
                 
                 if not info_deportiva:
                     # Crear nueva información deportiva
+                    recomendacion_medica = datos_informacion_deportiva.get('recomendacion_medica', False)
+                    descripcion_recomendacion = None
+                    if recomendacion_medica:
+                        descripcion_recomendacion = sanitize_free_text(
+                            'descripcion_recomendacion',
+                            datos_informacion_deportiva.get('descripcion_recomendacion'),
+                            max_length=500
+                        )
+
                     info_deportiva = InformacionDeportiva(
                         id_persona=deportista.id_persona,
                         practica_otro_deporte=datos_informacion_deportiva.get('practica_otro_deporte', False),
                         participa_escuela=datos_informacion_deportiva.get('participa_escuela', False),
-                        recomendacion_medica=datos_informacion_deportiva.get('recomendacion_medica', False),
-                        descripcion_recomendacion=datos_informacion_deportiva.get('descripcion_recomendacion'),
+                        recomendacion_medica=recomendacion_medica,
+                        descripcion_recomendacion=descripcion_recomendacion,
                         id_escuela=datos_informacion_deportiva.get('id_escuela'),
                         id_deporte=datos_informacion_deportiva.get('id_deporte'),
                         id_institucion_registro=datos_informacion_deportiva.get('id_institucion_registro')
@@ -613,7 +623,21 @@ class DeportistaService:
                     
                     for campo in campos_info_deportiva:
                         if campo in datos_informacion_deportiva:
-                            setattr(info_deportiva, campo, datos_informacion_deportiva[campo])
+                            valor = datos_informacion_deportiva[campo]
+
+                            if campo == 'descripcion_recomendacion':
+                                recom_med = datos_informacion_deportiva.get(
+                                    'recomendacion_medica', info_deportiva.recomendacion_medica
+                                )
+                                if not recom_med:
+                                    valor = None
+                                elif valor:
+                                    valor = sanitize_free_text('descripcion_recomendacion', valor, max_length=500)
+
+                            setattr(info_deportiva, campo, valor)
+
+                    if 'recomendacion_medica' in datos_informacion_deportiva and not datos_informacion_deportiva['recomendacion_medica']:
+                        info_deportiva.descripcion_recomendacion = None
             
             # Actualizar diagnósticos si se proporcionan
             if tipo_enfermedad is not None or diagnosticos is not None:

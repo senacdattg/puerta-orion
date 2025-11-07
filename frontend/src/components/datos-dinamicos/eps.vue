@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="fila-texto">
-      <input 
-        v-model.trim="localForm.nombre" 
-        type="text" 
-        placeholder="Nombre" 
-        required 
+      <input
+        v-model.trim="localForm.nombre"
+        type="text"
+        placeholder="Nombre"
+        required
       />
-      <input 
-        v-model.trim="localForm.codigo" 
-        type="text" 
-        placeholder="Código EPS" 
+      <input
+        v-model.trim="localForm.codigo"
+        type="text"
+        placeholder="Código EPS"
       />
     </div>
     <hr class="form-divider" />
@@ -29,28 +29,42 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps({
-  modelValue: { 
-    type: Object, 
-    default: () => ({ nombre: '', codigo: '', estado: true }) 
+  modelValue: {
+    type: Object,
+    default: () => ({ nombre: '', codigo: '', estado: true })
   }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
+const LOCALE_COL = 'es-CO'
+const MAX_CODIGO = 20
+
+function normalizarNombre(valor = '') {
+  const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+}
+
+function normalizarCodigo(valor = '') {
+  if (!valor) return ''
+  const mayus = valor.toLocaleUpperCase(LOCALE_COL)
+  return mayus.replace(/[^A-Z0-9\-]/g, '').slice(0, MAX_CODIGO)
+}
+
 const localForm = ref({
-  nombre: props.modelValue?.nombre || '',
-  codigo: props.modelValue?.codigo || '',
+  nombre: normalizarNombre(props.modelValue?.nombre || ''),
+  codigo: normalizarCodigo(props.modelValue?.codigo || ''),
   estado: props.modelValue?.estado ?? true
 })
 
 // Solo actualizar localForm si el valor realmente cambió desde el padre
 watch(() => props.modelValue, (newVal) => {
-  const nuevoNombre = newVal?.nombre || ''
-  const nuevoCodigo = newVal?.codigo || ''
+  const nuevoNombre = normalizarNombre(newVal?.nombre || '')
+  const nuevoCodigo = normalizarCodigo(newVal?.codigo || '')
   const nuevoEstado = newVal?.estado ?? true
-  
-  if (localForm.value.nombre !== nuevoNombre || 
-      localForm.value.codigo !== nuevoCodigo || 
+
+  if (localForm.value.nombre !== nuevoNombre ||
+      localForm.value.codigo !== nuevoCodigo ||
       localForm.value.estado !== nuevoEstado) {
     localForm.value = {
       nombre: nuevoNombre,
@@ -60,14 +74,35 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { deep: true })
 
-// Solo emitir si el valor realmente cambió
-watch([() => localForm.value.nombre, () => localForm.value.codigo, () => localForm.value.estado], 
+// Normalizar y emitir cuando cambian los campos
+watch([() => localForm.value.nombre, () => localForm.value.codigo, () => localForm.value.estado],
   ([nombre, codigo, estado]) => {
+    const nombreNormalizado = normalizarNombre(nombre)
+    const codigoNormalizado = normalizarCodigo(codigo)
+
+    if (nombreNormalizado !== nombre) {
+      localForm.value.nombre = nombreNormalizado
+      return
+    }
+
+    if (codigoNormalizado !== codigo) {
+      localForm.value.codigo = codigoNormalizado
+      return
+    }
+
     const valorActual = props.modelValue
-    if (nombre !== (valorActual?.nombre || '') || 
-        codigo !== (valorActual?.codigo || '') || 
-        estado !== (valorActual?.estado ?? true)) {
-      emit('update:modelValue', { nombre, codigo, estado })
+    const nombreActual = normalizarNombre(valorActual?.nombre || '')
+    const codigoActual = normalizarCodigo(valorActual?.codigo || '')
+    const estadoActual = valorActual?.estado ?? true
+
+    if (nombreNormalizado !== nombreActual ||
+        codigoNormalizado !== codigoActual ||
+        estado !== estadoActual) {
+      emit('update:modelValue', {
+        nombre: nombreNormalizado,
+        codigo: codigoNormalizado,
+        estado
+      })
     }
   }
 )

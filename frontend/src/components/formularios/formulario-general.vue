@@ -32,7 +32,7 @@
         required
         :readonly="modo === 'ver'"
         :disabled="cargando"
-        @input="limpiarMensajes"
+        @input="(event) => manejarEntradaNombre('nombre1', event)"
         />
         <input
         v-model="form.nombre2"
@@ -42,6 +42,7 @@
         placeholder="Segundo nombre"
         :readonly="modo === 'ver'"
         :disabled="cargando"
+        @input="(event) => manejarEntradaNombre('nombre2', event, false)"
         />
       </div>
 
@@ -55,7 +56,7 @@
         required
         :readonly="modo === 'ver'"
         :disabled="cargando"
-        @input="limpiarMensajes"
+        @input="(event) => manejarEntradaNombre('apellido1', event)"
         />
         <input
         v-model="form.apellido2"
@@ -65,6 +66,7 @@
         placeholder="Segundo apellido"
         :readonly="modo === 'ver'"
         :disabled="cargando"
+        @input="(event) => manejarEntradaNombre('apellido2', event, false)"
         />
       </div>
 
@@ -107,7 +109,7 @@
         required
         :readonly="modo === 'ver'"
         :disabled="cargando"
-        @input="limpiarMensajes"
+        @input="manejarDocumento"
         />
       </div>
 
@@ -127,7 +129,7 @@
         @input="limpiarMensajes"
         />
         <input
-        type="tel"
+        type="text"
         v-model="form.telefono"
         name="telefono"
         autocomplete="tel"
@@ -135,7 +137,7 @@
         required
         :readonly="modo === 'ver'"
         :disabled="cargando"
-        @input="limpiarMensajes"
+        @input="manejarTelefono"
         />
       </div>
 
@@ -149,7 +151,7 @@
         required
         :readonly="modo === 'ver'"
         :disabled="cargando"
-        @input="limpiarMensajes"
+        @input="(event) => manejarEntradaDireccion(event)"
         />
       </div>
 
@@ -283,9 +285,78 @@ const cargandoCatalogos = ref(false)
 const mensajeError = ref('')
 const mensajeExito = ref('')
 
+const LOCALE_COL = 'es-CO'
+const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ ]+$/
+const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
+const MAX_DOCUMENTO = 10
+const MIN_DOCUMENTO = 6
+const MIN_TELEFONO = 10
+const MAX_TELEFONO = 10
+
 // Catálogos
 const tiposDocumento = ref([])
 const sexos = ref([])
+
+function transformarMayusculas(valor = '') {
+  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
+}
+
+function sanitizarNombre(valor = '', obligatorio = true) {
+  const mayus = transformarMayusculas(valor)
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ')
+  if (!obligatorio && !limpio.trim()) {
+    return ''
+  }
+  return limpio.trimStart()
+}
+
+function sanitizarDireccion(valor = '') {
+  const mayus = transformarMayusculas(valor)
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+}
+
+function manejarEntradaNombre(campo, event, obligatorio = true) {
+  limpiarMensajes()
+  const valor = event?.target?.value ?? form.value[campo]
+  form.value[campo] = sanitizarNombre(valor, obligatorio)
+}
+
+function manejarDocumento(event) {
+  limpiarMensajes()
+  const digitos = (event?.target?.value ?? form.value.numeroDocumento ?? '')
+    .replace(/\D/g, '')
+    .slice(0, MAX_DOCUMENTO)
+  form.value.numeroDocumento = digitos
+}
+
+function manejarTelefono(event) {
+  limpiarMensajes()
+  const digitos = (event?.target?.value ?? form.value.telefono ?? '')
+    .replace(/\D/g, '')
+    .slice(0, MAX_TELEFONO)
+  form.value.telefono = digitos
+}
+
+function manejarEntradaDireccion(event) {
+  limpiarMensajes()
+  form.value.direccion = sanitizarDireccion(event?.target?.value ?? form.value.direccion ?? '')
+}
+
+function normalizarCamposTexto() {
+  manejarEntradaNombre('nombre1', null)
+  manejarEntradaNombre('nombre2', null, false)
+  manejarEntradaNombre('apellido1', null)
+  manejarEntradaNombre('apellido2', null, false)
+  manejarDocumento(null)
+  manejarTelefono(null)
+  manejarEntradaDireccion(null)
+  if (form.value.usuario) {
+    form.value.usuario = form.value.usuario.trim()
+  }
+  if (form.value.correo) {
+    form.value.correo = form.value.correo.trim().toLowerCase()
+  }
+}
 
 // Función para obtener el título según el modo
 function obtenerTitulo() {
@@ -344,15 +415,46 @@ function validarFormulario() {
     return false
   }
 
-  // Validar teléfono (solo números)
-  if (!/^\d+$/.test(form.value.telefono)) {
-    mensajeError.value = 'El teléfono debe contener solo números'
+  // Validar nombres obligatorios
+  if (!REGEX_NOMBRE.test(form.value.nombre1)) {
+    mensajeError.value = 'El primer nombre solo debe contener letras y espacios'
     return false
   }
 
-  // Validar documento (solo números)
+  if (!REGEX_NOMBRE.test(form.value.apellido1)) {
+    mensajeError.value = 'El primer apellido solo debe contener letras y espacios'
+    return false
+  }
+
+  if (form.value.nombre2 && !REGEX_NOMBRE.test(form.value.nombre2)) {
+    mensajeError.value = 'El segundo nombre solo debe contener letras y espacios'
+    return false
+  }
+
+  if (form.value.apellido2 && !REGEX_NOMBRE.test(form.value.apellido2)) {
+    mensajeError.value = 'El segundo apellido solo debe contener letras y espacios'
+    return false
+  }
+
+  // Validar teléfono (solo números)
+  if (!/^\d{10}$/.test(form.value.telefono)) {
+    mensajeError.value = 'El teléfono debe contener exactamente 10 dígitos'
+    return false
+  }
+
+  // Validar documento (solo números y longitud)
   if (!/^\d+$/.test(form.value.numeroDocumento)) {
-    mensajeError.value = 'El número de documento debe contener solo números'
+    mensajeError.value = 'El número de documento debe contener solo dígitos'
+    return false
+  }
+
+  if (form.value.numeroDocumento.length < MIN_DOCUMENTO || form.value.numeroDocumento.length > MAX_DOCUMENTO) {
+    mensajeError.value = 'El número de documento debe tener entre 6 y 10 dígitos'
+    return false
+  }
+
+  if (!REGEX_CORREO.test(form.value.correo)) {
+    mensajeError.value = 'Ingrese un correo electrónico válido'
     return false
   }
 
@@ -362,6 +464,8 @@ function validarFormulario() {
 // Manejar envío del formulario
 async function manejarSubmit() {
   limpiarMensajes()
+
+  normalizarCamposTexto()
 
   if (!validarFormulario()) {
     return
@@ -473,6 +577,7 @@ onMounted(async () => {
         form.value[key] = props.datos[key]
       }
     })
+    normalizarCamposTexto()
   }
 })
 
@@ -484,6 +589,7 @@ watch(() => props.datos, (nuevosDatos) => {
         form.value[key] = nuevosDatos[key]
       }
     })
+    normalizarCamposTexto()
   }
 }, { deep: true })
 </script>

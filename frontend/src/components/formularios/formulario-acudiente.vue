@@ -12,12 +12,14 @@
           placeholder="¿Cuál es su primer nombre?"
           required
           :readonly="modo === 'ver'"
+          @input="(event) => manejarNombre('primer_nombre', event)"
         />
         <input
           v-model="form.segundo_nombre"
           type="text"
           placeholder="¿Cuál es su segundo nombre?"
           :readonly="modo === 'ver'"
+          @input="(event) => manejarNombre('segundo_nombre', event, false)"
         />
         <input
           v-model="form.primer_apellido"
@@ -25,12 +27,14 @@
           placeholder="¿Cuál es su primer apellido?"
           required
           :readonly="modo === 'ver'"
+          @input="(event) => manejarNombre('primer_apellido', event)"
         />
         <input
           v-model="form.segundo_apellido"
           type="text"
           placeholder="¿Cuál es su segundo apellido?"
           :readonly="modo === 'ver'"
+          @input="(event) => manejarNombre('segundo_apellido', event, false)"
         />
       </div>
 
@@ -49,10 +53,11 @@
         </select>
         <input
           v-model="form.documento"
-          type="number"
+          type="text"
           placeholder="¿Cuál es su número de documento?"
           required
           :readonly="modo === 'ver'"
+          @input="manejarDocumento"
         />
       </div>
 
@@ -75,6 +80,7 @@
           placeholder="¿Cuál es su correo electrónico?"
           required
           :readonly="modo === 'ver'"
+          @input="manejarCorreo"
         />
       </div>
 
@@ -83,10 +89,11 @@
       <div class="fila-texto">
         <input
           v-model="form.telefono"
-          type="number"
+          type="text"
           placeholder="¿Cuál es su número telefónico?"
           required
           :readonly="modo === 'ver'"
+          @input="(event) => manejarTelefono('telefono', event)"
         />
         <input
           v-model="form.direccion"
@@ -94,6 +101,7 @@
           placeholder="¿Cuál es su dirección?"
           required
           :readonly="modo === 'ver'"
+          @input="(event) => manejarDireccion('direccion', event)"
         />
       </div>
 
@@ -146,6 +154,7 @@
           type="text"
           placeholder="Información adicional sobre el acudiente (opcional)"
           :readonly="modo === 'ver'"
+          @input="(event) => manejarTextoLibre('observaciones_acudiente', event)"
         />
       </div>
 
@@ -157,6 +166,7 @@
           placeholder="Información de contacto de emergencia..."
           rows="4"
           :readonly="modo === 'ver'"
+          @input="(event) => manejarTextoLibre('informacion_contacto_emergencia', event)"
         ></textarea>
       </div>
 
@@ -222,6 +232,7 @@
           placeholder="Observaciones sobre la relación con el deportista..."
           rows="4"
           :readonly="modo === 'ver'"
+          @input="(event) => manejarTextoLibre('observaciones_relacion', event)"
         ></textarea>
       </div>
 
@@ -299,6 +310,7 @@
           placeholder="Observaciones generales..."
           rows="4"
           :readonly="modo === 'ver'"
+          @input="(event) => manejarTextoLibre('observaciones_generales', event)"
         ></textarea>
       </div>
 
@@ -395,6 +407,139 @@ const sexos = ref([]);
 const deportistas = ref([]);
 const parentescos = ref([]);
 
+const LOCALE_COL = 'es-CO';
+const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ\s'-]+$/;
+const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+const MAX_DOCUMENTO = 10;
+const MIN_DOCUMENTO = 6;
+const MIN_TELEFONO = 10;
+const MAX_TELEFONO = 10;
+const MAX_DIRECCION = 120;
+const MAX_TEXTO_LIBRE = 500;
+
+function transformarMayusculas(valor = '') {
+  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : '';
+}
+
+function normalizarEspacios(valor = '') {
+  return valor ? valor.replace(/\s+/g, ' ').trim() : '';
+}
+
+function manejarNombre(campo, event, obligatorio = true) {
+  const valor = event?.target?.value ?? form.value[campo] ?? '';
+  const mayus = transformarMayusculas(valor);
+  const limpiado = normalizarEspacios(mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, ''));
+  form.value[campo] = obligatorio ? limpiado : limpiado;
+}
+
+function manejarDocumento(event) {
+  const valor = event?.target?.value ?? form.value.documento ?? '';
+  form.value.documento = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO);
+}
+
+function manejarTelefono(campo, event) {
+  const valor = event?.target?.value ?? form.value[campo] ?? '';
+  form.value[campo] = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO);
+}
+
+function manejarDireccion(campo, event) {
+  const valor = event?.target?.value ?? form.value[campo] ?? '';
+  const mayus = transformarMayusculas(valor);
+  const limpio = normalizarEspacios(mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, ''));
+  form.value[campo] = limpio.slice(0, MAX_DIRECCION);
+}
+
+function manejarTextoLibre(campo, event) {
+  const valor = event?.target?.value ?? form.value[campo] ?? '';
+  const mayus = transformarMayusculas(valor);
+  const limpio = normalizarEspacios(mayus);
+  form.value[campo] = limpio.slice(0, MAX_TEXTO_LIBRE);
+}
+
+function manejarCorreo(event) {
+  const valor = event?.target?.value ?? form.value.correo_electronico ?? '';
+  form.value.correo_electronico = valor.trim().toLowerCase();
+}
+
+function normalizarFormulario() {
+  manejarNombre('primer_nombre');
+  manejarNombre('segundo_nombre', null, false);
+  manejarNombre('primer_apellido');
+  manejarNombre('segundo_apellido', null, false);
+  manejarDocumento(null);
+  manejarTelefono('telefono', null);
+  manejarDireccion('direccion', null);
+  manejarTextoLibre('observaciones_acudiente', null);
+  manejarTextoLibre('informacion_contacto_emergencia', null);
+  manejarTextoLibre('observaciones_relacion', null);
+  manejarTextoLibre('observaciones_generales', null);
+  manejarCorreo(null);
+}
+
+function validarFormulario() {
+  if (!form.value.primer_nombre || !form.value.primer_apellido) {
+    alert('Los nombres y apellidos principales son obligatorios');
+    return false;
+  }
+
+  if (!REGEX_NOMBRE.test(form.value.primer_nombre)) {
+    alert('El primer nombre solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (form.value.segundo_nombre && !REGEX_NOMBRE.test(form.value.segundo_nombre)) {
+    alert('El segundo nombre solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (!REGEX_NOMBRE.test(form.value.primer_apellido)) {
+    alert('El primer apellido solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (form.value.segundo_apellido && !REGEX_NOMBRE.test(form.value.segundo_apellido)) {
+    alert('El segundo apellido solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (!form.value.documento || form.value.documento.length < MIN_DOCUMENTO || form.value.documento.length > MAX_DOCUMENTO) {
+    alert(`El documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+    return false;
+  }
+
+  if (!/^\d+$/.test(form.value.documento)) {
+    alert('El documento solo debe contener dígitos');
+    return false;
+  }
+
+  if (!form.value.telefono || form.value.telefono.length !== MIN_TELEFONO) {
+    alert(`El teléfono debe tener exactamente ${MIN_TELEFONO} dígitos`);
+    return false;
+  }
+
+  if (!/^\d{10}$/.test(form.value.telefono)) {
+    alert('El teléfono solo debe contener 10 dígitos');
+    return false;
+  }
+
+  if (!REGEX_CORREO.test(form.value.correo_electronico)) {
+    alert('Ingrese un correo electrónico válido');
+    return false;
+  }
+
+  if (!form.value.direccion) {
+    alert('La dirección es obligatoria');
+    return false;
+  }
+
+  if (!form.value.password_hash) {
+    alert('La contraseña es obligatoria');
+    return false;
+  }
+
+  return true;
+}
+
 // Función para obtener el título según el modo
 function obtenerTitulo() {
   switch (props.modo) {
@@ -436,28 +581,27 @@ function anteriorSeccion() {
 
 // Manejo del formulario
 function manejarSubmit() {
-  // Validar contraseñas
+  normalizarFormulario();
+
   if (form.value.password_hash !== form.value.confirmar_password) {
     alert("Las contraseñas no coinciden");
     return;
   }
 
-  // Validar campos requeridos
-  if (!form.value.primer_nombre || !form.value.primer_apellido || !form.value.id_tipo_documento ||
-      !form.value.documento || !form.value.correo_electronico || !form.value.telefono ||
-      !form.value.direccion || !form.value.password_hash || !form.value.id_sexo ||
-      !form.value.id_deportista || !form.value.id_parentesco) {
+  if (!form.value.id_tipo_documento || !form.value.id_sexo || !form.value.id_deportista || !form.value.id_parentesco) {
     alert("Por favor complete todos los campos obligatorios");
     return;
   }
 
-  // Validar autorizaciones mínimas
+  if (!validarFormulario()) {
+    return;
+  }
+
   if (!form.value.autorizacion_deportiva || !form.value.autorizacion_medica) {
     alert("Debe autorizar la participación deportiva y la atención médica");
     return;
   }
 
-  // Emitir evento con los datos del formulario
   emit('submit', { ...form.value });
 }
 
@@ -522,6 +666,7 @@ onMounted(async () => {
   // Cargar datos del formulario si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
     form.value = { ...form.value, ...props.datos };
+    normalizarFormulario();
   }
 });
 
@@ -566,6 +711,8 @@ watch(() => props.datos, (nuevosDatos) => {
         form.value[key] = nuevosDatos[key];
       }
     });
+
+    normalizarFormulario();
   }
 }, { deep: true, immediate: true });
 </script>

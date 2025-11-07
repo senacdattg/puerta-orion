@@ -12,18 +12,28 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 
 from datetime import date
 from typing import Dict, Any, Optional, Tuple
-from werkzeug.security import generate_password_hash, check_password_hash
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from werkzeug.security import check_password_hash, generate_password_hash
 
-from src.models.base import db  
+from src.models.acudientes.acudiente import Acudiente
+from src.models.base import db
+from src.models.deportistas.deportista import Deportista
 from src.models.personas.persona import Persona
-from src.models.usuarios.usuario import Usuario
 from src.models.roles_y_permisos.rol import Rol
 from src.models.roles_y_permisos.usuario_rol import UsuarioRol
-from src.models.deportistas.deportista import Deportista
-from src.models.acudientes.acudiente import Acudiente
+from src.models.usuarios.usuario import Usuario
 from src.utils.logger import obtener_registrador
+from src.utils.validations import (
+    ValidationError,
+    sanitize_address,
+    sanitize_free_text,
+    validate_document,
+    validate_email,
+    validate_name,
+    validate_phone,
+)
 
 
 class UsuarioServiceError(Exception):
@@ -102,28 +112,38 @@ class UsuarioService:
         Raises:
             UsuarioServiceError: Si faltan campos requeridos
         """
-        campos_requeridos = [
-            'primer_nombre', 'primer_apellido', 'documento',
-            'correo_electronico', 'direccion', 'telefono',
-            'id_tipo_documento', 'id_sexo'
-        ]
-        
-        campos_faltantes = [campo for campo in campos_requeridos if not datos.get(campo)]
-        
-        if campos_faltantes:
-            raise UsuarioServiceError(f"Campos requeridos faltantes: {', '.join(campos_faltantes)}")
-        
-        # Validar formato de email básico
-        email = datos.get('correo_electronico', '')
-        if '@' not in email or '.' not in email.split('@')[-1]:
-            raise UsuarioServiceError("Formato de email inválido")
-        
-        # Validar longitud de campos
-        if len(datos.get('primer_nombre', '')) > 50:
-            raise UsuarioServiceError("El primer nombre excede la longitud máxima (50 caracteres)")
-        
-        if len(datos.get('primer_apellido', '')) > 50:
-            raise UsuarioServiceError("El primer apellido excede la longitud máxima (50 caracteres)")
+        try:
+            datos['primer_nombre'] = validate_name('primer_nombre', datos.get('primer_nombre'))
+            datos['segundo_nombre'] = validate_name('segundo_nombre', datos.get('segundo_nombre'), required=False)
+            datos['primer_apellido'] = validate_name('primer_apellido', datos.get('primer_apellido'))
+            datos['segundo_apellido'] = validate_name('segundo_apellido', datos.get('segundo_apellido'), required=False)
+
+            datos['documento'] = validate_document('documento', datos.get('documento'))
+            datos['telefono'] = validate_phone('telefono', datos.get('telefono'))
+            datos['correo_electronico'] = validate_email('correo_electronico', datos.get('correo_electronico'))
+            datos['direccion'] = sanitize_address('direccion', datos.get('direccion'))
+
+            # Normalizar observaciones u otros campos textuales si vienen
+            if 'observaciones' in datos:
+                datos['observaciones'] = sanitize_free_text('observaciones', datos.get('observaciones'))
+
+            # Campos requeridos numéricos
+            faltantes_ids = [
+                campo for campo in ('id_tipo_documento', 'id_sexo') if not datos.get(campo)
+            ]
+            if faltantes_ids:
+                raise UsuarioServiceError(
+                    f"Campos requeridos faltantes: {', '.join(faltantes_ids)}"
+                )
+
+            # Ajustar opcionales a None si quedan vacíos
+            if not datos['segundo_nombre']:
+                datos['segundo_nombre'] = None
+            if not datos['segundo_apellido']:
+                datos['segundo_apellido'] = None
+
+        except ValidationError as error:
+            raise UsuarioServiceError(str(error))
     
     def _validar_datos_usuario(self, datos: Dict[str, Any]) -> None:
         """
@@ -137,22 +157,23 @@ class UsuarioService:
         """
         campos_requeridos = ['usuario', 'password']
         campos_faltantes = [campo for campo in campos_requeridos if not datos.get(campo)]
-        
+
         if campos_faltantes:
             raise UsuarioServiceError(f"Campos de usuario requeridos faltantes: {', '.join(campos_faltantes)}")
-        
-        # Validar longitud de contraseña
-        password = datos.get('password', '')
+
+        password = str(datos.get('password', '')).strip()
         if len(password) < 6:
             raise UsuarioServiceError("La contraseña debe tener al menos 6 caracteres")
-        
-        # Validar longitud de nombre de usuario
-        usuario = datos.get('usuario', '')
+
+        usuario = str(datos.get('usuario', '')).strip()
         if len(usuario) < 3:
             raise UsuarioServiceError("El nombre de usuario debe tener al menos 3 caracteres")
-        
+
         if len(usuario) > 200:
             raise UsuarioServiceError("El nombre de usuario excede la longitud máxima (200 caracteres)")
+
+        datos['usuario'] = usuario.lower()
+        datos['password'] = password
     
     def _validar_unicidad(self, datos_persona: Dict[str, Any], datos_usuario: Dict[str, Any]) -> None:
         """
@@ -262,9 +283,9 @@ class UsuarioService:
         """
         persona = Persona(
             primer_nombre=datos['primer_nombre'],
-            segundo_nombre=datos.get('segundo_nombre'),
+            segundo_nombre=datos.get('segundo_nombre') or None,
             primer_apellido=datos['primer_apellido'],
-            segundo_apellido=datos.get('segundo_apellido'),
+            segundo_apellido=datos.get('segundo_apellido') or None,
             documento=datos['documento'],
             correo_electronico=datos['correo_electronico'],
             direccion=datos['direccion'],
@@ -703,91 +724,84 @@ class UsuarioService:
         """
         campos_actualizados = []
         # Validar y actualizar nombre completo
-        if 'primer_nombre' in datos:
-            primer_nombre = datos['primer_nombre'].strip()
-            if len(primer_nombre) > 50:
-                raise UsuarioServiceError("El primer nombre excede la longitud máxima (50 caracteres)")
-            if persona.primer_nombre != primer_nombre:
-                persona.primer_nombre = primer_nombre
-                campos_actualizados.append('primer_nombre')
+        try:
+            if 'primer_nombre' in datos:
+                primer_nombre = validate_name('primer_nombre', datos['primer_nombre'])
+                if persona.primer_nombre != primer_nombre:
+                    persona.primer_nombre = primer_nombre
+                    campos_actualizados.append('primer_nombre')
+
+            if 'segundo_nombre' in datos:
+                segundo_nombre = validate_name('segundo_nombre', datos.get('segundo_nombre'), required=False)
+                segundo_nombre_db = segundo_nombre or None
+                if persona.segundo_nombre != segundo_nombre_db:
+                    persona.segundo_nombre = segundo_nombre_db
+                    campos_actualizados.append('segundo_nombre')
+
+            if 'primer_apellido' in datos:
+                primer_apellido = validate_name('primer_apellido', datos['primer_apellido'])
+                if persona.primer_apellido != primer_apellido:
+                    persona.primer_apellido = primer_apellido
+                    campos_actualizados.append('primer_apellido')
+
+            if 'segundo_apellido' in datos:
+                segundo_apellido = validate_name('segundo_apellido', datos.get('segundo_apellido'), required=False)
+                segundo_apellido_db = segundo_apellido or None
+                if persona.segundo_apellido != segundo_apellido_db:
+                    persona.segundo_apellido = segundo_apellido_db
+                    campos_actualizados.append('segundo_apellido')
         
-        if 'segundo_nombre' in datos:
-            segundo_nombre = datos.get('segundo_nombre', '').strip() if datos.get('segundo_nombre') else None
-            if segundo_nombre and len(segundo_nombre) > 50:
-                raise UsuarioServiceError("El segundo nombre excede la longitud máxima (50 caracteres)")
-            if persona.segundo_nombre != segundo_nombre:
-                persona.segundo_nombre = segundo_nombre
-                campos_actualizados.append('segundo_nombre')
-        
-        if 'primer_apellido' in datos:
-            primer_apellido = datos['primer_apellido'].strip()
-            if len(primer_apellido) > 50:
-                raise UsuarioServiceError("El primer apellido excede la longitud máxima (50 caracteres)")
-            if persona.primer_apellido != primer_apellido:
-                persona.primer_apellido = primer_apellido
-                campos_actualizados.append('primer_apellido')
-        
-        if 'segundo_apellido' in datos:
-            segundo_apellido = datos.get('segundo_apellido', '').strip() if datos.get('segundo_apellido') else None
-            if segundo_apellido and len(segundo_apellido) > 50:
-                raise UsuarioServiceError("El segundo apellido excede la longitud máxima (50 caracteres)")
-            if persona.segundo_apellido != segundo_apellido:
-                persona.segundo_apellido = segundo_apellido
-                campos_actualizados.append('segundo_apellido')
-        
-        # Validar y actualizar documento
-        if 'documento' in datos:
-            documento = str(datos['documento']).strip()
-            if len(documento) < 6:
-                raise UsuarioServiceError("El documento debe tener al menos 6 dígitos")
+            # Validar y actualizar documento
+            if 'documento' in datos:
+                documento = validate_document('documento', datos['documento'])
+
+                documento_existente = (
+                    Persona.query.filter_by(documento=documento)
+                    .filter(Persona.id_persona != id_persona)
+                    .first()
+                )
+
+                if documento_existente:
+                    raise UsuarioServiceError(f"Ya existe una persona con el documento {documento}")
+
+                if persona.documento != documento:
+                    persona.documento = documento
+                    campos_actualizados.append('documento')
             
-            # Validar unicidad (excluyendo la persona actual)
-            documento_existente = Persona.query.filter_by(documento=documento).filter(
-                Persona.id_persona != id_persona
-            ).first()
+            # Validar y actualizar correo electrónico
+            if 'correo_electronico' in datos:
+                email = validate_email('correo_electronico', datos['correo_electronico'])
+
+                email_existente = (
+                    Persona.query.filter_by(correo_electronico=email)
+                    .filter(Persona.id_persona != id_persona)
+                    .first()
+                )
+
+                if email_existente:
+                    raise UsuarioServiceError(f"Ya existe una persona con el email {email}")
+
+                if persona.correo_electronico != email:
+                    persona.correo_electronico = email
+                    campos_actualizados.append('correo_electronico')
             
-            if documento_existente:
-                raise UsuarioServiceError(f"Ya existe una persona con el documento {documento}")
+            # Actualizar dirección
+            if 'direccion' in datos:
+                nueva_direccion = sanitize_address('direccion', datos.get('direccion'), required=False)
+                nueva_direccion_db = nueva_direccion or None
+                if persona.direccion != nueva_direccion_db:
+                    persona.direccion = nueva_direccion_db
+                    campos_actualizados.append('direccion')
             
-            if persona.documento != documento:
-                persona.documento = documento
-                campos_actualizados.append('documento')
-        
-        # Validar y actualizar correo electrónico
-        if 'correo_electronico' in datos:
-            email = datos['correo_electronico'].strip().lower()
-            
-            # Validar formato básico
-            if '@' not in email or '.' not in email.split('@')[-1]:
-                raise UsuarioServiceError("Formato de email inválido")
-            
-            # Validar unicidad (excluyendo la persona actual)
-            email_existente = Persona.query.filter_by(correo_electronico=email).filter(
-                Persona.id_persona != id_persona
-            ).first()
-            
-            if email_existente:
-                raise UsuarioServiceError(f"Ya existe una persona con el email {email}")
-            
-            if persona.correo_electronico != email:
-                persona.correo_electronico = email
-                campos_actualizados.append('correo_electronico')
-        
-        # Actualizar dirección
-        if 'direccion' in datos:
-            nueva_direccion = datos['direccion'].strip() if datos['direccion'] else None
-            if persona.direccion != nueva_direccion:
-                persona.direccion = nueva_direccion
-                campos_actualizados.append('direccion')
-        
-        # Validar y actualizar teléfono
-        if 'telefono' in datos:
-            telefono = str(datos['telefono']).strip()
-            if len(telefono) < 7 or len(telefono) > 20:
-                raise UsuarioServiceError("El teléfono debe tener entre 7 y 20 caracteres")
-            if persona.telefono != telefono:
-                persona.telefono = telefono
-                campos_actualizados.append('telefono')
+            # Validar y actualizar teléfono
+            if 'telefono' in datos:
+                telefono = validate_phone('telefono', datos['telefono'])
+                if persona.telefono != telefono:
+                    persona.telefono = telefono
+                    campos_actualizados.append('telefono')
+
+        except ValidationError as error:
+            raise UsuarioServiceError(str(error))
         
         # Validar y actualizar relaciones
         if 'id_tipo_documento' in datos:

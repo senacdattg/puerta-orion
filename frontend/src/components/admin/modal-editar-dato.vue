@@ -54,6 +54,39 @@ const emit = defineEmits(['cerrar', 'guardado'])
 const guardando = ref(false)
 const formData = ref({})
 
+const REGEX_CODIGO_EPS = /^[A-Z0-9\-]{2,20}$/
+const NAME_MIN_LENGTH = 2
+
+function validarDatos() {
+  const errores = []
+  const nombre = formData.value.nombre?.trim()
+
+  if (!nombre || nombre.length < NAME_MIN_LENGTH) {
+    errores.push('El nombre es obligatorio y debe tener al menos 2 caracteres')
+  }
+
+  if (props.tema === 'eps') {
+    if (formData.value.codigo && !REGEX_CODIGO_EPS.test(formData.value.codigo)) {
+      errores.push('El código de la EPS debe contener entre 2 y 20 caracteres alfanuméricos (puede incluir guiones)')
+    }
+    if (formData.value.estado === '' || formData.value.estado === undefined || formData.value.estado === null) {
+      errores.push('Debes seleccionar un estado para la EPS')
+    }
+  }
+
+  if (props.tema === 'metodo-pago') {
+    if (formData.value.estado === '' || formData.value.estado === undefined || formData.value.estado === null) {
+      errores.push('Debes seleccionar un estado para el método de pago')
+    }
+  }
+
+  if (props.tema === 'tipo-evento' && formData.value.descripcion && formData.value.descripcion.length > 500) {
+    errores.push('La descripción no puede exceder los 500 caracteres')
+  }
+
+  return errores
+}
+
 // Mapeo de temas a componentes
 const componentes = {
   'tipo-documento': TipoDocumento,
@@ -135,17 +168,18 @@ async function guardar() {
       return
     }
     
+    const errores = validarDatos()
+    if (errores.length > 0) {
+      alert('❌ Corrige los siguientes errores:\n' + errores.join('\n'))
+      guardando.value = false
+      return
+    }
+
     const campoNombre = camposNombre[props.tema]
     
     // Preparar datos según el tipo
     const datos = {}
     datos[campoNombre] = formData.value.nombre?.trim()
-
-    if (!datos[campoNombre]) {
-      alert('❌ El nombre es requerido')
-      guardando.value = false
-      return
-    }
 
     // Campos adicionales según el tipo
     if (props.tema === 'eps') {

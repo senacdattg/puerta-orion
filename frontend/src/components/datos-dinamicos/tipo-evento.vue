@@ -29,15 +29,29 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const LOCALE_COL = 'es-CO'
+const MAX_DESCRIPCION = 500
+
+function normalizarNombre(valor = '') {
+  const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+}
+
+function normalizarDescripcion(valor = '') {
+  if (!valor) return ''
+  const mayus = valor.toLocaleUpperCase(LOCALE_COL)
+  return mayus.replace(/\s{2,}/g, ' ').trim().slice(0, MAX_DESCRIPCION)
+}
+
 const localForm = ref({
-  nombre: props.modelValue?.nombre || '',
-  descripcion: props.modelValue?.descripcion || ''
+  nombre: normalizarNombre(props.modelValue?.nombre || ''),
+  descripcion: normalizarDescripcion(props.modelValue?.descripcion || '')
 })
 
 // Solo actualizar localForm si el valor realmente cambió desde el padre
 watch(() => props.modelValue, (newVal) => {
-  const nuevoNombre = newVal?.nombre || ''
-  const nuevaDescripcion = newVal?.descripcion || ''
+  const nuevoNombre = normalizarNombre(newVal?.nombre || '')
+  const nuevaDescripcion = normalizarDescripcion(newVal?.descripcion || '')
   
   if (localForm.value.nombre !== nuevoNombre || 
       localForm.value.descripcion !== nuevaDescripcion) {
@@ -48,13 +62,27 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { deep: true })
 
-// Solo emitir si el valor realmente cambió
+// Normalizar y emitir cuando cambian los campos
 watch([() => localForm.value.nombre, () => localForm.value.descripcion], 
   ([nombre, descripcion]) => {
-    const valorActual = props.modelValue
-    if (nombre !== (valorActual?.nombre || '') || 
-        descripcion !== (valorActual?.descripcion || '')) {
-      emit('update:modelValue', { nombre, descripcion })
+    const nombreNormalizado = normalizarNombre(nombre)
+    const descripcionNormalizada = normalizarDescripcion(descripcion)
+
+    if (nombreNormalizado !== nombre) {
+      localForm.value.nombre = nombreNormalizado
+      return
+    }
+
+    if (descripcionNormalizada !== descripcion) {
+      localForm.value.descripcion = descripcionNormalizada
+      return
+    }
+
+    const actualNombre = normalizarNombre(props.modelValue?.nombre || '')
+    const actualDescripcion = normalizarDescripcion(props.modelValue?.descripcion || '')
+
+    if (nombreNormalizado !== actualNombre || descripcionNormalizada !== actualDescripcion) {
+      emit('update:modelValue', { nombre: nombreNormalizado, descripcion: descripcionNormalizada })
     }
   }
 )

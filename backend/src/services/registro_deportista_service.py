@@ -30,6 +30,7 @@ from ..models.roles_y_permisos.rol import Rol
 from ..models.usuarios.usuario import Usuario
 from ..models.pagos.mensualidad import Mensualidad
 from ..utils.logger import obtener_registrador
+from ..utils.validations import sanitize_free_text
 
 
 class RegistroDeportistaService:
@@ -335,7 +336,13 @@ class RegistroDeportistaService:
                 
                 # Si recomendacion_medica es false, descripcion_recomendacion debe ser null
                 recomendacion_medica = info_deportiva.get('recomendacion_medica', False)
-                descripcion_recomendacion = None if not recomendacion_medica else info_deportiva.get('descripcion_recomendacion')
+                descripcion_recomendacion = None
+                if recomendacion_medica:
+                    descripcion_recomendacion = sanitize_free_text(
+                        'descripcion_recomendacion',
+                        info_deportiva.get('descripcion_recomendacion'),
+                        max_length=500
+                    )
                 
                 informacion = InformacionDeportiva(
                     id_persona=datos_deportista['id_persona'],

@@ -1,3 +1,5 @@
+import re
+
 from flask import Blueprint, request, jsonify
 from src.models.base import db
 from src.models import (
@@ -14,6 +16,12 @@ from src.models import (
 )
 from src.models.pagos.metodo_pago import MetodoPago
 from src.models.roles_y_permisos.rol import Rol
+from src.utils.validations import (
+    ValidationError,
+    validate_name,
+    sanitize_free_text,
+    normalize_upper,
+)
 
 dynamic_data_bp = Blueprint('dynamic_data', __name__)
 
@@ -48,6 +56,58 @@ TEMA_CAMPOS = {
     'tipo-documento': 'nombre_documento',
     'sexo': 'nombre'
 }
+
+STRICT_NAME_TOPICS = {
+    'tipo-documento',
+    'sexo',
+    'parentesco',
+    'metodo-pago',
+    'deporte',
+    'escuela',
+    'tipo-evento',
+    'tipo-enfermedad',
+    'roles',
+}
+
+FREE_TEXT_TOPICS = {
+    'eps',
+    'ciudad-residencia',
+    'institucion-registro',
+}
+
+def normalizar_nombre_por_tema(tema, campo, valor):
+    if tema in STRICT_NAME_TOPICS:
+        return validate_name(campo, valor)
+    # Usar texto libre para temas que podrían incluir caracteres especiales o números
+    return sanitize_free_text(campo, valor, max_length=120)
+
+
+def normalizar_codigo_eps(valor):
+    if not valor:
+        return None
+    codigo = normalize_upper(str(valor))
+    codigo = re.sub(r'[^A-Z0-9\-]', '', codigo)
+    if len(codigo) < 2 or len(codigo) > 20:
+        raise ValidationError('El código de la EPS debe tener entre 2 y 20 caracteres alfanuméricos (puede incluir guiones)')
+    return codigo
+
+
+def normalizar_descripcion(valor, max_length=500):
+    if not valor:
+        return ''
+    return sanitize_free_text('descripcion', valor, max_length=max_length)
+
+
+def normalizar_estado_bool(valor, default=True):
+    if valor is None:
+        return default
+    if isinstance(valor, bool):
+        return valor
+    if isinstance(valor, (int, float)):
+        return bool(int(valor))
+    if isinstance(valor, str):
+        return valor.strip().lower() in {'1', 'true', 'activo', 'activa', 'sí', 'si', 'on'}
+    return default
 
 def validar_tema(tema):
     """Valida que el tema sea válido"""
@@ -125,13 +185,10 @@ def crear_dato_dinamico(tema):
                 'error': f'Campo requerido: {campo_nombre}'
             }), 400
         
-        # Validar que no exista
-        nombre = data[campo_nombre].strip()
-        if not nombre:
-            return jsonify({
-                'success': False,
-                'error': f'El {campo_nombre} no puede estar vacío'
-            }), 400
+        try:
+            nombre = normalizar_nombre_por_tema(tema, campo_nombre, data[campo_nombre])
+        except ValidationError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
         
         # Verificar si ya existe
         if hasattr(modelo, 'estado'):
@@ -149,16 +206,20 @@ def crear_dato_dinamico(tema):
         nuevo_registro = modelo()
         setattr(nuevo_registro, campo_nombre, nombre)
         if hasattr(nuevo_registro, 'estado'):
-            # Usar el estado del request si está presente, sino usar True por defecto
-            nuevo_registro.estado = data.get('estado', True)
+            nuevo_registro.estado = normalizar_estado_bool(data.get('estado'), True)
         
         # Manejar campos adicionales específicos por modelo
-        if tema == 'eps' and 'codigo_eps' in data:
-            nuevo_registro.codigo_eps = data['codigo_eps']
+        if tema == 'eps':
+            codigo_raw = data.get('codigo_eps') or data.get('codigo')
+            if codigo_raw:
+                try:
+                    nuevo_registro.codigo_eps = normalizar_codigo_eps(codigo_raw)
+                except ValidationError as e:
+                    return jsonify({'success': False, 'error': str(e)}), 400
         elif tema == 'tipo-evento' and 'descripcion' in data:
-            nuevo_registro.descripcion = data['descripcion']
+            nuevo_registro.descripcion = normalizar_descripcion(data.get('descripcion'))
         elif tema == 'roles' and 'descripcion' in data:
-            nuevo_registro.descripcion = data['descripcion']
+            nuevo_registro.descripcion = normalizar_descripcion(data.get('descripcion'), max_length=300)
         
         # Guardar en base de datos
         db.session.add(nuevo_registro)
@@ -216,13 +277,10 @@ def actualizar_dato_dinamico(tema, id):
                 'error': f'Campo requerido: {campo_nombre}'
             }), 400
         
-        # Validar nuevo nombre
-        nuevo_nombre = data[campo_nombre].strip()
-        if not nuevo_nombre:
-            return jsonify({
-                'success': False,
-                'error': f'El {campo_nombre} no puede estar vacío'
-            }), 400
+        try:
+            nuevo_nombre = normalizar_nombre_por_tema(tema, campo_nombre, data[campo_nombre])
+        except ValidationError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
         
         # Verificar si el nuevo nombre ya existe en otro registro
         if hasattr(modelo, 'estado'):
@@ -245,12 +303,24 @@ def actualizar_dato_dinamico(tema, id):
         setattr(registro, campo_nombre, nuevo_nombre)
         
         # Manejar campos adicionales específicos por modelo
-        if tema == 'eps' and 'codigo_eps' in data:
-            registro.codigo_eps = data['codigo_eps']
+        if tema == 'eps':
+            codigo_raw = data.get('codigo_eps') or data.get('codigo')
+            if codigo_raw is not None:
+                if codigo_raw == '':
+                    registro.codigo_eps = None
+                else:
+                    try:
+                        registro.codigo_eps = normalizar_codigo_eps(codigo_raw)
+                    except ValidationError as e:
+                        return jsonify({'success': False, 'error': str(e)}), 400
+            if 'estado' in data:
+                registro.estado = normalizar_estado_bool(data.get('estado'), registro.estado)
+        elif tema == 'metodo-pago' and 'estado' in data:
+            registro.estado = normalizar_estado_bool(data.get('estado'), registro.estado)
         elif tema == 'tipo-evento' and 'descripcion' in data:
-            registro.descripcion = data['descripcion']
+            registro.descripcion = normalizar_descripcion(data.get('descripcion'))
         elif tema == 'roles' and 'descripcion' in data:
-            registro.descripcion = data['descripcion']
+            registro.descripcion = normalizar_descripcion(data.get('descripcion'), max_length=300)
         
         # Guardar cambios
         db.session.commit()
