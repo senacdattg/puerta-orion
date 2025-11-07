@@ -13,6 +13,7 @@ from src.models.eventos.tipo_evento import TipoEvento
 from src.models.categorias.categoria import Categoria
 from ..middleware.auth_decorator import token_required
 from src.utils.logger import logger
+from src.utils.validations import sanitize_free_text, ValidationError
 
 archivos_bp = Blueprint('archivos', __name__, url_prefix='/api/archivos')
 
@@ -81,8 +82,16 @@ def subir_archivo():
             }), 400
         
         # Obtener datos del formulario
-        titulo = request.form.get('titulo', '').strip()
-        descripcion = request.form.get('descripcion', '').strip()
+        titulo_raw = request.form.get('titulo', '')
+        descripcion_raw = request.form.get('descripcion', '')
+        try:
+            titulo = sanitize_free_text('titulo', titulo_raw, max_length=120)
+        except ValidationError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 400
+        descripcion = sanitize_free_text('descripcion', descripcion_raw, max_length=500) if descripcion_raw else None
         id_tipo_evento = request.form.get('id_tipo_evento')
         id_categoria = request.form.get('id_categoria')
         
@@ -141,7 +150,7 @@ def subir_archivo():
         nueva_imagen = Galeria(
             titulo=titulo,
             url_imagen=image_url,
-            descripcion=descripcion if descripcion else None,
+            descripcion=descripcion,
             id_tipo_evento=id_tipo_evento if id_tipo_evento else None,
             id_categoria=id_categoria if id_categoria else None
         )

@@ -78,7 +78,7 @@
               <i class="fas fa-heading"></i>
               Título del evento *
             </label>
-            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento" :readonly="!puedeEditarFoto" />
+            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
           </div>
           <div class="campo-formulario">
             <label for="archivo_imagen">
@@ -104,6 +104,7 @@
                 accept="image/*"
                 @change="manejarSeleccionArchivo"
                 class="input-evento"
+                :required="imagenRequerida"
               />
               <div v-if="archivoSeleccionado" class="archivo-info">
                 <i class="fas fa-file-image"></i>
@@ -117,9 +118,9 @@
           <div class="campo-formulario">
             <label for="id_tipo_evento">
               <i class="fas fa-tag"></i>
-              Tipo de evento
+              Tipo de evento *
             </label>
-            <select v-model="form.id_tipo_evento" class="select-evento" :disabled="!puedeEditarFoto">
+            <select v-model="form.id_tipo_evento" class="select-evento" :disabled="!puedeEditarFoto" required>
               <option value="">Selecciona tipo de evento</option>
               <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">{{ tipo.nombre }}</option>
             </select>
@@ -137,10 +138,10 @@
           <div class="campo-formulario">
             <label for="descripcion">
               <i class="fas fa-align-left"></i>
-              Descripción
+              Descripción *
             </label>
             <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
-              class="input-evento" :readonly="!puedeEditarFoto"></textarea>
+              class="input-evento" :readonly="!puedeEditarFoto" @input="manejarDescripcion" required></textarea>
           </div>
 
           <div class="acciones centrado">
@@ -163,6 +164,10 @@
 <script>
 import { useAuthStore } from '@/stores/auth'
 import galeriaService from '@/services/galeriaService'
+
+const LOCALE_COL = 'es-CO'
+const MAX_TITULO = 120
+const MAX_DESCRIPCION = 500
 
 export default {
   name: "EventosClub",
@@ -208,6 +213,10 @@ export default {
       });
     },
 
+    imagenRequerida() {
+      return this.editando === null || this.cambiandoImagen;
+    },
+
     // Permisos de galería
     puedeVerGaleria() {
       return this.authStore.hasPermission('ver_galeria');
@@ -234,6 +243,33 @@ export default {
     }
   },
   methods: {
+    normalizarEspacios(valor = "") {
+      return valor ? valor.replace(/\s+/g, " ").trim() : ""
+    },
+    normalizarTitulo(valor = "") {
+      if (!valor) return ""
+      const mayus = valor.toLocaleUpperCase(LOCALE_COL)
+      const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, "")
+      return this.normalizarEspacios(limpio).slice(0, MAX_TITULO)
+    },
+    normalizarDescripcion(valor = "") {
+      if (!valor) return ""
+      const mayus = valor.toLocaleUpperCase(LOCALE_COL)
+      const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, "")
+      return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION)
+    },
+    manejarTitulo(event) {
+      const valor = event?.target?.value ?? this.form.titulo
+      this.form.titulo = this.normalizarTitulo(valor)
+    },
+    manejarDescripcion(event) {
+      const valor = event?.target?.value ?? this.form.descripcion
+      this.form.descripcion = this.normalizarDescripcion(valor)
+    },
+    normalizarFormulario() {
+      this.form.titulo = this.normalizarTitulo(this.form.titulo)
+      this.form.descripcion = this.normalizarDescripcion(this.form.descripcion)
+    },
     async cargarDatos() {
       this.cargando = true
       try {
@@ -302,6 +338,7 @@ export default {
         id_tipo_evento: "",
         id_categoria: ""
       };
+      this.normalizarFormulario();
       this.mostrarFormulario = true;
     },
     cerrarFormulario() {
@@ -332,6 +369,7 @@ export default {
         id_tipo_evento: evento.id_tipo_evento || "",
         id_categoria: evento.id_categoria || ""
       };
+      this.normalizarFormulario();
 
       this.archivoSeleccionado = null;
       this.cambiandoImagen = false;
@@ -349,6 +387,7 @@ export default {
         id_tipo_evento: evento.id_tipo_evento || "",
         id_categoria: evento.id_categoria || ""
       };
+      this.normalizarFormulario();
       this.archivoSeleccionado = null;
       this.cambiandoImagen = false;
       this.mostrarFormulario = true;
@@ -386,15 +425,24 @@ export default {
     },
     async guardarEvento() {
       try {
+        this.normalizarFormulario();
         // Validar campos requeridos
+        const errores = []
         if (!this.form.titulo) {
-          alert('El título es obligatorio');
-          return;
+          errores.push('El título es obligatorio')
         }
-
-        if (this.editando === null && !this.archivoSeleccionado) {
-          alert('Debes seleccionar una imagen');
-          return;
+        if (!this.form.id_tipo_evento) {
+          errores.push('Debes seleccionar un tipo de evento')
+        }
+        if (!this.form.descripcion) {
+          errores.push('La descripción es obligatoria')
+        }
+        if (this.imagenRequerida && !this.archivoSeleccionado) {
+          errores.push('Debes seleccionar una imagen')
+        }
+        if (errores.length > 0) {
+          alert('Corrige los siguientes errores:\n' + errores.join('\n'))
+          return
         }
 
         if (this.editando !== null) {
@@ -490,6 +538,7 @@ export default {
         id_tipo_evento: "",
         id_categoria: ""
       };
+      this.normalizarFormulario();
       this.archivoSeleccionado = null;
       this.editando = null;
       this.cambiandoImagen = false;
