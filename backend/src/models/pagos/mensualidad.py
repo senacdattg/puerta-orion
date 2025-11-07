@@ -6,7 +6,7 @@ Maneja las mensualidades por persona.
 from datetime import datetime, date
 from decimal import Decimal
 from ..base import BaseModel
-from sqlalchemy import Column, Integer, Numeric, Date, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, Numeric, Date, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 
@@ -17,6 +17,10 @@ class Mensualidad(BaseModel):
     Registra por cada persona el monto, la fecha de pago, el estado y el método de pago.
     """
     __tablename__ = 'puerta_orion_mensualidad'
+
+    __table_args__ = (
+        UniqueConstraint('id_persona', 'fecha_vencimiento', name='uq_persona_mes'),
+    )
     
     id_mensualidad = Column(Integer, primary_key=True)
     id_persona = Column(Integer, ForeignKey('puerta_orion_personas.id_persona'), nullable=False)

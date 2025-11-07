@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 from datetime import date
-from sqlalchemy import or_, cast, String
+from sqlalchemy import or_, cast, String, extract
 import re
 # Implementación simple para sumar meses sin dependencias externas
 
@@ -21,6 +21,7 @@ from src.models.pagos.abono_mensualidad import AbonoMensualidad
 from src.middleware.auth_decorator import permission_required, get_current_user, has_role, token_required
 from src.utils.validations import validate_document, ValidationError
 from src.models.usuarios.usuario import Usuario
+from src.models.pagos.metodo_pago import MetodoPago
 try:
     # Import defensivo: la ruta del modelo de Persona puede variar
     from src.models.personas.persona import Persona  # type: ignore
@@ -344,6 +345,17 @@ def crear_mensualidad():
         if not id_persona and not numero_documento:
             return jsonify({'success': False, 'error': 'Debe proporcionar id_persona o numero_documento'}), 400
 
+        estado_ui_raw = data.get('estado_ui')
+        if estado_ui_raw is None:
+            return jsonify({'success': False, 'error': 'El estado inicial es requerido'}), 400
+        estado_ui = str(estado_ui_raw).strip().lower()
+        if estado_ui not in ('pagado', 'pendiente'):
+            return jsonify({'success': False, 'error': 'El estado inicial debe ser "Pagado" o "Pendiente"'}), 400
+        is_pagado_inicial = estado_ui == 'pagado'
+
+        if not data.get('id_metodo_pago') and data.get('id_metodo_pago') not in (0, '0'):
+            return jsonify({'success': False, 'error': 'El método de pago es requerido'}), 400
+
         # Resolver persona por número de documento si aplica
         persona_obj = None
         if not id_persona and numero_documento:
@@ -364,83 +376,77 @@ def crear_mensualidad():
         if not _persona_tiene_rol_deportista(id_persona):
             return jsonify({'success': False, 'error': 'La persona especificada no tiene el rol "Deportista". No se puede crear la mensualidad.'}), 400
 
-        # Validar monto
-        if data.get('monto_pago') in (None, ''):
-            return jsonify({'success': False, 'error': 'monto_pago es requerido'}), 400
-
         monto_pago = parse_decimal(data.get('monto_pago'))
         if monto_pago is None or monto_pago <= 0:
             return jsonify({'success': False, 'error': 'monto_pago debe ser > 0'}), 400
 
-        fecha_vencimiento_raw = data.get('fecha_vencimiento')  # ISO date opcional
-        if fecha_vencimiento_raw:
-            try:
-                fecha_vencimiento = date.fromisoformat(str(fecha_vencimiento_raw))
-            except ValueError:
-                return jsonify({'success': False, 'error': 'fecha_vencimiento no tiene un formato válido (YYYY-MM-DD)'}), 400
-        else:
-            fecha_vencimiento = None
-        # Permitir definir saldo inicial/estado desde el payload (e.g., estado_ui = 'Pagado')
-        saldo_inicial = data.get('saldo_pendiente')
+        fecha_vencimiento_raw = data.get('fecha_vencimiento')
+        if not fecha_vencimiento_raw:
+            return jsonify({'success': False, 'error': 'La fecha de vencimiento es requerida'}), 400
         try:
-            saldo_inicial = float(saldo_inicial) if saldo_inicial is not None and saldo_inicial != '' else None
-        except Exception:
-            saldo_inicial = None
-        if saldo_inicial is not None:
-            if saldo_inicial < 0:
-                return jsonify({'success': False, 'error': 'saldo_pendiente no puede ser negativo'}), 400
-            if saldo_inicial > monto_pago:
-                saldo_inicial = monto_pago
-        estado_ui = (str(data.get('estado_ui') or '')).strip().lower()
-        # Aceptar también 'estado' boolean/string como alternativa
-        estado_bool_raw = data.get('estado')
-        estado_bool_norm = None
-        if isinstance(estado_bool_raw, bool):
-            estado_bool_norm = estado_bool_raw
-        elif isinstance(estado_bool_raw, (int, float)):
-            estado_bool_norm = bool(int(estado_bool_raw))
-        elif isinstance(estado_bool_raw, str):
-            estado_bool_norm = estado_bool_raw.strip().lower() in ('1', 'true', 'pagado', 'si', 'sí')
+            fecha_vencimiento = date.fromisoformat(str(fecha_vencimiento_raw))
+        except ValueError:
+            return jsonify({'success': False, 'error': 'fecha_vencimiento no tiene un formato válido (YYYY-MM-DD)'}), 400
 
-        is_pagado_inicial = (estado_ui == 'pagado') or (estado_bool_norm is True) or (saldo_inicial is not None and float(saldo_inicial) == 0)
-        saldo_pendiente = 0 if is_pagado_inicial else (saldo_inicial if saldo_inicial is not None else float(monto_pago))
+        # Saldo pendiente requerido (0 para pagado)
+        saldo_bruto = data.get('saldo_pendiente')
+        if saldo_bruto in (None, ''):
+            if is_pagado_inicial:
+                saldo_inicial = 0.0
+            else:
+                return jsonify({'success': False, 'error': 'El saldo pendiente es requerido'}), 400
+        else:
+            saldo_inicial = parse_decimal(saldo_bruto)
+            if saldo_inicial is None or saldo_inicial < 0:
+                return jsonify({'success': False, 'error': 'El saldo pendiente debe ser un número mayor o igual a 0'}), 400
+        if saldo_inicial > monto_pago:
+            saldo_inicial = monto_pago
+
+        if is_pagado_inicial:
+            saldo_inicial = 0.0
 
         id_metodo_pago_raw = data.get('id_metodo_pago')
-        if id_metodo_pago_raw in (None, '',):
-            id_metodo_pago_val = None
-        else:
-            try:
-                id_metodo_pago_val = int(id_metodo_pago_raw)
-            except (TypeError, ValueError):
-                return jsonify({'success': False, 'error': 'id_metodo_pago debe ser numérico'}), 400
+        try:
+            id_metodo_pago_val = int(id_metodo_pago_raw)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'id_metodo_pago debe ser numérico'}), 400
+        metodo_pago_obj = MetodoPago.query.get(id_metodo_pago_val)
+        if not metodo_pago_obj:
+            return jsonify({'success': False, 'error': f'Método de pago con ID {id_metodo_pago_val} no encontrado'}), 404
+
+        # Validar duplicado mes/año
+        existente_mes = Mensualidad.query.filter(
+            Mensualidad.id_persona == id_persona,
+            extract('year', Mensualidad.fecha_vencimiento) == fecha_vencimiento.year,
+            extract('month', Mensualidad.fecha_vencimiento) == fecha_vencimiento.month
+        ).first()
+        if existente_mes:
+            return jsonify({'success': False, 'error': 'Ya existe una mensualidad para este deportista en el mismo mes y año'}), 400
 
         mensualidad = Mensualidad(
-            id_persona=int(id_persona),
+            id_persona=id_persona,
             id_metodo_pago=id_metodo_pago_val,
             monto_pago=monto_pago,
-            estado=bool(is_pagado_inicial),
+            estado=is_pagado_inicial,
             fecha_pago=date.today() if is_pagado_inicial else None,
-            saldo_pendiente=saldo_pendiente,
+            saldo_pendiente=saldo_inicial,
             fecha_vencimiento=fecha_vencimiento,
             activo=True,
         )
 
         db.session.add(mensualidad)
-        # Necesitamos el id para registrar abono inicial si ya está pagado
         db.session.flush()
 
-        # Si se creó como pagado, registrar abono equivalente con método y monto
-        if is_pagado_inicial and mensualidad.id_mensualidad and id_metodo_pago_val is not None:
+        if is_pagado_inicial and mensualidad.id_mensualidad:
             try:
                 abono_inicial = AbonoMensualidad(
                     id_mensualidad=mensualidad.id_mensualidad,
                     monto=monto_pago,
                     fecha_abono=mensualidad.fecha_pago or date.today(),
-                    id_metodo_pago=mensualidad.id_metodo_pago
+                    id_metodo_pago=id_metodo_pago_val
                 )
                 db.session.add(abono_inicial)
             except Exception as _:
-                # No bloquear la creación si falla el abono inicial
                 pass
 
         db.session.commit()
@@ -498,12 +504,15 @@ def actualizar_mensualidad(mensualidad_id: int):
         # Permitir actualizar ciertos campos
         if 'id_metodo_pago' in data:
             if data['id_metodo_pago'] in (None, '',):
-                m.id_metodo_pago = None
+                return jsonify({'success': False, 'error': 'El método de pago es requerido'}), 400
             else:
                 try:
-                    m.id_metodo_pago = int(data['id_metodo_pago'])
+                    nuevo_metodo = int(data['id_metodo_pago'])
                 except (TypeError, ValueError):
                     return jsonify({'success': False, 'error': 'id_metodo_pago debe ser numérico'}), 400
+                if not MetodoPago.query.get(nuevo_metodo):
+                    return jsonify({'success': False, 'error': f'Método de pago con ID {nuevo_metodo} no encontrado'}), 404
+                m.id_metodo_pago = nuevo_metodo
         if 'monto_pago' in data:
             monto_pago = parse_decimal(data['monto_pago'])
             if monto_pago is None or monto_pago <= 0:
@@ -518,7 +527,7 @@ def actualizar_mensualidad(mensualidad_id: int):
                 except ValueError:
                     return jsonify({'success': False, 'error': 'fecha_vencimiento no tiene un formato válido (YYYY-MM-DD)'}), 400
             else:
-                m.fecha_vencimiento = None
+                return jsonify({'success': False, 'error': 'La fecha de vencimiento es requerida'}), 400
         if 'saldo_pendiente' in data:
             saldo = parse_decimal(data['saldo_pendiente'])
             if saldo is None or saldo < 0:
@@ -528,6 +537,18 @@ def actualizar_mensualidad(mensualidad_id: int):
             m.saldo_pendiente = saldo
         if 'activo' in data:
             m.activo = bool(int(data['activo'])) if isinstance(data['activo'], str) else bool(data['activo'])
+
+        if not m.fecha_vencimiento:
+            return jsonify({'success': False, 'error': 'La fecha de vencimiento es requerida'}), 400
+
+        duplicada_mes = Mensualidad.query.filter(
+            Mensualidad.id_persona == m.id_persona,
+            extract('year', Mensualidad.fecha_vencimiento) == m.fecha_vencimiento.year,
+            extract('month', Mensualidad.fecha_vencimiento) == m.fecha_vencimiento.month,
+            Mensualidad.id_mensualidad != mensualidad_id
+        ).first()
+        if duplicada_mes:
+            return jsonify({'success': False, 'error': 'Ya existe una mensualidad para este deportista en el mismo mes y año'}), 400
 
         # Recalcular estado/fecha_pago si aplica
         if m.saldo_pendiente == 0:

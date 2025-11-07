@@ -138,13 +138,13 @@
             <div class="campo-formulario">
               <label for="idMetodo">
                 <i class="fas fa-money-bill-wave"></i>
-                Método de Pago (opcional)
+                Método de Pago *
               </label>
-              <select id="idMetodo" v-model.number="form.id_metodo_pago" class="select-mensualidad">
+              <select id="idMetodo" v-model.number="form.id_metodo_pago" class="select-mensualidad" required>
                 <option :value="''">— Sin seleccionar —</option>
                 <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
               </select>
-              <small class="hint">Déjalo vacío si no hay pago inicial.</small>
+              <small class="hint">Selecciona el método con el que se pagará la mensualidad.</small>
             </div>
 
             <div class="campo-formulario">
@@ -181,6 +181,7 @@
                 placeholder="Ej: 0"
                 class="input-mensualidad"
                 @input="manejarMontoCampo('saldo_pendiente', $event)"
+                required
               />
               <small class="hint">Si lo dejas vacío, será igual al valor total.</small>
             </div>
@@ -596,6 +597,14 @@ function validarFormularioMensualidad() {
     errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
   }
 
+  if (!form.value.id_metodo_pago) {
+    errores.push('Debes seleccionar un método de pago');
+  }
+
+  if (form.value.estado_ui === 'Pagado') {
+    form.value.saldo_pendiente = '0';
+  }
+
   const monto = parseMonto(form.value.valorSinSimbolo);
   if (!Number.isFinite(monto) || monto <= 0) {
     errores.push('El valor total debe ser un número mayor a 0');
@@ -603,7 +612,9 @@ function validarFormularioMensualidad() {
 
   let saldo = form.value.saldo_pendiente;
   let saldoNumero = undefined;
-  if (saldo !== undefined && saldo !== null && saldo !== '') {
+  if (saldo === undefined || saldo === null || String(saldo).trim() === '') {
+    errores.push('Debes especificar el saldo pendiente');
+  } else {
     saldo = normalizarMonto(saldo);
     form.value.saldo_pendiente = saldo;
     saldoNumero = parseMonto(saldo);
@@ -642,23 +653,24 @@ function guardarMensualidad() {
 
   const payload = {
     numero_documento: form.value.numero_documento,
+    id_metodo_pago: Number(form.value.id_metodo_pago),
     monto_pago: monto,
     fecha_vencimiento: form.value.vencimiento,
     activo: !!form.value.activo,
     estado_ui: form.value.estado_ui
   };
 
-  if (form.value.id_metodo_pago !== '' && form.value.id_metodo_pago !== undefined && form.value.id_metodo_pago !== null) {
-    const metodo = Number(form.value.id_metodo_pago);
-    if (!Number.isNaN(metodo)) {
-      payload.id_metodo_pago = metodo;
-    }
+  const metodo = Number(form.value.id_metodo_pago);
+  if (!Number.isNaN(metodo)) {
+    payload.id_metodo_pago = metodo;
   }
 
   if (form.value.estado_ui === 'Pagado') {
     payload.saldo_pendiente = 0;
   } else if (saldo !== undefined) {
     payload.saldo_pendiente = saldo;
+  } else {
+    payload.saldo_pendiente = 0;
   }
 
   emit('nueva', payload);
