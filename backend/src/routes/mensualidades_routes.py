@@ -20,6 +20,7 @@ from src.utils.logger import logger
 from src.models.pagos.abono_mensualidad import AbonoMensualidad
 from src.middleware.auth_decorator import permission_required, get_current_user, has_role, token_required
 from src.utils.validations import validate_document, ValidationError
+from src.models.usuarios.usuario import Usuario
 try:
     # Import defensivo: la ruta del modelo de Persona puede variar
     from src.models.personas.persona import Persona  # type: ignore
@@ -98,6 +99,25 @@ def _buscar_persona_por_documento(numero_documento):
         return None
 
 
+def _persona_tiene_rol_deportista(id_persona):
+    if id_persona is None:
+        return False
+
+    try:
+        usuario = Usuario.query.filter_by(id_persona=id_persona).first()
+        if not usuario or not getattr(usuario, 'estado', True):
+            return False
+
+        for rol in getattr(usuario, 'roles', []) or []:
+            nombre = getattr(rol, 'nombre_rol', None) or getattr(rol, 'nombre', None)
+            if nombre and nombre.lower() == 'deportista':
+                return True
+    except Exception:
+        return False
+
+    return False
+
+
 def _adjuntar_info_persona_dict(mensualidad_obj, destino_dict):
     persona_nombre = None
     persona_documento = None
@@ -167,6 +187,7 @@ def buscar_persona_por_documento():
     }
 
     mensaje = 'Persona encontrada y activa.' if data['estado'] else 'Persona encontrada, pero se encuentra inactiva.'
+    data['rol_deportista'] = _persona_tiene_rol_deportista(data['id_persona'])
 
     return jsonify({
         'success': True,
@@ -340,6 +361,9 @@ def crear_mensualidad():
         except (TypeError, ValueError):
             return jsonify({'success': False, 'error': 'id_persona debe ser numérico'}), 400
 
+        if not _persona_tiene_rol_deportista(id_persona):
+            return jsonify({'success': False, 'error': 'La persona especificada no tiene el rol "Deportista". No se puede crear la mensualidad.'}), 400
+
         # Validar monto
         if data.get('monto_pago') in (None, ''):
             return jsonify({'success': False, 'error': 'monto_pago es requerido'}), 400
@@ -463,6 +487,9 @@ def actualizar_mensualidad(mensualidad_id: int):
                 nuevo_id_persona = int(nuevo_id_persona)
             except (TypeError, ValueError):
                 return jsonify({'success': False, 'error': 'id_persona asociado al documento es inválido'}), 400
+
+            if not _persona_tiene_rol_deportista(nuevo_id_persona):
+                return jsonify({'success': False, 'error': 'La persona asociada al documento no tiene el rol "Deportista".'}), 400
 
             if m.id_persona != nuevo_id_persona:
                 m.id_persona = nuevo_id_persona

@@ -329,6 +329,7 @@ function actualizarEstadoDocumento(status, mensaje) {
 
 function resetEstadoDocumento() {
   personaEncontrada.value = null;
+  personaRolValido.value = false;
   estadoDocumento.value = { status: 'idle', mensaje: '' };
   documentoConsultando = null;
 }
@@ -359,6 +360,7 @@ const form = ref({
 const metodosPago = ref([]);
 const cargandoMetodosPago = ref(false);
 const personaEncontrada = ref(null);
+const personaRolValido = ref(false);
 const estadoDocumento = ref({ status: 'idle', mensaje: '' });
 let documentoConsultando = null;
 
@@ -490,6 +492,7 @@ function limpiarFormulario() {
 function manejarDocumento(event) {
   form.value.numero_documento = normalizarDocumento(event?.target?.value ?? form.value.numero_documento ?? '');
   personaEncontrada.value = null;
+  personaRolValido.value = false;
   documentoConsultando = null;
 
   if (!form.value.numero_documento) {
@@ -540,20 +543,25 @@ async function verificarDocumento() {
 
     if (!respuesta?.success) {
       const mensaje = respuesta?.error || 'No fue posible verificar el documento.';
-      actualizarEstadoDocumento('invalid', mensaje);
+      actualizarEstadoDocumento('error', mensaje);
+      personaRolValido.value = false;
       return;
     }
 
     if (respuesta.encontrado) {
       personaEncontrada.value = respuesta.data;
+      personaRolValido.value = !!respuesta.data?.rol_deportista;
       const nombre = respuesta.data?.nombre_completo || 'Persona encontrada';
-      if (respuesta.data?.estado === false) {
+      if (!personaRolValido.value) {
+        actualizarEstadoDocumento('error', `${nombre} no tiene el rol de Deportista.`);
+      } else if (respuesta.data?.estado === false) {
         actualizarEstadoDocumento('warning', `${nombre} está inactiva. Verifica antes de continuar.`);
       } else {
         actualizarEstadoDocumento('found', `${nombre} registrada en el sistema.`);
       }
     } else {
       const mensaje = respuesta?.message || 'No encontramos una persona con ese documento.';
+      personaRolValido.value = false;
       actualizarEstadoDocumento('not-found', mensaje);
     }
   } catch (error) {
@@ -561,6 +569,7 @@ async function verificarDocumento() {
       return;
     }
     const mensaje = error?.message || 'Error al buscar el documento.';
+    personaRolValido.value = false;
     actualizarEstadoDocumento('error', mensaje);
   } finally {
     if (documentoConsultando === documentoEnProceso) {
@@ -611,6 +620,10 @@ function validarFormularioMensualidad() {
     errores.push('La fecha de vencimiento no es válida');
   }
 
+  if (!personaRolValido.value) {
+    errores.push('Selecciona un deportista válido para crear la mensualidad');
+  }
+
   return {
     errores,
     monto,
@@ -622,7 +635,8 @@ function guardarMensualidad() {
   const { errores, monto, saldo } = validarFormularioMensualidad();
 
   if (errores.length > 0) {
-    alert('Corrige los siguientes errores:\n' + errores.join('\n'));
+    const mensaje = errores.join('\n');
+    alert('Corrige los siguientes errores:\n' + mensaje);
     return;
   }
 
