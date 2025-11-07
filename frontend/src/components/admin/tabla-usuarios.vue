@@ -485,7 +485,7 @@ async function cargarDatos() {
   try {
     // Cargar roles primero
     const rolesResponse = await usuariosService.listarRoles();
-    
+
     if (rolesResponse.success) {
       // Solo mostrar Entrenador y Administrador (excluir SuperAdmin, Usuario, Deportista, Acudiente)
       const rolesPermitidos = ['entrenador', 'administrador'];
@@ -510,7 +510,7 @@ async function cargarDatos() {
 
     while (hayMas) {
       const usuariosResponse = await usuariosService.listarUsuarios('todos', usuariosPorPagina, currentOffset);
-      
+
       if (usuariosResponse.success) {
         todosUsuarios = [...todosUsuarios, ...usuariosResponse.data];
         total = usuariosResponse.total || todosUsuarios.length;
@@ -524,7 +524,7 @@ async function cargarDatos() {
         }
         
         currentOffset += usuariosResponse.data.length;
-      } else {
+    } else {
         throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
       }
     }
@@ -594,18 +594,18 @@ const filteredUsers = computed(() => {
 
 // Usuarios filtrados completos (para calcular hasMore)
 const filteredUsersCompletos = computed(() => {
-  const text = props.searchTerm.trim().toLowerCase();
-  const roleFilter = props.roleFilter;
+    const text = props.searchTerm.trim().toLowerCase();
+    const roleFilter = props.roleFilter;
 
   return users.value.filter(user => {
-    const matchesText = !text ||
-      user.usuario.toLowerCase().includes(text);
+      const matchesText = !text ||
+        user.usuario.toLowerCase().includes(text);
 
-    const matchesRole = roleFilter === 'todos' ||
-      user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
+      const matchesRole = roleFilter === 'todos' ||
+        user.roles.some(rol => rol.nombre_rol.toLowerCase() === roleFilter.toLowerCase());
 
-    return matchesText && matchesRole;
-  });
+      return matchesText && matchesRole;
+    });
 });
 
 // Actualizar hasMore reactivamente

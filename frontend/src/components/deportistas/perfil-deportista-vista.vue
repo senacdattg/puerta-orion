@@ -197,7 +197,7 @@
                     <input type="radio" :value="false" v-model="formData.participa_escuela" />
                     No
                   </label>
-                </div>
+              </div>
               </div>
               <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.participa_escuela">
                 <label>Escuela:</label>
@@ -237,7 +237,7 @@
                     <input type="radio" :value="false" v-model="formData.recomendacion_medica" />
                     No
                   </label>
-                </div>
+              </div>
               </div>
               <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.descripcion_recomendacion">
                 <label>Descripción recomendación:</label>
@@ -299,12 +299,12 @@
       <!-- Botones de acción -->
       <div class="perfil-actions">
         <template v-if="!modoEdicion">
-          <button class="btn-editar-perfil" @click="$emit('editar')">
+        <button class="btn-editar-perfil" @click="$emit('editar')">
             <i class="fas fa-edit"></i> Actualizar
-          </button>
-          <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
-            Cerrar
-          </button>
+        </button>
+        <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
+          Cerrar
+        </button>
         </template>
         <template v-else>
           <button class="btn-guardar-perfil" @click="guardarCambios" :disabled="guardando">
@@ -716,7 +716,7 @@ function obtenerTipoSanguineo() {
   const idTipo = props.modoEdicion 
     ? formData.value.id_tipo_sanguineo
     : (props.datos?.persona?.id_tipo_sanguineo ||
-       props.datos?.deportista?.id_tipo_sanguineo ||
+                 props.datos?.deportista?.id_tipo_sanguineo ||
        props.datos?.datos_deportista?.id_tipo_sanguineo ||
        props.datos?.id_tipo_sanguineo);
   if (!idTipo) return null;
@@ -732,7 +732,7 @@ function obtenerCiudad() {
   const idCiudad = props.modoEdicion 
     ? formData.value.id_ciudad_recidencia
     : (props.datos?.persona?.id_ciudad_recidencia ||
-       props.datos?.deportista?.id_ciudad_recidencia ||
+                   props.datos?.deportista?.id_ciudad_recidencia ||
        props.datos?.datos_deportista?.id_ciudad_recidencia ||
        props.datos?.id_ciudad_recidencia);
   if (!idCiudad) return null;
@@ -748,7 +748,7 @@ function obtenerEPS() {
   const idEPS = props.modoEdicion 
     ? formData.value.id_eps
     : (props.datos?.persona?.id_eps ||
-       props.datos?.deportista?.id_eps ||
+                props.datos?.deportista?.id_eps ||
        props.datos?.datos_deportista?.id_eps ||
        props.datos?.id_eps);
   if (!idEPS) return null;
@@ -955,7 +955,7 @@ function obtenerTipoDocumento() {
   const idTipoDocumento = props.modoEdicion 
     ? formData.value.id_tipo_documento
     : (props.datos?.persona?.id_tipo_documento ||
-       props.datos?.id_tipo_documento ||
+                           props.datos?.id_tipo_documento ||
        props.datos?.deportista?.id_tipo_documento);
 
   if (!idTipoDocumento) return null;

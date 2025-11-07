@@ -115,8 +115,24 @@
                 <i class="fas fa-id-card"></i>
                 Número de documento de la persona *
               </label>
-              <input id="docPersona" v-model="form.numero_documento" type="text" placeholder="Ej: 12345678" autocomplete="off"
-                class="input-mensualidad" required />
+              <input
+                id="docPersona"
+                v-model="form.numero_documento"
+                type="text"
+                inputmode="numeric"
+                placeholder="Ej: 12345678"
+                autocomplete="off"
+                class="input-mensualidad"
+                required
+                @input="manejarDocumento"
+                @blur="verificarDocumento"
+              />
+              <small
+                v-if="estadoDocumento.mensaje"
+                :class="['mensaje-documento', estadoDocumento.status]"
+              >
+                {{ estadoDocumento.mensaje }}
+              </small>
             </div>
 
             <div class="campo-formulario">
@@ -138,8 +154,17 @@
               </label>
               <div class="input-with-symbol">
                 <span class="dollar-symbol">$</span>
-                <input id="monto" v-model="form.valorSinSimbolo" type="number" placeholder="150000" autocomplete="off"
-                  class="input-mensualidad" required @input="actualizarValorConSimbolo" />
+                <input
+                  id="monto"
+                  v-model="form.valorSinSimbolo"
+                  type="text"
+                  inputmode="decimal"
+                  placeholder="150000"
+                  autocomplete="off"
+                  class="input-mensualidad"
+                  required
+                  @input="manejarMontoCampo('valorSinSimbolo', $event)"
+                />
               </div>
             </div>
 
@@ -148,8 +173,15 @@
                 <i class="fas fa-balance-scale"></i>
                 Saldo Pendiente (opcional)
               </label>
-              <input id="saldoPendiente" v-model.number="form.saldo_pendiente" type="number" placeholder="Ej: 0"
-                class="input-mensualidad" />
+              <input
+                id="saldoPendiente"
+                v-model="form.saldo_pendiente"
+                type="text"
+                inputmode="decimal"
+                placeholder="Ej: 0"
+                class="input-mensualidad"
+                @input="manejarMontoCampo('saldo_pendiente', $event)"
+              />
               <small class="hint">Si lo dejas vacío, será igual al valor total.</small>
             </div>
 
@@ -218,6 +250,7 @@ import { useAuthStore } from '@/stores/auth';
 import TarjetaMensualidad from './tarjeta-mensualidad.vue';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
+import mensualidadesService from '@/services/mensualidadesService';
 
 // Props
 const props = defineProps({
@@ -251,7 +284,54 @@ const esAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNam
 
 const estados = ['Pagado', 'Pendiente', 'Vencido'];
 
-// Filtro de vencimiento eliminado
+// Constantes de validación
+const LOCALE_COL = 'es-CO';
+const MIN_DOCUMENTO = 6;
+const MAX_DOCUMENTO = 10;
+
+function normalizarDocumento(valor = '') {
+  return (valor || '')
+    .toString()
+    .replace(/\D/g, '')
+    .slice(0, MAX_DOCUMENTO);
+}
+
+function normalizarMonto(valor = '') {
+  if (!valor) return '';
+  const saneado = valor
+    .toString()
+    .replace(/[^0-9.,]/g, '')
+    .replace(/,/g, '.');
+
+  const partes = saneado.split('.');
+  if (partes.length === 1) {
+    return partes[0];
+  }
+
+  const enteros = partes.shift() || '';
+  const decimales = partes.join('');
+  return decimales ? `${enteros}.${decimales}` : enteros;
+}
+
+function parseMonto(valor = '') {
+  if (valor === '' || valor === null || valor === undefined) return NaN;
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : NaN;
+}
+
+function esFechaValida(fecha) {
+  return !!fecha && !Number.isNaN(Date.parse(fecha));
+}
+
+function actualizarEstadoDocumento(status, mensaje) {
+  estadoDocumento.value = { status, mensaje };
+}
+
+function resetEstadoDocumento() {
+  personaEncontrada.value = null;
+  estadoDocumento.value = { status: 'idle', mensaje: '' };
+  documentoConsultando = null;
+}
 
 // Estado reactivo
 const busqueda = ref('');
@@ -278,6 +358,9 @@ const form = ref({
 
 const metodosPago = ref([]);
 const cargandoMetodosPago = ref(false);
+const personaEncontrada = ref(null);
+const estadoDocumento = ref({ status: 'idle', mensaje: '' });
+let documentoConsultando = null;
 
 // Computed properties
 const mensualidadesFiltradas = computed(() => {
@@ -401,45 +484,204 @@ function limpiarFormulario() {
     saldo_pendiente: undefined,
     estado_ui: 'Pendiente'
   };
+  resetEstadoDocumento();
 }
 
-function actualizarValorConSimbolo() {
-  if (form.value.valorSinSimbolo) {
-    const numero = parseFloat(form.value.valorSinSimbolo);
-    if (!isNaN(numero)) {
-      form.value.valor = `$${numero.toLocaleString('es-CO')}`;
-    }
-  } else {
-    form.value.valor = '';
+function manejarDocumento(event) {
+  form.value.numero_documento = normalizarDocumento(event?.target?.value ?? form.value.numero_documento ?? '');
+  personaEncontrada.value = null;
+  documentoConsultando = null;
+
+  if (!form.value.numero_documento) {
+    resetEstadoDocumento();
+    return;
+  }
+
+  if (form.value.numero_documento.length < MIN_DOCUMENTO) {
+    actualizarEstadoDocumento('indicacion', `Ingresa al menos ${MIN_DOCUMENTO} dígitos para buscar.`);
+    return;
+  }
+
+  actualizarEstadoDocumento('pendiente', 'Documento listo. Sal del campo para verificar.');
+}
+
+function manejarMontoCampo(campo, event) {
+  const normalizado = normalizarMonto(event?.target?.value ?? form.value[campo] ?? '');
+  form.value[campo] = normalizado;
+  if (campo === 'valorSinSimbolo') {
+    actualizarValorConSimbolo();
   }
 }
 
+async function verificarDocumento() {
+  const documento = form.value.numero_documento;
+
+  if (!documento) {
+    resetEstadoDocumento();
+    return;
+  }
+
+  if (documento.length < MIN_DOCUMENTO) {
+    actualizarEstadoDocumento('indicacion', `Ingresa al menos ${MIN_DOCUMENTO} dígitos para buscar.`);
+    return;
+  }
+
+  const documentoEnProceso = documento;
+  documentoConsultando = documentoEnProceso;
+  personaEncontrada.value = null;
+  actualizarEstadoDocumento('checking', 'Buscando persona...');
+
+  try {
+    const respuesta = await mensualidadesService.buscarPersonaPorDocumento(documentoEnProceso);
+
+    if (documentoConsultando !== documentoEnProceso) {
+      return;
+    }
+
+    if (!respuesta?.success) {
+      const mensaje = respuesta?.error || 'No fue posible verificar el documento.';
+      actualizarEstadoDocumento('invalid', mensaje);
+      return;
+    }
+
+    if (respuesta.encontrado) {
+      personaEncontrada.value = respuesta.data;
+      const nombre = respuesta.data?.nombre_completo || 'Persona encontrada';
+      if (respuesta.data?.estado === false) {
+        actualizarEstadoDocumento('warning', `${nombre} está inactiva. Verifica antes de continuar.`);
+      } else {
+        actualizarEstadoDocumento('found', `${nombre} registrada en el sistema.`);
+      }
+    } else {
+      const mensaje = respuesta?.message || 'No encontramos una persona con ese documento.';
+      actualizarEstadoDocumento('not-found', mensaje);
+    }
+  } catch (error) {
+    if (documentoConsultando !== documentoEnProceso) {
+      return;
+    }
+    const mensaje = error?.message || 'Error al buscar el documento.';
+    actualizarEstadoDocumento('error', mensaje);
+  } finally {
+    if (documentoConsultando === documentoEnProceso) {
+      documentoConsultando = null;
+    }
+  }
+}
+
+function actualizarValorConSimbolo() {
+  const normalizado = normalizarMonto(form.value.valorSinSimbolo);
+  form.value.valorSinSimbolo = normalizado;
+
+  const numero = parseMonto(normalizado);
+  form.value.valor = Number.isFinite(numero)
+    ? `$${numero.toLocaleString('es-CO')}`
+    : '';
+}
+
+function validarFormularioMensualidad() {
+  const errores = [];
+
+  const documento = form.value.numero_documento;
+  if (!documento || documento.length < MIN_DOCUMENTO || documento.length > MAX_DOCUMENTO) {
+    errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+  }
+
+  const monto = parseMonto(form.value.valorSinSimbolo);
+  if (!Number.isFinite(monto) || monto <= 0) {
+    errores.push('El valor total debe ser un número mayor a 0');
+  }
+
+  let saldo = form.value.saldo_pendiente;
+  let saldoNumero = undefined;
+  if (saldo !== undefined && saldo !== null && saldo !== '') {
+    saldo = normalizarMonto(saldo);
+    form.value.saldo_pendiente = saldo;
+    saldoNumero = parseMonto(saldo);
+    if (!Number.isFinite(saldoNumero) || saldoNumero < 0) {
+      errores.push('El saldo pendiente debe ser un número mayor o igual a 0');
+    } else if (Number.isFinite(monto) && saldoNumero > monto) {
+      errores.push('El saldo pendiente no puede ser mayor que el valor total');
+    }
+  }
+
+  if (!form.value.vencimiento) {
+    errores.push('La fecha de vencimiento es obligatoria');
+  } else if (!esFechaValida(form.value.vencimiento)) {
+    errores.push('La fecha de vencimiento no es válida');
+  }
+
+  return {
+    errores,
+    monto,
+    saldo: saldoNumero
+  };
+}
+
 function guardarMensualidad() {
-  if (!form.value.numero_documento || !form.value.valorSinSimbolo || !form.value.vencimiento) {
-    alert('Completa Número de documento, Valor y Fecha de vencimiento');
+  const { errores, monto, saldo } = validarFormularioMensualidad();
+
+  if (errores.length > 0) {
+    alert('Corrige los siguientes errores:\n' + errores.join('\n'));
     return;
   }
 
   const payload = {
-    numero_documento: String(form.value.numero_documento).trim(),
-    monto_pago: Number(form.value.valorSinSimbolo),
+    numero_documento: form.value.numero_documento,
+    monto_pago: monto,
     fecha_vencimiento: form.value.vencimiento,
     activo: !!form.value.activo,
-    estado_ui: form.value.estado_ui,
-    saldo_pendiente: form.value.saldo_pendiente !== undefined && form.value.saldo_pendiente !== null && form.value.saldo_pendiente !== ''
-      ? Number(form.value.saldo_pendiente) : undefined
+    estado_ui: form.value.estado_ui
   };
-  // Adjuntar id_metodo_pago solo si fue seleccionado
+
   if (form.value.id_metodo_pago !== '' && form.value.id_metodo_pago !== undefined && form.value.id_metodo_pago !== null) {
-    payload.id_metodo_pago = Number(form.value.id_metodo_pago);
+    const metodo = Number(form.value.id_metodo_pago);
+    if (!Number.isNaN(metodo)) {
+      payload.id_metodo_pago = metodo;
+    }
   }
-  // Si marcó Pagado en la creación, forzar saldo 0 para coherencia inmediata
+
   if (form.value.estado_ui === 'Pagado') {
     payload.saldo_pendiente = 0;
+  } else if (saldo !== undefined) {
+    payload.saldo_pendiente = saldo;
   }
+
   emit('nueva', payload);
   cerrarFormulario();
 }
 </script>
 
+<style scoped>
+.mensaje-documento {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
 
+.mensaje-documento.indicacion,
+.mensaje-documento.pendiente {
+  color: #6c757d;
+}
+
+.mensaje-documento.checking {
+  color: #0d6efd;
+}
+
+.mensaje-documento.found {
+  color: #198754;
+  font-weight: 600;
+}
+
+.mensaje-documento.warning {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.mensaje-documento.not-found,
+.mensaje-documento.invalid,
+.mensaje-documento.error {
+  color: #dc3545;
+}
+</style>
