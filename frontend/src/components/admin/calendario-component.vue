@@ -139,7 +139,6 @@
                                 {{ categoria.nombre_categoria }}
                             </option>
                         </select>
-
                     </div>
 
                     <div class="campo-formulario">
@@ -641,7 +640,17 @@ export default {
 
             this.normalizarCamposEvento();
             // Validar datos del evento
-            const errores = calendarioService.validarEvento(this.nuevoEvento);
+            const errores = [];
+            if (!this.nuevoEvento.titulo) errores.push('El título debe tener al menos 3 caracteres');
+            if (!this.nuevoEvento.idTipoEvento) errores.push('Debe seleccionar un tipo de evento');
+            if (!this.nuevoEvento.fecha) errores.push('Debe especificar una fecha');
+            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) errores.push('Debe especificar una hora de inicio');
+            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) errores.push('Debe especificar hora de inicio y fin');
+            if (!this.nuevoEvento.idCategoria) errores.push('Debe seleccionar una categoría');
+            if (!this.nuevoEvento.lugar) errores.push('El lugar debe tener al menos 3 caracteres');
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
+                errores.push('La hora de fin debe ser posterior a la hora de inicio');
+            }
             if (errores.length > 0) {
                 alert('Errores de validación:\n' + errores.join('\n'));
                 return;
