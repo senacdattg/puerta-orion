@@ -9,26 +9,6 @@
     </div>
 
     <div class="dashboard-grid">
-      <div class="dashboard-card" @click="navigateTo('/registrar-deportista-form')">
-        <div class="card-icon">
-          <i class="fas fa-user-plus"></i>
-        </div>
-        <div class="card-content">
-          <h3>Registrar Deportista</h3>
-          <p>Agrega nuevos deportistas al sistema</p>
-        </div>
-      </div>
-
-      <div class="dashboard-card" @click="navigateTo('/registrar-acudiente')">
-        <div class="card-icon">
-          <i class="fas fa-user-friends"></i>
-        </div>
-        <div class="card-content">
-          <h3>Registrar Acudiente</h3>
-          <p>Registra nuevos acudientes</p>
-        </div>
-      </div>
-
       <div class="dashboard-card" @click="navigateTo('/deportistas')">
         <div class="card-icon">
           <i class="fas fa-users"></i>
@@ -39,13 +19,13 @@
         </div>
       </div>
 
-      <div class="dashboard-card" @click="navigateTo('/mensualidades')">
+      <div class="dashboard-card" @click="navigateTo('/calendario')">
         <div class="card-icon">
-          <i class="fas fa-money-bill-wave"></i>
+          <i class="fas fa-calendar-alt"></i>
         </div>
         <div class="card-content">
-          <h3>Mensualidades</h3>
-          <p>Gestiona los pagos del club</p>
+          <h3>Calendario</h3>
+          <p>Gestiona eventos y actividades del club</p>
         </div>
       </div>
     </div>

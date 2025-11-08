@@ -166,10 +166,13 @@
   font-weight: bold !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  width: 140px !important;
-  min-width: 140px !important;
-  max-width: 140px !important;
-  flex: 0 0 140px !important;
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  flex: 0 0 150px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -182,11 +185,17 @@
 
 .botones-modal .btn-principal,
 .botones-modal .btn-secundario,
-.botones-modal .btn-eliminar {
-  width: 140px !important;
-  min-width: 140px !important;
-  max-width: 140px !important;
-  flex: 0 0 140px !important;
+.botones-modal .btn-eliminar,
+.botones-modal button.btn-principal,
+.botones-modal button.btn-secundario,
+.botones-modal button.btn-eliminar {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  flex: 0 0 150px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
 }
 
 .botones-modal .btn-principal {
@@ -210,10 +219,13 @@
 .botones-modal .btn-eliminar {
   background: #ff0000 !important;
   color: white !important;
-  width: 140px !important;
-  min-width: 140px !important;
-  max-width: 140px !important;
-  flex: 0 0 140px !important;
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  flex: 0 0 150px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
 }
 
 .botones-modal .btn-eliminar:hover {
@@ -221,11 +233,16 @@
 }
 
 /* Selector aún más específico para asegurar el ancho */
-.modal-content .botones-modal button.btn-eliminar {
-  width: 140px !important;
-  min-width: 140px !important;
-  max-width: 140px !important;
-  flex: 0 0 140px !important;
+.modal-content .botones-modal button.btn-eliminar,
+.modal-content .botones-modal button.btn-secundario,
+.modal-content .botones-modal button.btn-principal {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+  flex: 0 0 150px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
 }
 
 /* Modal selector de eventos */
@@ -295,10 +312,24 @@
 }
 
 .evento-hora,
-.evento-lugar {
+.evento-lugar,
+.evento-categoria {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.evento-categoria {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  background: #e6fffa;
+  color: #234e52;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.evento-categoria i {
+  font-size: 0.7rem;
 }
 
         .evento-item i.fa-edit,

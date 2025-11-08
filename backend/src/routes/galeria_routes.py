@@ -9,6 +9,7 @@ from src.models.eventos.tipo_evento import TipoEvento
 from src.models.categorias.categoria import Categoria
 from ..middleware.auth_decorator import token_required
 from src.utils.logger import logger
+from src.utils.validations import sanitize_free_text, ValidationError
 import os
 import urllib.parse
 
@@ -123,30 +124,60 @@ def crear_imagen():
         data = request.get_json()
         
         # Validar datos requeridos
-        if not data.get('titulo'):
+        try:
+            titulo = sanitize_free_text('titulo', data.get('titulo'), max_length=120)
+        except ValidationError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'status_code': 400
+            }), 400
+        if not titulo:
             return jsonify({
                 'success': False,
                 'error': 'El título es requerido',
                 'status_code': 400
             }), 400
-        
+
+        descripcion = data.get('descripcion')
+        if not descripcion:
+            return jsonify({
+                'success': False,
+                'error': 'La descripción es requerida',
+                'status_code': 400
+            }), 400
+        try:
+            descripcion_sanitizada = sanitize_free_text('descripcion', descripcion, max_length=500)
+        except ValidationError as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'status_code': 400
+            }), 400
+
         if not data.get('url_imagen'):
             return jsonify({
                 'success': False,
                 'error': 'La URL de la imagen es requerida',
                 'status_code': 400
             }), 400
+
+        if not data.get('id_tipo_evento'):
+            return jsonify({
+                'success': False,
+                'error': 'El tipo de evento es requerido',
+                'status_code': 400
+            }), 400
         
         # Validar foreign keys si se proporcionan
-        if data.get('id_tipo_evento'):
-            tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
-            if not tipo_evento:
-                return jsonify({
-                    'success': False,
-                    'error': 'Tipo de evento no encontrado',
-                    'status_code': 400
-                }), 400
-        
+        tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
+        if not tipo_evento:
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de evento no encontrado',
+                'status_code': 400
+            }), 400
+
         if data.get('id_categoria'):
             categoria = Categoria.query.get(data['id_categoria'])
             if not categoria:
@@ -155,12 +186,11 @@ def crear_imagen():
                     'error': 'Categoría no encontrada',
                     'status_code': 400
                 }), 400
-        
-        # Crear nueva imagen
+
         nueva_imagen = Galeria(
-            titulo=data['titulo'],
+            titulo=titulo,
             url_imagen=data['url_imagen'],
-            descripcion=data.get('descripcion'),
+            descripcion=descripcion_sanitizada,
             id_tipo_evento=data.get('id_tipo_evento'),
             id_categoria=data.get('id_categoria')
         )
@@ -214,7 +244,13 @@ def actualizar_imagen(id_galeria):
                     'error': 'Tipo de evento no encontrado',
                     'status_code': 400
                 }), 400
-        
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'El tipo de evento es requerido',
+                'status_code': 400
+            }), 400
+
         if data.get('id_categoria'):
             categoria = Categoria.query.get(data['id_categoria'])
             if not categoria:
@@ -223,17 +259,30 @@ def actualizar_imagen(id_galeria):
                     'error': 'Categoría no encontrada',
                     'status_code': 400
                 }), 400
-        
+
         # Actualizar campos
         if 'titulo' in data:
-            imagen.titulo = data['titulo']
-        
+            try:
+                imagen.titulo = sanitize_free_text('titulo', data['titulo'], max_length=120)
+            except ValidationError as e:
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'status_code': 400
+                }), 400
+
         if 'url_imagen' in data:
             imagen.url_imagen = data['url_imagen']
-        
+
         if 'descripcion' in data:
-            imagen.descripcion = data['descripcion']
-        
+            if not data['descripcion']:
+                return jsonify({
+                    'success': False,
+                    'error': 'La descripción es requerida',
+                    'status_code': 400
+                }), 400
+            imagen.descripcion = sanitize_free_text('descripcion', data['descripcion'], max_length=500)
+
         if 'id_tipo_evento' in data:
             imagen.id_tipo_evento = data['id_tipo_evento']
         

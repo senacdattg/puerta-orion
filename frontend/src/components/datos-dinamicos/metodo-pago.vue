@@ -29,14 +29,21 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const LOCALE_COL = 'es-CO'
+
+function normalizarNombre(valor = '') {
+  const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+}
+
 const localForm = ref({
-  nombre: props.modelValue?.nombre || '',
+  nombre: normalizarNombre(props.modelValue?.nombre || ''),
   estado: props.modelValue?.estado ?? true
 })
 
 // Solo actualizar localForm si el valor realmente cambió desde el padre
 watch(() => props.modelValue, (newVal) => {
-  const nuevoNombre = newVal?.nombre || ''
+  const nuevoNombre = normalizarNombre(newVal?.nombre || '')
   const nuevoEstado = newVal?.estado ?? true
   
   if (localForm.value.nombre !== nuevoNombre || localForm.value.estado !== nuevoEstado) {
@@ -47,13 +54,21 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { deep: true })
 
-// Solo emitir si el valor realmente cambió
+// Normalizar y emitir cambios
 watch([() => localForm.value.nombre, () => localForm.value.estado], 
   ([nombre, estado]) => {
+    const nombreNormalizado = normalizarNombre(nombre)
+    if (nombreNormalizado !== nombre) {
+      localForm.value.nombre = nombreNormalizado
+      return
+    }
+
     const valorActual = props.modelValue
-    if (nombre !== (valorActual?.nombre || '') || 
-        estado !== (valorActual?.estado ?? true)) {
-      emit('update:modelValue', { nombre, estado })
+    const nombreActual = normalizarNombre(valorActual?.nombre || '')
+    const estadoActual = valorActual?.estado ?? true
+
+    if (nombreNormalizado !== nombreActual || estado !== estadoActual) {
+      emit('update:modelValue', { nombre: nombreNormalizado, estado })
     }
   }
 )

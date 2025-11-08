@@ -82,7 +82,7 @@
                         </label>
                         <input id="titulo" v-model="nuevoEvento.titulo" type="text"
                             placeholder="Ej: Entrenamiento de fuerza" required class="input-evento"
-                            :disabled="!puedeCrear && !modoEdicion" />
+                            :disabled="!puedeCrear && !modoEdicion" @input="manejarTitulo" />
                     </div>
 
                     <div class="campo-formulario">
@@ -105,7 +105,7 @@
                             Fecha *
                         </label>
                         <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
-                            :disabled="!puedeCrear && !modoEdicion" />
+                            :disabled="true" readonly />
                     </div>
 
                     <div class="fila-dos-columnas">
@@ -139,7 +139,6 @@
                                 {{ categoria.nombre_categoria }}
                             </option>
                         </select>
-
                     </div>
 
                     <div class="campo-formulario">
@@ -148,7 +147,7 @@
                             Lugar *
                         </label>
                         <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
-                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" />
+                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
                     </div>
 
                     <div class="campo-formulario">
@@ -158,17 +157,33 @@
                         </label>
                         <textarea id="descripcion" v-model="nuevoEvento.descripcion"
                             placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento"
-                            :disabled="!puedeCrear && !modoEdicion"></textarea>
+                            :disabled="!puedeCrear && !modoEdicion" @input="manejarDescripcion"></textarea>
                     </div>
 
                     <div class="botones-modal">
-                        <button type="button" @click="cerrarModal" class="btn-secundario">
+                        <button 
+                            type="button" 
+                            @click="cerrarModal" 
+                            class="btn-secundario"
+                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        >
                             Cerrar
                         </button>
-                        <button v-if="puedeEliminar && modoEdicion" type="button" @click="eliminarEvento" class="btn-eliminar">
+                        <button 
+                            v-if="puedeEliminar && modoEdicion" 
+                            type="button" 
+                            @click="eliminarEvento" 
+                            class="btn-eliminar"
+                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        >
                             Eliminar
                         </button>
-                        <button v-if="puedeCrear || (puedeEditar && modoEdicion)" type="submit" class="btn-principal">
+                        <button 
+                            v-if="puedeCrear || (puedeEditar && modoEdicion)" 
+                            type="submit" 
+                            class="btn-principal"
+                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        >
                             {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
                         </button>
                     </div>
@@ -195,6 +210,10 @@
                             <div class="evento-detalles">
                                 <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
                                     {{ evento.tipo }}
+                                </span>
+                                <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
+                                    <i class="fas fa-tag"></i>
+                                    {{ evento.categoria.nombre_categoria }}
                                 </span>
                                 <span class="evento-hora">
                                     <i class="fas fa-clock"></i>
@@ -241,6 +260,11 @@
 <script>
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
+
+const LOCALE_COL = 'es-CO';
+const MAX_TITULO = 120;
+const MAX_LUGAR = 120;
+const MAX_DESCRIPCION = 500;
 
 export default {
     name: 'CalendarioComponent',
@@ -327,6 +351,52 @@ export default {
     },
 
     methods: {
+        normalizarEspacios(valor = '') {
+            return valor ? valor.replace(/\s+/g, ' ').trim() : '';
+        },
+
+        normalizarTitulo(valor = '') {
+            if (!valor) return '';
+            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, '');
+            return this.normalizarEspacios(limpio).slice(0, MAX_TITULO);
+        },
+
+        normalizarLugar(valor = '') {
+            if (!valor) return '';
+            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '');
+            return this.normalizarEspacios(limpio).slice(0, MAX_LUGAR);
+        },
+
+        normalizarDescripcion(valor = '') {
+            if (!valor) return '';
+            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, '');
+            return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION);
+        },
+
+        manejarTitulo(event) {
+            const valor = event?.target?.value ?? this.nuevoEvento.titulo;
+            this.nuevoEvento.titulo = this.normalizarTitulo(valor);
+        },
+
+        manejarLugar(event) {
+            const valor = event?.target?.value ?? this.nuevoEvento.lugar;
+            this.nuevoEvento.lugar = this.normalizarLugar(valor);
+        },
+
+        manejarDescripcion(event) {
+            const valor = event?.target?.value ?? this.nuevoEvento.descripcion;
+            this.nuevoEvento.descripcion = this.normalizarDescripcion(valor);
+        },
+
+        normalizarCamposEvento() {
+            this.nuevoEvento.titulo = this.normalizarTitulo(this.nuevoEvento.titulo);
+            this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
+            this.nuevoEvento.descripcion = this.normalizarDescripcion(this.nuevoEvento.descripcion);
+        },
+
         async inicializarComponente() {
             try {
                 this.cargando = true;
@@ -505,6 +575,7 @@ export default {
             this.modalVisible = true;
             this.modoEdicion = false;
             this.limpiarFormulario();
+            this.normalizarCamposEvento();
 
             if (!this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
@@ -543,6 +614,7 @@ export default {
                 idTipoEvento: evento.idTipoEvento || evento.tipo,
                 idCategoria: evento.idCategoria || evento.id_categoria
             };
+            this.normalizarCamposEvento();
             this.modoEdicion = true;
             this.selectorEventosVisible = false;
             this.modalVisible = true;
@@ -551,6 +623,7 @@ export default {
         verEvento(evento) {
             this.eventoSeleccionado = evento;
             this.nuevoEvento = { ...evento };
+            this.normalizarCamposEvento();
             this.modoEdicion = false;
             this.selectorEventosVisible = false;
             this.modalVisible = true;
@@ -565,8 +638,19 @@ export default {
         async guardarEvento() {
             if (!this.puedeCrear && !this.puedeEditar) return; // Verificar permisos
 
+            this.normalizarCamposEvento();
             // Validar datos del evento
-            const errores = calendarioService.validarEvento(this.nuevoEvento);
+            const errores = [];
+            if (!this.nuevoEvento.titulo) errores.push('El título debe tener al menos 3 caracteres');
+            if (!this.nuevoEvento.idTipoEvento) errores.push('Debe seleccionar un tipo de evento');
+            if (!this.nuevoEvento.fecha) errores.push('Debe especificar una fecha');
+            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) errores.push('Debe especificar una hora de inicio');
+            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) errores.push('Debe especificar hora de inicio y fin');
+            if (!this.nuevoEvento.idCategoria) errores.push('Debe seleccionar una categoría');
+            if (!this.nuevoEvento.lugar) errores.push('El lugar debe tener al menos 3 caracteres');
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
+                errores.push('La hora de fin debe ser posterior a la hora de inicio');
+            }
             if (errores.length > 0) {
                 alert('Errores de validación:\n' + errores.join('\n'));
                 return;
@@ -657,6 +741,7 @@ export default {
                 descripcion: '',
                 fecha: this.nuevoEvento.fecha || this.obtenerFechaActual()
             };
+            this.normalizarCamposEvento();
             this.eventoSeleccionado = null;
             this.modoEdicion = false;
         },

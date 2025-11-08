@@ -6,13 +6,13 @@
 
       <div class="fila-texto">
         <input v-model="form.nombre1" type="text" placeholder="¿Cuál es su primer nombre?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreCampo('nombre1', event)" />
         <input v-model="form.nombre2" type="text" placeholder="¿Cuál es su segundo nombre?"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreCampo('nombre2', event, false)" />
         <input v-model="form.apellido1" type="text" placeholder="¿Cuál es su primer apellido?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreCampo('apellido1', event)" />
         <input v-model="form.apellido2" type="text" placeholder="¿Cuál es su segundo apellido?"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreCampo('apellido2', event, false)" />
       </div>
 
       <hr class="form-divider" />
@@ -25,7 +25,7 @@
           </option>
         </select>
         <input v-model="form.numeroDocumento" type="text" placeholder="¿Cuál es su número de documento?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="manejarDocumento" />
       </div>
 
       <hr class="form-divider" />
@@ -44,18 +44,18 @@
 
       <div class="fila-texto">
         <input v-model="form.correo" type="email" placeholder="¿Cuál es su correo electrónico?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="manejarCorreo" />
         <input v-model="form.telefono" type="text" placeholder="¿Cuál es su número telefónico?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTelefonoCampo('telefono', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input v-model="form.ciudad" type="text" placeholder="¿En qué ciudad reside?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('ciudad', event)" />
         <input v-model="form.direccion" type="text" placeholder="¿Cuál es su dirección?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarDireccionCampo('direccion', event)" />
       </div>
 
       <hr class="form-divider" />
@@ -83,16 +83,16 @@
 
       <div class="fila-texto">
         <input v-model="form.profesion" type="text" placeholder="¿Cuál es su profesión?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('profesion', event)" />
         <input v-model="form.especialidad" type="text" placeholder="¿Cuál es su especialidad deportiva?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('especialidad', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input v-model="form.institucion" type="text" placeholder="¿En qué institución se formó?"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('institucion', event)" />
         <input v-model="form.anoGraduacion" type="number" placeholder="¿En qué año se graduó?" min="1950" max="2030"
           :readonly="modo === 'ver'" />
       </div>
@@ -101,7 +101,7 @@
 
       <div class="fila-texto">
         <input v-model="form.certificaciones" type="text" placeholder="¿Qué certificaciones tiene?"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('certificaciones', event)" />
         <input v-model="form.experienciaAnos" type="number" placeholder="¿Cuántos años de experiencia tiene?" min="0"
           max="50" :readonly="modo === 'ver'" />
       </div>
@@ -111,7 +111,7 @@
       <div class="fila-texto">
         <textarea v-model="form.biografia"
           placeholder="Cuéntenos brevemente sobre su experiencia y logros deportivos..." rows="4"
-          :readonly="modo === 'ver'"></textarea>
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('biografia', event)"></textarea>
       </div>
       <hr class="form-divider" />
       <!-- Botones de navegación - SIEMPRE visibles -->
@@ -139,23 +139,23 @@
           <option value="otros">Otros</option>
         </select>
         <input v-model="form.nivelEntrenamiento" type="text" placeholder="¿Qué nivel de entrenamiento maneja?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('nivelEntrenamiento', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input v-model="form.clubesAnteriores" type="text" placeholder="¿En qué clubes ha trabajado anteriormente?"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('clubesAnteriores', event)" />
         <input v-model="form.logrosEntrenador" type="text" placeholder="¿Qué logros ha obtenido como entrenador?"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('logrosEntrenador', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input v-model="form.horariosDisponibles" type="text" placeholder="¿Qué horarios tiene disponibles?" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('horariosDisponibles', event)" />
         <input v-model="form.salarioEsperado" type="number" placeholder="¿Cuál es su expectativa salarial?" min="0"
           :readonly="modo === 'ver'" />
       </div>
@@ -177,18 +177,18 @@
 
       <div class="fila-texto">
         <input v-model="form.contactoEmergencia.nombre" type="text" placeholder="Nombre del contacto de emergencia"
-          required :readonly="modo === 'ver'" />
+          required :readonly="modo === 'ver'" @input="(event) => manejarNombreEmergencia('nombre', event)" />
         <input v-model="form.contactoEmergencia.parentesco" type="text" placeholder="Parentesco" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreEmergencia('parentesco', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input v-model="form.contactoEmergencia.telefono" type="text" placeholder="Teléfono de emergencia" required
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="manejarTelefonoEmergencia" />
         <input v-model="form.contactoEmergencia.correo" type="email" placeholder="Correo de emergencia"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="manejarCorreoEmergencia" />
       </div>
 
       <hr class="form-divider" />
@@ -228,25 +228,25 @@
 
       <div class="fila-texto">
         <input v-model="form.referencias.nombre1" type="text" placeholder="Nombre de referencia 1"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreReferencia('nombre1', event)" />
         <input v-model="form.referencias.telefono1" type="text" placeholder="Teléfono de referencia 1"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTelefonoReferencia('telefono1', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <input v-model="form.referencias.nombre2" type="text" placeholder="Nombre de referencia 2"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarNombreReferencia('nombre2', event)" />
         <input v-model="form.referencias.telefono2" type="text" placeholder="Teléfono de referencia 2"
-          :readonly="modo === 'ver'" />
+          :readonly="modo === 'ver'" @input="(event) => manejarTelefonoReferencia('telefono2', event)" />
       </div>
 
       <hr class="form-divider" />
 
       <div class="fila-texto">
         <textarea v-model="form.observaciones" placeholder="Observaciones adicionales..." rows="4"
-          :readonly="modo === 'ver'"></textarea>
+          :readonly="modo === 'ver'" @input="(event) => manejarTextoCampo('observaciones', event)"></textarea>
       </div>
 
       <hr class="form-divider" />
@@ -344,6 +344,200 @@ const form = ref({
   observaciones: ""
 });
 
+const LOCALE_COL = 'es-CO';
+const NAME_REGEX = /^[A-ZÁÉÍÓÚÜÑ ]+$/;
+const EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+const MIN_DOCUMENTO = 6;
+const MAX_DOCUMENTO = 10;
+const MIN_TELEFONO = 10;
+const MAX_TELEFONO = 10;
+const MAX_TEXTO = 500;
+
+function aMayusculas(valor = '') {
+  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : '';
+}
+
+function sanitizarNombre(valor = '', obligatorio = true) {
+  const mayus = aMayusculas(valor || '');
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ').trim();
+  return obligatorio ? limpio : limpio || '';
+}
+
+function sanitizarDocumento(valor = '') {
+  return (valor || '').toString().replace(/\D/g, '').slice(0, MAX_DOCUMENTO);
+}
+
+function sanitizarTelefono(valor = '') {
+  return (valor || '').toString().replace(/\D/g, '').slice(0, MAX_TELEFONO);
+}
+
+function sanitizarDireccion(valor = '') {
+  const mayus = aMayusculas(valor || '');
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '').replace(/\s{2,}/g, ' ').trim();
+}
+
+function sanitizarTexto(valor = '', maxLength = MAX_TEXTO) {
+  const mayus = aMayusculas(valor || '');
+  return mayus.replace(/\s{2,}/g, ' ').trim().slice(0, maxLength);
+}
+
+function manejarNombreCampo(campo, event, obligatorio = true) {
+  const valor = event?.target?.value ?? form.value[campo];
+  form.value[campo] = sanitizarNombre(valor, obligatorio);
+}
+
+function manejarNombreReferencia(campo, event) {
+  const valor = event?.target?.value ?? form.value.referencias[campo];
+  form.value.referencias[campo] = sanitizarNombre(valor, false);
+}
+
+function manejarNombreEmergencia(campo, event, obligatorio = true) {
+  const valor = event?.target?.value ?? form.value.contactoEmergencia[campo];
+  form.value.contactoEmergencia[campo] = sanitizarNombre(valor, obligatorio);
+}
+
+function manejarDocumento(event) {
+  const valor = event?.target?.value ?? form.value.numeroDocumento;
+  form.value.numeroDocumento = sanitizarDocumento(valor);
+}
+
+function manejarTelefonoCampo(campo, event) {
+  const valor = event?.target?.value ?? form.value[campo];
+  form.value[campo] = sanitizarTelefono(valor);
+}
+
+function manejarTelefonoReferencia(campo, event) {
+  const valor = event?.target?.value ?? form.value.referencias[campo];
+  form.value.referencias[campo] = sanitizarTelefono(valor);
+}
+
+function manejarTelefonoEmergencia(event) {
+  const valor = event?.target?.value ?? form.value.contactoEmergencia.telefono;
+  form.value.contactoEmergencia.telefono = sanitizarTelefono(valor);
+}
+
+function manejarDireccionCampo(campo, event) {
+  const valor = event?.target?.value ?? form.value[campo];
+  form.value[campo] = sanitizarDireccion(valor);
+}
+
+function manejarTextoCampo(campo, event, maxLength = MAX_TEXTO) {
+  const valor = event?.target?.value ?? form.value[campo];
+  form.value[campo] = sanitizarTexto(valor, maxLength);
+}
+
+function manejarCorreo(event) {
+  const valor = event?.target?.value ?? form.value.correo;
+  form.value.correo = valor ? valor.trim().toLowerCase() : '';
+}
+
+function manejarCorreoEmergencia(event) {
+  const valor = event?.target?.value ?? form.value.contactoEmergencia.correo;
+  form.value.contactoEmergencia.correo = valor ? valor.trim().toLowerCase() : '';
+}
+
+function normalizarFormulario() {
+  manejarNombreCampo('nombre1');
+  manejarNombreCampo('nombre2', null, false);
+  manejarNombreCampo('apellido1');
+  manejarNombreCampo('apellido2', null, false);
+  manejarDocumento(null);
+  manejarTelefonoCampo('telefono', null);
+  manejarDireccionCampo('direccion', null);
+  manejarTextoCampo('ciudad', null);
+  manejarTextoCampo('profesion', null);
+  manejarTextoCampo('especialidad', null);
+  manejarTextoCampo('institucion', null);
+  manejarTextoCampo('certificaciones', null);
+  manejarTextoCampo('biografia', null);
+  manejarTextoCampo('nivelEntrenamiento', null);
+  manejarTextoCampo('clubesAnteriores', null);
+  manejarTextoCampo('logrosEntrenador', null);
+  manejarTextoCampo('horariosDisponibles', null);
+  manejarTextoCampo('observaciones', null);
+  manejarNombreEmergencia('nombre', null);
+  manejarNombreEmergencia('parentesco', null);
+  manejarTelefonoEmergencia(null);
+  manejarCorreoEmergencia(null);
+  manejarNombreReferencia('nombre1', null);
+  manejarNombreReferencia('nombre2', null);
+  manejarTelefonoReferencia('telefono1', null);
+  manejarTelefonoReferencia('telefono2', null);
+  manejarCorreo(null);
+}
+
+function validarFormulario() {
+  if (!form.value.nombre1 || !NAME_REGEX.test(form.value.nombre1)) {
+    alert('El primer nombre solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (form.value.nombre2 && !NAME_REGEX.test(form.value.nombre2)) {
+    alert('El segundo nombre solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (!form.value.apellido1 || !NAME_REGEX.test(form.value.apellido1)) {
+    alert('El primer apellido solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (form.value.apellido2 && !NAME_REGEX.test(form.value.apellido2)) {
+    alert('El segundo apellido solo debe contener letras y espacios');
+    return false;
+  }
+
+  if (!form.value.numeroDocumento || form.value.numeroDocumento.length < MIN_DOCUMENTO || form.value.numeroDocumento.length > MAX_DOCUMENTO) {
+    alert(`El documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+    return false;
+  }
+
+  if (!/^\d+$/.test(form.value.numeroDocumento)) {
+    alert('El documento solo debe contener dígitos');
+    return false;
+  }
+
+  if (!form.value.telefono || form.value.telefono.length !== MIN_TELEFONO) {
+    alert(`El teléfono debe tener exactamente ${MIN_TELEFONO} dígitos`);
+    return false;
+  }
+
+  if (!/^\d{10}$/.test(form.value.telefono)) {
+    alert('El teléfono solo debe contener 10 dígitos');
+    return false;
+  }
+
+  if (!EMAIL_REGEX.test(form.value.correo)) {
+    alert('Ingrese un correo electrónico válido');
+    return false;
+  }
+
+  const telefonoEmergencia = form.value.contactoEmergencia.telefono;
+  if (!telefonoEmergencia || telefonoEmergencia.length !== MIN_TELEFONO || !/^\d{10}$/.test(telefonoEmergencia)) {
+    alert('El teléfono de emergencia debe contener exactamente 10 dígitos');
+    return false;
+  }
+
+  if (form.value.contactoEmergencia.correo && !EMAIL_REGEX.test(form.value.contactoEmergencia.correo)) {
+    alert('Ingrese un correo válido para el contacto de emergencia');
+    return false;
+  }
+
+  const telefono1 = form.value.referencias.telefono1;
+  if (telefono1 && !/^\d{10}$/.test(telefono1)) {
+    alert('El teléfono de referencia 1 debe contener exactamente 10 dígitos');
+    return false;
+  }
+
+  const telefono2 = form.value.referencias.telefono2;
+  if (telefono2 && !/^\d{10}$/.test(telefono2)) {
+    alert('El teléfono de referencia 2 debe contener exactamente 10 dígitos');
+    return false;
+  }
+
+  return true;
+}
+
 // Función para obtener el título según el modo
 function obtenerTitulo() {
   switch (props.modo) {
@@ -423,6 +617,8 @@ async function cargarCatalogos() {
 
 // Manejo del formulario
 function manejarSubmit() {
+  normalizarFormulario();
+
   // Validar contraseñas
   if (form.value.contrasena !== form.value.confirmarContrasena) {
     alert("Las contraseñas no coinciden");
@@ -434,6 +630,10 @@ function manejarSubmit() {
     !form.value.numeroDocumento || !form.value.correo || !form.value.telefono ||
     !form.value.ciudad || !form.value.direccion || !form.value.contrasena) {
     alert("Por favor complete todos los campos obligatorios");
+    return;
+  }
+
+  if (!validarFormulario()) {
     return;
   }
 
@@ -461,6 +661,7 @@ onMounted(async () => {
   // Cargar datos del formulario si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
     form.value = { ...form.value, ...props.datos };
+    normalizarFormulario();
   }
 });
 
@@ -468,6 +669,7 @@ onMounted(async () => {
 watch(() => props.datos, (nuevosDatos) => {
   if (nuevosDatos && Object.keys(nuevosDatos).length > 0) {
     form.value = { ...form.value, ...nuevosDatos };
+    normalizarFormulario();
   }
 }, { deep: true });
 </script>

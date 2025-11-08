@@ -47,7 +47,9 @@ from ..models.base import db
 from ..models.deportistas.deportista import Deportista
 from ..models.deportistas.informacion_deportiva import InformacionDeportiva
 from ..models.personas.persona import Persona
+from ..models.usuarios.usuario import Usuario
 from ..utils.logger import obtener_registrador
+from ..utils.validations import sanitize_free_text
 
 
 class DeportistaService:
@@ -75,7 +77,6 @@ class DeportistaService:
                 - fecha_nacimiento (int, opcional): Año de nacimiento
                 - id_tipo_sanguineo (int, opcional): ID del grupo sanguíneo
                 - id_ciudad_recidencia (int, opcional): ID de la ciudad de residencia
-                - id_mensualidad (int, opcional): ID de la mensualidad
                 - id_informacion_deportiva (int, opcional): ID de información deportiva
                 - id_eps (int, opcional): ID de la EPS
 
@@ -151,7 +152,6 @@ class DeportistaService:
                 fecha_nacimiento=fecha_nacimiento_date,
                 id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
                 id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
-                id_mensualidad=datos.get('id_mensualidad'),
                 id_informacion_deportiva=datos.get('id_informacion_deportiva'),
                 id_eps=datos.get('id_eps')
             )
@@ -268,7 +268,23 @@ class DeportistaService:
                     datos['telefono'] = deportista.persona.telefono
                     datos['direccion'] = deportista.persona.direccion
                     datos['documento'] = deportista.persona.documento
-                    datos['estado'] = 'activo' if deportista.persona.estado else 'inactivo'
+                    
+                    # Determinar el estado: priorizar el estado del usuario si existe
+                    # Si la persona tiene un usuario asociado, usar el estado del usuario
+                    # Si no tiene usuario, usar el estado de la persona
+                    estado_final = deportista.persona.estado
+                    
+                    # Buscar si existe un usuario asociado a esta persona
+                    usuario = Usuario.query.filter_by(id_persona=deportista.persona.id_persona).first()
+                    if usuario:
+                        # Si existe usuario, usar su estado (tiene prioridad)
+                        estado_final = usuario.estado
+                        # Agregar id_usuario para que el frontend pueda cambiar el estado
+                        datos['id_usuario'] = usuario.id_usuario
+                    else:
+                        datos['id_usuario'] = None
+                    
+                    datos['estado'] = 'activo' if estado_final else 'inactivo'
                 
                 # Agregar datos de la categoría si existe la relación
                 if deportista.categoria:
@@ -329,7 +345,7 @@ class DeportistaService:
             # Actualizar campos permitidos
             campos_permitidos = [
                 'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
-                'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_mensualidad',
+                'id_tipo_sanguineo', 'id_ciudad_recidencia',
                 'id_informacion_deportiva', 'id_eps', 'id_categoria'
             ]
 
@@ -492,20 +508,10 @@ class DeportistaService:
                             'status_code': 400
                         }
                 
-                # Validar mensualidad
-                if 'id_mensualidad' in datos_deportista and datos_deportista['id_mensualidad'] is not None:
-                    mensualidad = Mensualidad.query.filter_by(id_mensualidad=datos_deportista['id_mensualidad']).first()
-                    if not mensualidad:
-                        return {
-                            'success': False,
-                            'message': 'La mensualidad especificada no existe',
-                            'status_code': 400
-                        }
-                
                 # Campos actualizables del deportista
                 campos_deportista_actualizables = [
                     'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
-                    'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_mensualidad',
+                    'id_tipo_sanguineo', 'id_ciudad_recidencia',
                     'id_informacion_deportiva', 'id_eps', 'id_categoria'
                 ]
                 
@@ -549,12 +555,21 @@ class DeportistaService:
                 
                 if not info_deportiva:
                     # Crear nueva información deportiva
+                    recomendacion_medica = datos_informacion_deportiva.get('recomendacion_medica', False)
+                    descripcion_recomendacion = None
+                    if recomendacion_medica:
+                        descripcion_recomendacion = sanitize_free_text(
+                            'descripcion_recomendacion',
+                            datos_informacion_deportiva.get('descripcion_recomendacion'),
+                            max_length=500
+                        )
+
                     info_deportiva = InformacionDeportiva(
                         id_persona=deportista.id_persona,
                         practica_otro_deporte=datos_informacion_deportiva.get('practica_otro_deporte', False),
                         participa_escuela=datos_informacion_deportiva.get('participa_escuela', False),
-                        recomendacion_medica=datos_informacion_deportiva.get('recomendacion_medica', False),
-                        descripcion_recomendacion=datos_informacion_deportiva.get('descripcion_recomendacion'),
+                        recomendacion_medica=recomendacion_medica,
+                        descripcion_recomendacion=descripcion_recomendacion,
                         id_escuela=datos_informacion_deportiva.get('id_escuela'),
                         id_deporte=datos_informacion_deportiva.get('id_deporte'),
                         id_institucion_registro=datos_informacion_deportiva.get('id_institucion_registro')
@@ -608,7 +623,21 @@ class DeportistaService:
                     
                     for campo in campos_info_deportiva:
                         if campo in datos_informacion_deportiva:
-                            setattr(info_deportiva, campo, datos_informacion_deportiva[campo])
+                            valor = datos_informacion_deportiva[campo]
+
+                            if campo == 'descripcion_recomendacion':
+                                recom_med = datos_informacion_deportiva.get(
+                                    'recomendacion_medica', info_deportiva.recomendacion_medica
+                                )
+                                if not recom_med:
+                                    valor = None
+                                elif valor:
+                                    valor = sanitize_free_text('descripcion_recomendacion', valor, max_length=500)
+
+                            setattr(info_deportiva, campo, valor)
+
+                    if 'recomendacion_medica' in datos_informacion_deportiva and not datos_informacion_deportiva['recomendacion_medica']:
+                        info_deportiva.descripcion_recomendacion = None
             
             # Actualizar diagnósticos si se proporcionan
             if tipo_enfermedad is not None or diagnosticos is not None:

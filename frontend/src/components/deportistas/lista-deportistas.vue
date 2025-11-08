@@ -52,7 +52,7 @@
       <!-- Grid de tarjetas de deportistas -->
       <div class="grid-deportistas">
         <TarjetaDeportista v-for="deportista in deportistasFiltrados" :key="deportista.id" :deportista="deportista"
-          @editar="editarDeportista" @eliminar="eliminarDeportista" @ver="verDeportista" />
+          @editar="editarDeportista" @eliminar="eliminarDeportista" @ver="verDeportista" @cambiar-estado="cambiarEstadoDeportista" />
 
         <!-- Botón para agregar deportista - Oculto en modo solo visualización -->
         <!-- <div class="boton-agregar" @click="agregarDeportista">
@@ -92,7 +92,7 @@ const props = defineProps({
 });
 
 // Emits para comunicación con el componente padre
-const emit = defineEmits(['editar', 'eliminar', 'agregar', 'ver']);
+const emit = defineEmits(['editar', 'eliminar', 'agregar', 'ver', 'cambiar-estado']);
 
 // Estado local para filtros (KISS - simple y directo)
 const busqueda = ref('');
@@ -175,6 +175,10 @@ function limpiarFiltros() {
 
 function verDeportista(deportista) {
   emit('ver', deportista);
+}
+
+function cambiarEstadoDeportista(deportista) {
+  emit('cambiar-estado', deportista);
 }
 
 // Cargar categorías desde la base de datos

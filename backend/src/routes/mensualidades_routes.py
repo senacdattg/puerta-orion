@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_cors import cross_origin
 from datetime import date
+from sqlalchemy import or_, cast, String, extract
+import re
 # Implementación simple para sumar meses sin dependencias externas
 
 def _add_months(base: date, months: int) -> date:
@@ -17,6 +19,9 @@ from src.models.pagos.mensualidad import Mensualidad
 from src.utils.logger import logger
 from src.models.pagos.abono_mensualidad import AbonoMensualidad
 from src.middleware.auth_decorator import permission_required, get_current_user, has_role, token_required
+from src.utils.validations import validate_document, ValidationError
+from src.models.usuarios.usuario import Usuario
+from src.models.pagos.metodo_pago import MetodoPago
 try:
     # Import defensivo: la ruta del modelo de Persona puede variar
     from src.models.personas.persona import Persona  # type: ignore
@@ -69,6 +74,128 @@ def parse_decimal(value):
         return float(value) if value is not None else None
     except Exception:
         return None
+
+
+def _buscar_persona_por_documento(numero_documento):
+    if Persona is None or not numero_documento:
+        return None
+
+    doc_str = str(numero_documento).strip()
+    columnas = []
+    for nombre in ('numero_documento', 'documento', 'num_documento', 'dni', 'cedula'):
+        try:
+            col = getattr(Persona, nombre, None)
+            if col is not None:
+                columnas.append(col)
+        except Exception:
+            continue
+
+    if not columnas:
+        return None
+
+    try:
+        condiciones = [cast(columna, String) == doc_str for columna in columnas]
+        return db.session.query(Persona).filter(or_(*condiciones)).first()
+    except Exception:
+        return None
+
+
+def _persona_tiene_rol_deportista(id_persona):
+    if id_persona is None:
+        return False
+
+    try:
+        usuario = Usuario.query.filter_by(id_persona=id_persona).first()
+        if not usuario or not getattr(usuario, 'estado', True):
+            return False
+
+        for rol in getattr(usuario, 'roles', []) or []:
+            nombre = getattr(rol, 'nombre_rol', None) or getattr(rol, 'nombre', None)
+            if nombre and nombre.lower() == 'deportista':
+                return True
+    except Exception:
+        return False
+
+    return False
+
+
+def _adjuntar_info_persona_dict(mensualidad_obj, destino_dict):
+    persona_nombre = None
+    persona_documento = None
+
+    try:
+        persona_rel = getattr(mensualidad_obj, 'persona', None)
+        if persona_rel is not None:
+            persona_nombre = getattr(persona_rel, 'nombre', None) or getattr(persona_rel, 'nombres', None) or \
+                             getattr(persona_rel, 'nombre_persona', None) or getattr(persona_rel, 'nombre_completo', None)
+            persona_documento = getattr(persona_rel, 'documento', None)
+
+        if (persona_nombre is None or persona_documento is None) and Persona is not None and getattr(mensualidad_obj, 'id_persona', None):
+            persona_db = db.session.get(Persona, mensualidad_obj.id_persona)
+            if persona_db is not None:
+                if persona_nombre is None:
+                    persona_nombre = getattr(persona_db, 'nombre', None) or getattr(persona_db, 'nombres', None) or \
+                                     getattr(persona_db, 'nombre_persona', None) or getattr(persona_db, 'nombre_completo', None)
+                if persona_documento is None:
+                    persona_documento = getattr(persona_db, 'documento', None)
+    except Exception:
+        pass
+
+    if persona_documento is not None:
+        try:
+            persona_documento = re.sub(r'\D', '', str(persona_documento)) or None
+        except Exception:
+            persona_documento = str(persona_documento)
+
+    destino_dict['persona_nombre'] = persona_nombre
+    destino_dict['numero_documento'] = persona_documento
+    return destino_dict
+
+
+@mensualidades_bp.get('/buscar-persona')
+@permission_required('crear_mensualidad')
+def buscar_persona_por_documento():
+    documento_raw = (request.args.get('documento') or '').strip()
+
+    if not documento_raw:
+        return jsonify({
+            'success': False,
+            'error': 'Debes proporcionar un número de documento'
+        }), 200
+
+    try:
+        documento = validate_document('numero_documento', documento_raw)
+    except ValidationError as error:
+        return jsonify({
+            'success': False,
+            'error': str(error)
+        }), 200
+
+    persona = _buscar_persona_por_documento(documento)
+    if not persona:
+        return jsonify({
+            'success': True,
+            'encontrado': False,
+            'message': 'No encontramos una persona registrada con ese número de documento.'
+        }), 200
+
+    data = {
+        'id_persona': getattr(persona, 'id_persona', None) or getattr(persona, 'id', None),
+        'documento': getattr(persona, 'documento', documento),
+        'nombre_completo': getattr(persona, 'nombre', None) or getattr(persona, 'nombres', None) or \
+                           getattr(persona, 'nombre_persona', None) or getattr(persona, 'nombre_completo', None),
+        'estado': bool(getattr(persona, 'estado', True))
+    }
+
+    mensaje = 'Persona encontrada y activa.' if data['estado'] else 'Persona encontrada, pero se encuentra inactiva.'
+    data['rol_deportista'] = _persona_tiene_rol_deportista(data['id_persona'])
+
+    return jsonify({
+        'success': True,
+        'encontrado': True,
+        'message': mensaje,
+        'data': data
+    }), 200
 
 
 @mensualidades_bp.get('/')
@@ -152,22 +279,7 @@ def listar_mensualidades():
             except Exception:
                 d['created_at'] = None
             d['id_metodo_pago'] = getattr(m, 'id_metodo_pago', None)
-            # Resolver nombre de persona de forma robusta
-            persona_nombre = None
-            try:
-                pers = getattr(m, 'persona', None)
-                if pers is not None:
-                    persona_nombre = getattr(pers, 'nombre', None) or getattr(pers, 'nombres', None) or \
-                                     getattr(pers, 'nombre_persona', None) or getattr(pers, 'nombre_completo', None)
-                if not persona_nombre and Persona is not None and getattr(m, 'id_persona', None):
-                    # Consulta directa si la relación no está materializada
-                    p = db.session.get(Persona, m.id_persona)
-                    if p is not None:
-                        persona_nombre = getattr(p, 'nombre', None) or getattr(p, 'nombres', None) or \
-                                         getattr(p, 'nombre_persona', None) or getattr(p, 'nombre_completo', None)
-            except Exception:
-                persona_nombre = None
-            d['persona_nombre'] = persona_nombre
+            d = _adjuntar_info_persona_dict(m, d)
             items.append(d)
         return jsonify({
             'success': True,
@@ -211,20 +323,7 @@ def obtener_mensualidad(mensualidad_id: int):
     except Exception:
         d['created_at'] = None
     d['id_metodo_pago'] = getattr(m, 'id_metodo_pago', None)
-    persona_nombre = None
-    try:
-        pers = getattr(m, 'persona', None)
-        if pers is not None:
-            persona_nombre = getattr(pers, 'nombre', None) or getattr(pers, 'nombres', None) or \
-                             getattr(pers, 'nombre_persona', None) or getattr(pers, 'nombre_completo', None)
-        if not persona_nombre and Persona is not None and getattr(m, 'id_persona', None):
-            p = db.session.get(Persona, m.id_persona)
-            if p is not None:
-                persona_nombre = getattr(p, 'nombre', None) or getattr(p, 'nombres', None) or \
-                                 getattr(p, 'nombre_persona', None) or getattr(p, 'nombre_completo', None)
-    except Exception:
-        persona_nombre = None
-    d['persona_nombre'] = persona_nombre
+    d = _adjuntar_info_persona_dict(m, d)
     return jsonify({'success': True, 'data': d}), 200
 
 
@@ -235,99 +334,124 @@ def crear_mensualidad():
         data = request.get_json() or {}
         # Validar identificador de persona por id o número de documento
         id_persona = data.get('id_persona')
-        numero_documento = (data.get('numero_documento') or data.get('documento') or '').strip() if isinstance(data.get('numero_documento') or data.get('documento'), str) else data.get('numero_documento') or data.get('documento')
+        numero_documento_raw = data.get('numero_documento') or data.get('documento')
+        if isinstance(numero_documento_raw, str):
+            numero_documento_raw = numero_documento_raw.strip()
+
+        try:
+            numero_documento = validate_document('numero_documento', numero_documento_raw) if numero_documento_raw else None
+        except ValidationError as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
         if not id_persona and not numero_documento:
             return jsonify({'success': False, 'error': 'Debe proporcionar id_persona o numero_documento'}), 400
 
+        estado_ui_raw = data.get('estado_ui')
+        if estado_ui_raw is None:
+            return jsonify({'success': False, 'error': 'El estado inicial es requerido'}), 400
+        estado_ui = str(estado_ui_raw).strip().lower()
+        if estado_ui not in ('pagado', 'pendiente'):
+            return jsonify({'success': False, 'error': 'El estado inicial debe ser "Pagado" o "Pendiente"'}), 400
+        is_pagado_inicial = estado_ui == 'pagado'
+
+        if not data.get('id_metodo_pago') and data.get('id_metodo_pago') not in (0, '0'):
+            return jsonify({'success': False, 'error': 'El método de pago es requerido'}), 400
+
         # Resolver persona por número de documento si aplica
-        if not id_persona and numero_documento and Persona is not None:
-            from sqlalchemy import or_, cast, String
-            doc_str = str(numero_documento).strip()
-            cols = []
-            # Reunir posibles columnas de documento presentes en el modelo
-            for nombre in ('numero_documento', 'documento', 'num_documento', 'dni', 'cedula'):
-                try:
-                    col = getattr(Persona, nombre, None)
-                    if col is not None:
-                        cols.append(col)
-                except Exception:
-                    pass
-            p = None
-            if cols:
-                try:
-                    condiciones = [cast(col, String) == doc_str for col in cols]
-                    p = db.session.query(Persona).filter(or_(*condiciones)).first()
-                except Exception:
-                    p = None
-            if not p:
+        persona_obj = None
+        if not id_persona and numero_documento:
+            persona_obj = _buscar_persona_por_documento(numero_documento)
+            if not persona_obj:
                 return jsonify({'success': False, 'error': 'Persona no encontrada por numero_documento'}), 404
-            id_persona = getattr(p, 'id_persona', None) or getattr(p, 'id', None)
+            id_persona = getattr(persona_obj, 'id_persona', None) or getattr(persona_obj, 'id', None)
             if not id_persona:
                 return jsonify({'success': False, 'error': 'No se pudo determinar id_persona de la persona encontrada'}), 400
 
-        # Validar monto
-        if data.get('monto_pago') in (None, ''):
-            return jsonify({'success': False, 'error': 'monto_pago es requerido'}), 400
+        if id_persona is None:
+            return jsonify({'success': False, 'error': 'No se pudo determinar id_persona'}), 400
+        try:
+            id_persona = int(id_persona)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'id_persona debe ser numérico'}), 400
+
+        if not _persona_tiene_rol_deportista(id_persona):
+            return jsonify({'success': False, 'error': 'La persona especificada no tiene el rol "Deportista". No se puede crear la mensualidad.'}), 400
 
         monto_pago = parse_decimal(data.get('monto_pago'))
         if monto_pago is None or monto_pago <= 0:
             return jsonify({'success': False, 'error': 'monto_pago debe ser > 0'}), 400
 
-        fecha_vencimiento = data.get('fecha_vencimiento')  # ISO date opcional
-        # Permitir definir saldo inicial/estado desde el payload (e.g., estado_ui = 'Pagado')
-        saldo_inicial = data.get('saldo_pendiente')
+        fecha_vencimiento_raw = data.get('fecha_vencimiento')
+        if not fecha_vencimiento_raw:
+            return jsonify({'success': False, 'error': 'La fecha de vencimiento es requerida'}), 400
         try:
-            saldo_inicial = float(saldo_inicial) if saldo_inicial is not None and saldo_inicial != '' else None
-        except Exception:
-            saldo_inicial = None
-        estado_ui = (str(data.get('estado_ui') or '')).strip().lower()
-        # Aceptar también 'estado' boolean/string como alternativa
-        estado_bool_raw = data.get('estado')
-        estado_bool_norm = None
-        if isinstance(estado_bool_raw, bool):
-            estado_bool_norm = estado_bool_raw
-        elif isinstance(estado_bool_raw, (int, float)):
-            estado_bool_norm = bool(int(estado_bool_raw))
-        elif isinstance(estado_bool_raw, str):
-            estado_bool_norm = estado_bool_raw.strip().lower() in ('1', 'true', 'pagado', 'si', 'sí')
+            fecha_vencimiento = date.fromisoformat(str(fecha_vencimiento_raw))
+        except ValueError:
+            return jsonify({'success': False, 'error': 'fecha_vencimiento no tiene un formato válido (YYYY-MM-DD)'}), 400
 
-        is_pagado_inicial = (estado_ui == 'pagado') or (estado_bool_norm is True) or (saldo_inicial is not None and float(saldo_inicial) == 0)
-        saldo_pendiente = 0 if is_pagado_inicial else (saldo_inicial if saldo_inicial is not None else float(monto_pago))
+        # Saldo pendiente requerido (0 para pagado)
+        saldo_bruto = data.get('saldo_pendiente')
+        if saldo_bruto in (None, ''):
+            if is_pagado_inicial:
+                saldo_inicial = 0.0
+            else:
+                return jsonify({'success': False, 'error': 'El saldo pendiente es requerido'}), 400
+        else:
+            saldo_inicial = parse_decimal(saldo_bruto)
+            if saldo_inicial is None or saldo_inicial < 0:
+                return jsonify({'success': False, 'error': 'El saldo pendiente debe ser un número mayor o igual a 0'}), 400
+        if saldo_inicial > monto_pago:
+            saldo_inicial = monto_pago
+
+        if is_pagado_inicial:
+            saldo_inicial = 0.0
 
         id_metodo_pago_raw = data.get('id_metodo_pago')
-        id_metodo_pago_val = int(id_metodo_pago_raw) if id_metodo_pago_raw not in (None, '',) else None
+        try:
+            id_metodo_pago_val = int(id_metodo_pago_raw)
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'id_metodo_pago debe ser numérico'}), 400
+        metodo_pago_obj = MetodoPago.query.get(id_metodo_pago_val)
+        if not metodo_pago_obj:
+            return jsonify({'success': False, 'error': f'Método de pago con ID {id_metodo_pago_val} no encontrado'}), 404
+
+        # Validar duplicado mes/año
+        existente_mes = Mensualidad.query.filter(
+            Mensualidad.id_persona == id_persona,
+            extract('year', Mensualidad.fecha_vencimiento) == fecha_vencimiento.year,
+            extract('month', Mensualidad.fecha_vencimiento) == fecha_vencimiento.month
+        ).first()
+        if existente_mes:
+            return jsonify({'success': False, 'error': 'Ya existe una mensualidad para este deportista en el mismo mes y año'}), 400
 
         mensualidad = Mensualidad(
-            id_persona=int(id_persona),
+            id_persona=id_persona,
             id_metodo_pago=id_metodo_pago_val,
             monto_pago=monto_pago,
-            estado=bool(is_pagado_inicial),
+            estado=is_pagado_inicial,
             fecha_pago=date.today() if is_pagado_inicial else None,
-            saldo_pendiente=saldo_pendiente,
-            fecha_vencimiento=date.fromisoformat(fecha_vencimiento) if fecha_vencimiento else None,
+            saldo_pendiente=saldo_inicial,
+            fecha_vencimiento=fecha_vencimiento,
             activo=True,
         )
 
         db.session.add(mensualidad)
-        # Necesitamos el id para registrar abono inicial si ya está pagado
         db.session.flush()
 
-        # Si se creó como pagado, registrar abono equivalente con método y monto
-        if is_pagado_inicial and mensualidad.id_mensualidad and id_metodo_pago_val is not None:
+        if is_pagado_inicial and mensualidad.id_mensualidad:
             try:
                 abono_inicial = AbonoMensualidad(
                     id_mensualidad=mensualidad.id_mensualidad,
                     monto=monto_pago,
                     fecha_abono=mensualidad.fecha_pago or date.today(),
-                    id_metodo_pago=mensualidad.id_metodo_pago
+                    id_metodo_pago=id_metodo_pago_val
                 )
                 db.session.add(abono_inicial)
             except Exception as _:
-                # No bloquear la creación si falla el abono inicial
                 pass
 
         db.session.commit()
-        return jsonify({'success': True, 'data': mensualidad.to_dict()}), 201
+        data_resp = _adjuntar_info_persona_dict(mensualidad, mensualidad.to_dict())
+        return jsonify({'success': True, 'data': data_resp}), 201
     except Exception as e:
         logger.error(f"Error creando mensualidad: {str(e)}")
         db.session.rollback()
@@ -350,23 +474,81 @@ def actualizar_mensualidad(mensualidad_id: int):
 
         data = request.get_json() or {}
 
+        numero_documento_actualizado = None
+        if 'numero_documento' in data:
+            try:
+                nuevo_documento = validate_document('numero_documento', data['numero_documento'])
+            except ValidationError as e:
+                return jsonify({'success': False, 'error': str(e)}), 400
+
+            persona_destino = _buscar_persona_por_documento(nuevo_documento)
+            if not persona_destino:
+                return jsonify({'success': False, 'error': 'Persona no encontrada por numero_documento'}), 404
+
+            nuevo_id_persona = getattr(persona_destino, 'id_persona', None) or getattr(persona_destino, 'id', None)
+            if not nuevo_id_persona:
+                return jsonify({'success': False, 'error': 'No se pudo determinar id_persona de la persona encontrada'}), 400
+
+            try:
+                nuevo_id_persona = int(nuevo_id_persona)
+            except (TypeError, ValueError):
+                return jsonify({'success': False, 'error': 'id_persona asociado al documento es inválido'}), 400
+
+            if not _persona_tiene_rol_deportista(nuevo_id_persona):
+                return jsonify({'success': False, 'error': 'La persona asociada al documento no tiene el rol "Deportista".'}), 400
+
+            if m.id_persona != nuevo_id_persona:
+                m.id_persona = nuevo_id_persona
+            numero_documento_actualizado = nuevo_documento
+
         # Permitir actualizar ciertos campos
         if 'id_metodo_pago' in data:
-            m.id_metodo_pago = int(data['id_metodo_pago'])
+            if data['id_metodo_pago'] in (None, '',):
+                return jsonify({'success': False, 'error': 'El método de pago es requerido'}), 400
+            else:
+                try:
+                    nuevo_metodo = int(data['id_metodo_pago'])
+                except (TypeError, ValueError):
+                    return jsonify({'success': False, 'error': 'id_metodo_pago debe ser numérico'}), 400
+                if not MetodoPago.query.get(nuevo_metodo):
+                    return jsonify({'success': False, 'error': f'Método de pago con ID {nuevo_metodo} no encontrado'}), 404
+                m.id_metodo_pago = nuevo_metodo
         if 'monto_pago' in data:
             monto_pago = parse_decimal(data['monto_pago'])
             if monto_pago is None or monto_pago <= 0:
                 return jsonify({'success': False, 'error': 'monto_pago debe ser > 0'}), 400
             m.monto_pago = monto_pago
+            if m.saldo_pendiente is not None and m.saldo_pendiente > monto_pago:
+                m.saldo_pendiente = monto_pago
         if 'fecha_vencimiento' in data:
-            m.fecha_vencimiento = date.fromisoformat(data['fecha_vencimiento']) if data['fecha_vencimiento'] else None
+            if data['fecha_vencimiento']:
+                try:
+                    m.fecha_vencimiento = date.fromisoformat(str(data['fecha_vencimiento']))
+                except ValueError:
+                    return jsonify({'success': False, 'error': 'fecha_vencimiento no tiene un formato válido (YYYY-MM-DD)'}), 400
+            else:
+                return jsonify({'success': False, 'error': 'La fecha de vencimiento es requerida'}), 400
         if 'saldo_pendiente' in data:
             saldo = parse_decimal(data['saldo_pendiente'])
             if saldo is None or saldo < 0:
                 return jsonify({'success': False, 'error': 'saldo_pendiente inválido'}), 400
+            if m.monto_pago is not None and saldo > m.monto_pago:
+                return jsonify({'success': False, 'error': 'saldo_pendiente no puede ser mayor al monto de la mensualidad'}), 400
             m.saldo_pendiente = saldo
         if 'activo' in data:
             m.activo = bool(int(data['activo'])) if isinstance(data['activo'], str) else bool(data['activo'])
+
+        if not m.fecha_vencimiento:
+            return jsonify({'success': False, 'error': 'La fecha de vencimiento es requerida'}), 400
+
+        duplicada_mes = Mensualidad.query.filter(
+            Mensualidad.id_persona == m.id_persona,
+            extract('year', Mensualidad.fecha_vencimiento) == m.fecha_vencimiento.year,
+            extract('month', Mensualidad.fecha_vencimiento) == m.fecha_vencimiento.month,
+            Mensualidad.id_mensualidad != mensualidad_id
+        ).first()
+        if duplicada_mes:
+            return jsonify({'success': False, 'error': 'Ya existe una mensualidad para este deportista en el mismo mes y año'}), 400
 
         # Recalcular estado/fecha_pago si aplica
         if m.saldo_pendiente == 0:
@@ -377,7 +559,10 @@ def actualizar_mensualidad(mensualidad_id: int):
             m.fecha_pago = None
 
         db.session.commit()
-        return jsonify({'success': True, 'data': m.to_dict()}), 200
+        data_resp = _adjuntar_info_persona_dict(m, m.to_dict())
+        if numero_documento_actualizado is not None:
+            data_resp['numero_documento'] = numero_documento_actualizado
+        return jsonify({'success': True, 'data': data_resp}), 200
     except Exception as e:
         logger.error(f"Error actualizando mensualidad: {str(e)}")
         db.session.rollback()
@@ -419,13 +604,41 @@ def abonar_mensualidad(mensualidad_id: int):
         data = request.get_json() or {}
         monto_abonado = parse_decimal(data.get('monto_abonado'))
         fecha_abono_str = data.get('fecha_abono')  # opcional; ISO date
-        id_metodo_pago = data.get('id_metodo_pago')
+        id_metodo_pago_raw = data.get('id_metodo_pago')
         if monto_abonado is None or monto_abonado <= 0:
             return jsonify({'success': False, 'error': 'monto_abonado debe ser > 0'}), 400
 
+        try:
+            monto_base = float(m.monto_pago)
+        except Exception:
+            return jsonify({'success': False, 'error': 'La mensualidad tiene un monto inválido'}), 400
+        try:
+            saldo_actual = float(m.saldo_pendiente if m.saldo_pendiente is not None else monto_base)
+        except Exception:
+            saldo_actual = monto_base
+
+        if saldo_actual >= 0 and monto_abonado > saldo_actual + 1e-6:
+            return jsonify({'success': False, 'error': 'El monto abonado no puede superar el saldo pendiente'}), 400
+
+        if fecha_abono_str:
+            try:
+                fecha_abono = date.fromisoformat(str(fecha_abono_str))
+            except ValueError:
+                return jsonify({'success': False, 'error': 'fecha_abono no tiene un formato válido (YYYY-MM-DD)'}), 400
+        else:
+            fecha_abono = date.today()
+
+        if id_metodo_pago_raw in (None, '',):
+            id_metodo_pago = None
+        else:
+            try:
+                id_metodo_pago = int(id_metodo_pago_raw)
+            except (TypeError, ValueError):
+                return jsonify({'success': False, 'error': 'id_metodo_pago debe ser numérico'}), 400
+
         # Calcular meses cubiertos y sobrante
-        meses_cubiertos = int(monto_abonado // float(m.monto_pago))
-        sobrante = monto_abonado - (meses_cubiertos * float(m.monto_pago))
+        meses_cubiertos = int(monto_abonado // monto_base) if monto_base > 0 else 0
+        sobrante = monto_abonado - (meses_cubiertos * monto_base) if monto_base > 0 else 0
 
         # Actualizar fecha_vencimiento sumando meses cubiertos
         if meses_cubiertos > 0:
@@ -434,17 +647,20 @@ def abonar_mensualidad(mensualidad_id: int):
 
         # Recalcular saldo_pendiente del período actual
         if meses_cubiertos >= 1:
-            m.saldo_pendiente = float(m.monto_pago) - sobrante if sobrante > 0 else 0
+            m.saldo_pendiente = max(0, monto_base - sobrante) if monto_base > 0 else 0
         else:
-            m.saldo_pendiente = max(0, float(m.saldo_pendiente) - sobrante)
+            try:
+                saldo_float = float(m.saldo_pendiente)
+            except Exception:
+                saldo_float = saldo_actual
+            m.saldo_pendiente = max(0, saldo_float - monto_abonado)
 
         # Registrar abono en histórico
-        fecha_abono = date.fromisoformat(fecha_abono_str) if fecha_abono_str else date.today()
         abono = AbonoMensualidad(
             id_mensualidad=mensualidad_id,
             monto=monto_abonado,
             fecha_abono=fecha_abono,
-            id_metodo_pago=int(id_metodo_pago) if id_metodo_pago is not None else None
+            id_metodo_pago=id_metodo_pago
         )
         db.session.add(abono)
 

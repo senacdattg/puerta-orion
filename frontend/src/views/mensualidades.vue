@@ -50,6 +50,8 @@ function mapMensualidadToCard(m) {
   return {
     id: m.id_mensualidad,
     nombre: m.persona_nombre || obtenerNombrePersonaDesdeObjeto(m.persona, m.id_persona),
+    persona_nombre: m.persona_nombre || obtenerNombrePersonaDesdeObjeto(m.persona, m.id_persona),
+    numero_documento: m.numero_documento || (m.persona ? String(m.persona.documento || '') : null),
     mes: nombreMes(vencRaw),
     valor: `$${formatoCOP(m.monto_pago)}`,
     estado: estadoTxt,
@@ -140,6 +142,7 @@ async function iniciarPago(m) {
 async function editarMensualidad(mActualizada) {
   const payload = {};
   if (mActualizada.id_metodo_pago !== undefined) payload.id_metodo_pago = mActualizada.id_metodo_pago;
+  if (mActualizada.numero_documento !== undefined) payload.numero_documento = mActualizada.numero_documento;
   if (mActualizada.monto_pago !== undefined) payload.monto_pago = mActualizada.monto_pago;
   if (mActualizada.fecha_vencimiento !== undefined) payload.fecha_vencimiento = mActualizada.fecha_vencimiento;
   if (mActualizada.saldo_pendiente !== undefined) payload.saldo_pendiente = mActualizada.saldo_pendiente;

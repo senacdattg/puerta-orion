@@ -24,43 +24,66 @@
         @click="handleMainClick"
       >
         <div class="main-content">
-          <div class="welcome-section">
-            <h1 class="welcome-title">Panel del Deportista</h1>
-            <p class="welcome-subtitle">
-              Bienvenido, gestiona tu información deportiva y mantente al día con las actividades del club
-            </p>
-          </div>
+          <div class="role-dashboard deportista-dashboard">
+            <div class="dashboard-header">
+              <h2 class="dashboard-title">
+                <i class="fas fa-user"></i>
+                Panel del Deportista
+              </h2>
+              <p class="dashboard-subtitle">Gestiona tu información deportiva y mantente al día con las actividades del club</p>
+            </div>
 
-          <div class="cards-grid">
-            <CardDeportista
-              title="Mis Mensualidades"
-              description="Consulta el estado de tus pagos y mensualidades pendientes"
-              icon="fas fa-money-bill-wave"
-              :value="estadoMensualidad"
-              to="/deportista/mensualidades"
-            />
+            <div class="dashboard-grid">
+              <div class="dashboard-card" @click="navigateTo('/perfil')">
+                <div class="card-icon">
+                  <i class="fas fa-user"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Mi Perfil</h3>
+                  <p>Gestiona tu información personal y deportiva</p>
+                </div>
+              </div>
 
-            <CardDeportista
-              title="Eventos Próximos"
-              description="Participa en los próximos eventos y actividades deportivas"
-              icon="fas fa-calendar-check"
-              :value="eventosProximosCount"
-              to="/deportista/eventos"
-            />
+              <div class="dashboard-card" @click="navigateTo('/mensualidades')">
+                <div class="card-icon">
+                  <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Mis Mensualidades</h3>
+                  <p>Consulta el estado de tus pagos y mensualidades pendientes</p>
+                </div>
+              </div>
 
-            <CardDeportista
-              title="Galería"
-              description="Explora las últimas imágenes y momentos del club"
-              icon="fas fa-images"
-              to="/deportista/galeria"
-            />
+              <div class="dashboard-card" @click="navigateTo('/eventos')">
+                <div class="card-icon">
+                  <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Eventos Próximos</h3>
+                  <p>Participa en los próximos eventos y actividades deportivas</p>
+                </div>
+              </div>
 
-            <CardDeportista
-              title="Calendario"
-              description="Consulta el calendario completo de actividades"
-              icon="fas fa-calendar-alt"
-              to="/deportista/calendario"
-            />
+              <div class="dashboard-card" @click="navigateTo('/calendario')">
+                <div class="card-icon">
+                  <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Calendario</h3>
+                  <p>Consulta el calendario completo de actividades</p>
+                </div>
+              </div>
+
+              <div class="dashboard-card" @click="navigateTo('/galeria')">
+                <div class="card-icon">
+                  <i class="fas fa-images"></i>
+                </div>
+                <div class="card-content">
+                  <h3>Galería</h3>
+                  <p>Explora las últimas imágenes y momentos del club</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -77,37 +100,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
 import Encabezado from '@/components/layout/encabezado.vue'
 import SidebarDeportista from '@/components/deportistas/SidebarDeportista.vue'
-import CardDeportista from '@/components/deportistas/CardDeportista.vue'
 import PerfilModal from '@/components/deportistas/PerfilModal.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
-import calendarioService from '@/services/calendarioService'
 
 defineOptions({
   name: 'DeportistaDashboard'
 })
 
+const router = useRouter()
 const sidebarOpen = ref(false)
 const isMobile = ref(false)
 const showPerfilModal = ref(false)
-const eventosProximos = ref([])
-const cargandoEventos = ref(false)
 
-const estadoMensualidad = computed(() => {
-  // Aquí se podría obtener el estado real de la mensualidad desde un servicio
-  return 'Al día'
-})
-
-const eventosProximosCount = computed(() => {
-  if (cargandoEventos.value) {
-    return '...'
-  }
-  return eventosProximos.value.length > 0 ? eventosProximos.value.length.toString() : '0'
-})
-
+const navigateTo = (route) => {
+  router.push(route)
+}
 
 const handleMainClick = () => {
   if (isMobile.value && sidebarOpen.value) {
@@ -124,23 +136,9 @@ const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
 
-const cargarEventosProximos = async () => {
-  cargandoEventos.value = true
-  try {
-    const eventos = await calendarioService.obtenerEventosProximos()
-    eventosProximos.value = eventos || []
-  } catch (error) {
-    console.error('Error al cargar eventos próximos:', error)
-    eventosProximos.value = []
-  } finally {
-    cargandoEventos.value = false
-  }
-}
-
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  cargarEventosProximos()
 })
 
 onBeforeUnmount(() => {
@@ -196,48 +194,6 @@ onBeforeUnmount(() => {
 .mobile-sidebar-toggle:hover {
   background: #003d8f;
   transform: scale(1.05);
-}
-
-.welcome-section {
-  margin-bottom: var(--espaciado-xxl);
-  text-align: center;
-  animation: fadeInUp 0.6s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.welcome-title {
-  font-size: var(--tamano-fuente-xxxl);
-  font-weight: var(--peso-fuente-bold);
-  background: linear-gradient(135deg, #004AAD 0%, #0066d6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0 0 var(--espaciado-sm) 0;
-  font-family: 'Poppins', sans-serif;
-  letter-spacing: -0.5px;
-}
-
-.welcome-subtitle {
-  font-size: var(--tamano-fuente-lg);
-  color: var(--color-gris);
-  margin: 0;
-  line-height: 1.6;
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--espaciado-lg);
 }
 
 /* Responsive */

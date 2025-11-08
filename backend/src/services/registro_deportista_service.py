@@ -28,7 +28,9 @@ from ..models.acudientes.parentesco import Parentesco
 from ..models.roles_y_permisos.usuario_rol import UsuarioRol
 from ..models.roles_y_permisos.rol import Rol
 from ..models.usuarios.usuario import Usuario
+from ..models.pagos.mensualidad import Mensualidad
 from ..utils.logger import obtener_registrador
+from ..utils.validations import sanitize_free_text
 
 
 class RegistroDeportistaService:
@@ -209,21 +211,37 @@ class RegistroDeportistaService:
                 }
             
             datos_deportista = datos['datos_deportista']
-            
+            informacion_deportiva = datos.get('informacion_deportiva') or {}
+            datos['informacion_deportiva'] = informacion_deportiva
+ 
             # Validar campos obligatorios
-            campos_requeridos = ['id_persona', 'fecha_nacimiento']
+            campos_requeridos = ['id_persona', 'fecha_nacimiento', 'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_eps']
             campos_faltantes = [
                 campo for campo in campos_requeridos
-                if campo not in datos_deportista or datos_deportista[campo] is None
+                if campo not in datos_deportista or datos_deportista[campo] in (None, '', [])
             ]
-            
+ 
             if campos_faltantes:
                 return {
                     'success': False,
                     'message': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}',
                     'status_code': 400
                 }
-            
+
+            # Validar campos obligatorios de información deportiva
+            campos_info_requeridos = ['id_deporte', 'id_institucion_registro']
+            campos_info_faltantes = [
+                campo for campo in campos_info_requeridos
+                if campo not in informacion_deportiva or informacion_deportiva[campo] in (None, '', [])
+            ]
+
+            if campos_info_faltantes:
+                return {
+                    'success': False,
+                    'message': f'Campos requeridos faltantes en informacion_deportiva: {", ".join(campos_info_faltantes)}',
+                    'status_code': 400
+                }
+ 
             # Validar que todos los IDs existen
             es_valido, mensaje_error = RegistroDeportistaService._validar_ids(datos)
             if not es_valido:
@@ -334,7 +352,13 @@ class RegistroDeportistaService:
                 
                 # Si recomendacion_medica es false, descripcion_recomendacion debe ser null
                 recomendacion_medica = info_deportiva.get('recomendacion_medica', False)
-                descripcion_recomendacion = None if not recomendacion_medica else info_deportiva.get('descripcion_recomendacion')
+                descripcion_recomendacion = None
+                if recomendacion_medica:
+                    descripcion_recomendacion = sanitize_free_text(
+                        'descripcion_recomendacion',
+                        info_deportiva.get('descripcion_recomendacion'),
+                        max_length=500
+                    )
                 
                 informacion = InformacionDeportiva(
                     id_persona=datos_deportista['id_persona'],
@@ -676,12 +700,17 @@ class RegistroDeportistaService:
             if deportista.fecha_ingreso:
                 datos_deportista_adicionales['fecha_ingreso'] = deportista.fecha_ingreso.isoformat()
             
-            # Información de mensualidad
-            if deportista.mensualidad:
+            # Información de mensualidad (obtener a través de id_persona)
+            mensualidad = Mensualidad.query.filter_by(
+                id_persona=deportista.id_persona,
+                activo=True
+            ).order_by(Mensualidad.created_at.desc()).first()
+            
+            if mensualidad:
                 datos_deportista_adicionales['mensualidad'] = {
-                    'monto': float(deportista.mensualidad.monto_pago) if deportista.mensualidad.monto_pago else None,
-                    'fecha_pago': deportista.mensualidad.fecha_pago.isoformat() if deportista.mensualidad.fecha_pago else None,
-                    'estado': deportista.mensualidad.estado
+                    'monto': float(mensualidad.monto_pago) if mensualidad.monto_pago else None,
+                    'fecha_pago': mensualidad.fecha_pago.isoformat() if mensualidad.fecha_pago else None,
+                    'estado': mensualidad.estado
                 }
             
             logger.info(f'Información completa obtenida para deportista ID {id_deportista}')

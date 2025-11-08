@@ -92,6 +92,29 @@
               <p class="descripcion-seccion">Configura el método, el estado deseado y los importes.</p>
               <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;">
                 <div class="campo-formulario">
+                  <label for="documento-edicion">
+                    <i class="fas fa-id-card"></i>
+                    Documento *
+                  </label>
+                  <input
+                    id="documento-edicion"
+                    v-model="formEdicion.numero_documento"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="123456789"
+                    class="input-edicion"
+                    required
+                    @input="manejarDocumentoEdicion"
+                    @blur="verificarDocumentoEdicion"
+                  />
+                  <small
+                    v-if="estadoDocumentoEdicion.mensaje"
+                    :class="['mensaje-documento', estadoDocumentoEdicion.status]"
+                  >
+                    {{ estadoDocumentoEdicion.mensaje }}
+                  </small>
+                </div>
+                <div class="campo-formulario">
                   <label for="metodo-edicion">
                     <i class="fas fa-money-bill-wave"></i>
                     Método de Pago *
@@ -102,38 +125,53 @@
                   </select>
                   <small class="hint">Usa el método por defecto de esta mensualidad.</small>
                 </div>
-
-            <div class="campo-formulario">
-              <label for="estado-edicion">
-                <i class="fas fa-info-circle"></i>
+                <div class="campo-formulario">
+                  <label for="estado-edicion">
+                    <i class="fas fa-info-circle"></i>
                     Estado (visual)
-              </label>
+                  </label>
                   <select id="estado-edicion" v-model="formEdicion.estado_ui" class="select-edicion">
                     <option value="Pendiente">Pendiente</option>
-                <option value="Pagado">Pagado</option>
-              </select>
+                    <option value="Pagado">Pagado</option>
+                  </select>
                   <small class="hint">El estado real lo fija el saldo pendiente (0 = Pagado).</small>
-            </div>
-
-            <div class="campo-formulario">
-              <label for="valor-edicion">
-                <i class="fas fa-dollar-sign"></i>
-                Valor Total *
-              </label>
-              <div class="input-with-symbol">
-                <span class="dollar-symbol">$</span>
-                <input id="valor-edicion" v-model="formEdicion.valorSinSimbolo" type="number" placeholder="80000"
-                  class="input-edicion" required @input="actualizarValorConSimbolo" />
+                </div>
               </div>
+              <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin-top:16px;">
+                <div class="campo-formulario">
+                  <label for="valor-edicion">
+                    <i class="fas fa-dollar-sign"></i>
+                    Valor Total *
+                  </label>
+                  <div class="input-with-symbol">
+                    <span class="dollar-symbol">$</span>
+                    <input
+                      id="valor-edicion"
+                      v-model="formEdicion.valorSinSimbolo"
+                      type="text"
+                      inputmode="decimal"
+                      placeholder="80000"
+                      class="input-edicion"
+                      required
+                      @input="manejarValorSinSimbolo($event)"
+                    />
+                  </div>
                   <small class="hint">Es el valor base de cada mensualidad.</small>
-            </div>
-
-                <div class="campo-formulario" style="grid-column:1 / -1;max-width:360px;margin:0 auto;">
+                </div>
+                <div class="campo-formulario">
                   <label for="saldo-edicion">
                     <i class="fas fa-balance-scale"></i>
                     Saldo Pendiente
-              </label>
-                  <input id="saldo-edicion" v-model.number="formEdicion.saldo_pendiente" type="number" class="input-edicion" placeholder="0" />
+                  </label>
+                  <input
+                    id="saldo-edicion"
+                    v-model="formEdicion.saldo_pendiente"
+                    type="text"
+                    inputmode="decimal"
+                    class="input-edicion"
+                    placeholder="0"
+                    @input="manejarSaldoPendiente($event)"
+                  />
                   <small class="hint">Si eliges “Pagado”, se guardará con saldo 0 automáticamente.</small>
                 </div>
               </div>
@@ -197,14 +235,22 @@
                     <i class="fas fa-dollar-sign"></i>
                     Monto del abono
                   </label>
-                  <input id="abono-monto" v-model.number="nuevoAbono.monto" type="number" class="input-edicion" placeholder="0" />
+                  <input
+                    id="abono-monto"
+                    v-model="nuevoAbono.monto"
+                    type="text"
+                    inputmode="decimal"
+                    class="input-edicion"
+                    placeholder="0"
+                    @input="manejarMontoAbono($event)"
+                  />
                 </div>
                 <div class="campo-formulario">
                   <label for="abono-metodo">
                     <i class="fas fa-money-bill-wave"></i>
                     Método de pago
                   </label>
-                  <select id="abono-metodo" v-model.number="nuevoAbono.id_metodo_pago" class="select-edicion">
+                  <select id="abono-metodo" v-model="nuevoAbono.id_metodo_pago" class="select-edicion">
                     <option :value="undefined">—</option>
                     <option v-for="m in metodosPago" :key="m.id" :value="m.id" :disabled="String(m.nombre).toLowerCase()==='ninguno'">{{ m.nombre }}</option>
                   </select>
@@ -342,7 +388,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
 import { useAuthStore } from '@/stores/auth';
@@ -371,16 +417,190 @@ const formEdicion = ref({
   id_metodo_pago: undefined,
   valor: props.mensualidad.valor || '',
   valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
+  numero_documento: '',
   fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
   saldo_pendiente: undefined,
   estado_ui: props.mensualidad.estado || 'Pendiente',
   activo: true,
   fecha_pago: ''
 });
-const nuevoAbono = ref({ fecha: '', monto: undefined });
+const documentoOriginal = ref(normalizarDocumento(props.mensualidad.numero_documento || ''));
+const estadoDocumentoEdicion = ref({ status: 'idle', mensaje: '' });
+const personaDocumentoEdicion = ref(null);
+let documentoConsultandoEdicion = null;
+const nuevoAbono = ref({ fecha: '', monto: '', id_metodo_pago: undefined });
 const abonos = ref([]);
 const abonoEditIndex = ref(null);
 const abonoEdit = ref({ fecha: '', monto: undefined, id_metodo_pago: undefined });
+
+const LOCALE_COL = 'es-CO';
+const MIN_DOCUMENTO = 6;
+const MAX_DOCUMENTO = 10;
+
+function normalizarDocumento(valor = '') {
+  return (valor || '')
+    .toString()
+    .replace(/\D/g, '')
+    .slice(0, MAX_DOCUMENTO);
+}
+
+function normalizarIdMetodoPago(valor) {
+  if (valor === undefined || valor === null || valor === '') return undefined;
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : undefined;
+}
+
+function normalizarMonto(valor = '') {
+  if (!valor) return '';
+  const saneado = valor
+    .toString()
+    .replace(/[^0-9.,]/g, '')
+    .replace(/,/g, '.');
+
+  const partes = saneado.split('.');
+  if (partes.length === 1) {
+    return partes[0];
+  }
+
+  const enteros = partes.shift() || '';
+  const decimales = partes.join('');
+  return decimales ? `${enteros}.${decimales}` : enteros;
+}
+
+function parseMonto(valor = '') {
+  if (valor === '' || valor === null || valor === undefined) return NaN;
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero : NaN;
+}
+
+function esFechaValida(fecha) {
+  return !!fecha && !Number.isNaN(Date.parse(fecha));
+}
+
+function actualizarEstadoDocumentoEdicion(status, mensaje) {
+  estadoDocumentoEdicion.value = { status, mensaje };
+}
+
+function resetDocumentoEdicion() {
+  personaDocumentoEdicion.value = null;
+  estadoDocumentoEdicion.value = { status: 'idle', mensaje: '' };
+  documentoConsultandoEdicion = null;
+}
+
+function manejarDocumentoEdicion(event) {
+  formEdicion.value.numero_documento = normalizarDocumento(event?.target?.value ?? formEdicion.value.numero_documento ?? '');
+  personaDocumentoEdicion.value = null;
+  documentoConsultandoEdicion = null;
+
+  if (!formEdicion.value.numero_documento) {
+    resetDocumentoEdicion();
+    return;
+  }
+
+  if (formEdicion.value.numero_documento.length < MIN_DOCUMENTO) {
+    actualizarEstadoDocumentoEdicion('indicacion', `Ingresa al menos ${MIN_DOCUMENTO} dígitos para buscar.`);
+    return;
+  }
+
+  actualizarEstadoDocumentoEdicion('pendiente', 'Documento listo. Sal del campo para verificar.');
+}
+
+async function verificarDocumentoEdicion() {
+  const documento = formEdicion.value.numero_documento;
+
+  if (!documento) {
+    resetDocumentoEdicion();
+    return;
+  }
+
+  if (documento.length < MIN_DOCUMENTO) {
+    actualizarEstadoDocumentoEdicion('indicacion', `Ingresa al menos ${MIN_DOCUMENTO} dígitos para buscar.`);
+    return;
+  }
+
+  const documentoEnProceso = documento;
+  documentoConsultandoEdicion = documentoEnProceso;
+  personaDocumentoEdicion.value = null;
+  actualizarEstadoDocumentoEdicion('checking', 'Buscando persona...');
+
+  try {
+    const respuesta = await mensualidadesService.buscarPersonaPorDocumento(documentoEnProceso);
+
+    if (documentoConsultandoEdicion !== documentoEnProceso) {
+      return;
+    }
+
+    if (!respuesta?.success) {
+      const mensaje = respuesta?.error || 'No fue posible verificar el documento.';
+      actualizarEstadoDocumentoEdicion('error', mensaje);
+      return;
+    }
+
+    if (respuesta.encontrado) {
+      personaDocumentoEdicion.value = respuesta.data;
+      const nombre = respuesta.data?.nombre_completo || 'Persona encontrada';
+      if (respuesta.data?.estado === false) {
+        actualizarEstadoDocumentoEdicion('warning', `${nombre} está inactiva. Verifica antes de continuar.`);
+      } else {
+        actualizarEstadoDocumentoEdicion('found', `${nombre} registrada en el sistema.`);
+      }
+    } else {
+      const mensaje = respuesta?.message || 'No encontramos una persona con ese documento.';
+      actualizarEstadoDocumentoEdicion('not-found', mensaje);
+    }
+  } catch (error) {
+    if (documentoConsultandoEdicion !== documentoEnProceso) {
+      return;
+    }
+    const mensaje = error?.message || 'Error al buscar el documento.';
+    actualizarEstadoDocumentoEdicion('error', mensaje);
+  } finally {
+    if (documentoConsultandoEdicion === documentoEnProceso) {
+      documentoConsultandoEdicion = null;
+    }
+  }
+}
+
+function inicializarDocumentoEdicion() {
+  documentoOriginal.value = normalizarDocumento(props.mensualidad.numero_documento || formEdicion.value.numero_documento || '');
+  formEdicion.value.numero_documento = documentoOriginal.value;
+  personaDocumentoEdicion.value = null;
+  documentoConsultandoEdicion = null;
+
+  if (!documentoOriginal.value) {
+    resetDocumentoEdicion();
+    return;
+  }
+
+  const nombre = props.mensualidad.persona_nombre || props.mensualidad.nombre;
+  if (nombre) {
+    actualizarEstadoDocumentoEdicion('found', `${nombre} registrada en el sistema.`);
+  } else {
+    actualizarEstadoDocumentoEdicion('pendiente', 'Documento listo. Sal del campo para verificar.');
+  }
+}
+
+function configurarFormularioDesdeProps() {
+  documentoOriginal.value = normalizarDocumento(props.mensualidad.numero_documento || '');
+  formEdicion.value = {
+    id_metodo_pago: normalizarIdMetodoPago(props.mensualidad.id_metodo_pago ?? props.mensualidad.idMetodoPago),
+    valor: props.mensualidad.valor || '',
+    valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
+    numero_documento: documentoOriginal.value,
+    fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
+    saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
+    estado_ui: props.mensualidad.estado || 'Pendiente',
+    activo: props.mensualidad.activo !== undefined ? !!props.mensualidad.activo : true,
+    fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
+  };
+  inicializarDocumentoEdicion();
+}
+
+configurarFormularioDesdeProps();
+
+watch(() => props.mensualidad, () => {
+  configurarFormularioDesdeProps();
+}, { deep: true });
 
 // Permisos
 const authStore = useAuthStore();
@@ -410,24 +630,17 @@ onMounted(async () => {
     const resp = await fetch(`${base}/api/catalogos/metodos-pago`, { headers: { 'Accept': 'application/json' } });
     if (resp.ok) {
       const json = await resp.json();
-      metodosPago.value = (json.data || []).map(m => ({ id: m.id_metodo_pago || m.id, nombre: m.nombre || m.nombre_metodo }));
+      metodosPago.value = (json.data || []).map(m => {
+        const id = normalizarIdMetodoPago(m.id_metodo_pago ?? m.id);
+        return { id, nombre: m.nombre || m.nombre_metodo };
+      }).filter(m => m.id !== undefined && m.nombre);
     } else {
       metodosPago.value = [];
     }
   } catch {
     metodosPago.value = [];
   }
-  // Inicializar campos derivados del objeto mensualidad
-  formEdicion.value = {
-    id_metodo_pago: undefined,
-    valor: props.mensualidad.valor || '',
-    valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
-    fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
-    saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
-    estado_ui: props.mensualidad.estado || 'Pendiente',
-    activo: props.mensualidad.activo !== undefined ? !!props.mensualidad.activo : true,
-    fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
-  };
+  // configurarFormularioDesdeProps(); // Moved to top
 
   // Cargar abonos para totales
   try {
@@ -465,6 +678,86 @@ const calcularSaldoPendiente = () => {
 function extraerNumeroDeValor(valor) {
   if (!valor) return '';
   return valor.replace(/[^0-9.-]+/g, '');
+}
+
+function validarFormularioEdicion() {
+  const errores = [];
+
+  const documentoNormalizado = normalizarDocumento(formEdicion.value.numero_documento);
+  formEdicion.value.numero_documento = documentoNormalizado;
+  if (!documentoNormalizado || documentoNormalizado.length < MIN_DOCUMENTO || documentoNormalizado.length > MAX_DOCUMENTO) {
+    errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+  }
+
+  const monto = parseMonto(formEdicion.value.valorSinSimbolo);
+  if (!Number.isFinite(monto) || monto <= 0) {
+    errores.push('El valor total debe ser un número mayor a 0');
+  }
+
+  let saldoNumero;
+  if (formEdicion.value.saldo_pendiente !== undefined && formEdicion.value.saldo_pendiente !== null && formEdicion.value.saldo_pendiente !== '') {
+    const normalizadoSaldo = normalizarMonto(formEdicion.value.saldo_pendiente);
+    formEdicion.value.saldo_pendiente = normalizadoSaldo;
+    saldoNumero = parseMonto(normalizadoSaldo);
+
+    if (!Number.isFinite(saldoNumero) || saldoNumero < 0) {
+      errores.push('El saldo pendiente debe ser un número mayor o igual a 0');
+    } else if (Number.isFinite(monto) && saldoNumero > monto) {
+      errores.push('El saldo pendiente no puede ser mayor que el valor total');
+    }
+  }
+
+  if (formEdicion.value.fecha_vencimiento && !esFechaValida(formEdicion.value.fecha_vencimiento)) {
+    errores.push('La fecha de vencimiento no es válida');
+  }
+
+  return {
+    errores,
+    monto,
+    saldo: saldoNumero
+  };
+}
+
+function validarAbonoFormulario() {
+  const errores = [];
+
+  const normalizadoMonto = normalizarMonto(nuevoAbono.value.monto ?? '');
+  nuevoAbono.value.monto = normalizadoMonto;
+  const monto = parseMonto(normalizadoMonto);
+
+  if (!Number.isFinite(monto) || monto <= 0) {
+    errores.push('El monto del abono debe ser un número mayor a 0');
+  } else {
+    const saldoRestante = Number(saldoPendienteHistNum.value || 0);
+    if (saldoRestante > 0 && monto > saldoRestante + 0.00001) {
+      errores.push('El abono no puede superar el saldo pendiente actual');
+    }
+  }
+
+  if (nuevoAbono.value.fecha && !esFechaValida(nuevoAbono.value.fecha)) {
+    errores.push('La fecha del abono no es válida');
+  }
+
+  return {
+    errores,
+    monto
+  };
+}
+
+function manejarValorSinSimbolo(event) {
+  const normalizado = normalizarMonto(event?.target?.value ?? formEdicion.value.valorSinSimbolo ?? '');
+  formEdicion.value.valorSinSimbolo = normalizado;
+  actualizarValorConSimbolo();
+}
+
+function manejarSaldoPendiente(event) {
+  const normalizado = normalizarMonto(event?.target?.value ?? formEdicion.value.saldo_pendiente ?? '');
+  formEdicion.value.saldo_pendiente = normalizado;
+}
+
+function manejarMontoAbono(event) {
+  const normalizado = normalizarMonto(event?.target?.value ?? nuevoAbono.value.monto ?? '');
+  nuevoAbono.value.monto = normalizado;
 }
 
 function formatearAInputDate(valor) {
@@ -532,14 +825,13 @@ function mostrarSaldoPendiente() {
 }
 
 function actualizarValorConSimbolo() {
-  if (formEdicion.value.valorSinSimbolo) {
-    const numero = parseFloat(formEdicion.value.valorSinSimbolo);
-    if (!isNaN(numero)) {
-      formEdicion.value.valor = `$${numero.toLocaleString('es-CO')}`;
-    }
-  } else {
-    formEdicion.value.valor = '';
-  }
+  const normalizado = normalizarMonto(formEdicion.value.valorSinSimbolo);
+  formEdicion.value.valorSinSimbolo = normalizado;
+
+  const numero = parseMonto(normalizado);
+  formEdicion.value.valor = Number.isFinite(numero)
+    ? `$${numero.toLocaleString('es-CO')}`
+    : '';
 }
 
 function toggleEdicion() {
@@ -549,44 +841,62 @@ function toggleEdicion() {
   }
   editando.value = !editando.value;
   if (!editando.value) {
-    // Restaurar
-    formEdicion.value = {
-      id_metodo_pago: undefined,
-      valor: props.mensualidad.valor || '',
-      valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
-      fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
-      saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
-      estado_ui: props.mensualidad.estado || 'Pendiente',
-      activo: props.mensualidad.activo !== undefined ? !!props.mensualidad.activo : true,
-      fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
-    };
+    configurarFormularioDesdeProps();
   }
 }
 
 function guardarCambios() {
-  if (!formEdicion.value.valorSinSimbolo) {
-    alert('Ingresa el valor total');
+  const { errores, monto, saldo } = validarFormularioEdicion();
+
+  if (errores.length > 0) {
+    alert('Corrige los siguientes errores:\n' + errores.join('\n'));
     return;
   }
 
+  const metodoPagoNormalizado = normalizarIdMetodoPago(formEdicion.value.id_metodo_pago);
+  const documentoActual = formEdicion.value.numero_documento;
+
   const payloadUpdate = {
-    id_metodo_pago: formEdicion.value.id_metodo_pago,
-    monto_pago: Number(formEdicion.value.valorSinSimbolo),
+    monto_pago: monto,
     fecha_vencimiento: formEdicion.value.fecha_vencimiento || null,
     activo: formEdicion.value.activo
   };
 
+  if (formEdicion.value.id_metodo_pago === '' || formEdicion.value.id_metodo_pago === null) {
+    payloadUpdate.id_metodo_pago = null;
+  } else if (metodoPagoNormalizado !== undefined) {
+    payloadUpdate.id_metodo_pago = metodoPagoNormalizado;
+  }
+
+  if (documentoActual && documentoActual.length >= MIN_DOCUMENTO) {
+    if (!documentoOriginal.value || documentoActual !== documentoOriginal.value) {
+      payloadUpdate.numero_documento = documentoActual;
+    }
+  }
+
   if (formEdicion.value.estado_ui === 'Pagado') {
     payloadUpdate.saldo_pendiente = 0;
-  } else if (formEdicion.value.saldo_pendiente !== undefined && formEdicion.value.saldo_pendiente !== null && formEdicion.value.saldo_pendiente !== '') {
-    payloadUpdate.saldo_pendiente = Number(formEdicion.value.saldo_pendiente);
+  } else if (saldo !== undefined) {
+    payloadUpdate.saldo_pendiente = saldo;
   }
+
+  const nombrePersonaActualizada = personaDocumentoEdicion.value?.nombre_completo || props.mensualidad.persona_nombre || props.mensualidad.nombre;
+  const idMetodoEnRespuesta = Object.prototype.hasOwnProperty.call(payloadUpdate, 'id_metodo_pago') ? payloadUpdate.id_metodo_pago : props.mensualidad.id_metodo_pago;
 
   const mensualidadActualizada = {
     ...props.mensualidad,
     ...payloadUpdate,
-    valor: formEdicion.value.valor
+    valor: formEdicion.value.valor,
+    numero_documento: documentoActual,
+    persona_nombre: nombrePersonaActualizada,
+    nombre: nombrePersonaActualizada,
+    id_metodo_pago: idMetodoEnRespuesta
   };
+
+  documentoOriginal.value = documentoActual;
+  if (nombrePersonaActualizada) {
+    actualizarEstadoDocumentoEdicion('found', `${nombrePersonaActualizada} registrada en el sistema.`);
+  }
 
   emit('guardar-cambios', mensualidadActualizada);
   editando.value = false;
@@ -597,16 +907,21 @@ async function registrarAbono() {
     alert('No tienes permiso para registrar abonos');
     return;
   }
-  if (!nuevoAbono.value.monto || nuevoAbono.value.monto <= 0) {
-    alert('Ingresa el monto del abono');
+  const { errores, monto } = validarAbonoFormulario();
+  if (errores.length > 0) {
+    alert('Corrige los siguientes errores:\n' + errores.join('\n'));
     return;
   }
   try {
-    await mensualidadesService.abonar(props.mensualidad.id, {
-      monto_abonado: Number(nuevoAbono.value.monto),
+    const metodoPagoAbono = normalizarIdMetodoPago(nuevoAbono.value.id_metodo_pago);
+    const payloadAbono = {
+      monto_abonado: monto,
       fecha_abono: nuevoAbono.value.fecha || undefined,
-      id_metodo_pago: nuevoAbono.value.id_metodo_pago
-    })
+    };
+    if (metodoPagoAbono !== undefined) {
+      payloadAbono.id_metodo_pago = metodoPagoAbono;
+    }
+    await mensualidadesService.abonar(props.mensualidad.id, payloadAbono)
     alert('Abono registrado correctamente');
     // Sugerir al padre refrescar datos
     emit('guardar-cambios', { ...props.mensualidad });
@@ -620,6 +935,7 @@ async function registrarAbono() {
   } catch (e) {
     alert(e?.message || 'Error registrando abono');
   }
+  nuevoAbono.value = { fecha: '', monto: '', id_metodo_pago: undefined };
 }
 
 function iniciarEdicionAbono(index) {
@@ -867,4 +1183,38 @@ async function pagarConMercadoPago() {
   }
 }
 </script>
+
+<style scoped>
+.mensaje-documento {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.mensaje-documento.indicacion,
+.mensaje-documento.pendiente {
+  color: #6c757d;
+}
+
+.mensaje-documento.checking {
+  color: #0d6efd;
+}
+
+.mensaje-documento.found {
+  color: #198754;
+  font-weight: 600;
+}
+
+.mensaje-documento.warning {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.mensaje-documento.not-found,
+.mensaje-documento.invalid,
+.mensaje-documento.error {
+  color: #dc3545;
+}
+</style>
 

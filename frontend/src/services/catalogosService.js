@@ -110,7 +110,7 @@ class CatalogosService {
       } else if (Array.isArray(data)) {
         return data;
       }
-      
+
       return [];
     } catch (error) {
       console.error('❌ Error al obtener categorías:', error)
@@ -147,6 +147,39 @@ class CatalogosService {
       return data.data || {}
     } catch (error) {
       console.error('❌ CatalogosService: Error al obtener catálogos completos:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Obtener parentescos
+   */
+  async getParentescos() {
+    try {
+      console.log('🔄 Obteniendo parentescos desde:', `${this.baseURL}/api/catalogos/parentescos`);
+
+      const response = await fetch(`${this.baseURL}/api/catalogos/parentescos`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      console.log('📡 Respuesta parentescos:', response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Error del servidor parentescos:', errorText);
+        throw new Error(`Error al obtener parentescos: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json();
+      console.log('📦 Datos parentescos recibidos:', data);
+
+      return data.data || []
+    } catch (error) {
+      console.error('❌ Error al obtener parentescos:', error)
       throw error
     }
   }

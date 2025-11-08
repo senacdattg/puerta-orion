@@ -574,7 +574,6 @@ def actualizar_deportista(id_deportista):
             "id_categoria": 1,
             "id_tipo_sanguineo": 2,
             "id_ciudad_recidencia": 1,
-            "id_mensualidad": 1,
             "id_eps": 3
         },
         "datos_informacion_deportiva": {
@@ -596,7 +595,6 @@ def actualizar_deportista(id_deportista):
     - id_categoria (int): ID de la categoría deportiva
     - id_tipo_sanguineo (int): ID del grupo sanguíneo
     - id_ciudad_recidencia (int): ID de la ciudad de residencia
-    - id_mensualidad (int): ID de la mensualidad
     - id_eps (int): ID de la EPS
     
     Campos disponibles en datos_informacion_deportiva:

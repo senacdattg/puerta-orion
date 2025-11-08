@@ -251,12 +251,20 @@ class AuthService {
       const data = await response.json()
 
       if (!response.ok) {
+        // Si es 401, el token expiró, no lanzar error, solo retornar fallo
+        if (response.status === 401) {
+          console.warn('⚠️ Token expirado al obtener permisos del rol')
+          return { success: false, error: 'Token expirado', expired: true }
+        }
         throw new Error(data.error || 'Error al obtener permisos del rol')
       }
 
       return { success: true, ...data.data }
     } catch (error) {
-      console.error('Error obteniendo permisos del rol:', error)
+      // No loguear errores de token expirado como errores críticos
+      if (!error.message.includes('expirado') && !error.message.includes('401')) {
+        console.error('Error obteniendo permisos del rol:', error)
+      }
       return { success: false, error: error.message || 'Error de conexión' }
     }
   }
@@ -316,12 +324,25 @@ class AuthService {
       const data = await response.json()
 
       if (!response.ok) {
+        // Si es 401, el token expiró, retornar error controlado
+        if (response.status === 401) {
+          console.warn('⚠️ Token expirado al obtener detalle del perfil')
+          return { 
+            success: false, 
+            error: 'Sesión inactiva o expirada',
+            expired: true 
+          }
+        }
+        
         console.error('❌ Error en getProfileDetail:', {
           status: response.status,
           statusText: response.statusText,
           data
         })
-        throw new Error(data.error || `Error al obtener detalle del perfil (${response.status})`)
+        return {
+          success: false,
+          error: data.error || `Error al obtener detalle del perfil (${response.status})`
+        }
       }
 
       // Si hay un warning, mostrarlo pero no fallar
@@ -330,10 +351,16 @@ class AuthService {
       }
 
       console.log('✅ Detalle del perfil obtenido:', data)
-      return data
+      return { success: true, ...data }
     } catch (error) {
-      console.error('Error al obtener detalle del perfil:', error)
-      throw error
+      // No loguear errores de token expirado como errores críticos
+      if (!error.message.includes('expirado') && !error.message.includes('401')) {
+        console.error('Error al obtener detalle del perfil:', error)
+      }
+      return { 
+        success: false, 
+        error: error.message || 'Error al obtener detalle del perfil' 
+      }
     }
   }
 

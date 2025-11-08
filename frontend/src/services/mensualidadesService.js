@@ -83,6 +83,14 @@ class MensualidadesApi {
     }, 'MensualidadesApi.reactivar')
   }
 
+  /** Buscar persona por número de documento para crear mensualidad */
+  async buscarPersonaPorDocumento (documento) {
+    const qs = new URLSearchParams()
+    if (documento) qs.set('documento', documento)
+    const path = `/api/mensualidades/buscar-persona${qs.toString() ? `?${qs}` : ''}`
+    return this._request(path, {}, 'MensualidadesApi.buscarPersona')
+  }
+
   /** Registrar abono (con fecha opcional e id_metodo_pago opcional) */
   async abonar (id, { monto_abonado, fecha_abono, id_metodo_pago } = {}) {
     const body = { monto_abonado }

@@ -209,7 +209,6 @@ class DeportistaCreator(ProfileCreator):
             fecha_nacimiento=fecha_nacimiento_date,
             id_tipo_sanguineo=data.get('id_tipo_sanguineo'),
             id_ciudad_recidencia=data.get('id_ciudad_recidencia'),
-            id_mensualidad=data.get('id_mensualidad'),
             id_informacion_deportiva=data.get('id_informacion_deportiva'),
             id_eps=data.get('id_eps'),
             alergias=data.get('alergias', ''),

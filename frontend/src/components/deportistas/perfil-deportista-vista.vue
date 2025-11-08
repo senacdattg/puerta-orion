@@ -1,8 +1,8 @@
 <template>
   <div class="perfil-deportista-vista">
     <div class="perfil-header">
-      <h2>📋 Información del Deportista</h2>
-      <button class="btn-cerrar" @click="$emit('cerrar')" title="Cerrar">
+      <h2>{{ modoEdicion ? '✏️ Editar Deportista' : '📋 Información del Deportista' }}</h2>
+      <button class="btn-cerrar" @click="modoEdicion ? cancelarEdicion() : $emit('cerrar')" :title="modoEdicion ? 'Cancelar' : 'Cerrar'">
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -22,23 +22,28 @@
           <div class="info-grid">
             <div class="info-row">
               <label>Nombre completo:</label>
-              <span>{{ obtenerNombreCompleto() || 'No disponible' }}</span>
+              <span v-if="!modoEdicion">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
+              <span v-else class="readonly-field">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
             </div>
-            <div class="info-row" v-if="datos.persona?.primer_nombre">
+            <div class="info-row">
               <label>Primer nombre:</label>
-              <span>{{ datos.persona.primer_nombre || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.primer_nombre || datos.nombre1 || '—' }}</span>
+              <input v-else v-model="formData.primer_nombre" type="text" class="input-editable" />
             </div>
-            <div class="info-row" v-if="datos.persona?.segundo_nombre">
+            <div class="info-row">
               <label>Segundo nombre:</label>
-              <span>{{ datos.persona.segundo_nombre || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.segundo_nombre || datos.nombre2 || '—' }}</span>
+              <input v-else v-model="formData.segundo_nombre" type="text" class="input-editable" />
             </div>
-            <div class="info-row" v-if="datos.persona?.primer_apellido">
+            <div class="info-row">
               <label>Primer apellido:</label>
-              <span>{{ datos.persona.primer_apellido || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.primer_apellido || datos.apellido1 || '—' }}</span>
+              <input v-else v-model="formData.primer_apellido" type="text" class="input-editable" />
             </div>
-            <div class="info-row" v-if="datos.persona?.segundo_apellido">
+            <div class="info-row">
               <label>Segundo apellido:</label>
-              <span>{{ datos.persona.segundo_apellido || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.segundo_apellido || datos.apellido2 || '—' }}</span>
+              <input v-else v-model="formData.segundo_apellido" type="text" class="input-editable" />
             </div>
             <div class="info-row">
               <label>Tipo de documento:</label>
@@ -46,19 +51,23 @@
             </div>
             <div class="info-row">
               <label>Documento:</label>
-              <span>{{ datos.persona?.documento || datos.documento || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.documento || datos.documento || '—' }}</span>
+              <input v-else v-model="formData.documento" type="text" class="input-editable" />
             </div>
             <div class="info-row">
               <label>Correo electrónico:</label>
-              <span>{{ datos.persona?.correo_electronico || datos.correo || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.correo_electronico || datos.correo || '—' }}</span>
+              <input v-else v-model="formData.correo_electronico" type="email" class="input-editable" />
             </div>
             <div class="info-row">
               <label>Teléfono:</label>
-              <span>{{ datos.persona?.telefono || datos.telefono || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.telefono || datos.telefono || '—' }}</span>
+              <input v-else v-model="formData.telefono" type="tel" class="input-editable" />
             </div>
             <div class="info-row">
               <label>Dirección:</label>
-              <span>{{ datos.persona?.direccion || datos.direccion || '—' }}</span>
+              <span v-if="!modoEdicion">{{ datos.persona?.direccion || datos.direccion || '—' }}</span>
+              <input v-else v-model="formData.direccion" type="text" class="input-editable" />
             </div>
           </div>
         </div>
@@ -81,11 +90,19 @@
             </div>
             <div class="info-row">
               <label>Peso:</label>
-              <span>{{ datosDeportista.peso !== undefined && datosDeportista.peso !== null ? datosDeportista.peso + ' kg' : '—' }}</span>
+              <span v-if="!modoEdicion">{{ datosDeportista.peso !== undefined && datosDeportista.peso !== null ? datosDeportista.peso + ' kg' : '—' }}</span>
+              <div v-else class="input-with-unit">
+                <input v-model="formData.peso" type="number" step="0.1" class="input-editable" placeholder="0.0" />
+                <span class="unit">kg</span>
+              </div>
             </div>
             <div class="info-row">
               <label>Altura:</label>
-              <span>{{ datosDeportista.altura !== undefined && datosDeportista.altura !== null ? datosDeportista.altura + ' m' : '—' }}</span>
+              <span v-if="!modoEdicion">{{ datosDeportista.altura !== undefined && datosDeportista.altura !== null ? datosDeportista.altura + ' m' : '—' }}</span>
+              <div v-else class="input-with-unit">
+                <input v-model="formData.altura" type="number" step="0.01" class="input-editable" placeholder="0.00" />
+                <span class="unit">m</span>
+              </div>
             </div>
             <div class="info-row">
               <label>Tipo sanguíneo:</label>
@@ -102,7 +119,7 @@
           </div>
 
           <!-- Información Deportiva Detallada -->
-          <div class="info-subsection" v-if="datos.informacion_deportiva">
+          <div class="info-subsection" v-if="datos.informacion_deportiva || modoEdicion">
             <h4>⚽ Detalles Deportivos</h4>
             <div class="info-grid">
               <div class="info-row">
@@ -111,21 +128,41 @@
               </div>
               <div class="info-row">
                 <label>Practica otro deporte:</label>
-                <span>
+                <span v-if="!modoEdicion">
                   <span class="badge" :class="datos.informacion_deportiva?.practica_otro_deporte ? 'badge-success' : 'badge-muted'">
                     {{ datos.informacion_deportiva?.practica_otro_deporte !== undefined ? (datos.informacion_deportiva.practica_otro_deporte ? 'Sí' : 'No') : '—' }}
                   </span>
                 </span>
+                <div v-else class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" :value="true" v-model="formData.practica_otro_deporte" />
+                    Sí
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" :value="false" v-model="formData.practica_otro_deporte" />
+                    No
+                  </label>
+                </div>
               </div>
               <div class="info-row">
                 <label>Participa en escuela:</label>
-                <span>
+                <span v-if="!modoEdicion">
                   <span class="badge" :class="datos.informacion_deportiva?.participa_escuela ? 'badge-success' : 'badge-muted'">
                     {{ datos.informacion_deportiva?.participa_escuela !== undefined ? (datos.informacion_deportiva.participa_escuela ? 'Sí' : 'No') : '—' }}
                   </span>
                 </span>
+                <div v-else class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" :value="true" v-model="formData.participa_escuela" />
+                    Sí
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" :value="false" v-model="formData.participa_escuela" />
+                    No
+                  </label>
               </div>
-              <div class="info-row">
+              </div>
+              <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.participa_escuela">
                 <label>Escuela:</label>
                 <span>{{ obtenerEscuela() || '—' }}</span>
               </div>
@@ -135,15 +172,26 @@
               </div>
               <div class="info-row">
                 <label>Recomendación médica:</label>
-                <span>
+                <span v-if="!modoEdicion">
                   <span class="badge" :class="datos.informacion_deportiva?.recomendacion_medica ? 'badge-warning' : 'badge-success'">
                     {{ datos.informacion_deportiva?.recomendacion_medica !== undefined ? (datos.informacion_deportiva.recomendacion_medica ? 'Sí' : 'No') : '—' }}
                   </span>
                 </span>
+                <div v-else class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" :value="true" v-model="formData.recomendacion_medica" />
+                    Sí
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" :value="false" v-model="formData.recomendacion_medica" />
+                    No
+                  </label>
               </div>
-              <div class="info-row" v-if="datos.informacion_deportiva?.descripcion_recomendacion">
+              </div>
+              <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.descripcion_recomendacion">
                 <label>Descripción recomendación:</label>
-                <span>{{ datos.informacion_deportiva.descripcion_recomendacion || '—' }}</span>
+                <span v-if="!modoEdicion">{{ datos.informacion_deportiva.descripcion_recomendacion || '—' }}</span>
+                <textarea v-else v-model="formData.descripcion_recomendacion" class="input-editable" rows="3"></textarea>
               </div>
             </div>
           </div>
@@ -199,12 +247,22 @@
 
       <!-- Botones de acción -->
       <div class="perfil-actions">
+        <template v-if="!modoEdicion">
         <button class="btn-editar-perfil" @click="$emit('editar')">
-          <i class="fas fa-edit"></i> Editar Información
+            <i class="fas fa-edit"></i> Actualizar
         </button>
         <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
           Cerrar
         </button>
+        </template>
+        <template v-else>
+          <button class="btn-guardar-perfil" @click="guardarCambios" :disabled="guardando">
+            <i class="fas fa-save"></i> {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
+          </button>
+          <button class="btn-cancelar-perfil" @click="cancelarEdicion" :disabled="guardando">
+            Cancelar
+          </button>
+        </template>
       </div>
     </div>
 
@@ -218,7 +276,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import catalogosService from '@/services/catalogosService';
 import { getApiUrl } from '@/config/environment';
 
@@ -230,10 +288,14 @@ const props = defineProps({
   datos: {
     type: Object,
     default: null
+  },
+  modoEdicion: {
+    type: Boolean,
+    default: false
   }
 });
 
-const emit = defineEmits(['cerrar', 'editar']);
+const emit = defineEmits(['cerrar', 'editar', 'guardar', 'cancelar']);
 
 // Catálogos para mapear IDs a nombres
 const catalogos = ref({
@@ -256,10 +318,16 @@ const catalogosCargados = ref(false);
 onMounted(async () => {
   try {
     await cargarCatalogos();
-    catalogosCargados.value = true;
+    // catalogosCargados se establece dentro de cargarCatalogos()
+    // Si ya estamos en modo edición y hay datos, inicializar
+    if (props.modoEdicion && props.datos) {
+      console.log('🔄 onMounted: Inicializando formulario en modo edición');
+      inicializarFormulario();
+    }
   } catch (error) {
-    console.error('Error al cargar catálogos:', error);
-    catalogosCargados.value = false;
+    console.error('Error crítico al cargar catálogos:', error);
+    // Aún así, permitir que se muestre el componente
+    catalogosCargados.value = true;
   }
 });
 
@@ -280,17 +348,27 @@ async function cargarCatalogos() {
       { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
     ];
 
+    // Obtener token de autenticación
+    const token = localStorage.getItem('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     const resultados = await Promise.all(
       endpoints.map(async (endpoint) => {
         try {
           console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
           const response = await fetch(endpoint.url);
           const data = await response.json();
-          console.log(`✅ ${endpoint.name} cargado:`, response.ok, data);
+          console.log(`✅ ${endpoint.name} cargado:`, response.ok);
           return { name: endpoint.name, ok: response.ok, data };
         } catch (error) {
           console.error(`❌ Error al cargar ${endpoint.name}:`, error);
-          return { name: endpoint.name, ok: false, data: null, error };
+          return { name: endpoint.name, ok: false, data: null, error: error.message };
         }
       })
     );
@@ -350,8 +428,13 @@ async function cargarCatalogos() {
     }
 
     console.log('✅ Catálogos cargados completamente');
+    // Marcar como cargado incluso si algunos catálogos fallaron
+    catalogosCargados.value = true;
   } catch (error) {
     console.error('Error al cargar catálogos:', error);
+    // Aún así, marcar como cargado para que el componente se muestre
+    // El perfil puede funcionar sin todos los catálogos
+    catalogosCargados.value = true;
   }
 }
 
@@ -375,7 +458,8 @@ function obtenerNombreCompleto() {
 function obtenerTipoSanguineo() {
   const idTipo = props.datos?.persona?.id_tipo_sanguineo ||
                  props.datos?.deportista?.id_tipo_sanguineo ||
-                 props.datos?.id_tipo_sanguineo;
+       props.datos?.datos_deportista?.id_tipo_sanguineo ||
+       props.datos?.id_tipo_sanguineo);
   if (!idTipo) return null;
   const tipo = catalogos.value.tiposSanguineos.find(t =>
     t.id_tipo_sangre === idTipo ||
@@ -388,7 +472,8 @@ function obtenerTipoSanguineo() {
 function obtenerCiudad() {
   const idCiudad = props.datos?.persona?.id_ciudad_recidencia ||
                    props.datos?.deportista?.id_ciudad_recidencia ||
-                   props.datos?.id_ciudad_recidencia;
+       props.datos?.datos_deportista?.id_ciudad_recidencia ||
+       props.datos?.id_ciudad_recidencia);
   if (!idCiudad) return null;
   const ciudad = catalogos.value.ciudades.find(c =>
     c.id_ciudad === idCiudad ||
@@ -401,7 +486,8 @@ function obtenerCiudad() {
 function obtenerEPS() {
   const idEPS = props.datos?.persona?.id_eps ||
                 props.datos?.deportista?.id_eps ||
-                props.datos?.id_eps;
+       props.datos?.datos_deportista?.id_eps ||
+       props.datos?.id_eps);
   if (!idEPS) return null;
   const eps = catalogos.value.eps.find(e =>
     e.id_eps === idEPS ||
@@ -454,11 +540,22 @@ function obtenerCategoria() {
 
 // Acceso a datos del deportista (puede venir en diferentes estructuras)
 const datosDeportista = computed(() => {
+  if (props.modoEdicion) {
+    // En modo edición, usar formData
+    return {
+      peso: formData.value.peso,
+      altura: formData.value.altura,
+      fecha_nacimiento: formData.value.fecha_nacimiento
+    };
+  }
   // El backend devuelve datos en 'datos_deportista' según obtener_informacion_completa_deportista
   return props.datos?.datos_deportista || props.datos?.deportista || props.datos || {};
 });
 
 const fechaNacimiento = computed(() => {
+  if (props.modoEdicion) {
+    return formData.value.fecha_nacimiento;
+  }
   // Buscar fecha de nacimiento en diferentes ubicaciones según la estructura del backend
   return props.datos?.persona?.fecha_nacimiento ||
          props.datos?.datos_deportista?.fecha_nacimiento ||
@@ -588,7 +685,7 @@ function obtenerDiagnostico(idDiagnostico) {
 function obtenerTipoDocumento() {
   const idTipoDocumento = props.datos?.persona?.id_tipo_documento ||
                            props.datos?.id_tipo_documento ||
-                           props.datos?.deportista?.id_tipo_documento;
+       props.datos?.deportista?.id_tipo_documento);
 
   if (!idTipoDocumento) return null;
 
@@ -609,12 +706,13 @@ function obtenerTipoDocumento() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   max-width: 900px;
   width: 100%;
-  max-height: 90vh;
+  max-height: calc(100vh - 100px); /* Altura máxima considerando el header */
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
+  z-index: 10000; /* Asegurar que esté por encima de todo */
 }
 
 .perfil-header {
@@ -627,7 +725,8 @@ function obtenerTipoDocumento() {
   border-radius: 12px 12px 0 0;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 11;
+  flex-shrink: 0; /* Evitar que se comprima */
 }
 
 .perfil-header h2 {
@@ -801,6 +900,114 @@ function obtenerTipoDocumento() {
 
 .btn-editar-perfil i {
   margin-right: 0.5rem;
+}
+
+.btn-guardar-perfil {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 1rem;
+}
+
+.btn-guardar-perfil:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-guardar-perfil:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-guardar-perfil i {
+  margin-right: 0.5rem;
+}
+
+.btn-cancelar-perfil {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancelar-perfil:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-cancelar-perfil:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.input-editable {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  transition: border-color 0.3s;
+}
+
+.input-editable:focus {
+  outline: none;
+  border-color: #004AAD;
+  box-shadow: 0 0 0 2px rgba(0, 74, 173, 0.1);
+}
+
+.input-editable:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input-with-unit .input-editable {
+  flex: 1;
+}
+
+.unit {
+  color: #6c757d;
+  font-size: 0.9rem;
+  min-width: 30px;
+}
+
+.readonly-field {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+  cursor: pointer;
 }
 
 .cargando {

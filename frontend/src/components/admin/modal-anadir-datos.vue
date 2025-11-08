@@ -122,6 +122,44 @@ const componenteFormulario = computed(() => {
   return componentes[seleccionado.value.id] || null
 })
 
+const REGEX_CODIGO_EPS = /^[A-Z0-9\-]{2,20}$/
+const NAME_MIN_LENGTH = 2
+
+function validarFormulario() {
+  const errores = []
+  const nombre = form.value.nombre?.trim()
+
+  if (!nombre || nombre.length < NAME_MIN_LENGTH) {
+    errores.push('El nombre es obligatorio y debe tener al menos 2 caracteres')
+  }
+
+  if (seleccionado.value?.id === 'eps') {
+    if (!form.value.codigo || !REGEX_CODIGO_EPS.test(form.value.codigo)) {
+      errores.push('Debes ingresar un código de EPS válido (2 a 20 caracteres alfanuméricos, puede incluir guiones)')
+    }
+
+    if (form.value.estado !== true && form.value.estado !== false) {
+      errores.push('Debes seleccionar un estado para la EPS')
+    }
+  }
+
+  if (seleccionado.value?.id === 'metodo_pago') {
+    if (form.value.estado !== true && form.value.estado !== false) {
+      errores.push('Debes seleccionar un estado para el método de pago')
+    }
+  }
+
+  if (seleccionado.value?.id === 'tipo-evento') {
+    if (!form.value.descripcion || form.value.descripcion.trim().length === 0) {
+      errores.push('La descripción es obligatoria para el tipo de evento')
+    } else if (form.value.descripcion.length > 500) {
+      errores.push('La descripción no puede exceder los 500 caracteres')
+    }
+  }
+
+  return errores
+}
+
 function cerrar() {
   // Limpiar selección y resetear al cerrar
   seleccionado.value = null
@@ -193,6 +231,12 @@ function volverPaso1(){
 }
 
 function enviar(){
+  const errores = validarFormulario()
+  if (errores.length > 0) {
+    alert('Corrige los siguientes errores:\n' + errores.join('\n'))
+    return
+  }
+
   emit('guardar-dato', { entidad: seleccionado.value.id, ...form.value })
   volverPaso1()
   cerrar()
