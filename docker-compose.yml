@@ -30,6 +30,10 @@ services:
       context: ./backend
     container_name: puerta_backend
     restart: unless-stopped
+    entrypoint:
+      - /bin/sh
+      - -c
+      - sed -i 's/\r$//' /app/entrypoint.sh && exec /app/entrypoint.sh
     env_file:
       - ./backend/.env
     environment:

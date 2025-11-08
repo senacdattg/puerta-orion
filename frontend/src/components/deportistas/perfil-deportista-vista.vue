@@ -456,10 +456,11 @@ function obtenerNombreCompleto() {
 }
 
 function obtenerTipoSanguineo() {
-  const idTipo = props.datos?.persona?.id_tipo_sanguineo ||
-                 props.datos?.deportista?.id_tipo_sanguineo ||
-       props.datos?.datos_deportista?.id_tipo_sanguineo ||
-       props.datos?.id_tipo_sanguineo);
+  const idTipo =
+    props.datos?.persona?.id_tipo_sanguineo ||
+    props.datos?.deportista?.id_tipo_sanguineo ||
+    props.datos?.datos_deportista?.id_tipo_sanguineo ||
+    props.datos?.id_tipo_sanguineo;
   if (!idTipo) return null;
   const tipo = catalogos.value.tiposSanguineos.find(t =>
     t.id_tipo_sangre === idTipo ||
@@ -470,10 +471,11 @@ function obtenerTipoSanguineo() {
 }
 
 function obtenerCiudad() {
-  const idCiudad = props.datos?.persona?.id_ciudad_recidencia ||
-                   props.datos?.deportista?.id_ciudad_recidencia ||
-       props.datos?.datos_deportista?.id_ciudad_recidencia ||
-       props.datos?.id_ciudad_recidencia);
+  const idCiudad =
+    props.datos?.persona?.id_ciudad_recidencia ||
+    props.datos?.deportista?.id_ciudad_recidencia ||
+    props.datos?.datos_deportista?.id_ciudad_recidencia ||
+    props.datos?.id_ciudad_recidencia;
   if (!idCiudad) return null;
   const ciudad = catalogos.value.ciudades.find(c =>
     c.id_ciudad === idCiudad ||
@@ -484,10 +486,11 @@ function obtenerCiudad() {
 }
 
 function obtenerEPS() {
-  const idEPS = props.datos?.persona?.id_eps ||
-                props.datos?.deportista?.id_eps ||
-       props.datos?.datos_deportista?.id_eps ||
-       props.datos?.id_eps);
+  const idEPS =
+    props.datos?.persona?.id_eps ||
+    props.datos?.deportista?.id_eps ||
+    props.datos?.datos_deportista?.id_eps ||
+    props.datos?.id_eps;
   if (!idEPS) return null;
   const eps = catalogos.value.eps.find(e =>
     e.id_eps === idEPS ||
@@ -683,9 +686,10 @@ function obtenerDiagnostico(idDiagnostico) {
 }
 
 function obtenerTipoDocumento() {
-  const idTipoDocumento = props.datos?.persona?.id_tipo_documento ||
-                           props.datos?.id_tipo_documento ||
-       props.datos?.deportista?.id_tipo_documento);
+  const idTipoDocumento =
+    props.datos?.persona?.id_tipo_documento ||
+    props.datos?.id_tipo_documento ||
+    props.datos?.deportista?.id_tipo_documento;
 
   if (!idTipoDocumento) return null;
 
