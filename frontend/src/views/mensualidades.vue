@@ -5,6 +5,7 @@ import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
 import Pie from '../components/layout/pie.vue';
 import { ref, onMounted } from 'vue';
 import mensualidadesService from '@/services/mensualidadesService';
+import { getApiUrl } from '@/config/environment';
 
 defineOptions({ name: 'MensualidadesView' });
 
@@ -107,7 +108,7 @@ async function cargarMensualidades() {
 
 async function iniciarPago(m) {
   try {
-    const resp = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/mercadopago/crear-preferencia`, {
+    const resp = await fetch(getApiUrl('/api/mercadopago/crear-preferencia'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')||''}` },
       body: JSON.stringify({

@@ -30,19 +30,26 @@ def upgrade():
     # with op.batch_alter_table('informaciondeportiva', schema=None) as batch_op:
     #     batch_op.drop_index('ix_informacion_deportiva_institucion')
 
-    with op.batch_alter_table('puerta_orion_deportista', schema=None) as batch_op:
-        # La columna id_diagnostico_deportista ya existe, no es necesario agregarla
-        # batch_op.add_column(sa.Column('id_diagnostico_deportista', sa.Integer(), nullable=True))
-        
-        # No eliminar índices que están siendo usados por claves foráneas
-        # batch_op.drop_index('ix_deportista_ciudad')
-        # batch_op.drop_index('ix_deportista_eps')
-        # batch_op.drop_index('ix_deportista_tipo_sanguineo')
-        
-        # Eliminar la clave foránea antigua y crear la nueva
-        batch_op.drop_constraint('fk_deportista_diagnostico', type_='foreignkey')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    tables_map = {t.lower(): t for t in inspector.get_table_names()}
+    if 'puerta_orion_deportista' not in tables_map:
+        return
+
+    deportista_table = tables_map['puerta_orion_deportista']
+    existing_columns_deportista = {col['name'] for col in inspector.get_columns(deportista_table)}
+    existing_fks_deportista = {fk.get('name') for fk in inspector.get_foreign_keys(deportista_table)}
+
+    with op.batch_alter_table(deportista_table, schema=None) as batch_op:
+        if 'id_diagnostico_deportista' not in existing_columns_deportista:
+            if 'id_diagnosco_deportista' in existing_columns_deportista:
+                batch_op.alter_column('id_diagnosco_deportista', new_column_name='id_diagnostico_deportista', existing_type=sa.Integer())
+            else:
+                batch_op.add_column(sa.Column('id_diagnostico_deportista', sa.Integer(), nullable=True))
+
+        if 'fk_deportista_diagnostico' in existing_fks_deportista:
+            batch_op.drop_constraint('fk_deportista_diagnostico', type_='foreignkey')
         batch_op.create_foreign_key('fk_deportista_diagnostico_nuevo', 'diagnostico', ['id_diagnostico_deportista'], ['id_diagnostico'])
-        batch_op.drop_column('id_diagnosco_deportista')
 
     # ### end Alembic commands ###
 

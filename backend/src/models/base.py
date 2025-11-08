@@ -27,6 +27,7 @@ class BaseModel(db.Model):
         """
         # Se asume que cada modelo tendrá un atributo id_ (ej. id_persona, id_categoria)
         # para su clave primaria. Si no, se usará el __repr__ por defecto del objeto.
-        if hasattr(self, f"id_{self.__tablename__.replace('puerta_orion_', '')}"):
-            return f"<{self.__class__.__name__}(id={getattr(self, f'id_{self.__tablename__.replace("puerta_orion_", "")}')})>"
+        id_attr = f"id_{self.__tablename__.replace('puerta_orion_', '')}"
+        if hasattr(self, id_attr):
+            return f"<{self.__class__.__name__}(id={getattr(self, id_attr)})>"
         return f"<{self.__class__.__name__}>"

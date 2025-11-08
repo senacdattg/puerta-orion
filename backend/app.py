@@ -155,8 +155,9 @@ if __name__ == '__main__':
     config_obj = get_config()
     
     app.run(
-        host=config_obj.HOST,
-        port=config_obj.PORT,
-        debug=config_obj.DEBUG,
-        use_reloader=config_obj.FLASK_RUN_RELOAD
+        # host=config_obj.HOST,
+        # port=config_obj.PORT,
+        # debug=config_obj.DEBUG,
+        # use_reloader=config_obj.FLASK_RUN_RELOAD
+        host='0.0.0.0', port=5000, debug=True
     )

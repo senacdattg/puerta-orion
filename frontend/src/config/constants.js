@@ -3,6 +3,8 @@
  * Centraliza todas las constantes utilizadas en la aplicación
  */
 
+import { CURRENT_CONFIG } from '@/config/environment'
+
 // ===== CONFIGURACIÓN DE LA APLICACIÓN =====
 export const APP_CONFIG = {
   name: 'Puerta Orion',
@@ -103,7 +105,7 @@ export const ROUTES_BY_ROLE = {
 
 // ===== CONFIGURACIÓN DE API =====
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  BASE_URL: CURRENT_CONFIG.apiUrl,
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
   RETRY_DELAY: 1000

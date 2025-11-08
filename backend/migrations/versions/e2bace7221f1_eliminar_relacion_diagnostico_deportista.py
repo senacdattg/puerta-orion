@@ -21,9 +21,22 @@ def upgrade():
     # No eliminar índices que están siendo usados por claves foráneas
     
     # Eliminar la relación con diagnostico de la tabla puerta_orion_deportista
-    with op.batch_alter_table('puerta_orion_deportista', schema=None) as batch_op:
-        batch_op.drop_constraint('fk_deportista_diagnostico_nuevo', type_='foreignkey')
-        batch_op.drop_column('id_diagnostico_deportista')
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    tables_map = {t.lower(): t for t in inspector.get_table_names()}
+    if 'puerta_orion_deportista' not in tables_map:
+        return
+
+    deportista_table = tables_map['puerta_orion_deportista']
+    existing_columns = {col['name'] for col in inspector.get_columns(deportista_table)}
+
+    with op.batch_alter_table(deportista_table, schema=None) as batch_op:
+        try:
+            batch_op.drop_constraint('fk_deportista_diagnostico_nuevo', type_='foreignkey')
+        except Exception:
+            pass
+        if 'id_diagnostico_deportista' in existing_columns:
+            batch_op.drop_column('id_diagnostico_deportista')
 
     # ### end Alembic commands ###
 

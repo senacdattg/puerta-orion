@@ -1,20 +1,24 @@
-# Imagen base
 FROM python:3.11-slim
 
-# Establecer el directorio de trabajo dentro del contenedor
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_RUN_HOST=0.0.0.0 \
+    FLASK_RUN_PORT=5000
+
 WORKDIR /app
 
-# Copiar dependencias
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
-# Instalar dependencias
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el resto del código
 COPY . .
 
-# Exponer el puerto que usa Flask
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 5000
 
-# Comando de arranque
-CMD ["python", "app.py"]
+ENTRYPOINT ["/app/entrypoint.sh"]

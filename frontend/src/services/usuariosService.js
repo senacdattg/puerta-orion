@@ -2,10 +2,10 @@
  * Servicio para gestión de usuarios
  * Maneja las llamadas a la API de usuarios
  */
-
 import { useAuthStore } from '@/stores/auth'
+import { getApiBaseUrl } from '@/config/environment'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+const API_BASE_URL = getApiBaseUrl()
 
 class UsuariosService {
   constructor() {

@@ -229,6 +229,7 @@ import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/authService'
 import Encabezado from '@/components/layout/encabezado.vue'
 import Pie from '@/components/layout/pie.vue'
+import { getApiUrl } from '@/config/environment'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -444,21 +445,21 @@ async function completarPerfilAcudiente() {
 async function cargarCatalogos() {
   try {
     // Cargar categorías
-    const resCategorias = await fetch(`${import.meta.env.VITE_API_URL}/api/catalogos/categorias`)
+    const resCategorias = await fetch(getApiUrl('/api/catalogos/categorias'))
     if (resCategorias.ok) {
       const dataCategorias = await resCategorias.json()
       categorias.value = dataCategorias.data || []
     }
 
     // Cargar tipos sanguíneos
-    const resTiposSanguineos = await fetch(`${import.meta.env.VITE_API_URL}/api/catalogos/tipos-sanguineos`)
+    const resTiposSanguineos = await fetch(getApiUrl('/api/catalogos/tipos-sanguineos'))
     if (resTiposSanguineos.ok) {
       const dataTiposSanguineos = await resTiposSanguineos.json()
       tiposSanguineos.value = dataTiposSanguineos.data || []
     }
 
     // Cargar EPS
-    const resEps = await fetch(`${import.meta.env.VITE_API_URL}/api/catalogos/eps`)
+    const resEps = await fetch(getApiUrl('/api/catalogos/eps'))
     if (resEps.ok) {
       const dataEps = await resEps.json()
       listaEps.value = dataEps.data || []

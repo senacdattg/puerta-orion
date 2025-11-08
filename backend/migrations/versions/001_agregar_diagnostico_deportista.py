@@ -24,32 +24,43 @@ def upgrade():
     en los deportistas del sistema, permitiendo un seguimiento más detallado de su
     condición médica durante su carrera deportiva.
     """
-    # Crear tabla diagnostico_deportista
-    op.create_table('diagnostico_deportista',
-        sa.Column('id_diagnostico_deportista', sa.Integer(), nullable=False),
-        sa.Column('diagnostico', sa.Integer(), nullable=False),
-        sa.Column('fecha', sa.Date(), nullable=False),
-        sa.Column('id_deportista', sa.Integer(), nullable=False),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['diagnostico'], ['diagnostico.id_diagnostico'], ),
-        sa.ForeignKeyConstraint(['id_deportista'], ['puerta_orion_deportista.id_deportista'], ),
-        sa.PrimaryKeyConstraint('id_diagnostico_deportista')
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = {t.lower(): t for t in inspector.get_table_names()}
+
+    # Crear tabla diagnostico_deportista si no existe
+    if 'diagnostico_deportista' not in existing_tables:
+        op.create_table('diagnostico_deportista',
+            sa.Column('id_diagnostico_deportista', sa.Integer(), nullable=False),
+            sa.Column('diagnostico', sa.Integer(), nullable=False),
+            sa.Column('fecha', sa.Date(), nullable=False),
+            sa.Column('id_deportista', sa.Integer(), nullable=False),
+            sa.Column('created_at', sa.DateTime(), nullable=False),
+            sa.Column('updated_at', sa.DateTime(), nullable=False),
+            sa.ForeignKeyConstraint(['diagnostico'], ['diagnostico.id_diagnostico'], ),
+            sa.ForeignKeyConstraint(['id_deportista'], ['puerta_orion_deportista.id_deportista'], ),
+            sa.PrimaryKeyConstraint('id_diagnostico_deportista')
+        )
     
+    existing_indexes = {idx['name'] for idx in inspector.get_indexes('diagnostico_deportista')} if 'diagnostico_deportista' in existing_tables else set()
+    existing_columns = {col['name'] for col in inspector.get_columns('diagnostico_deportista')} if 'diagnostico_deportista' in existing_tables else set()
+
     # Crear índices para mejorar el rendimiento de las consultas
-    op.create_index(
-        'ix_diagnostico_deportista_id_deportista',
-        'diagnostico_deportista',
-        ['id_deportista'],
-        unique=False
-    )
-    op.create_index(
-        'ix_diagnostico_deportista_diagnostico',
-        'diagnostico_deportista',
-        ['diagnostico'],
-        unique=False
-    )
+    if 'ix_diagnostico_deportista_id_deportista' not in existing_indexes and 'id_deportista' in existing_columns:
+        op.create_index(
+            'ix_diagnostico_deportista_id_deportista',
+            'diagnostico_deportista',
+            ['id_deportista'],
+            unique=False
+        )
+    if 'ix_diagnostico_deportista_diagnostico' not in existing_indexes and ('diagnostico' in existing_columns or 'id_diagnostico' in existing_columns):
+        column_name = 'diagnostico' if 'diagnostico' in existing_columns else 'id_diagnostico'
+        op.create_index(
+            'ix_diagnostico_deportista_diagnostico',
+            'diagnostico_deportista',
+            [column_name],
+            unique=False
+        )
 
 
 def downgrade():

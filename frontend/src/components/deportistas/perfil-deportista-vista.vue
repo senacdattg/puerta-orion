@@ -220,6 +220,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import catalogosService from '@/services/catalogosService';
+import { getApiUrl } from '@/config/environment';
 
 defineOptions({
   name: 'PerfilDeportistaVista'
@@ -264,22 +265,19 @@ onMounted(async () => {
 
 async function cargarCatalogos() {
   try {
-    // Usar la variable de entorno correcta
-    const baseURL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-    console.log('🔗 Base URL para catálogos:', baseURL);
+    console.log('🔗 Base URL para catálogos:', getApiUrl(''));
 
     // Cargar todos los catálogos necesarios desde las rutas de deportistas
     const endpoints = [
-      { url: `${baseURL}/api/deportistas/catalogos/grupos-sanguineos`, name: 'grupos-sanguineos' },
-      { url: `${baseURL}/api/deportistas/catalogos/ciudades-residencia`, name: 'ciudades-residencia' },
-      { url: `${baseURL}/api/deportistas/catalogos/eps`, name: 'eps' },
-      { url: `${baseURL}/api/deportistas/catalogos/deportes`, name: 'deportes' },
-      { url: `${baseURL}/api/deportistas/catalogos/escuelas`, name: 'escuelas' },
-      { url: `${baseURL}/api/deportistas/catalogos/instituciones-registro`, name: 'instituciones-registro' },
-      { url: `${baseURL}/api/deportistas/catalogos/tipos-enfermedad`, name: 'tipos-enfermedad' },
-      { url: `${baseURL}/api/deportistas/catalogos/diagnosticos`, name: 'diagnosticos' },
-      { url: `${baseURL}/api/catalogos/tipos-documento`, name: 'tipos-documento' }
+      { url: getApiUrl('/api/deportistas/catalogos/grupos-sanguineos'), name: 'grupos-sanguineos' },
+      { url: getApiUrl('/api/deportistas/catalogos/ciudades-residencia'), name: 'ciudades-residencia' },
+      { url: getApiUrl('/api/deportistas/catalogos/eps'), name: 'eps' },
+      { url: getApiUrl('/api/deportistas/catalogos/deportes'), name: 'deportes' },
+      { url: getApiUrl('/api/deportistas/catalogos/escuelas'), name: 'escuelas' },
+      { url: getApiUrl('/api/deportistas/catalogos/instituciones-registro'), name: 'instituciones-registro' },
+      { url: getApiUrl('/api/deportistas/catalogos/tipos-enfermedad'), name: 'tipos-enfermedad' },
+      { url: getApiUrl('/api/deportistas/catalogos/diagnosticos'), name: 'diagnosticos' },
+      { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
     ];
 
     const resultados = await Promise.all(

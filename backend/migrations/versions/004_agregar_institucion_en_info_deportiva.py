@@ -23,25 +23,39 @@ def upgrade():
     Según el MER, la tabla InformacionDeportiva debe tener una referencia
     a la institución de registro del deportista.
     """
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    tables_map = {t.lower(): t for t in inspector.get_table_names()}
+
+    if 'informaciondeportiva' not in tables_map:
+        return
+
+    info_table = tables_map['informaciondeportiva']
+    institucion_table = tables_map.get('puerta_orion_institucion_registro')
+
     # Agregar columna id_institucion_registro
-    op.add_column('InformacionDeportiva', 
-        sa.Column('id_institucion_registro', sa.Integer(), nullable=True)
-    )
-    
-    # Crear clave foránea
-    op.create_foreign_key(
-        'fk_informacion_deportiva_institucion',
-        'InformacionDeportiva', 'puerta_orion_institucion_registro',
-        ['id_institucion_registro'], ['id_institucion']
-    )
-    
-    # Crear índice para mejorar el rendimiento
-    op.create_index(
-        'ix_informacion_deportiva_institucion',
-        'InformacionDeportiva',
-        ['id_institucion_registro'],
-        unique=False
-    )
+    with op.batch_alter_table(info_table, schema=None) as batch_op:
+        existing_columns = {col['name'] for col in inspector.get_columns(info_table)}
+        if 'id_institucion_registro' not in existing_columns:
+            batch_op.add_column(sa.Column('id_institucion_registro', sa.Integer(), nullable=True))
+
+    if institucion_table:
+        existing_fks = {fk.get('name') for fk in inspector.get_foreign_keys(info_table)}
+        if 'fk_informacion_deportiva_institucion' not in existing_fks:
+            op.create_foreign_key(
+                'fk_informacion_deportiva_institucion',
+                info_table, institucion_table,
+                ['id_institucion_registro'], ['id_institucion']
+            )
+
+    existing_indexes = {idx['name'] for idx in inspector.get_indexes(info_table)}
+    if 'ix_informacion_deportiva_institucion' not in existing_indexes:
+        op.create_index(
+            'ix_informacion_deportiva_institucion',
+            info_table,
+            ['id_institucion_registro'],
+            unique=False
+        )
 
 
 def downgrade():
@@ -51,21 +65,29 @@ def downgrade():
     # ORDEN CORRECTO EN MYSQL: FK primero, luego índice, luego columna
     
     # 1. Eliminar clave foránea primero
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    tables_map = {t.lower(): t for t in inspector.get_table_names()}
+
+    if 'informaciondeportiva' not in tables_map:
+        return
+
+    info_table = tables_map['informaciondeportiva']
+
     try:
-        op.drop_constraint('fk_informacion_deportiva_institucion', 'InformacionDeportiva', type_='foreignkey')
-    except:
+        op.drop_constraint('fk_informacion_deportiva_institucion', info_table, type_='foreignkey')
+    except Exception:
         pass
-    
-    # 2. Eliminar índice después
+
     try:
-        op.drop_index('ix_informacion_deportiva_institucion', table_name='InformacionDeportiva')
-    except:
+        op.drop_index('ix_informacion_deportiva_institucion', table_name=info_table)
+    except Exception:
         pass
-    
-    # 3. Eliminar columna al final
+
     try:
-        op.drop_column('InformacionDeportiva', 'id_institucion_registro')
-    except:
+        with op.batch_alter_table(info_table, schema=None) as batch_op:
+            batch_op.drop_column('id_institucion_registro')
+    except Exception:
         pass
 
 
