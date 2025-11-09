@@ -201,7 +201,24 @@ def validar_solapamiento_horario(fecha_evento, hora_inicio, hora_fin, id_evento_
 # ============================================================================
 
 @eventos_bp.route('/calendario', methods=['GET'])
-@token_required()
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ]
+)
 def listar_eventos():
     """
     Listar eventos con filtros opcionales, filtrando por categoría según el rol del usuario.
@@ -365,6 +382,24 @@ def listar_eventos():
 
 
 @eventos_bp.route('/calendario/<int:id>', methods=['GET'])
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ]
+)
 def obtener_evento(id):
     """Obtener un evento específico por ID"""
     try:
@@ -402,6 +437,10 @@ def obtener_evento(id):
 
 
 @eventos_bp.route('/calendario', methods=['POST'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def crear_evento():
     """
     Crear un nuevo evento.
@@ -552,6 +591,10 @@ def crear_evento():
 
 
 @eventos_bp.route('/calendario/<int:id>', methods=['PUT'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def actualizar_evento(id):
     """
     Actualizar un evento existente.
@@ -744,6 +787,10 @@ def actualizar_evento(id):
 
 
 @eventos_bp.route('/calendario/<int:id>', methods=['DELETE'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def eliminar_evento(id):
     """Eliminar un evento"""
     try:
@@ -778,6 +825,10 @@ def eliminar_evento(id):
 # ============================================================================
 
 @eventos_bp.route('/sesiones', methods=['GET'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def listar_sesiones():
     """Listar todas las sesiones"""
     try:
@@ -813,6 +864,10 @@ def listar_sesiones():
 
 
 @eventos_bp.route('/sesiones/<int:id>', methods=['GET'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def obtener_sesion(id):
     """Obtener una sesión específica por ID"""
     try:
@@ -837,6 +892,10 @@ def obtener_sesion(id):
 
 
 @eventos_bp.route('/sesiones', methods=['POST'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def crear_sesion():
     """
     Crear una nueva sesión.
@@ -892,6 +951,10 @@ def crear_sesion():
 
 
 @eventos_bp.route('/sesiones/<int:id>', methods=['PUT'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def actualizar_sesion(id):
     """
     Actualizar una sesión existente.
@@ -953,6 +1016,10 @@ def actualizar_sesion(id):
 
 
 @eventos_bp.route('/sesiones/<int:id>', methods=['DELETE'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def eliminar_sesion(id):
     """Eliminar una sesión"""
     try:
@@ -995,6 +1062,22 @@ def eliminar_sesion(id):
 # ============================================================================
 
 @eventos_bp.route('/tipos-evento', methods=['GET'])
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente'
+    ]
+)
 def listar_tipos_evento():
     """Listar todos los tipos de evento"""
     try:
@@ -1030,6 +1113,22 @@ def listar_tipos_evento():
 
 
 @eventos_bp.route('/tipos-evento/<int:id>', methods=['GET'])
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente'
+    ]
+)
 def obtener_tipo_evento(id):
     """Obtener un tipo de evento específico por ID"""
     try:
@@ -1054,6 +1153,10 @@ def obtener_tipo_evento(id):
 
 
 @eventos_bp.route('/tipos-evento', methods=['POST'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def crear_tipo_evento():
     """
     Crear un nuevo tipo de evento.
@@ -1109,6 +1212,10 @@ def crear_tipo_evento():
 
 
 @eventos_bp.route('/tipos-evento/<int:id>', methods=['PUT'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def actualizar_tipo_evento(id):
     """
     Actualizar un tipo de evento existente.
@@ -1170,6 +1277,10 @@ def actualizar_tipo_evento(id):
 
 
 @eventos_bp.route('/tipos-evento/<int:id>', methods=['DELETE'])
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def eliminar_tipo_evento(id):
     """Eliminar un tipo de evento"""
     try:
@@ -1212,7 +1323,24 @@ def eliminar_tipo_evento(id):
 # ============================================================================
 
 @eventos_bp.route('/eventos/proximos', methods=['GET'])
-@token_required()
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ]
+)
 def eventos_proximos():
     """
     Listar eventos próximos (desde hoy en adelante), filtrando por categoría según el rol del usuario.
@@ -1321,6 +1449,24 @@ def eventos_proximos():
 
 
 @eventos_bp.route('/eventos/categoria/<int:categoria_id>', methods=['GET'])
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ]
+)
 def eventos_por_categoria(categoria_id):
     """Listar todos los eventos de una categoría específica"""
     try:

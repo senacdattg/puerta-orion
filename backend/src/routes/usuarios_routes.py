@@ -27,7 +27,10 @@ logger = obtener_registrador('aplicacion')
 
 @usuarios_bp.route('/', methods=['GET', 'OPTIONS'])
 @cross_origin(methods=['GET', 'OPTIONS'])
-@token_required()  # Habilitar autenticación
+@token_required(
+    required_roles=['Administrador', 'SuperAdmin'],
+    required_active_roles=['Administrador', 'SuperAdmin']
+)  # Habilitar autenticación
 def listar_usuarios():
     """
     Endpoint para listar todos los usuarios con sus roles.
@@ -124,7 +127,10 @@ def listar_usuarios():
 
 
 @usuarios_bp.route('/<int:id_usuario>/detalle', methods=['GET'])
-@token_required()  # Protegido con autenticación
+@token_required(
+    required_roles=['Administrador', 'SuperAdmin', 'Entrenador'],
+    required_active_roles=['Administrador', 'SuperAdmin', 'Entrenador']
+)  # Protegido con autenticación
 def obtener_detalle_usuario(id_usuario):
     """
     Endpoint para obtener la información completa de un usuario específico.
@@ -166,7 +172,10 @@ def obtener_detalle_usuario(id_usuario):
 
 @usuarios_bp.route('/<int:id_usuario>', methods=['PUT', 'OPTIONS'])
 @cross_origin(methods=['PUT', 'OPTIONS'])
-@token_required()  # Habilitar autenticación
+@token_required(
+    required_roles=['Administrador', 'SuperAdmin'],
+    required_active_roles=['Administrador', 'SuperAdmin']
+)  # Habilitar autenticación
 def actualizar_usuario(id_usuario):
     """
     Endpoint para actualizar los datos de un usuario.
@@ -322,7 +331,10 @@ def actualizar_usuario(id_usuario):
 
 @usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])
 @cross_origin(methods=['PUT', 'OPTIONS'])
-@token_required()  # Habilitar autenticación
+@token_required(
+    required_roles=['Administrador', 'SuperAdmin'],
+    required_active_roles=['Administrador', 'SuperAdmin']
+)  # Habilitar autenticación
 def cambiar_rol_usuario(id_usuario):
     """
     Endpoint para cambiar el rol de un usuario.
@@ -470,7 +482,10 @@ def cambiar_rol_usuario(id_usuario):
 
 @usuarios_bp.route('/<int:id_usuario>/estado', methods=['PUT', 'OPTIONS'])
 @cross_origin(methods=['PUT', 'OPTIONS'])
-@token_required()
+@token_required(
+    required_roles=['Administrador', 'SuperAdmin'],
+    required_active_roles=['Administrador', 'SuperAdmin']
+)
 def cambiar_estado_usuario(id_usuario):
     """
     Endpoint para activar o desactivar un usuario.
