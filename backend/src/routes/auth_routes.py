@@ -14,6 +14,11 @@ from flask import Blueprint, request, jsonify, current_app
 from ..services.Auth.usuario_service import usuario_service, UsuarioServiceError
 from ..services.Auth.auth_service import auth_service, AuthServiceError
 from ..services.Auth.profile_completion_service import profile_completion_service, ProfileCompletionError
+from ..services.Auth.role_permission_service import (
+    obtener_paneles_autorizados,
+    obtener_roles_para_selector,
+    cambiar_rol_activo,
+)
 from ..middleware.auth_decorator import token_required, get_current_user
 from ..utils.logger import obtener_registrador
 from ..services.Auth.usuario_service import usuario_service
@@ -676,6 +681,9 @@ def obtener_perfil():
             'username': user.get('username'),
             'estado': user.get('estado'),
             'roles': user.get('roles', []),
+            'rol_activo': user.get('rol_activo'),
+            'roles_selector': user.get('roles_selector', {}),
+            'paneles': user.get('paneles', []),
             'persona': {
                 'id_persona': persona.get('id_persona'),
                 'nombre_completo': persona.get('nombre_completo', ''),
@@ -706,7 +714,7 @@ def obtener_perfil():
             'data': perfil_data,
             'status_code': 200
         }), 200
-        
+
     except KeyError as e:
         logger.error(f"Error de clave faltante al obtener perfil: {str(e)}")
         import traceback
@@ -720,6 +728,134 @@ def obtener_perfil():
         logger.error(f"Error inesperado al obtener perfil: {str(e)}")
         import traceback
         logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/roles/opciones', methods=['GET'])
+@token_required()
+def obtener_roles_disponibles():
+    """
+    Retorna los roles del usuario autenticado indicando cuáles puede activar y los paneles visibles.
+    """
+    try:
+        user_context = get_current_user()
+        if not user_context:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no autenticado',
+                'status_code': 401
+            }), 401
+
+        from flask import g
+        usuario_obj = getattr(g, 'current_user_obj', None)
+        if not usuario_obj:
+            from ..models.usuarios.usuario import Usuario
+            usuario_obj = Usuario.query.get(user_context['id_usuario'])
+            if not usuario_obj:
+                return jsonify({
+                    'success': False,
+                    'error': 'Usuario no encontrado',
+                    'status_code': 404
+                }), 404
+
+        roles_selector = obtener_roles_para_selector(usuario_obj)
+        paneles = obtener_paneles_autorizados(usuario_obj)
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'roles_selector': roles_selector,
+                'rol_activo': usuario_obj.rol_activo.nombre_rol if usuario_obj.rol_activo else None,
+                'paneles': [
+                    {'module': panel.module, 'allowed': panel.allowed}
+                    for panel in paneles
+                ]
+            },
+            'status_code': 200
+        }), 200
+
+    except Exception as exc:
+        logger.error(f"Error al obtener roles disponibles: {str(exc)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor',
+            'status_code': 500
+        }), 500
+
+
+@auth_bp.route('/roles/activar', methods=['PUT'])
+@token_required()
+def cambiar_rol_activo_endpoint():
+    """
+    Cambia el rol activo del usuario autenticado.
+    """
+    try:
+        if not request.is_json:
+            return jsonify({
+                'success': False,
+                'error': 'Content-Type debe ser application/json',
+                'status_code': 400
+            }), 400
+
+        payload = request.get_json()
+        nuevo_rol = payload.get('rol')
+        if not nuevo_rol:
+            return jsonify({
+                'success': False,
+                'error': 'Debe especificar el campo "rol"',
+                'status_code': 400
+            }), 400
+
+        from flask import g
+        usuario_obj = getattr(g, 'current_user_obj', None)
+        if not usuario_obj:
+            from ..models.usuarios.usuario import Usuario
+            user_context = get_current_user()
+            usuario_obj = Usuario.query.get(user_context['id_usuario']) if user_context else None
+        if not usuario_obj:
+            return jsonify({
+                'success': False,
+                'error': 'Usuario no encontrado',
+                'status_code': 404
+            }), 404
+
+        rol_actualizado = cambiar_rol_activo(usuario_obj, nuevo_rol, commit=True)
+        paneles = obtener_paneles_autorizados(usuario_obj)
+
+        return jsonify({
+            'success': True,
+            'message': 'Rol activo actualizado correctamente',
+            'data': {
+                'rol_activo': rol_actualizado.nombre_rol if rol_actualizado else None,
+                'roles_selector': obtener_roles_para_selector(usuario_obj),
+                'paneles': [
+                    {'module': panel.module, 'allowed': panel.allowed}
+                    for panel in paneles
+                ]
+            },
+            'status_code': 200
+        }), 200
+
+    except PermissionError as exc:
+        logger.warning(f"Intento inválido de cambiar rol activo: {str(exc)}")
+        return jsonify({
+            'success': False,
+            'error': str(exc),
+            'status_code': 403
+        }), 403
+    except ValueError as exc:
+        logger.warning(f"Error de validación al cambiar rol activo: {str(exc)}")
+        return jsonify({
+            'success': False,
+            'error': str(exc),
+            'status_code': 400
+        }), 400
+    except Exception as exc:
+        logger.error(f"Error inesperado al cambiar rol activo: {str(exc)}")
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor',

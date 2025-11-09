@@ -23,6 +23,11 @@ from ..models.roles_y_permisos.permiso import Permiso
 from ..models.roles_y_permisos.rol_permiso import RolPermiso
 from ..services.Auth.auth_service import auth_service
 from ..utils.logger import obtener_registrador
+from ..services.Auth.role_permission_service import (
+    asegurar_rol_activo_valido,
+    obtener_paneles_autorizados,
+    obtener_roles_para_selector,
+)
 
 
 class TokenRequiredError(Exception):
@@ -30,7 +35,7 @@ class TokenRequiredError(Exception):
     pass
 
 
-def check_permission(usuario: Usuario, permiso: str) -> bool:
+def check_permission(usuario: Usuario, permiso: str, use_active_role: bool = False) -> bool:
     """
     Verifica si un usuario tiene un permiso específico.
     
@@ -52,9 +57,25 @@ def check_permission(usuario: Usuario, permiso: str) -> bool:
             logger.warning("Usuario no proporcionado para verificación de permisos")
             return False
         
-        # Obtener todos los roles del usuario
-        roles_usuario = usuario.roles
-        if not roles_usuario:
+        # Determinar roles a considerar
+        roles_usuario = usuario.roles or []
+
+        if use_active_role:
+            roles_a_evaluar = []
+            if getattr(usuario, 'rol_activo', None):
+                roles_a_evaluar.append(usuario.rol_activo)
+
+            # Mantener acceso base del rol 'usuario'
+            for rol in roles_usuario:
+                if rol.nombre_rol.lower() == 'usuario' and rol not in roles_a_evaluar:
+                    roles_a_evaluar.append(rol)
+
+            if not roles_a_evaluar:
+                roles_a_evaluar = roles_usuario
+        else:
+            roles_a_evaluar = roles_usuario
+
+        if not roles_a_evaluar:
             logger.info(f"Usuario {usuario.usuario} no tiene roles asignados")
             return False
         
@@ -65,7 +86,7 @@ def check_permission(usuario: Usuario, permiso: str) -> bool:
             return False
         
         # Verificar si algún rol del usuario tiene el permiso
-        for rol in roles_usuario:
+        for rol in roles_a_evaluar:
             # Verificar si el rol tiene el permiso específico
             rol_permiso = RolPermiso.query.filter_by(
                 id_rol=rol.id_rol,
@@ -132,16 +153,25 @@ class TokenRequired:
     correspondiente esté activa en la base de datos.
     """
     
-    def __init__(self, required_roles: Optional[list] = None, required_permissions: Optional[list] = None):
+    def __init__(
+        self,
+        required_roles: Optional[list] = None,
+        required_permissions: Optional[list] = None,
+        required_active_roles: Optional[list] = None,
+        permissions_active_only: bool = False
+    ):
         """
         Inicializa el decorador.
         
         Args:
             required_roles (list, optional): Lista de roles requeridos para acceder
             required_permissions (list, optional): Lista de permisos requeridos para acceder
+            required_active_roles (list, optional): Lista de roles permitidos como rol activo
         """
         self.required_roles = required_roles or []
         self.required_permissions = required_permissions or []
+        self.required_active_roles = required_active_roles or []
+        self.permissions_active_only = permissions_active_only
         self.logger = obtener_registrador('aplicacion')
     
     def __call__(self, f: Callable) -> Callable:
@@ -199,8 +229,16 @@ class TokenRequired:
                 
                 # Verificar permisos si se especificaron
                 if self.required_permissions:
-                    if not self._verificar_permisos(usuario, self.required_permissions):
+                    if not self._verificar_permisos(
+                        usuario,
+                        self.required_permissions,
+                        self.permissions_active_only
+                    ):
                         return self._error_response("Permisos insuficientes", 403)
+                
+                if self.required_active_roles:
+                    if not self._verificar_rol_activo(usuario, self.required_active_roles):
+                        return self._error_response("Rol activo no autorizado", 403)
                 
                 # Inyectar datos en el contexto global
                 self._inyectar_datos_usuario(usuario, sesion, payload)
@@ -336,7 +374,30 @@ class TokenRequired:
             self.logger.error(f"Error al verificar roles: {str(e)}")
             return False
     
-    def _verificar_permisos(self, usuario: Usuario, required_permissions: list) -> bool:
+    def _verificar_rol_activo(self, usuario: Usuario, required_roles: list) -> bool:
+        """
+        Verifica que el rol activo del usuario sea uno de los requeridos.
+        
+        Args:
+            usuario (Usuario): Usuario autenticado
+            required_roles (list): Lista de roles permitidos como rol activo
+        """
+        try:
+            if not required_roles:
+                return True
+            if not usuario or not usuario.rol_activo:
+                return False
+            return usuario.rol_activo.nombre_rol in required_roles
+        except Exception as e:
+            self.logger.error(f"Error al verificar rol activo: {str(e)}")
+            return False
+    
+    def _verificar_permisos(
+        self,
+        usuario: Usuario,
+        required_permissions: list,
+        active_only: bool = False
+    ) -> bool:
         """
         Verifica que el usuario tenga los permisos requeridos.
         
@@ -353,7 +414,7 @@ class TokenRequired:
             
             # Verificar que tenga todos los permisos requeridos
             for permiso in required_permissions:
-                if not check_permission(usuario, permiso):
+                if not check_permission(usuario, permiso, use_active_role=active_only):
                     self.logger.info(f"Usuario {usuario.usuario} no tiene permiso '{permiso}'")
                     return False
             
@@ -374,6 +435,10 @@ class TokenRequired:
             payload (Dict): Payload del token JWT
         """
         try:
+            # Asegurar rol activo válido y paneles
+            rol_activo_ajustado = asegurar_rol_activo_valido(usuario, commit=False)
+            paneles_autorizados = obtener_paneles_autorizados(usuario)
+
             # Obtener roles del usuario
             roles_usuario = []
             if hasattr(usuario, 'roles') and usuario.roles:
@@ -383,18 +448,33 @@ class TokenRequired:
             permisos_usuario = get_user_permissions(usuario)
             
             # Inyectar en el contexto global de Flask
+            persona = usuario.persona if getattr(usuario, 'persona', None) else None
+
             g.current_user = {
                 'id_usuario': usuario.id_usuario,
                 'username': usuario.usuario,
                 'estado': usuario.estado,
                 'roles': roles_usuario,
+                'rol_activo': (
+                    rol_activo_ajustado.nombre_rol
+                    if rol_activo_ajustado
+                    else (usuario.rol_activo.nombre_rol if usuario.rol_activo else None)
+                ),
                 'permisos': permisos_usuario,
+                'roles_selector': obtener_roles_para_selector(usuario),
+                'paneles': [
+                    {
+                        'module': panel.module,
+                        'allowed': panel.allowed
+                    }
+                    for panel in paneles_autorizados
+                ],
                 'persona': {
-                    'id_persona': usuario.persona.id_persona,
-                    'nombre_completo': usuario.persona.nombre_completo,
-                    'correo_electronico': usuario.persona.correo_electronico,
-                    'documento': usuario.persona.documento
-                }
+                    'id_persona': persona.id_persona,
+                    'nombre_completo': persona.nombre_completo,
+                    'correo_electronico': persona.correo_electronico,
+                    'documento': persona.documento
+                } if persona else None
             }
             # Guardar el objeto Usuario completo para uso en servicios
             g.current_user_obj = usuario
@@ -433,12 +513,18 @@ class TokenRequired:
 
 
 # Función helper para crear el decorador
-def token_required(required_roles: Optional[list] = None, required_permissions: Optional[list] = None):
+def token_required(
+    required_roles: Optional[list] = None,
+    required_permissions: Optional[list] = None,
+    required_active_roles: Optional[list] = None,
+    permissions_active_only: bool = False
+):
     """
     Decorador para validar tokens JWT y sesiones activas.
     
     Args:
         required_roles (list, optional): Lista de roles requeridos
+        required_active_roles (list, optional): Lista de roles permitidos como rol activo
         
     Returns:
         Callable: Decorador configurado
@@ -452,7 +538,7 @@ def token_required(required_roles: Optional[list] = None, required_permissions: 
         def admin_route():
             return jsonify({'message': 'Solo para administradores'})
     """
-    return TokenRequired(required_roles, required_permissions)
+    return TokenRequired(required_roles, required_permissions, required_active_roles, permissions_active_only)
 
 
 # Decoradores específicos para roles comunes
@@ -495,6 +581,13 @@ def any_role_required(*roles: str):
     return token_required(list(roles))
 
 
+def active_role_required(*roles: str):
+    """
+    Decorador para rutas que requieren un rol activo específico.
+    """
+    return token_required(required_active_roles=list(roles))
+
+
 def permission_required(*permissions: str):
     """
     Decorador para rutas que requieren permisos específicos.
@@ -505,7 +598,10 @@ def permission_required(*permissions: str):
     Returns:
         Callable: Decorador configurado
     """
-    return token_required(required_permissions=list(permissions))
+    return token_required(
+        required_permissions=list(permissions),
+        permissions_active_only=True
+    )
 
 
 def any_permission_required(*permissions: str):
@@ -542,7 +638,7 @@ def any_permission_required(*permissions: str):
                 
                 # Verificar que tenga al menos uno de los permisos
                 for permiso in permissions:
-                    if check_permission(usuario, permiso):
+                    if check_permission(usuario, permiso, use_active_role=True):
                         return f(*args, **kwargs)
                 
                 return jsonify({

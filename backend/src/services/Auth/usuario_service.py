@@ -25,6 +25,7 @@ from src.models.roles_y_permisos.rol import Rol
 from src.models.roles_y_permisos.usuario_rol import UsuarioRol
 from src.models.usuarios.usuario import Usuario
 from src.utils.logger import obtener_registrador
+from .role_permission_service import puede_registrarse_como_acudiente
 from src.utils.validations import (
     ValidationError,
     sanitize_address,
@@ -236,11 +237,11 @@ class UsuarioService:
             db.session.flush()
             
             # Asignar rol por defecto
-            self._asignar_rol_por_defecto(usuario.id_usuario)
+            rol_por_defecto = self._asignar_rol_por_defecto(usuario)
             
             # Si se especifica un rol, crear el registro correspondiente
             if rol_opcional and rol_opcional in ['deportista', 'acudiente']:
-                self._crear_registro_rol(usuario.id_persona, rol_opcional, datos_rol)
+                self._crear_registro_rol(usuario, rol_opcional, datos_rol)
                 
                 # Asignar rol específico además del rol por defecto
                 rol_especifico = Rol.query.filter_by(nombre_rol=rol_opcional.capitalize()).first()
@@ -257,6 +258,13 @@ class UsuarioService:
                             id_rol=rol_especifico.id_rol
                         )
                         db.session.add(usuario_rol)
+                        usuario.set_rol_activo(rol_especifico)
+                else:
+                    if rol_por_defecto:
+                        usuario.set_rol_activo(rol_por_defecto)
+            else:
+                if rol_por_defecto:
+                    usuario.set_rol_activo(rol_por_defecto)
             
             # Commit de la transacción
             db.session.commit()
@@ -325,12 +333,12 @@ class UsuarioService:
         db.session.add(usuario)
         return usuario
     
-    def _crear_registro_rol(self, id_persona: int, rol: str, datos: Dict[str, Any]) -> None:
+    def _crear_registro_rol(self, usuario: Usuario, rol: str, datos: Dict[str, Any]) -> None:
         """
         Crea un registro de Deportista o Acudiente según el rol especificado.
         
         Args:
-            id_persona (int): ID de la persona asociada
+            usuario (Usuario): Usuario asociado
             rol (str): Tipo de rol ('deportista' o 'acudiente')
             datos (Dict): Datos adicionales para el rol (opcional)
             
@@ -340,6 +348,8 @@ class UsuarioService:
         from datetime import date
         
         try:
+            id_persona = usuario.id_persona
+
             if rol == 'deportista':
                 # Verificar que no exista ya un deportista para esta persona
                 deportista_existente = Deportista.query.filter_by(id_persona=id_persona).first()
@@ -393,6 +403,11 @@ class UsuarioService:
                 acudiente_existente = Acudiente.query.filter_by(id_persona=id_persona).first()
                 if acudiente_existente:
                     raise UsuarioServiceError("Ya existe un registro de acudiente para esta persona")
+
+                if not puede_registrarse_como_acudiente(usuario):
+                    raise UsuarioServiceError(
+                        "Para registrarse como acudiente debe cumplir la mayoría de edad o no ser deportista activo"
+                    )
                 
                 acudiente = Acudiente(
                     id_persona=id_persona,
@@ -410,34 +425,41 @@ class UsuarioService:
             self.logger.error(f"Error al crear registro de {rol}: {str(e)}")
             raise UsuarioServiceError(f"Error al crear registro de {rol}: {str(e)}")
     
-    def _asignar_rol_por_defecto(self, id_usuario: int) -> None:
+    def _asignar_rol_por_defecto(self, usuario: Usuario) -> Rol:
         """
         Asigna el rol por defecto 'usuario' al usuario recién creado.
         
         Args:
-            id_usuario (int): ID del usuario al que asignar el rol
+            usuario (Usuario): Usuario al que asignar el rol
             
         Raises:
             UsuarioServiceError: Si hay errores al asignar el rol
         """
         try:
             # Verificar si el usuario ya tiene roles asignados
-            roles_existentes = UsuarioRol.query.filter_by(id_usuario=id_usuario).all()
+            roles_existentes = UsuarioRol.query.filter_by(id_usuario=usuario.id_usuario).all()
             if roles_existentes:
-                self.logger.info(f"Usuario {id_usuario} ya tiene roles asignados, omitiendo asignación de rol por defecto")
-                return
+                self.logger.info(
+                    f"Usuario {usuario.id_usuario} ya tiene roles asignados, omitiendo asignación de rol por defecto"
+                )
+                rol_usuario = Rol.query.filter_by(nombre_rol='usuario').first()
+                if rol_usuario and any(rel.id_rol == rol_usuario.id_rol for rel in roles_existentes):
+                    return rol_usuario
+                primer_rol = Rol.query.get(roles_existentes[0].id_rol)
+                return primer_rol
             
             # Obtener o crear el rol por defecto
             rol_usuario = self._obtener_o_crear_rol_usuario()
             
             # Crear la relación usuario-rol
             usuario_rol = UsuarioRol(
-                id_usuario=id_usuario,
+                id_usuario=usuario.id_usuario,
                 id_rol=rol_usuario.id_rol
             )
             
             db.session.add(usuario_rol)
-            self.logger.info(f"Rol 'usuario' asignado al usuario ID: {id_usuario}")
+            self.logger.info(f"Rol 'usuario' asignado al usuario ID: {usuario.id_usuario}")
+            return rol_usuario
             
         except Exception as e:
             self.logger.error(f"Error al asignar rol por defecto: {str(e)}")

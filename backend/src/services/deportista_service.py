@@ -451,13 +451,13 @@ class DeportistaService:
                                 roles_usuario.append(rol)
                     
                     # Roles permitidos para actualizar peso y altura
-                    roles_permitidos = ['Entrenador', 'Administrador', 'SuperAdmin']
+                    roles_permitidos = ['Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin']
                     tiene_permiso = any(rol in roles_permitidos for rol in roles_usuario)
                     
                     if not tiene_permiso:
                         return {
                             'success': False,
-                            'message': f'No tiene permisos para actualizar los campos: {", ".join(campos_intentados)}. Solo Entrenador y Administrador pueden modificar peso y altura.',
+                            'message': f'No tiene permisos para actualizar los campos: {", ".join(campos_intentados)}. Solo Acudiente, Entrenador y Administrador pueden modificar peso y altura.',
                             'status_code': 403
                         }
                 

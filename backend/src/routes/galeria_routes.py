@@ -17,7 +17,24 @@ galeria_bp = Blueprint('galeria', __name__, url_prefix='/api/galeria')
 
 
 @galeria_bp.route('/', methods=['GET'])
-@token_required()
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ]
+)
 def listar_galeria():
     """
     Listar todas las imágenes de la galería con filtros opcionales.
@@ -75,7 +92,24 @@ def listar_galeria():
 
 
 @galeria_bp.route('/<int:id_galeria>', methods=['GET'])
-@token_required()
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente',
+        'usuario'
+    ]
+)
 def obtener_imagen(id_galeria):
     """
     Obtener una imagen específica por ID.
@@ -115,7 +149,10 @@ def obtener_imagen(id_galeria):
 
 
 @galeria_bp.route('/', methods=['POST'])
-@token_required()
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def crear_imagen():
     """
     Crear una nueva imagen en la galería.
@@ -218,7 +255,10 @@ def crear_imagen():
 
 
 @galeria_bp.route('/<int:id_galeria>', methods=['PUT'])
-@token_required()
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def actualizar_imagen(id_galeria):
     """
     Actualizar una imagen existente.
@@ -311,7 +351,10 @@ def actualizar_imagen(id_galeria):
 
 
 @galeria_bp.route('/<int:id_galeria>', methods=['DELETE'])
-@token_required()
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
+)
 def eliminar_imagen(id_galeria):
     """
     Eliminar una imagen de la galería y su archivo físico.
@@ -375,7 +418,22 @@ def eliminar_imagen(id_galeria):
 
 
 @galeria_bp.route('/catalogos', methods=['GET'])
-@token_required()
+@token_required(
+    required_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente'
+    ],
+    required_active_roles=[
+        'SuperAdmin',
+        'Administrador',
+        'Entrenador',
+        'Deportista',
+        'Acudiente'
+    ]
+)
 def obtener_catalogos():
     """
     Obtener catálogos necesarios para la galería (tipos de evento y categorías).

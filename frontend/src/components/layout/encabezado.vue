@@ -256,7 +256,7 @@ function cargarOpciones() {
     ],
     Acudiente: [
       { texto: "Inicio", link: "/acudiente/dashboard", icono: "fas fa-home" },
-      { texto: "Mis Acudidos", link: "/ver-acudidos", icono: "fas fa-users" },
+      { texto: "Mis Acudidos", link: "/acudiente/ver-acudidos", icono: "fas fa-users" },
       { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-money-bill-wave" },
       { texto: "Eventos", link: "/eventos", icono: "fas fa-calendar-check" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar-alt" },

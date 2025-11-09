@@ -161,7 +161,7 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/ver-acudidos',
+      path: '/acudiente/ver-acudidos',
       name: 'ver-acudidos',
       component: () => import('@/views/ver-acudidos.vue'),
       meta: { requiresAuth: true, requiresRole: ['Acudiente'] }
@@ -324,6 +324,14 @@ router.beforeEach(async (to, from, next) => {
     isAuthenticated = await authStore.verifyToken()
   }
 
+  if (isAuthenticated && !Object.keys(authStore.rolesSelector || {}).length) {
+    await authStore.refreshRoleOptions?.()
+  }
+
+  const selectorRoles = Object.entries(authStore.rolesSelector || {})
+    .filter(([, visible]) => visible)
+    .map(([role]) => role)
+
   if (requiresAuth && !isAuthenticated) {
     // Ruta requiere autenticación pero el usuario no está autenticado o token expirado
     console.log('🔒 Redirigiendo a login: usuario no autenticado')
@@ -331,8 +339,8 @@ router.beforeEach(async (to, from, next) => {
   } else if (requiresGuest && isAuthenticated) {
     // Ruta es para invitados pero el usuario ya está autenticado
     // Si tiene múltiples roles pero no ha seleccionado uno, redirigir a seleccionar rol
-    const userRoles = authStore.user?.roles || []
-    const roleNames = userRoles.map(r => typeof r === 'string' ? r : r?.nombre_rol)
+    const rawRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
+    const roleNames = rawRoles.map(r => typeof r === 'string' ? r : r?.nombre_rol).filter(Boolean)
 
     if (roleNames.length > 1 && !authStore.activeRole) {
       console.log('🔄 Usuario con múltiples roles, redirigiendo a selección de rol')
@@ -341,7 +349,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // Redirigir a la ruta por defecto según el rol activo o roles del usuario
-    const defaultRoute = getDefaultRouteForRole(authStore.user?.roles, authStore.activeRole)
+    const defaultRoute = getDefaultRouteForRole(rawRoles, authStore.activeRole)
     console.log('🔄 Redirigiendo usuario autenticado:', defaultRoute)
     next(defaultRoute)
   } else if (requiresAuth && isAuthenticated && requiresRole) {
@@ -364,7 +372,7 @@ router.beforeEach(async (to, from, next) => {
     }
 
     // Si no hay rol activo, usar la lógica original con todos los roles
-    const userRoles = authStore.user?.roles || []
+    const userRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
 
     console.log('🔍 Verificando rol para:', to.path)
     console.log('🔍 Roles requeridos:', requiredRoles)
@@ -373,7 +381,8 @@ router.beforeEach(async (to, from, next) => {
     if (!hasRequiredRole(userRoles, requiredRoles)) {
       console.log('🚫 Acceso denegado: rol insuficiente. Requerido:', requiredRoles, 'Usuario:', userRoles)
       // Si tiene múltiples roles, redirigir a selección
-      const roleNames = (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol)
+      const roleNames = (selectorRoles.length ? selectorRoles : (authStore.user?.roles || []))
+        .map(r => typeof r === 'string' ? r : r?.nombre_rol)
       if (roleNames.length > 1) {
         next('/seleccionar-rol')
       } else {

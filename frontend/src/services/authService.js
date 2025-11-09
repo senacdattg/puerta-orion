@@ -587,6 +587,75 @@ class AuthService {
       return { success: false, error: error.message || 'Error de conexión' }
     }
   }
+
+  /**
+   * Obtener roles disponibles y paneles autorizados para el usuario autenticado
+   */
+  async getRoleOptions() {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/auth/roles/opciones`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { success: false, error: 'Sesión expirada', expired: true }
+        }
+        throw new Error(data.error || 'Error al obtener opciones de roles')
+      }
+
+      return { success: true, data: data.data }
+    } catch (error) {
+      console.error('Error al obtener opciones de roles:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
+
+  /**
+   * Cambiar el rol activo del usuario autenticado
+   */
+  async activateRole(roleName) {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('No hay token de autenticación')
+      }
+
+      const response = await fetch(`${this.baseURL}/api/auth/roles/activar`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rol: roleName })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return { success: false, error: 'Sesión expirada', expired: true }
+        }
+        throw new Error(data.error || 'Error al cambiar rol activo')
+      }
+
+      return { success: true, data: data.data }
+    } catch (error) {
+      console.error('Error al cambiar rol activo:', error)
+      return { success: false, error: error.message || 'Error de conexión' }
+    }
+  }
 }
 
 // Exportar instancia única

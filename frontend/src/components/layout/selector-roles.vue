@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -105,6 +105,11 @@ const yaEsAcudiente = computed(() => {
 })
 
 const rolesDisponibles = computed(() => {
+  const selectorEntries = Object.entries(authStore.rolesSelector || {}).filter(([, visible]) => visible)
+  if (selectorEntries.length > 0) {
+    return selectorEntries.map(([role]) => role)
+  }
+
   const roles = authStore.user?.roles || []
   // Normalizar a nombres simples
   const nombresRoles = roles.map(r => getNombreRolSimple(r) || r).filter(Boolean)
@@ -206,14 +211,24 @@ async function cambiarRol(event) {
 
   console.log('✅ Rol validado:', rolValidado)
 
+  const previousRole = authStore.activeRole || rolActivo.value
+
   // Actualizar el estado con el rol validado PRIMERO
   rolActivo.value = rolValidado
 
   try {
-    await authStore.setActiveRole?.(rolValidado)
+    const result = await authStore.setActiveRole?.(rolValidado)
+    if (result?.success === false) {
+      throw new Error(result.error || 'No se pudo actualizar el rol activo')
+    }
     console.log('✅ Rol establecido en el store:', rolValidado)
   } catch (e) {
     console.warn('⚠️ No se pudo establecer el rol activo en el store:', e)
+    rolActivo.value = previousRole
+    if (event?.target) {
+      event.target.value = previousRole
+    }
+    return
   }
 
   // Redirigir siempre al panel de inicio (/home) cuando se cambia de rol
@@ -239,7 +254,7 @@ async function cambiarRol(event) {
 }
 
 // Observar cambios en los roles del usuario y el detalle del usuario
-watch(() => [authStore.user?.roles, authStore.userDetail], () => {
+watch(() => [rolesDisponibles.value, authStore.userDetail], () => {
   // Cargar detalle si no está cargado y el usuario es deportista
   if (esDeportista.value && !authStore.userDetail) {
     authStore.loadUserProfileDetail()
@@ -261,19 +276,15 @@ watch(() => [authStore.user?.roles, authStore.userDetail], () => {
   }
 }, { immediate: true })
 
-// Observar cambios en los roles del usuario
-watch(() => authStore.user?.roles, (nuevosRoles) => {
+// Observar cambios en los roles disponibles
+watch(() => rolesDisponibles.value, (nuevosRoles) => {
   if (nuevosRoles && nuevosRoles.length > 0) {
-    // Obtener nombres de roles
-    const nombresRoles = nuevosRoles.map(r => getNombreRolSimple(r))
+    const nombresRoles = nuevosRoles.map(r => getNombreRolSimple(r) || r)
 
-    // Si el rol activo no está en los nuevos roles, usar el rol principal
     if (!nombresRoles.includes(rolActivo.value)) {
       const nuevoRolPrincipal = obtenerRolPrincipal(nuevosRoles)
       if (nuevoRolPrincipal) {
         rolActivo.value = nuevoRolPrincipal
-        // No cambiar automáticamente el rol, solo actualizar el valor
-        // El usuario debe cambiar manualmente desde el selector
       }
     }
   }
@@ -283,6 +294,12 @@ watch(() => authStore.user?.roles, (nuevosRoles) => {
 watch(() => authStore.activeRole, (nuevo) => {
   if (nuevo && nuevo !== rolActivo.value) {
     rolActivo.value = nuevo
+  }
+})
+
+onMounted(async () => {
+  if (!Object.keys(authStore.rolesSelector || {}).length) {
+    await authStore.refreshRoleOptions?.()
   }
 })
 </script>

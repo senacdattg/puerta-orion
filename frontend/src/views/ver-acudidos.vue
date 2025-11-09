@@ -55,10 +55,6 @@
               <i class="fas fa-eye"></i>
               Ver Detalle
             </button>
-            <button class="btn-action btn-edit" @click="editarAcudido(acudido)">
-              <i class="fas fa-edit"></i>
-              Editar
-            </button>
           </div>
         </div>
       </div>
@@ -179,7 +175,11 @@
           <PerfilDeportistaVista
             v-else-if="deportistaSeleccionadoPerfil"
             :datos="deportistaSeleccionadoPerfil"
+            :modoEdicion="modoEdicionPerfil"
             @cerrar="cerrarModalPerfil"
+            @editar="habilitarEdicionPerfil"
+            @cancelar="cancelarEdicionPerfil"
+            @guardar="manejarGuardadoPerfil"
           />
           <div v-else class="error">
             <p>No se pudo cargar la información del deportista</p>
@@ -194,7 +194,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import { useAuthStore } from '@/stores/auth'
@@ -203,7 +202,6 @@ import authService from '@/services/authService'
 import catalogosService from '@/services/catalogosService'
 import PerfilDeportistaVista from '@/components/deportistas/perfil-deportista-vista.vue'
 
-const router = useRouter()
 const authStore = useAuthStore()
 
 const acudidos = ref([])
@@ -279,11 +277,13 @@ const cargarAcudidos = async () => {
 const mostrarModalPerfil = ref(false)
 const deportistaSeleccionadoPerfil = ref(null)
 const cargandoPerfil = ref(false)
+const modoEdicionPerfil = ref(false)
 
 const verDetalle = async (acudido) => {
   cargandoPerfil.value = true
   mostrarModalPerfil.value = true
   deportistaSeleccionadoPerfil.value = null
+  modoEdicionPerfil.value = false
 
   try {
     // Obtener información completa del deportista
@@ -307,10 +307,35 @@ const verDetalle = async (acudido) => {
 const cerrarModalPerfil = () => {
   mostrarModalPerfil.value = false
   deportistaSeleccionadoPerfil.value = null
+  modoEdicionPerfil.value = false
 }
 
-const editarAcudido = (acudido) => {
-  router.push(`/actualizar-deportista/${acudido.id}`)
+const habilitarEdicionPerfil = () => {
+  modoEdicionPerfil.value = true
+}
+
+const cancelarEdicionPerfil = () => {
+  modoEdicionPerfil.value = false
+}
+
+const manejarGuardadoPerfil = async () => {
+  modoEdicionPerfil.value = false
+
+  try {
+    if (deportistaSeleccionadoPerfil.value) {
+      const idDeportista = deportistaSeleccionadoPerfil.value.id || deportistaSeleccionadoPerfil.value.id_deportista
+      if (idDeportista) {
+        const response = await deportistasService.obtenerDeportistaPorId(idDeportista)
+        if ((response.status === 'success' || response.success) && response.data) {
+          deportistaSeleccionadoPerfil.value = response.data
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error al refrescar información del deportista:', error)
+  }
+
+  await cargarAcudidos()
 }
 
 // Funciones para el modal de acudir
@@ -620,17 +645,6 @@ const asociarDeportista = async () => {
 
 .btn-view:hover {
   background: #003d8f;
-}
-
-.btn-edit {
-  background: #f7d600;
-  color: #0047ab;
-  font-weight: 700;
-}
-
-.btn-edit:hover {
-  background: #ffc107;
-  color: #003d8f;
 }
 
 .empty-state {

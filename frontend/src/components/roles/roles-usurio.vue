@@ -56,15 +56,28 @@ const usuarioRoles = computed(() => {
 })
 
 // Lista para el selector (solo roles que posee)
-const rolesDisponibles = computed(() => usuarioRoles.value)
+const rolesDisponibles = computed(() => {
+  const selectorEntries = Object.entries(authStore.rolesSelector || {}).filter(([, visible]) => visible)
+  if (selectorEntries.length > 0) {
+    return selectorEntries.map(([rol]) => rol)
+  }
+  return usuarioRoles.value
+})
 
 // Rol actual tomado del store
 const rolActual = ref(authStore.activeRole || rolesDisponibles.value[0] || 'Usuario')
 
 async function cambiarRol() {
   const nombreRol = rolActual.value
-  await authStore.setActiveRole(nombreRol) // carga permisos del rol
-  // Navegar según rol elegido
+  const previo = authStore.activeRole
+  const resultado = await authStore.setActiveRole(nombreRol)
+
+  if (resultado?.success === false) {
+    console.warn('No se pudo cambiar el rol activo:', resultado.error)
+    rolActual.value = previo || rolesDisponibles.value[0] || 'Usuario'
+    return
+  }
+
   switch (nombreRol) {
     case 'SuperAdmin':
     case 'Administrador':
@@ -76,7 +89,7 @@ async function cambiarRol() {
     case 'Acudiente':
       router.replace('/acudiente/dashboard'); break
     default:
-      router.replace('/home');
+      router.replace('/home')
   }
 }
 

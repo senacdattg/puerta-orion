@@ -17,7 +17,7 @@
             </div>
 
             <div class="dashboard-grid">
-              <div class="dashboard-card" @click="navigateTo('/ver-acudidos')">
+              <div class="dashboard-card" @click="navigateTo('/acudiente/ver-acudidos')">
                 <div class="card-icon">
                   <i class="fas fa-users"></i>
                 </div>
