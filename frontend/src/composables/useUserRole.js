@@ -83,121 +83,82 @@ export const navigationConfig = [
 export function useUserRole() {
   const authStore = useAuthStore()
 
-  /**
-   * Obtiene el rol activo del usuario (respecta el rol seleccionado en localStorage)
-   * Si no hay rol activo, usa el rol principal basado en jerarquía de prioridades
-   * @returns {string} Nombre del rol activo
-   */
+  const availableRoles = computed(() => {
+    const selector = authStore.rolesSelector || {}
+    const entries = Object.entries(selector).filter(([, visible]) => visible)
+    if (entries.length > 0) {
+      return entries.map(([role]) => role)
+    }
+
+    const rawRoles = authStore.userRoles || []
+    return rawRoles.length > 0 ? rawRoles : ['Usuario']
+  })
+
   const userRole = computed(() => {
-    // PRIORIDAD 1: Usar el rol activo del store (si fue seleccionado explícitamente)
-    const activeRole = authStore.activeRole
-    if (activeRole) {
-      if (activeRole === 'SuperAdmin' || activeRole === 'Administrador') {
-        return 'Admin'
-      }
-      return activeRole
+    if (authStore.activeRole) {
+      return authStore.activeRole
     }
-
-    const userRoles = authStore.userRoles
-
-    if (!userRoles || userRoles.length === 0) {
-      return 'Usuario'
-    }
-
-    // Extraer nombres de roles (pueden ser objetos o strings)
-    const roleNames = userRoles.map(role => {
-      if (typeof role === 'string') return role
-      if (role.nombre_rol) return role.nombre_rol
-      if (role.rol) return role.rol
-      return role.toString()
-    })
-
-    // PRIORIDAD 2: Si tiene UN SOLO rol, usar ese (automático)
-    if (roleNames.length === 1) {
-      const singleRole = roleNames[0]
-      if (singleRole === 'SuperAdmin' || singleRole === 'Administrador') {
-        return 'Admin'
-      }
-      return singleRole
-    }
-
-    // PRIORIDAD 3: Si tiene MÚLTIPLES roles pero NO ha seleccionado uno, devolver null/UsuarioSinAuth
-    // NO usar fallback automático para evitar asignar Admin por defecto
-    return 'UsuarioSinAuth'
+    const roles = availableRoles.value
+    return roles.length > 0 ? roles[0] : 'Usuario'
   })
 
-  /**
-   * Función helper para extraer nombres de roles
-   */
-  // Nota: getRoleNames no se utiliza actualmente; eliminar para evitar warning del linter
-
-  /**
-   * Verifica si el usuario es administrador o entrenador (basado en el rol activo)
-   * @returns {boolean}
-   */
   const isAdminOrCoach = computed(() => {
-    return userRole.value === 'Administrador' ||
-           userRole.value === 'SuperAdmin' ||
-           userRole.value === 'Entrenador'
+    return ['Administrador', 'SuperAdmin', 'Entrenador'].includes(userRole.value)
   })
 
-  /**
-   * Verifica si el usuario es deportista (basado en el rol activo)
-   * @returns {boolean}
-   */
   const isDeportista = computed(() => {
     return userRole.value === 'Deportista'
   })
 
-  /**
-   * Verifica si el usuario es acudiente (basado en el rol activo)
-   * @returns {boolean}
-   */
   const isAcudiente = computed(() => {
     return userRole.value === 'Acudiente'
   })
 
-  /**
-   * Filtra elementos de navegación según los roles del usuario
-   * @returns {Array} Array de elementos de navegación permitidos
-   */
-  const filteredNavigation = computed(() => {
-    const userRoles = authStore.userRoles
-    console.log('🔍 Debug filteredNavigation:')
-    console.log('- userRoles:', userRoles)
-    console.log('- authStore.user:', authStore.user)
-
-    // Si no hay roles, mostrar solo calendario y galería
-    if (!userRoles || userRoles.length === 0) {
-      console.log('- No hay roles, mostrando calendario y galería')
-      return navigationConfig.filter(item =>
-        item.id === 'calendario' || item.id === 'galeria'
-      )
-    }
-
-    // Extraer nombres de roles (en caso de que sean objetos)
-    const roleNames = userRoles.map(role => {
-      if (typeof role === 'string') return role
-      if (role.nombre_rol) return role.nombre_rol
-      if (role.rol) return role.rol
-      return role.toString()
+  const allowedPanels = computed(() => {
+    const result = {}
+    const panelList = authStore.panels || []
+    panelList.forEach(panel => {
+      if (panel && panel.module) {
+        result[panel.module] = panel.allowed !== false
+      }
     })
-
-    console.log('- roleNames extraídos:', roleNames)
-
-    // Filtrar elementos según los roles del usuario
-    const filtered = navigationConfig.filter(item => {
-      return item.roles.some(role => roleNames.includes(role))
-    })
-
-    console.log('- elementos filtrados:', filtered)
-    return filtered
+    return result
   })
 
-  /**
-   * Obtiene el mensaje de bienvenida personalizado según el rol
-   * @returns {Object} Objeto con título y descripción
-   */
+  const panelModuleMap = {
+    calendario: 'calendario',
+    galeria: 'galeria',
+    mensualidades: 'mensualidades',
+    deportistas: 'deportistas',
+    admin: 'panel_admin'
+  }
+
+  const availableRoleSet = computed(() => new Set(
+    availableRoles.value.map(role => {
+      if (typeof role === 'string') return role
+      if (role?.nombre_rol) return role.nombre_rol
+      return role?.rol || role
+    })
+  ))
+
+  const filteredNavigation = computed(() => {
+    const rolesSet = availableRoleSet.value
+    const hasRoles = rolesSet.size > 0
+
+    return navigationConfig.filter(item => {
+      const moduleKey = panelModuleMap[item.id]
+      if (moduleKey && allowedPanels.value[moduleKey] === false) {
+        return false
+      }
+
+      if (!hasRoles) {
+        return moduleKey ? allowedPanels.value[moduleKey] !== false : true
+      }
+
+      return item.roles.some(role => rolesSet.has(role))
+    })
+  })
+
   const welcomeMessage = computed(() => {
     const userName = authStore.user?.nombre || 'Usuario'
 
@@ -214,33 +175,24 @@ export function useUserRole() {
     }
   })
 
-  /**
-   * Verifica si el usuario tiene un rol específico
-   * @param {string} roleName - Nombre del rol a verificar
-   * @returns {boolean}
-   */
   const hasRole = (roleName) => {
-    const userRoles = authStore.userRoles
-    if (!userRoles || userRoles.length === 0) return false
-
-    // Los roles ya están procesados como strings en el store
-    return userRoles.includes(roleName)
+    return availableRoleSet.value.has(roleName)
   }
 
-  /**
-   * Verifica si el usuario tiene acceso a una ruta específica
-   * @param {string} routeName - Nombre de la ruta
-   * @returns {boolean}
-   */
   const canAccessRoute = (routeName) => {
-    const userRoles = authStore.userRoles
+    const rolesSet = availableRoleSet.value
     const navItem = navigationConfig.find(item => item.route === routeName)
 
     if (!navItem) return true // Si no está en la config, permitir acceso
-    if (!userRoles || userRoles.length === 0) return false
+    if (rolesSet.size === 0) {
+      const moduleKey = panelModuleMap[navItem.id]
+      if (moduleKey) {
+        return allowedPanels.value[moduleKey] !== false
+      }
+      return false
+    }
 
-    // Los roles ya están procesados como strings en el store
-    return navItem.roles.some(role => userRoles.includes(role))
+    return navItem.roles.some(role => rolesSet.has(role))
   }
 
   return {
@@ -249,6 +201,7 @@ export function useUserRole() {
     isAdminOrCoach,
     isDeportista,
     isAcudiente,
+    availableRoles,
     filteredNavigation,
     welcomeMessage,
 

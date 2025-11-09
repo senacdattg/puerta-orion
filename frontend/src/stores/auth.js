@@ -11,7 +11,9 @@ export const useAuthStore = defineStore('auth', () => {
   // Estado reactivo
   const user = ref(null)
   const token = ref(localStorage.getItem('token') || null)
-  const permissions = ref([]) // Nuevo: permisos específicos del usuario
+  const permissions = ref([]) // Permisos específicos del usuario según rol activo
+  const rolesSelector = ref({}) // Roles disponibles según backend
+  const panels = ref([]) // Paneles autorizados según rol activo
   const activeRole = ref(localStorage.getItem('activeRole') || null) // Rol activo seleccionado
   const userDetail = ref(null) // Detalle completo del usuario (con información por rol)
   const isLoading = ref(false)
@@ -62,28 +64,28 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.success) {
         token.value = response.token
         user.value = response.user
+        rolesSelector.value = response.user?.roles_selector || {}
+        panels.value = response.user?.paneles || []
+        activeRole.value = response.user?.rol_activo || null
 
         // Guardar en localStorage
         localStorage.setItem('token', token.value)
         localStorage.setItem('user', JSON.stringify(user.value))
+        if (activeRole.value) {
+          localStorage.setItem('activeRole', activeRole.value)
+        } else {
+          localStorage.removeItem('activeRole')
+        }
 
         // Verificar cuántos roles tiene el usuario
         const userRoles = response.user?.roles || []
         const roleNames = userRoles.map(role => typeof role === 'string' ? role : role.nombre_rol)
 
-        // Solo cargar permisos si tiene un solo rol
-        // Si tiene múltiples roles, limpiar permisos y esperar a que seleccione uno
-        if (roleNames.length === 1) {
-          // Un solo rol: cargar permisos de ese rol
+        if (activeRole.value) {
+          await loadPermissionsForRole(activeRole.value)
+        } else if (roleNames.length === 1) {
           await loadPermissionsForRole(roleNames[0])
-        } else if (roleNames.length > 1) {
-          // Múltiples roles: limpiar permisos y establecer activeRole como null
-          permissions.value = []
-          activeRole.value = null
-          localStorage.removeItem('activeRole')
-          console.log('⚠️ Usuario con múltiples roles, esperando selección de rol')
         } else {
-          // Sin roles: limpiar permisos
           permissions.value = []
         }
 
@@ -133,6 +135,8 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null
       user.value = null
       permissions.value = [] // Limpiar permisos
+      rolesSelector.value = {}
+      panels.value = []
       error.value = null
 
       // Limpiar localStorage
@@ -177,6 +181,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   const loadUserPermissions = async () => {
     try {
+      if (activeRole.value) {
+        await loadPermissionsForRole(activeRole.value)
+        return
+      }
+
       const response = await authService.getUserPermissions()
       if (response.success) {
         permissions.value = response.permisos || []
@@ -213,6 +222,49 @@ export const useAuthStore = defineStore('auth', () => {
     } catch (error) {
       console.warn(`⚠️ Error cargando permisos del rol "${roleName}":`, error.message)
       permissions.value = []
+    }
+  }
+
+  const refreshRoleOptions = async () => {
+    try {
+      const response = await authService.getRoleOptions()
+      if (!response.success) {
+        return { success: false, error: response.error }
+      }
+
+      const {
+        roles_selector: selector = {},
+        rol_activo: rolBackend = null,
+        paneles: panelBackend = []
+      } = response.data || {}
+
+      rolesSelector.value = selector || {}
+      panels.value = Array.isArray(panelBackend) ? panelBackend : []
+
+      if (rolBackend) {
+        activeRole.value = rolBackend
+        localStorage.setItem('activeRole', rolBackend)
+        await loadPermissionsForRole(rolBackend)
+      } else {
+        activeRole.value = null
+        localStorage.removeItem('activeRole')
+        permissions.value = []
+      }
+
+      if (user.value) {
+        user.value = {
+          ...user.value,
+          rol_activo: rolBackend,
+          roles_selector: selector,
+          paneles: panelBackend
+        }
+        localStorage.setItem('user', JSON.stringify(user.value))
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error al refrescar opciones de rol:', error)
+      return { success: false, error: error.message || 'Error inesperado' }
     }
   }
 
@@ -258,6 +310,15 @@ export const useAuthStore = defineStore('auth', () => {
       if (response.success) {
         user.value = response.data
         localStorage.setItem('user', JSON.stringify(user.value))
+
+        rolesSelector.value = response.data?.roles_selector || {}
+        panels.value = response.data?.paneles || []
+        activeRole.value = response.data?.rol_activo || null
+        if (activeRole.value) {
+          localStorage.setItem('activeRole', activeRole.value)
+        } else {
+          localStorage.removeItem('activeRole')
+        }
 
         // Cargar permisos después de cargar el perfil
         await loadUserPermissions()
@@ -342,6 +403,16 @@ export const useAuthStore = defineStore('auth', () => {
       if (savedUser && savedUser !== 'null' && savedUser !== 'undefined') {
         try {
           user.value = JSON.parse(savedUser)
+          if (user.value?.roles_selector) {
+            rolesSelector.value = user.value.roles_selector
+          }
+          if (user.value?.paneles) {
+            panels.value = user.value.paneles
+          }
+          if (!activeRole.value && user.value?.rol_activo) {
+            activeRole.value = user.value.rol_activo
+            localStorage.setItem('activeRole', user.value.rol_activo)
+          }
         } catch (parseError) {
           console.warn('Error al parsear usuario guardado:', parseError)
           localStorage.removeItem('user')
@@ -382,16 +453,60 @@ export const useAuthStore = defineStore('auth', () => {
 
   const updateUser = (userData) => {
     user.value = { ...user.value, ...userData }
+    if (userData?.roles_selector) {
+      rolesSelector.value = userData.roles_selector
+    }
+    if (userData?.paneles) {
+      panels.value = userData.paneles
+    }
+    if (userData?.rol_activo) {
+      activeRole.value = userData.rol_activo
+      localStorage.setItem('activeRole', userData.rol_activo)
+    }
     localStorage.setItem('user', JSON.stringify(user.value))
   }
 
   // Función para establecer el rol activo seleccionado y cargar sus permisos
   const setActiveRole = async (roleName) => {
-    activeRole.value = roleName
-    localStorage.setItem('activeRole', roleName)
-    
-    // Cargar permisos del rol seleccionado
-    await loadPermissionsForRole(roleName)
+    try {
+      if (!roleName) {
+        throw new Error('Debe proporcionar un rol válido')
+      }
+
+      const response = await authService.activateRole(roleName)
+      if (!response.success) {
+        throw new Error(response.error || 'No se pudo cambiar el rol activo')
+      }
+
+      const {
+        rol_activo: rolBackend = roleName,
+        roles_selector: selector = rolesSelector.value,
+        paneles: panelBackend = panels.value
+      } = response.data || {}
+
+      activeRole.value = rolBackend
+      localStorage.setItem('activeRole', rolBackend)
+
+      rolesSelector.value = selector || {}
+      panels.value = Array.isArray(panelBackend) ? panelBackend : []
+
+      await loadPermissionsForRole(rolBackend)
+
+      if (user.value) {
+        user.value = {
+          ...user.value,
+          rol_activo: rolBackend,
+          roles_selector: selector,
+          paneles: panels.value
+        }
+        localStorage.setItem('user', JSON.stringify(user.value))
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('Error al establecer rol activo:', error)
+      return { success: false, error: error.message || 'Error al cambiar rol activo' }
+    }
   }
 
   // Función para limpiar el rol activo (útil al hacer logout)
@@ -405,6 +520,8 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     permissions, // Nuevo: permisos específicos
+    rolesSelector,
+    panels,
     activeRole, // Rol activo seleccionado
     userDetail, // Detalle completo del usuario
     isLoading,
@@ -441,6 +558,7 @@ export const useAuthStore = defineStore('auth', () => {
     loadUserPermissions, // Nueva acción
     loadPermissionsForRole, // Nueva acción para cargar permisos de un rol específico
     setPermissionsByRole, // Nueva acción
+    refreshRoleOptions,
     inicializar,
     clearError,
     updateUser,
