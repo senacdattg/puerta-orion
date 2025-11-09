@@ -22,9 +22,32 @@ def upgrade():
     from sqlalchemy import inspect
     conn = op.get_bind()
     inspector = inspect(conn)
-    existing_tables = inspector.get_table_names()
+    existing_tables = {t.lower(): t for t in inspector.get_table_names()}
+
+    def table_exists(name):
+        return name.lower() in existing_tables
+
+    def register_table(name):
+        existing_tables[name.lower()] = name
+
+    def canonical(name):
+        return existing_tables.get(name.lower(), name)
+
+    def table_is_referenced(name):
+        target = canonical(name).lower()
+        for tbl_actual in existing_tables.values():
+            for fk in inspector.get_foreign_keys(tbl_actual):
+                referred = fk.get('referred_table')
+                if referred and referred.lower() == target:
+                    return True
+        return False
+
+    def drop_table_if_unused(name):
+        # Esta migración se ejecuta sobre una base creada previamente, por lo que evitar
+        # drops asegura compatibilidad con la cadena existente.
+        return
     
-    if 'Escuela' not in existing_tables:
+    if not table_exists('Escuela'):
         op.create_table('Escuela',
         sa.Column('id_escuela', sa.Integer(), autoincrement=True, nullable=False),
         sa.Column('nombre', sa.String(length=150), nullable=False),
@@ -33,8 +56,9 @@ def upgrade():
         sa.PrimaryKeyConstraint('id_escuela'),
         sa.UniqueConstraint('nombre')
         )
+        register_table('Escuela')
     
-    if 'TipoEnfermedad' not in existing_tables:
+    if not table_exists('TipoEnfermedad'):
         op.create_table('TipoEnfermedad',
         sa.Column('id_tipo_enfermedad', sa.Integer(), nullable=False),
         sa.Column('nombre', sa.String(length=150), nullable=False),
@@ -43,8 +67,9 @@ def upgrade():
         sa.PrimaryKeyConstraint('id_tipo_enfermedad'),
         sa.UniqueConstraint('nombre')
         )
+        register_table('TipoEnfermedad')
     
-    if 'InformacionDeportiva' not in existing_tables:
+    if not table_exists('InformacionDeportiva'):
         op.create_table('InformacionDeportiva',
         sa.Column('id_informacion_deportiva', sa.Integer(), nullable=False),
         sa.Column('practica_otro_deporte', sa.Boolean(), nullable=False),
@@ -61,8 +86,9 @@ def upgrade():
         sa.ForeignKeyConstraint(['id_persona'], ['puerta_orion_personas.id_persona'], ),
         sa.PrimaryKeyConstraint('id_informacion_deportiva')
         )
+        register_table('InformacionDeportiva')
     
-    if 'PersonasRol' not in existing_tables:
+    if not table_exists('PersonasRol'):
         op.create_table('PersonasRol',
         sa.Column('id_persona', sa.Integer(), nullable=False),
         sa.Column('id_rol', sa.Integer(), nullable=False),
@@ -73,8 +99,9 @@ def upgrade():
         sa.ForeignKeyConstraint(['id_rol'], ['puerta_orion_roles.id_rol'], ),
         sa.PrimaryKeyConstraint('id_persona', 'id_rol')
         )
+        register_table('PersonasRol')
     
-    if 'SesionAuth' not in existing_tables:
+    if not table_exists('SesionAuth'):
         op.create_table('SesionAuth',
         sa.Column('id_sesion', sa.Integer(), nullable=False),
         sa.Column('id_usuario', sa.Integer(), nullable=False),
@@ -90,25 +117,37 @@ def upgrade():
         sa.PrimaryKeyConstraint('id_sesion'),
         sa.UniqueConstraint('token_sesion')
         )
+        register_table('SesionAuth')
     
-    with op.batch_alter_table('tipoenfermedad', schema=None) as batch_op:
-        batch_op.drop_index('nombre')
+    if table_exists('tipoenfermedad'):
+        with op.batch_alter_table(canonical('tipoenfermedad'), schema=None) as batch_op:
+            pass
+        drop_table_if_unused('tipoenfermedad')
 
-    op.drop_table('tipoenfermedad')
-    op.drop_table('informaciondeportiva')
-    with op.batch_alter_table('escuela', schema=None) as batch_op:
-        batch_op.drop_index('nombre')
+    drop_table_if_unused('informaciondeportiva')
 
-    op.drop_table('escuela')
-    op.drop_table('personasrol')
-    with op.batch_alter_table('sesionauth', schema=None) as batch_op:
-        batch_op.drop_index('token_sesion')
+    drop_table_if_unused('escuela')
 
-    op.drop_table('sesionauth')
-    op.drop_table('puerta_orion_rol_usuario')
+    drop_table_if_unused('personasrol')
+
+    if table_exists('sesionauth'):
+        with op.batch_alter_table(canonical('sesionauth'), schema=None) as batch_op:
+            try:
+                batch_op.drop_index('token_sesion')
+            except Exception:
+                pass
+        drop_table_if_unused('sesionauth')
+
+    drop_table_if_unused('puerta_orion_rol_usuario')
+    existing_fks_diagnostico = {fk.get('name') for fk in inspector.get_foreign_keys('diagnostico') if fk.get('name')}
+
     with op.batch_alter_table('diagnostico', schema=None) as batch_op:
-        batch_op.drop_constraint('diagnostico_ibfk_1', type_='foreignkey')
-        batch_op.create_foreign_key(None, 'TipoEnfermedad', ['id_tipo_enfermedad'], ['id_tipo_enfermedad'])
+        if 'diagnostico_ibfk_1' in existing_fks_diagnostico:
+            try:
+                batch_op.drop_constraint('diagnostico_ibfk_1', type_='foreignkey')
+            except Exception:
+                pass
+        batch_op.create_foreign_key(None, canonical('tipoenfermedad'), ['id_tipo_enfermedad'], ['id_tipo_enfermedad'])
 
     # ### end Alembic commands ###
 

@@ -13,32 +13,60 @@ Uso:
 import sys
 import os
 
-# Agregar el directorio raíz al path para las importaciones
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+from sqlalchemy import inspect, text
 
-from backend.app import create_app
-from backend.src.models.base import db
+SEEDERS_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SEEDERS_DIR, os.pardir, os.pardir))
 
-# Importar todos los seeders
-from backend.src.seeders import (
-    seed_tipo_documento,
-    seed_sexo,
-    seed_grupo_sanguineo,
-    seed_categoria,
-    seed_deporte,
-    seed_tipo_evento,
-    seed_metodo_pago,
-    seed_parentesco,
-    seed_tipo_enfermedad,
-    seed_diagnostico,
-    seed_ciudad_residencia,
-    seed_escuela,
-    seed_institucion_registro,
-    seed_eps,
-    seed_permisos,
-    seed_roles,
-    seed_superadmin
-)
+paths_to_try = [PROJECT_ROOT, os.path.abspath(os.path.join(PROJECT_ROOT, os.pardir))]
+for path in paths_to_try:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+try:
+    from backend.app import create_app  # type: ignore
+    from backend.src.models.base import db  # type: ignore
+    from backend.src.seeders import (
+        seed_tipo_documento,
+        seed_sexo,
+        seed_grupo_sanguineo,
+        seed_categoria,
+        seed_deporte,
+        seed_tipo_evento,
+        seed_metodo_pago,
+        seed_parentesco,
+        seed_tipo_enfermedad,
+        seed_diagnostico,
+        seed_ciudad_residencia,
+        seed_escuela,
+        seed_institucion_registro,
+        seed_eps,
+        seed_permisos,
+        seed_roles,
+        seed_superadmin
+    )
+except ModuleNotFoundError:  # Ejecutándose dentro del contenedor (/app)
+    from app import create_app  # type: ignore
+    from src.models.base import db  # type: ignore
+    from src.seeders import (
+        seed_tipo_documento,
+        seed_sexo,
+        seed_grupo_sanguineo,
+        seed_categoria,
+        seed_deporte,
+        seed_tipo_evento,
+        seed_metodo_pago,
+        seed_parentesco,
+        seed_tipo_enfermedad,
+        seed_diagnostico,
+        seed_ciudad_residencia,
+        seed_escuela,
+        seed_institucion_registro,
+        seed_eps,
+        seed_permisos,
+        seed_roles,
+        seed_superadmin
+    )
 
 
 def run_all_seeders():
@@ -59,6 +87,21 @@ def run_all_seeders():
     
     with app.app_context():
         try:
+            inspector = inspect(db.engine)
+            table_names = inspector.get_table_names()
+
+            if 'TipoEnfermedad' in table_names and 'tipoenfermedad' not in table_names:
+                print(" Detectada tabla 'TipoEnfermedad'. Renombrando a 'tipoenfermedad' para mantener consistencia...")
+                try:
+                    db.session.execute(text("RENAME TABLE `TipoEnfermedad` TO `tipoenfermedad`"))
+                    db.session.commit()
+                    inspector = inspect(db.engine)
+                    table_names = inspector.get_table_names()
+                    print("   ✅ Tabla renombrada correctamente.")
+                except Exception as rename_error:
+                    db.session.rollback()
+                    print(f"   ⚠️  No fue posible renombrar la tabla: {rename_error}")
+
             # PASO 1: Catálogos básicos (sin dependencias)
             print(" PASO 1: Insertando catálogos básicos...")
             print("-" * 70)

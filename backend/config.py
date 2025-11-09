@@ -22,10 +22,10 @@ class Config:
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         # Construir URL desde variables individuales
-        db_host = os.environ.get('DB_HOST', 'localhost')
+        db_host = os.environ.get('DB_HOST', os.environ.get('MYSQL_HOST', 'localhost'))
         db_port = os.environ.get('DB_PORT', '3306')
-        db_username = os.environ.get('DB_USERNAME', 'root')
-        db_password = os.environ.get('DB_PASSWORD', '')
+        db_username = os.environ.get('DB_USERNAME') or os.environ.get('DB_USER', 'root')
+        db_password = os.environ.get('DB_PASSWORD') or os.environ.get('MYSQL_PASSWORD', '')
         db_name = os.environ.get('DB_NAME', 'puerta_orion')
         
         if db_password:
@@ -41,7 +41,12 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de CORS
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', 'http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:4173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:3000').split(',')
+    CORS_ORIGINS = os.environ.get(
+        'CORS_ORIGINS',
+        'http://localhost:3000,http://localhost:5173,http://localhost:5174,'
+        'http://localhost:4173,http://localhost:8080,http://127.0.0.1:5173,'
+        'http://127.0.0.1:3000,http://frontend,http://frontend:80,http://frontend:8080'
+    ).split(',')
     CORS_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']
     CORS_HEADERS = ['Content-Type', 'Authorization']
     CORS_SUPPORTS_CREDENTIALS = True

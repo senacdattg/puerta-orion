@@ -47,14 +47,7 @@
             </div>
             <div class="info-row">
               <label>Tipo de documento:</label>
-              <span v-if="!modoEdicion">{{ obtenerTipoDocumento() || '—' }}</span>
-              <select v-else v-model="formData.id_tipo_documento" class="input-editable">
-                <option :value="null">Seleccione...</option>
-                <option v-for="tipo in catalogos.tiposDocumento" :key="tipo.id_tipo_documento || tipo.id" 
-                        :value="tipo.id_tipo_documento || tipo.id">
-                  {{ tipo.nombre || tipo.nombre_documento || tipo.tipo }}
-                </option>
-              </select>
+              <span>{{ obtenerTipoDocumento() || '—' }}</span>
             </div>
             <div class="info-row">
               <label>Documento:</label>
@@ -93,9 +86,7 @@
             </div>
             <div class="info-row">
               <label>Fecha de nacimiento:</label>
-              <span v-if="!modoEdicion">{{ formatearFechaNacimiento(fechaNacimiento) || '—' }}</span>
-              <input v-else v-model="formData.fecha_nacimiento" type="date" class="input-editable" 
-                     :max="new Date().toISOString().split('T')[0]" />
+              <span>{{ formatearFechaNacimiento(fechaNacimiento) || '—' }}</span>
             </div>
             <div class="info-row">
               <label>Peso:</label>
@@ -115,36 +106,15 @@
             </div>
             <div class="info-row">
               <label>Tipo sanguíneo:</label>
-              <span v-if="!modoEdicion">{{ obtenerTipoSanguineo() || '—' }}</span>
-              <select v-else v-model="formData.id_tipo_sanguineo" class="input-editable">
-                <option :value="null">Seleccione...</option>
-                <option v-for="tipo in catalogos.tiposSanguineos" :key="tipo.id_tipo_sangre || tipo.id" 
-                        :value="tipo.id_tipo_sangre || tipo.id">
-                  {{ tipo.tipo_sangre || tipo.nombre || tipo.tipo }}
-                </option>
-              </select>
+              <span>{{ obtenerTipoSanguineo() || '—' }}</span>
             </div>
             <div class="info-row">
               <label>Ciudad de residencia:</label>
-              <span v-if="!modoEdicion">{{ obtenerCiudad() || '—' }}</span>
-              <select v-else v-model="formData.id_ciudad_recidencia" class="input-editable">
-                <option :value="null">Seleccione...</option>
-                <option v-for="ciudad in catalogos.ciudades" :key="ciudad.id_ciudad || ciudad.id" 
-                        :value="ciudad.id_ciudad || ciudad.id">
-                  {{ ciudad.nombre_ciudad || ciudad.nombre || ciudad.ciudad }}
-                </option>
-              </select>
+              <span>{{ obtenerCiudad() || '—' }}</span>
             </div>
             <div class="info-row">
               <label>EPS:</label>
-              <span v-if="!modoEdicion">{{ obtenerEPS() || '—' }}</span>
-              <select v-else v-model="formData.id_eps" class="input-editable">
-                <option :value="null">Seleccione...</option>
-                <option v-for="eps in catalogos.eps" :key="eps.id_eps || eps.id" 
-                        :value="eps.id_eps || eps.id">
-                  {{ eps.nombre_eps || eps.nombre || eps.eps }}
-                </option>
-              </select>
+              <span>{{ obtenerEPS() || '—' }}</span>
             </div>
           </div>
 
@@ -154,14 +124,7 @@
             <div class="info-grid">
               <div class="info-row">
                 <label>Deporte principal:</label>
-                <span v-if="!modoEdicion">{{ obtenerDeporte() || '—' }}</span>
-                <select v-else v-model="formData.id_deporte" class="input-editable" required>
-                  <option :value="null">Seleccione...</option>
-                  <option v-for="deporte in catalogos.deportes" :key="deporte.id_deporte || deporte.id" 
-                          :value="deporte.id_deporte || deporte.id">
-                    {{ deporte.nombre || deporte.nombre_deporte || deporte.deporte }}
-                  </option>
-                </select>
+                <span>{{ obtenerDeporte() || '—' }}</span>
               </div>
               <div class="info-row">
                 <label>Practica otro deporte:</label>
@@ -201,25 +164,11 @@
               </div>
               <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.participa_escuela">
                 <label>Escuela:</label>
-                <span v-if="!modoEdicion">{{ obtenerEscuela() || '—' }}</span>
-                <select v-else v-model="formData.id_escuela" class="input-editable" :disabled="!formData.participa_escuela">
-                  <option :value="null">Seleccione...</option>
-                  <option v-for="escuela in catalogos.escuelas" :key="escuela.id_escuela || escuela.id" 
-                          :value="escuela.id_escuela || escuela.id">
-                    {{ escuela.nombre_escuela || escuela.nombre || escuela.escuela }}
-                  </option>
-                </select>
+                <span>{{ obtenerEscuela() || '—' }}</span>
               </div>
               <div class="info-row">
                 <label>Institución de registro:</label>
-                <span v-if="!modoEdicion">{{ obtenerInstitucion() || '—' }}</span>
-                <select v-else v-model="formData.id_institucion_registro" class="input-editable" required>
-                  <option :value="null">Seleccione...</option>
-                  <option v-for="inst in catalogos.instituciones" :key="inst.id_institucion || inst.id_institucion_registro || inst.id" 
-                          :value="inst.id_institucion || inst.id_institucion_registro || inst.id">
-                    {{ inst.nombre_institucion || inst.nombre || inst.institucion }}
-                  </option>
-                </select>
+                <span>{{ obtenerInstitucion() || '—' }}</span>
               </div>
               <div class="info-row">
                 <label>Recomendación médica:</label>
@@ -329,7 +278,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import catalogosService from '@/services/catalogosService';
-import deportistasService from '@/services/deportistasService';
+import { getApiUrl } from '@/config/environment';
 
 defineOptions({
   name: 'PerfilDeportistaVista'
@@ -365,186 +314,6 @@ const catalogos = ref({
 // Estado de carga de catálogos
 const catalogosCargados = ref(false);
 
-// Estado para datos editables
-const formData = ref({
-  // Información Personal
-  primer_nombre: '',
-  segundo_nombre: '',
-  primer_apellido: '',
-  segundo_apellido: '',
-  documento: '',
-  correo_electronico: '',
-  telefono: '',
-  direccion: '',
-  id_tipo_documento: null,
-  // Datos del Deportista
-  fecha_nacimiento: '',
-  id_tipo_sanguineo: null,
-  id_ciudad_recidencia: null,
-  id_eps: null,
-  peso: null,
-  altura: null,
-  // Información Deportiva
-  id_deporte: null,
-  practica_otro_deporte: false,
-  participa_escuela: false,
-  id_escuela: null,
-  id_institucion_registro: null,
-  // Antecedentes Médicos
-  tiene_enfermedades: false,
-  tipo_enfermedad: null,
-  diagnosticos: [],
-  recomendacion_medica: false,
-  descripcion_recomendacion: ''
-});
-
-const guardando = ref(false);
-
-// Inicializar formulario con datos del deportista
-function inicializarFormulario() {
-  if (!props.datos) return;
-  
-  console.log('🔍 Inicializando formulario con datos:', props.datos);
-  
-  const persona = props.datos.persona || {};
-  const deportista = props.datos.datos_deportista || props.datos.deportista || {};
-  const infoDeportiva = props.datos.informacion_deportiva || {};
-  const salud = props.datos.salud || {};
-  
-  // Buscar fecha de nacimiento en múltiples ubicaciones
-  let fechaNac = persona.fecha_nacimiento || 
-                 deportista.fecha_nacimiento || 
-                 props.datos.fecha_nacimiento ||
-                 null;
-  
-  console.log('📅 Fecha de nacimiento encontrada:', fechaNac);
-  
-  // Formatear fecha de nacimiento para input date
-  if (fechaNac) {
-    if (typeof fechaNac === 'number') {
-      // Si es solo un año, crear fecha completa
-      fechaNac = `${fechaNac}-01-01`;
-    } else if (typeof fechaNac === 'string' && /^\d{4}$/.test(fechaNac)) {
-      fechaNac = `${fechaNac}-01-01`;
-    } else if (typeof fechaNac === 'string') {
-      // Si ya tiene formato YYYY-MM-DD, usarlo directamente
-      if (fechaNac.includes('-') && fechaNac.length >= 10) {
-        // Ya está en formato correcto, solo tomar los primeros 10 caracteres
-        fechaNac = fechaNac.substring(0, 10);
-      } else {
-        // Intentar parsear otros formatos
-        try {
-          const date = new Date(fechaNac);
-          if (!isNaN(date.getTime())) {
-            fechaNac = date.toISOString().split('T')[0];
-          }
-        } catch (e) {
-          console.warn('Error al formatear fecha:', e);
-          fechaNac = '';
-        }
-      }
-    }
-  }
-  
-  // Buscar tipo sanguíneo en múltiples ubicaciones
-  // El backend lo devuelve en persona según registro_deportista_service.py línea 611
-  let idTipoSanguineo = persona.id_tipo_sanguineo || 
-                        deportista.id_tipo_sanguineo || 
-                        props.datos.id_tipo_sanguineo || 
-                        null;
-  // Convertir a número si es string
-  if (idTipoSanguineo !== null && idTipoSanguineo !== undefined) {
-    idTipoSanguineo = Number(idTipoSanguineo) || null;
-  }
-  
-  // Buscar ciudad de residencia en múltiples ubicaciones
-  // El backend lo devuelve en persona según registro_deportista_service.py línea 612
-  let idCiudad = persona.id_ciudad_recidencia || 
-                 deportista.id_ciudad_recidencia || 
-                 props.datos.id_ciudad_recidencia || 
-                 null;
-  // Convertir a número si es string
-  if (idCiudad !== null && idCiudad !== undefined) {
-    idCiudad = Number(idCiudad) || null;
-  }
-  
-  // Buscar EPS en múltiples ubicaciones
-  // El backend lo devuelve en persona según registro_deportista_service.py línea 613
-  let idEPS = persona.id_eps || 
-              deportista.id_eps || 
-              props.datos.id_eps || 
-              null;
-  // Convertir a número si es string
-  if (idEPS !== null && idEPS !== undefined) {
-    idEPS = Number(idEPS) || null;
-  }
-  
-  console.log('🔍 IDs encontrados:', {
-    id_tipo_sanguineo: idTipoSanguineo,
-    id_ciudad_recidencia: idCiudad,
-    id_eps: idEPS,
-    fecha_nacimiento: fechaNac
-  });
-  
-  formData.value = {
-    // Información Personal
-    primer_nombre: persona.primer_nombre || props.datos.nombre1 || '',
-    segundo_nombre: persona.segundo_nombre || props.datos.nombre2 || '',
-    primer_apellido: persona.primer_apellido || props.datos.apellido1 || '',
-    segundo_apellido: persona.segundo_apellido || props.datos.apellido2 || '',
-    documento: persona.documento || props.datos.documento || '',
-    correo_electronico: persona.correo_electronico || props.datos.correo || '',
-    telefono: persona.telefono || props.datos.telefono || '',
-    direccion: persona.direccion || props.datos.direccion || '',
-    id_tipo_documento: persona.id_tipo_documento || props.datos.id_tipo_documento || null,
-    // Datos del Deportista - Buscar en persona y deportista
-    fecha_nacimiento: fechaNac || '',
-    id_tipo_sanguineo: idTipoSanguineo,
-    id_ciudad_recidencia: idCiudad,
-    id_eps: idEPS,
-    peso: deportista.peso !== undefined && deportista.peso !== null ? deportista.peso : (props.datos.peso !== undefined && props.datos.peso !== null ? props.datos.peso : null),
-    altura: deportista.altura !== undefined && deportista.altura !== null ? deportista.altura : (props.datos.altura !== undefined && props.datos.altura !== null ? props.datos.altura : null),
-    // Información Deportiva
-    id_deporte: infoDeportiva.id_deporte || props.datos.id_deporte || null,
-    practica_otro_deporte: infoDeportiva.practica_otro_deporte !== undefined ? infoDeportiva.practica_otro_deporte : false,
-    participa_escuela: infoDeportiva.participa_escuela !== undefined ? infoDeportiva.participa_escuela : false,
-    id_escuela: infoDeportiva.id_escuela || null,
-    id_institucion_registro: infoDeportiva.id_institucion_registro || null,
-    // Antecedentes Médicos
-    tiene_enfermedades: salud.tipos_enfermedad_ids && salud.tipos_enfermedad_ids.length > 0 ? true : false,
-    tipo_enfermedad: salud.tipos_enfermedad_ids && salud.tipos_enfermedad_ids.length > 0 ? salud.tipos_enfermedad_ids[0] : null,
-    diagnosticos: salud.diagnosticos ? salud.diagnosticos.map(d => d.id_diagnostico || d) : [],
-    recomendacion_medica: infoDeportiva.recomendacion_medica !== undefined ? infoDeportiva.recomendacion_medica : false,
-    descripcion_recomendacion: infoDeportiva.descripcion_recomendacion || ''
-  };
-  
-  console.log('✅ FormData inicializado:', formData.value);
-}
-
-// Watch para inicializar formulario cuando cambien los datos o se active modo edición
-watch(
-  () => props.modoEdicion,
-  (nuevoModo) => {
-    if (nuevoModo && props.datos) {
-      console.log('🔄 Modo edición activado, inicializando formulario...');
-      inicializarFormulario();
-    }
-  },
-  { immediate: true }
-);
-
-// Watch para cuando cambien los datos
-watch(
-  () => props.datos,
-  (nuevosDatos) => {
-    if (nuevosDatos && props.modoEdicion) {
-      console.log('🔄 Datos actualizados, reinicializando formulario...');
-      inicializarFormulario();
-    }
-  },
-  { deep: true, immediate: true }
-);
-
 // Cargar catálogos al montar el componente
 onMounted(async () => {
   try {
@@ -564,22 +333,19 @@ onMounted(async () => {
 
 async function cargarCatalogos() {
   try {
-    // Usar la variable de entorno correcta
-    const baseURL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-    console.log('🔗 Base URL para catálogos:', baseURL);
+    console.log('🔗 Base URL para catálogos:', getApiUrl(''));
 
     // Cargar todos los catálogos necesarios desde las rutas de deportistas
     const endpoints = [
-      { url: `${baseURL}/api/deportistas/catalogos/grupos-sanguineos`, name: 'grupos-sanguineos' },
-      { url: `${baseURL}/api/deportistas/catalogos/ciudades-residencia`, name: 'ciudades-residencia' },
-      { url: `${baseURL}/api/deportistas/catalogos/eps`, name: 'eps' },
-      { url: `${baseURL}/api/deportistas/catalogos/deportes`, name: 'deportes' },
-      { url: `${baseURL}/api/deportistas/catalogos/escuelas`, name: 'escuelas' },
-      { url: `${baseURL}/api/deportistas/catalogos/instituciones-registro`, name: 'instituciones-registro' },
-      { url: `${baseURL}/api/deportistas/catalogos/tipos-enfermedad`, name: 'tipos-enfermedad' },
-      { url: `${baseURL}/api/deportistas/catalogos/diagnosticos`, name: 'diagnosticos' },
-      { url: `${baseURL}/api/catalogos/tipos-documento`, name: 'tipos-documento' }
+      { url: getApiUrl('/api/deportistas/catalogos/grupos-sanguineos'), name: 'grupos-sanguineos' },
+      { url: getApiUrl('/api/deportistas/catalogos/ciudades-residencia'), name: 'ciudades-residencia' },
+      { url: getApiUrl('/api/deportistas/catalogos/eps'), name: 'eps' },
+      { url: getApiUrl('/api/deportistas/catalogos/deportes'), name: 'deportes' },
+      { url: getApiUrl('/api/deportistas/catalogos/escuelas'), name: 'escuelas' },
+      { url: getApiUrl('/api/deportistas/catalogos/instituciones-registro'), name: 'instituciones-registro' },
+      { url: getApiUrl('/api/deportistas/catalogos/tipos-enfermedad'), name: 'tipos-enfermedad' },
+      { url: getApiUrl('/api/deportistas/catalogos/diagnosticos'), name: 'diagnosticos' },
+      { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
     ];
 
     // Obtener token de autenticación
@@ -596,30 +362,7 @@ async function cargarCatalogos() {
       endpoints.map(async (endpoint) => {
         try {
           console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
-          const response = await fetch(endpoint.url, {
-            method: 'GET',
-            headers: headers
-          });
-          
-          if (!response.ok) {
-            console.warn(`⚠️ ${endpoint.name} retornó ${response.status}: ${response.statusText}`);
-            // Si es 401, puede ser que no requiera autenticación, intentar sin token
-            if (response.status === 401 && token) {
-              const responseWithoutAuth = await fetch(endpoint.url, {
-                method: 'GET',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Accept': 'application/json'
-                }
-              });
-              if (responseWithoutAuth.ok) {
-                const data = await responseWithoutAuth.json();
-                return { name: endpoint.name, ok: true, data };
-              }
-            }
-            return { name: endpoint.name, ok: false, data: null, error: `HTTP ${response.status}` };
-          }
-          
+          const response = await fetch(endpoint.url);
           const data = await response.json();
           console.log(`✅ ${endpoint.name} cargado:`, response.ok);
           return { name: endpoint.name, ok: response.ok, data };
@@ -713,12 +456,11 @@ function obtenerNombreCompleto() {
 }
 
 function obtenerTipoSanguineo() {
-  const idTipo = props.modoEdicion 
-    ? formData.value.id_tipo_sanguineo
-    : (props.datos?.persona?.id_tipo_sanguineo ||
-                 props.datos?.deportista?.id_tipo_sanguineo ||
-       props.datos?.datos_deportista?.id_tipo_sanguineo ||
-       props.datos?.id_tipo_sanguineo);
+  const idTipo =
+    props.datos?.persona?.id_tipo_sanguineo ||
+    props.datos?.deportista?.id_tipo_sanguineo ||
+    props.datos?.datos_deportista?.id_tipo_sanguineo ||
+    props.datos?.id_tipo_sanguineo;
   if (!idTipo) return null;
   const tipo = catalogos.value.tiposSanguineos.find(t =>
     t.id_tipo_sangre === idTipo ||
@@ -729,12 +471,11 @@ function obtenerTipoSanguineo() {
 }
 
 function obtenerCiudad() {
-  const idCiudad = props.modoEdicion 
-    ? formData.value.id_ciudad_recidencia
-    : (props.datos?.persona?.id_ciudad_recidencia ||
-                   props.datos?.deportista?.id_ciudad_recidencia ||
-       props.datos?.datos_deportista?.id_ciudad_recidencia ||
-       props.datos?.id_ciudad_recidencia);
+  const idCiudad =
+    props.datos?.persona?.id_ciudad_recidencia ||
+    props.datos?.deportista?.id_ciudad_recidencia ||
+    props.datos?.datos_deportista?.id_ciudad_recidencia ||
+    props.datos?.id_ciudad_recidencia;
   if (!idCiudad) return null;
   const ciudad = catalogos.value.ciudades.find(c =>
     c.id_ciudad === idCiudad ||
@@ -745,12 +486,11 @@ function obtenerCiudad() {
 }
 
 function obtenerEPS() {
-  const idEPS = props.modoEdicion 
-    ? formData.value.id_eps
-    : (props.datos?.persona?.id_eps ||
-                props.datos?.deportista?.id_eps ||
-       props.datos?.datos_deportista?.id_eps ||
-       props.datos?.id_eps);
+  const idEPS =
+    props.datos?.persona?.id_eps ||
+    props.datos?.deportista?.id_eps ||
+    props.datos?.datos_deportista?.id_eps ||
+    props.datos?.id_eps;
   if (!idEPS) return null;
   const eps = catalogos.value.eps.find(e =>
     e.id_eps === idEPS ||
@@ -760,10 +500,8 @@ function obtenerEPS() {
 }
 
 function obtenerDeporte() {
-  const idDeporte = props.modoEdicion 
-    ? formData.value.id_deporte
-    : (props.datos?.informacion_deportiva?.id_deporte ||
-       props.datos?.deportista?.id_deporte);
+  const idDeporte = props.datos?.informacion_deportiva?.id_deporte ||
+                    props.datos?.deportista?.id_deporte;
   if (!idDeporte) return null;
   const deporte = catalogos.value.deportes.find(d =>
     d.id_deporte === idDeporte ||
@@ -773,9 +511,7 @@ function obtenerDeporte() {
 }
 
 function obtenerEscuela() {
-  const idEscuela = props.modoEdicion 
-    ? formData.value.id_escuela
-    : props.datos?.informacion_deportiva?.id_escuela;
+  const idEscuela = props.datos?.informacion_deportiva?.id_escuela;
   if (!idEscuela) return null;
   const escuela = catalogos.value.escuelas.find(e =>
     e.id_escuela === idEscuela ||
@@ -785,9 +521,7 @@ function obtenerEscuela() {
 }
 
 function obtenerInstitucion() {
-  const idInst = props.modoEdicion 
-    ? formData.value.id_institucion_registro
-    : props.datos?.informacion_deportiva?.id_institucion_registro;
+  const idInst = props.datos?.informacion_deportiva?.id_institucion_registro;
   if (!idInst) return null;
   const inst = catalogos.value.instituciones.find(i =>
     i.id_institucion === idInst ||
@@ -952,11 +686,10 @@ function obtenerDiagnostico(idDiagnostico) {
 }
 
 function obtenerTipoDocumento() {
-  const idTipoDocumento = props.modoEdicion 
-    ? formData.value.id_tipo_documento
-    : (props.datos?.persona?.id_tipo_documento ||
-                           props.datos?.id_tipo_documento ||
-       props.datos?.deportista?.id_tipo_documento);
+  const idTipoDocumento =
+    props.datos?.persona?.id_tipo_documento ||
+    props.datos?.id_tipo_documento ||
+    props.datos?.deportista?.id_tipo_documento;
 
   if (!idTipoDocumento) return null;
 
@@ -967,66 +700,6 @@ function obtenerTipoDocumento() {
   );
 
   return tipoDocumento?.nombre || tipoDocumento?.nombre_documento || tipoDocumento?.tipo || null;
-}
-
-// Función para guardar cambios
-async function guardarCambios() {
-  if (!props.datos) return;
-  
-  guardando.value = true;
-  try {
-    const idDeportista = props.datos.id_deportista || props.datos.id;
-    
-    // Preparar datos para enviar al backend
-    const datosEnvio = {
-      datos_deportista: {
-        fecha_nacimiento: formData.value.fecha_nacimiento,
-        id_tipo_sanguineo: formData.value.id_tipo_sanguineo,
-        id_ciudad_recidencia: formData.value.id_ciudad_recidencia,
-        id_eps: formData.value.id_eps,
-        peso: formData.value.peso ? parseFloat(formData.value.peso) : null,
-        altura: formData.value.altura ? parseFloat(formData.value.altura) : null
-      },
-      datos_informacion_deportiva: {
-        id_deporte: formData.value.id_deporte,
-        practica_otro_deporte: formData.value.practica_otro_deporte,
-        participa_escuela: formData.value.participa_escuela,
-        id_escuela: formData.value.id_escuela || null,
-        id_institucion_registro: formData.value.id_institucion_registro,
-        recomendacion_medica: formData.value.recomendacion_medica,
-        descripcion_recomendacion: formData.value.descripcion_recomendacion || ''
-      },
-      datos_persona: {
-        primer_nombre: formData.value.primer_nombre,
-        segundo_nombre: formData.value.segundo_nombre || null,
-        primer_apellido: formData.value.primer_apellido,
-        segundo_apellido: formData.value.segundo_apellido || null,
-        documento: formData.value.documento,
-        correo_electronico: formData.value.correo_electronico,
-        telefono: formData.value.telefono || null,
-        direccion: formData.value.direccion || null,
-        id_tipo_documento: formData.value.id_tipo_documento
-      }
-    };
-    
-    const response = await deportistasService.actualizarDeportista(idDeportista, datosEnvio);
-    
-    if (response.success || response.status === 'success') {
-      alert('✅ Deportista actualizado exitosamente');
-      emit('guardar', response.data || datosEnvio);
-    } else {
-      throw new Error(response.message || 'Error al actualizar deportista');
-    }
-  } catch (error) {
-    console.error('Error al guardar:', error);
-    alert(`❌ Error al guardar: ${error.message || 'Error desconocido'}`);
-  } finally {
-    guardando.value = false;
-  }
-}
-
-function cancelarEdicion() {
-  emit('cancelar');
 }
 </script>
 
