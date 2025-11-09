@@ -1,0 +1,92 @@
+# Configuración de desarrollo para Puerta Orion
+# Este archivo contiene variables de entorno para el desarrollo local
+# Renombra este archivo a ".env" y personalízalo según tus necesidades
+
+# ============================================
+# CONFIGURACIÓN BÁSICA DE FLASK
+# ============================================
+SECRET_KEY=clave_secreta_desarrollo_123456789
+DEBUG=true
+FLASK_ENV=development
+FLASK_RUN_RELOAD=true
+
+# ============================================
+# CONFIGURACIÓN DEL SERVIDOR
+# ============================================
+HOST=puerta_mysql
+PORT=5000
+
+# ============================================
+# CONFIGURACIÓN DE BASE DE DATOS MYSQL
+# ============================================
+# MySQL con Laragon
+DB_HOST=puerta_mysql
+DB_PORT=3306
+DB_USERNAME=root
+DB_PASSWORD=123456
+DB_NAME=puerta_orion
+
+# ============================================
+# CONFIGURACIÓN DE JWT
+# ============================================
+JWT_SECRET_KEY=jwt_secret_key_desarrollo_123456789
+JWT_ACCESS_TOKEN_EXPIRES=3600
+JWT_REFRESH_TOKEN_EXPIRES=604800
+JWT_ALGORITHM=HS256
+
+# ============================================
+# CONFIGURACIÓN DE CORS
+# ============================================
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173
+CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS,PATCH
+CORS_HEADERS=Content-Type,Authorization,X-Requested-With,Accept,Origin
+CORS_SUPPORTS_CREDENTIALS=true
+
+# ============================================
+# CONFIGURACIÓN DE LOGS
+# ============================================
+LOG_LEVEL=DEBUG
+LOG_FILE=logs/app/app.log
+LOG_ERROR_FILE=logs/app/error.log
+LOG_ACCESS_FILE=logs/app/access.log
+
+# ============================================
+# CONFIGURACIÓN DE EMAIL (OPCIONAL)
+# ============================================
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=true
+EMAIL_ADDRESS=marioalexandercanola@gmail.com
+EMAIL_PASSWORD=tkvd taqd atdx czf
+
+# ============================================
+# CONFIGURACIÓN DE MERCADOPAGO (OPCIONAL)
+# ============================================
+MERCADOPAGO_ACCESS_TOKEN=tu_access_token_mercadopago
+MERCADOPAGO_PUBLIC_KEY=tu_public_key_mercadopago
+
+# ============================================
+# CONFIGURACIÓN DE SEGURIDAD
+# ============================================
+BCRYPT_LOG_ROUNDS=12
+SESSION_COOKIE_SECURE=false
+SESSION_COOKIE_HTTPONLY=true
+SESSION_COOKIE_SAMESITE=Lax
+
+# ============================================
+# CONFIGURACIÓN DE RENDIMIENTO
+# ============================================
+MAX_CONTENT_LENGTH=16777216
+
+# ===========================
+# Configuración de Email (Gmail)
+# ===========================
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_HOST_USER=marioalexandercanola@gmail.com
+EMAIL_HOST_PASSWORD=ayru vpny uwsv ehvo
+DEFAULT_FROM_EMAIL=Puerta de Orión <marioalexandercanola@gmail.com>
+FRONTEND_URL=http://localhost:5173
+
