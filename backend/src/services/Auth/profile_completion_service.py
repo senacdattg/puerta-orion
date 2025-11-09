@@ -24,6 +24,11 @@ from src.models.acudientes.acudiente import Acudiente
 from src.models.roles_y_permisos.rol import Rol
 from src.models.roles_y_permisos.usuario_rol import UsuarioRol
 from src.utils.logger import obtener_registrador
+from .role_permission_service import (
+    puede_registrarse_como_acudiente,
+    calcular_edad,
+    asegurar_rol_activo_valido,
+)
 
 # Logger simple para casos donde el gestor no está inicializado
 import logging
@@ -437,6 +442,9 @@ class ProfileCompletionService:
 
             # Asignar rol correspondiente
             self.role_assigner.assign_role(usuario_id, components['role'])
+            usuario_obj = Usuario.query.filter_by(id_usuario=usuario_id).first()
+            if usuario_obj:
+                asegurar_rol_activo_valido(usuario_obj, commit=False)
 
             # Commit de la transacción
             db.session.commit()
@@ -549,35 +557,16 @@ class ProfileCompletionService:
             if acudiente:
                 raise ProfileCompletionError("El usuario ya está registrado como acudiente")
             
-            # Validación específica para acudientes: deben ser mayores de 18 años
-            # Solo validar si el usuario tiene fecha de nacimiento registrada como deportista
-            # Si no es deportista, permitir el registro como acudiente sin validación de edad
-            fecha_nacimiento = None
-            
-            # Intentar obtener de la persona si tiene deportista
-            if deportista and deportista.fecha_nacimiento:
-                fecha_nacimiento = deportista.fecha_nacimiento
-            
-            # Solo validar edad si tiene fecha de nacimiento registrada
-            # Si no tiene fecha de nacimiento (no es deportista), permitir registro como acudiente
-            if fecha_nacimiento:
-                año_actual = date.today().year
-                # Calcular edad correctamente (manejar fecha completa)
-                if isinstance(fecha_nacimiento, date):
-                    edad = (date.today() - fecha_nacimiento).days // 365
-                else:
-                    # Si es solo año, calcular edad aproximada
-                    edad = año_actual - fecha_nacimiento
-                
-                if edad < 18:
+            if not puede_registrarse_como_acudiente(usuario):
+                edad = calcular_edad(deportista.fecha_nacimiento) if deportista else None
+                if edad is None:
                     raise ProfileCompletionError(
-                        f"Para ser acudiente debe ser mayor de edad. Su edad actual es {edad} años"
+                        "Para ser acudiente debe ser mayor de edad. Actualice primero su fecha de nacimiento."
                     )
-                self.logger.info(f"Validación de edad para acudiente: {edad} años (OK)")
-            else:
-                # Si no hay fecha de nacimiento registrada, permitir el registro como acudiente
-                # (No todos los acudientes necesitan ser deportistas primero)
-                self.logger.info("Registro como acudiente sin validación de edad (usuario no es deportista)")
+                raise ProfileCompletionError(
+                    f"Para ser acudiente debe ser mayor de edad. Su edad actual es {edad} años."
+                )
+            self.logger.info("Validación de edad para acudiente superada")
 
 
 # Instancia global del servicio para uso en la aplicación

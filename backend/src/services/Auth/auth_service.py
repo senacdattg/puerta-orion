@@ -24,6 +24,7 @@ from ...models.base import db
 from ...models.usuarios.usuario import Usuario
 from ...models.eventos.sesionAuth import SesionAuth
 from ...utils.logger import obtener_registrador
+from .role_permission_service import asegurar_rol_activo_valido
 
 class AuthServiceError(Exception):
     """Excepción personalizada para errores del servicio de autenticación."""
@@ -72,6 +73,8 @@ class AuthService:
             usuario = self._verificar_credenciales(username, password)
             if not usuario:
                 raise AuthServiceError("Credenciales inválidas")
+            
+            asegurar_rol_activo_valido(usuario, commit=False)
             
             # Generar token JWT
             token_jwt = self._generar_token_jwt(usuario)
@@ -170,12 +173,15 @@ class AuthService:
             if hasattr(usuario, 'roles') and usuario.roles:
                 roles_usuario = [rol.nombre_rol for rol in usuario.roles]
             
+            rol_activo = usuario.rol_activo.nombre_rol if getattr(usuario, 'rol_activo', None) else None
+            
             # Payload del token
             payload = {
                 'usuario_id': usuario.id_usuario,
                 'username': usuario.usuario,
                 'persona_id': usuario.id_persona,
                 'roles': roles_usuario,
+                'rol_activo': rol_activo,
                 'exp': expiracion,
                 'iat': datetime.utcnow(),
                 'iss': 'puerta_orion_api'
@@ -318,6 +324,17 @@ class AuthService:
         if hasattr(usuario, 'roles') and usuario.roles:
             roles_usuario = [rol.to_dict() for rol in usuario.roles]
         
+        rol_activo = usuario.rol_activo.nombre_rol if getattr(usuario, 'rol_activo', None) else None
+        
+        persona_data = None
+        if getattr(usuario, 'persona', None):
+            persona_data = {
+                'id_persona': usuario.persona.id_persona,
+                'nombre_completo': usuario.persona.nombre_completo,
+                'correo_electronico': usuario.persona.correo_electronico,
+                'documento': usuario.persona.documento
+            }
+
         return {
             'success': True,
             'message': 'Login exitoso',
@@ -328,13 +345,9 @@ class AuthService:
                 'id_usuario': usuario.id_usuario,
                 'username': usuario.usuario,
                 'estado': usuario.estado,
+                'rol_activo': rol_activo,
                 'roles': roles_usuario,
-                'persona': {
-                    'id_persona': usuario.persona.id_persona,
-                    'nombre_completo': usuario.persona.nombre_completo,
-                    'correo_electronico': usuario.persona.correo_electronico,
-                    'documento': usuario.persona.documento
-                }
+                'persona': persona_data
             },
             'session': {
                 'id_sesion': sesion.id_sesion,
