@@ -161,7 +161,7 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/ver-acudidos',
+      path: '/acudiente/ver-acudidos',
       name: 'ver-acudidos',
       component: () => import('@/views/ver-acudidos.vue'),
       meta: { requiresAuth: true, requiresRole: ['Acudiente'] }

@@ -1,8 +1,8 @@
 <template>
   <div class="perfil-deportista-vista">
     <div class="perfil-header">
-      <h2>{{ modoEdicion ? '✏️ Editar Deportista' : '📋 Información del Deportista' }}</h2>
-      <button class="btn-cerrar" @click="modoEdicion ? cancelarEdicion() : $emit('cerrar')" :title="modoEdicion ? 'Cancelar' : 'Cerrar'">
+      <h2>{{ isEditing ? '✏️ Editar Deportista' : '📋 Información del Deportista' }}</h2>
+      <button class="btn-cerrar" @click="isEditing ? cancelarEdicion() : $emit('cerrar')" :title="isEditing ? 'Cancelar' : 'Cerrar'">
         <i class="fas fa-times"></i>
       </button>
     </div>
@@ -22,28 +22,52 @@
           <div class="info-grid">
             <div class="info-row">
               <label>Nombre completo:</label>
-              <span v-if="!modoEdicion">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
+              <span v-if="!isEditing">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
               <span v-else class="readonly-field">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
             </div>
             <div class="info-row">
               <label>Primer nombre:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.primer_nombre || datos.nombre1 || '—' }}</span>
-              <input v-else v-model="formData.primer_nombre" type="text" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.primer_nombre || datos.nombre1 || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.primer_nombre"
+                type="text"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'primer_nombre')"
+              />
             </div>
             <div class="info-row">
               <label>Segundo nombre:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.segundo_nombre || datos.nombre2 || '—' }}</span>
-              <input v-else v-model="formData.segundo_nombre" type="text" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.segundo_nombre || datos.nombre2 || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.segundo_nombre"
+                type="text"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'segundo_nombre')"
+              />
             </div>
             <div class="info-row">
               <label>Primer apellido:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.primer_apellido || datos.apellido1 || '—' }}</span>
-              <input v-else v-model="formData.primer_apellido" type="text" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.primer_apellido || datos.apellido1 || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.primer_apellido"
+                type="text"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'primer_apellido')"
+              />
             </div>
             <div class="info-row">
               <label>Segundo apellido:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.segundo_apellido || datos.apellido2 || '—' }}</span>
-              <input v-else v-model="formData.segundo_apellido" type="text" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.segundo_apellido || datos.apellido2 || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.segundo_apellido"
+                type="text"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'segundo_apellido')"
+              />
             </div>
             <div class="info-row">
               <label>Tipo de documento:</label>
@@ -51,23 +75,47 @@
             </div>
             <div class="info-row">
               <label>Documento:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.documento || datos.documento || '—' }}</span>
-              <input v-else v-model="formData.documento" type="text" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.documento || datos.documento || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.documento"
+                type="text"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'documento')"
+              />
             </div>
             <div class="info-row">
               <label>Correo electrónico:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.correo_electronico || datos.correo || '—' }}</span>
-              <input v-else v-model="formData.correo_electronico" type="email" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.correo_electronico || datos.correo || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.correo_electronico"
+                type="email"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'correo_electronico')"
+              />
             </div>
             <div class="info-row">
               <label>Teléfono:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.telefono || datos.telefono || '—' }}</span>
-              <input v-else v-model="formData.telefono" type="tel" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.telefono || datos.telefono || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.telefono"
+                type="tel"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'telefono')"
+              />
             </div>
             <div class="info-row">
               <label>Dirección:</label>
-              <span v-if="!modoEdicion">{{ datos.persona?.direccion || datos.direccion || '—' }}</span>
-              <input v-else v-model="formData.direccion" type="text" class="input-editable" />
+              <span v-if="!isEditing">{{ datos.persona?.direccion || datos.direccion || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.direccion"
+                type="text"
+                class="input-editable"
+                :disabled="!campoEditable('persona', 'direccion')"
+              />
             </div>
           </div>
         </div>
@@ -86,112 +134,261 @@
             </div>
             <div class="info-row">
               <label>Fecha de nacimiento:</label>
-              <span>{{ formatearFechaNacimiento(fechaNacimiento) || '—' }}</span>
+              <span v-if="!isEditing">{{ formatearFechaNacimiento(fechaNacimiento) || '—' }}</span>
+              <input
+                v-else
+                v-model="formData.fecha_nacimiento"
+                type="date"
+                class="input-editable"
+              />
             </div>
             <div class="info-row">
               <label>Peso:</label>
-              <span v-if="!modoEdicion">{{ datosDeportista.peso !== undefined && datosDeportista.peso !== null ? datosDeportista.peso + ' kg' : '—' }}</span>
+              <span v-if="!isEditing">{{ datosDeportista.peso !== undefined && datosDeportista.peso !== null ? datosDeportista.peso + ' kg' : '—' }}</span>
               <div v-else class="input-with-unit">
-                <input v-model="formData.peso" type="number" step="0.1" class="input-editable" placeholder="0.0" />
+                <input
+                  v-model="formData.peso"
+                  type="number"
+                  step="0.1"
+                  class="input-editable"
+                  placeholder="0.0"
+                  :disabled="!puedeEditarMedidas"
+                />
                 <span class="unit">kg</span>
               </div>
             </div>
             <div class="info-row">
               <label>Altura:</label>
-              <span v-if="!modoEdicion">{{ datosDeportista.altura !== undefined && datosDeportista.altura !== null ? datosDeportista.altura + ' m' : '—' }}</span>
+              <span v-if="!isEditing">{{ datosDeportista.altura !== undefined && datosDeportista.altura !== null ? datosDeportista.altura + ' m' : '—' }}</span>
               <div v-else class="input-with-unit">
-                <input v-model="formData.altura" type="number" step="0.01" class="input-editable" placeholder="0.00" />
+                <input
+                  v-model="formData.altura"
+                  type="number"
+                  step="0.01"
+                  class="input-editable"
+                  placeholder="0.00"
+                  :disabled="!puedeEditarMedidas"
+                />
                 <span class="unit">m</span>
               </div>
             </div>
             <div class="info-row">
               <label>Tipo sanguíneo:</label>
-              <span>{{ obtenerTipoSanguineo() || '—' }}</span>
+              <span v-if="!isEditing">{{ obtenerTipoSanguineo() || '—' }}</span>
+              <select
+                v-else
+                v-model="formData.id_tipo_sanguineo"
+                class="input-editable"
+                :disabled="!campoEditable('datos', 'id_tipo_sanguineo')"
+              >
+                <option :value="null">Seleccione</option>
+                <option
+                  v-for="tipo in catalogos.tiposSanguineos"
+                  :key="tipo.id_tipo_sangre || tipo.id_tipo_sanguineo || tipo.id"
+                  :value="tipo.id_tipo_sangre ?? tipo.id_tipo_sanguineo ?? tipo.id"
+                >
+                  {{ tipo.tipo_sangre || tipo.nombre || tipo.tipo }}
+                </option>
+              </select>
             </div>
             <div class="info-row">
               <label>Ciudad de residencia:</label>
-              <span>{{ obtenerCiudad() || '—' }}</span>
+              <span v-if="!isEditing">{{ obtenerCiudad() || '—' }}</span>
+              <select
+                v-else
+                v-model="formData.id_ciudad_recidencia"
+                class="input-editable"
+                :disabled="!campoEditable('datos', 'id_ciudad_recidencia')"
+              >
+                <option :value="null">Seleccione</option>
+                <option
+                  v-for="ciudad in catalogos.ciudades"
+                  :key="ciudad.id_ciudad || ciudad.id_ciudad_residencia || ciudad.id"
+                  :value="ciudad.id_ciudad ?? ciudad.id_ciudad_residencia ?? ciudad.id"
+                >
+                  {{ ciudad.nombre_ciudad || ciudad.nombre || ciudad.ciudad }}
+                </option>
+              </select>
             </div>
             <div class="info-row">
               <label>EPS:</label>
-              <span>{{ obtenerEPS() || '—' }}</span>
+              <span v-if="!isEditing">{{ obtenerEPS() || '—' }}</span>
+              <select
+                v-else
+                v-model="formData.id_eps"
+                class="input-editable"
+                :disabled="!campoEditable('datos', 'id_eps')"
+              >
+                <option :value="null">Seleccione</option>
+                <option
+                  v-for="eps in catalogos.eps"
+                  :key="eps.id_eps || eps.id"
+                  :value="eps.id_eps ?? eps.id"
+                >
+                  {{ eps.nombre_eps || eps.nombre || eps.eps }}
+                </option>
+              </select>
+            </div>
+            <div v-if="isEditing && !puedeEditarMedidas" class="medidas-aviso">
+              Solo un entrenador o administrador puede actualizar peso y altura.
             </div>
           </div>
 
           <!-- Información Deportiva Detallada -->
-          <div class="info-subsection" v-if="datos.informacion_deportiva || modoEdicion">
+          <div class="info-subsection" v-if="datos.informacion_deportiva || isEditing">
             <h4>⚽ Detalles Deportivos</h4>
             <div class="info-grid">
               <div class="info-row">
                 <label>Deporte principal:</label>
-                <span>{{ obtenerDeporte() || '—' }}</span>
+                <span v-if="!isEditing">{{ obtenerDeporte() || '—' }}</span>
+                <select
+                  v-else
+                  v-model="formData.id_deporte"
+                  class="input-editable"
+                  :disabled="!campoEditable('informacion', 'id_deporte')"
+                >
+                  <option :value="null">Seleccione</option>
+                  <option
+                    v-for="deporte in catalogos.deportes"
+                    :key="deporte.id_deporte || deporte.id"
+                    :value="deporte.id_deporte ?? deporte.id"
+                  >
+                    {{ deporte.nombre || deporte.nombre_deporte || deporte.deporte }}
+                  </option>
+                </select>
               </div>
               <div class="info-row">
                 <label>Practica otro deporte:</label>
-                <span v-if="!modoEdicion">
+                <span v-if="!isEditing">
                   <span class="badge" :class="datos.informacion_deportiva?.practica_otro_deporte ? 'badge-success' : 'badge-muted'">
                     {{ datos.informacion_deportiva?.practica_otro_deporte !== undefined ? (datos.informacion_deportiva.practica_otro_deporte ? 'Sí' : 'No') : '—' }}
                   </span>
                 </span>
                 <div v-else class="radio-group">
                   <label class="radio-option">
-                    <input type="radio" :value="true" v-model="formData.practica_otro_deporte" />
+                    <input
+                      type="radio"
+                      :value="true"
+                      v-model="formData.practica_otro_deporte"
+                      :disabled="!campoEditable('informacion', 'practica_otro_deporte')"
+                    />
                     Sí
                   </label>
                   <label class="radio-option">
-                    <input type="radio" :value="false" v-model="formData.practica_otro_deporte" />
+                    <input
+                      type="radio"
+                      :value="false"
+                      v-model="formData.practica_otro_deporte"
+                      :disabled="!campoEditable('informacion', 'practica_otro_deporte')"
+                    />
                     No
                   </label>
                 </div>
               </div>
               <div class="info-row">
                 <label>Participa en escuela:</label>
-                <span v-if="!modoEdicion">
+                <span v-if="!isEditing">
                   <span class="badge" :class="datos.informacion_deportiva?.participa_escuela ? 'badge-success' : 'badge-muted'">
                     {{ datos.informacion_deportiva?.participa_escuela !== undefined ? (datos.informacion_deportiva.participa_escuela ? 'Sí' : 'No') : '—' }}
                   </span>
                 </span>
                 <div v-else class="radio-group">
                   <label class="radio-option">
-                    <input type="radio" :value="true" v-model="formData.participa_escuela" />
+                    <input
+                      type="radio"
+                      :value="true"
+                      v-model="formData.participa_escuela"
+                      :disabled="!campoEditable('informacion', 'participa_escuela')"
+                    />
                     Sí
                   </label>
                   <label class="radio-option">
-                    <input type="radio" :value="false" v-model="formData.participa_escuela" />
+                    <input
+                      type="radio"
+                      :value="false"
+                      v-model="formData.participa_escuela"
+                      :disabled="!campoEditable('informacion', 'participa_escuela')"
+                    />
                     No
                   </label>
               </div>
               </div>
-              <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.participa_escuela">
+              <div class="info-row" v-if="isEditing || datos.informacion_deportiva?.participa_escuela">
                 <label>Escuela:</label>
-                <span>{{ obtenerEscuela() || '—' }}</span>
+                <span v-if="!isEditing">{{ obtenerEscuela() || '—' }}</span>
+                <select
+                  v-else
+                  v-model="formData.id_escuela"
+                  class="input-editable"
+                  :disabled="!formData.participa_escuela || !campoEditable('informacion', 'id_escuela')"
+                >
+                  <option :value="null">Seleccione</option>
+                  <option
+                    v-for="escuela in catalogos.escuelas"
+                    :key="escuela.id_escuela || escuela.id"
+                    :value="escuela.id_escuela ?? escuela.id"
+                  >
+                    {{ escuela.nombre_escuela || escuela.nombre || escuela.escuela }}
+                  </option>
+                </select>
               </div>
               <div class="info-row">
                 <label>Institución de registro:</label>
-                <span>{{ obtenerInstitucion() || '—' }}</span>
+                <span v-if="!isEditing">{{ obtenerInstitucion() || '—' }}</span>
+                <select
+                  v-else
+                  v-model="formData.id_institucion_registro"
+                  class="input-editable"
+                  :disabled="!campoEditable('informacion', 'id_institucion_registro')"
+                >
+                  <option :value="null">Seleccione</option>
+                  <option
+                    v-for="institucion in catalogos.instituciones"
+                    :key="institucion.id_institucion_registro || institucion.id_institucion || institucion.id"
+                    :value="institucion.id_institucion_registro ?? institucion.id_institucion ?? institucion.id"
+                  >
+                    {{ institucion.nombre_institucion || institucion.nombre || institucion.institucion }}
+                  </option>
+                </select>
               </div>
               <div class="info-row">
                 <label>Recomendación médica:</label>
-                <span v-if="!modoEdicion">
+                <span v-if="!isEditing">
                   <span class="badge" :class="datos.informacion_deportiva?.recomendacion_medica ? 'badge-warning' : 'badge-success'">
                     {{ datos.informacion_deportiva?.recomendacion_medica !== undefined ? (datos.informacion_deportiva.recomendacion_medica ? 'Sí' : 'No') : '—' }}
                   </span>
                 </span>
                 <div v-else class="radio-group">
                   <label class="radio-option">
-                    <input type="radio" :value="true" v-model="formData.recomendacion_medica" />
+                    <input
+                      type="radio"
+                      :value="true"
+                      v-model="formData.recomendacion_medica"
+                      :disabled="!campoEditable('informacion', 'recomendacion_medica')"
+                    />
                     Sí
                   </label>
                   <label class="radio-option">
-                    <input type="radio" :value="false" v-model="formData.recomendacion_medica" />
+                    <input
+                      type="radio"
+                      :value="false"
+                      v-model="formData.recomendacion_medica"
+                      :disabled="!campoEditable('informacion', 'recomendacion_medica')"
+                    />
                     No
                   </label>
               </div>
               </div>
-              <div class="info-row" v-if="modoEdicion || datos.informacion_deportiva?.descripcion_recomendacion">
+              <div class="info-row" v-if="(isEditing && formData.recomendacion_medica) || (!isEditing && datos.informacion_deportiva?.descripcion_recomendacion)">
                 <label>Descripción recomendación:</label>
-                <span v-if="!modoEdicion">{{ datos.informacion_deportiva.descripcion_recomendacion || '—' }}</span>
-                <textarea v-else v-model="formData.descripcion_recomendacion" class="input-editable" rows="3"></textarea>
+                <span v-if="!isEditing">{{ datos.informacion_deportiva.descripcion_recomendacion || '—' }}</span>
+                <textarea
+                  v-else
+                  v-model="formData.descripcion_recomendacion"
+                  class="input-editable"
+                  rows="3"
+                  :disabled="!campoEditable('informacion', 'descripcion_recomendacion')"
+                ></textarea>
               </div>
             </div>
           </div>
@@ -199,47 +396,85 @@
       </div>
 
       <!-- Información de Salud - Diagnósticos y Enfermedades -->
-      <div class="perfil-card" v-if="datos.salud && (datos.salud.diagnosticos || datos.salud.tipos_enfermedad_ids)">
+      <div
+        class="perfil-card"
+        v-if="(datos.salud && (datos.salud.diagnosticos || datos.salud.tipos_enfermedad_ids)) || (isEditing && formData.recomendacion_medica)"
+      >
         <div class="card-header">
           <h3>🏥 Información de Salud</h3>
         </div>
         <div class="card-content">
           <div class="info-grid">
             <!-- Tipos de Enfermedad -->
-            <div class="info-row" v-if="datos.salud.tipos_enfermedad_ids && datos.salud.tipos_enfermedad_ids.length > 0">
-              <label>Tipos de enfermedad:</label>
-              <span>
+            <div class="info-row" v-if="isEditing || (datos.salud?.tipos_enfermedad_ids && datos.salud.tipos_enfermedad_ids.length > 0)">
+              <label>Tipo de enfermedad:</label>
+              <div v-if="isEditing">
+                <select
+                  v-model="formData.id_tipo_enfermedad"
+                  class="input-editable"
+                  :disabled="!campoEditable('salud', 'id_tipo_enfermedad')"
+                >
+                  <option :value="null">Seleccione</option>
+                  <option
+                    v-for="tipo in catalogos.tiposEnfermedad"
+                    :key="tipo.id_tipo_enfermedad || tipo.id"
+                    :value="tipo.id_tipo_enfermedad ?? tipo.id"
+                  >
+                    {{ tipo.nombre || tipo.nombre_tipo_enfermedad || tipo.tipo_enfermedad }}
+                  </option>
+                </select>
+              </div>
+              <span v-else>
                 <span
-                  v-for="idTipo in datos.salud.tipos_enfermedad_ids"
-                  :key="idTipo"
+                  v-for="idTipo in datos.salud?.tipos_enfermedad_ids || []"
+                  :key="`tipo-${idTipo}`"
                   class="badge badge-info"
                   style="margin-right: 0.5rem;"
                 >
                   {{ obtenerTipoEnfermedad(idTipo) || `ID: ${idTipo}` }}
                 </span>
-                <span v-if="!datos.salud.tipos_enfermedad_ids.length">—</span>
+                <span v-if="!datos.salud?.tipos_enfermedad_ids || datos.salud.tipos_enfermedad_ids.length === 0">—</span>
               </span>
             </div>
 
             <!-- Diagnósticos -->
-            <div class="info-row" v-if="datos.salud.diagnosticos && datos.salud.diagnosticos.length > 0">
+            <div class="info-row">
               <label>Diagnósticos:</label>
-              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <span
-                  v-for="(diagnostico, index) in datos.salud.diagnosticos"
-                  :key="diagnostico.id_diagnostico || index"
-                  class="badge badge-warning"
-                  style="display: inline-block; margin-right: 0.5rem;"
-                >
-                  {{ obtenerDiagnostico(diagnostico.id_diagnostico) || `ID: ${diagnostico.id_diagnostico}` }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Mensaje si no hay diagnósticos -->
-            <div class="info-row" v-if="!datos.salud.diagnosticos || datos.salud.diagnosticos.length === 0">
-              <label>Diagnósticos:</label>
-              <span>No hay diagnósticos registrados</span>
+              <template v-if="isEditing">
+                <div class="diagnosticos-editor">
+                  <template v-if="diagnosticosDisponibles.length > 0">
+                    <label
+                      v-for="diag in diagnosticosDisponibles"
+                      :key="diag.id_diagnostico || diag.id"
+                      class="checkbox-line"
+                    >
+                      <input
+                        type="checkbox"
+                        :value="diag.id_diagnostico ?? diag.id"
+                        v-model="formData.diagnosticos"
+                        :disabled="!campoEditable('salud', 'diagnosticos')"
+                      />
+                      {{ diag.nombre || diag.nombre_diagnostico || diag.diagnostico }}
+                    </label>
+                  </template>
+                  <span v-else class="diagnosticos-vacio">
+                    No hay diagnósticos disponibles para el tipo seleccionado.
+                  </span>
+                </div>
+              </template>
+              <template v-else>
+                <div v-if="datos.salud?.diagnosticos && datos.salud.diagnosticos.length > 0" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <span
+                    v-for="(diagnostico, index) in datos.salud.diagnosticos"
+                    :key="diagnostico.id_diagnostico || index"
+                    class="badge badge-warning"
+                    style="display: inline-block; margin-right: 0.5rem;"
+                  >
+                    {{ obtenerDiagnostico(diagnostico.id_diagnostico) || `ID: ${diagnostico.id_diagnostico}` }}
+                  </span>
+                </div>
+                <span v-else>No hay diagnósticos registrados</span>
+              </template>
             </div>
           </div>
         </div>
@@ -247,8 +482,8 @@
 
       <!-- Botones de acción -->
       <div class="perfil-actions">
-        <template v-if="!modoEdicion">
-        <button class="btn-editar-perfil" @click="$emit('editar')">
+        <template v-if="!isEditing">
+        <button class="btn-editar-perfil" @click="iniciarEdicion">
             <i class="fas fa-edit"></i> Actualizar
         </button>
         <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
@@ -278,7 +513,10 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import catalogosService from '@/services/catalogosService';
+import deportistasService from '@/services/deportistasService';
+import personasService from '@/services/personasService';
 import { getApiUrl } from '@/config/environment';
+import { useAuthStore } from '@/stores/auth';
 
 defineOptions({
   name: 'PerfilDeportistaVista'
@@ -297,6 +535,8 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'editar', 'guardar', 'cancelar']);
 
+const authStore = useAuthStore();
+
 // Catálogos para mapear IDs a nombres
 const catalogos = ref({
   tiposSanguineos: [],
@@ -314,15 +554,503 @@ const catalogos = ref({
 // Estado de carga de catálogos
 const catalogosCargados = ref(false);
 
+const guardando = ref(false);
+const formData = ref(crearEstadoInicial(props.datos));
+
+const isEditing = computed(() => !!props.modoEdicion);
+
+const idPersona = computed(() => props.datos?.persona?.id_persona ?? null);
+const idDeportista = computed(() => props.datos?.id ?? props.datos?.id_deportista ?? null);
+
+const PRIORIDAD_ROLES = ['SuperAdmin', 'Administrador', 'Entrenador', 'Acudiente', 'Deportista', 'Usuario'];
+const PERMISOS_POR_ROL = {
+  SuperAdmin: { persona: '*', datos: '*', informacion: '*', salud: '*' },
+  Administrador: { persona: '*', datos: '*', informacion: '*', salud: '*' },
+  Entrenador: {
+    persona: ['telefono', 'correo_electronico', 'direccion'],
+    datos: ['peso', 'altura', 'fecha_nacimiento', 'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_eps', 'id_categoria'],
+    informacion: ['id_deporte', 'practica_otro_deporte', 'participa_escuela', 'id_escuela', 'id_institucion_registro', 'recomendacion_medica', 'descripcion_recomendacion'],
+    salud: ['id_tipo_enfermedad', 'diagnosticos']
+  },
+  Acudiente: {
+    persona: ['telefono', 'correo_electronico', 'direccion'],
+    datos: ['id_ciudad_recidencia', 'id_eps'],
+    informacion: ['recomendacion_medica', 'descripcion_recomendacion'],
+    salud: ['id_tipo_enfermedad', 'diagnosticos']
+  },
+  Deportista: { persona: [], datos: [], informacion: [], salud: [] },
+  Usuario: { persona: [], datos: [], informacion: [], salud: [] }
+};
+
+const rolesUsuario = computed(() => {
+  const roles = authStore.user?.roles ?? [];
+  return roles.map(rol => {
+    if (typeof rol === 'string') return rol;
+    if (rol?.nombre_rol) return rol.nombre_rol;
+    if (rol?.rol) return rol.rol;
+    return String(rol ?? '');
+  });
+});
+
+const rolActivo = computed(() => {
+  const activo = authStore.activeRole;
+  if (activo) return activo;
+  const encontrado = PRIORIDAD_ROLES.find(rol => rolesUsuario.value.includes(rol));
+  return encontrado || rolesUsuario.value[0] || 'Usuario';
+});
+
+const permisosRol = computed(() => PERMISOS_POR_ROL[rolActivo.value] || PERMISOS_POR_ROL.Usuario);
+
+const campoEditable = (tipo, campo) => {
+  const permisos = permisosRol.value[tipo];
+  if (!permisos) return false;
+  if (permisos === '*') return true;
+  return permisos.includes(campo);
+};
+
+const puedeEditarMedidas = computed(() => campoEditable('datos', 'peso') && campoEditable('datos', 'altura'));
+
+const diagnosticosDisponibles = computed(() => {
+  const tipoSeleccionado = formData.value.id_tipo_enfermedad;
+  if (!tipoSeleccionado) {
+    return catalogos.value.diagnosticos || [];
+  }
+  return (catalogos.value.diagnosticos || []).filter(diag => {
+    const idTipo = diag.id_tipo_enfermedad || diag.tipo_enfermedad?.id_tipo_enfermedad;
+    return Number(idTipo) === Number(tipoSeleccionado);
+  });
+});
+
+watch(
+  () => props.datos,
+  (nuevo) => {
+    formData.value = crearEstadoInicial(nuevo);
+  },
+  { immediate: true }
+);
+
+watch(
+  () => props.modoEdicion,
+  (nuevo) => {
+    if (nuevo) {
+      inicializarFormulario();
+    }
+  }
+);
+
+watch(
+  () => formData.value.participa_escuela,
+  (nuevo) => {
+    if (!campoEditable('informacion', 'participa_escuela')) {
+      return;
+    }
+    if (!nuevo) {
+      formData.value.id_escuela = null;
+    }
+  }
+);
+
+watch(
+  () => formData.value.recomendacion_medica,
+  (nuevo) => {
+    if (!campoEditable('informacion', 'recomendacion_medica')) {
+      return;
+    }
+    if (!nuevo) {
+      formData.value.descripcion_recomendacion = '';
+      formData.value.id_tipo_enfermedad = null;
+      formData.value.diagnosticos = [];
+    } else {
+      if (!formData.value.id_tipo_enfermedad && catalogos.value.tiposEnfermedad.length > 0) {
+        formData.value.id_tipo_enfermedad = catalogos.value.tiposEnfermedad[0].id_tipo_enfermedad ?? catalogos.value.tiposEnfermedad[0].id ?? null;
+      }
+    }
+  }
+);
+
+watch(
+  () => formData.value.id_tipo_enfermedad,
+  () => {
+    if (!campoEditable('salud', 'id_tipo_enfermedad')) {
+      return;
+    }
+    if (!formData.value.id_tipo_enfermedad) {
+      formData.value.diagnosticos = [];
+      return;
+    }
+    const disponibles = diagnosticosDisponibles.value.map(diag => diag.id_diagnostico ?? diag.id);
+    formData.value.diagnosticos = (formData.value.diagnosticos || []).filter(id => disponibles.includes(id));
+  }
+);
+
+function crearEstadoInicial(origen = null) {
+  const datos = origen ?? props.datos ?? {};
+  const persona = datos.persona ?? {};
+  const info = datos.informacion_deportiva ?? {};
+  const datosDeportista = datos.datos_deportista ?? datos.deportista ?? {};
+  const diagnosticosSalud = Array.isArray(datos.salud?.diagnosticos) ? datos.salud.diagnosticos : [];
+  const tiposEnfermedadIds = Array.isArray(datos.salud?.tipos_enfermedad_ids) ? datos.salud.tipos_enfermedad_ids : [];
+
+  let tipoEnfermedadInicial = tiposEnfermedadIds.length > 0 ? tiposEnfermedadIds[0] : null;
+  if (!tipoEnfermedadInicial && diagnosticosSalud.length > 0) {
+    const posibleTipo = diagnosticosSalud[0]?.id_tipo_enfermedad ?? diagnosticosSalud[0]?.diagnostico?.id_tipo_enfermedad;
+    tipoEnfermedadInicial = posibleTipo ?? null;
+  }
+
+  return {
+    primer_nombre: persona.primer_nombre || datos.nombre1 || '',
+    segundo_nombre: persona.segundo_nombre || datos.nombre2 || '',
+    primer_apellido: persona.primer_apellido || datos.apellido1 || '',
+    segundo_apellido: persona.segundo_apellido || datos.apellido2 || '',
+    documento: persona.documento || datos.documento || '',
+    correo_electronico: persona.correo_electronico || datos.correo || '',
+    telefono: persona.telefono || datos.telefono || '',
+    direccion: persona.direccion || datos.direccion || '',
+    fecha_nacimiento: normalizarFechaParaInput(
+      persona.fecha_nacimiento ||
+      datosDeportista.fecha_nacimiento ||
+      datos.fecha_nacimiento ||
+      null
+    ),
+    peso: normalizarNumeroParaInput(datosDeportista.peso),
+    altura: normalizarNumeroParaInput(datosDeportista.altura),
+    practica_otro_deporte: info.practica_otro_deporte ?? false,
+    participa_escuela: info.participa_escuela ?? false,
+    recomendacion_medica: info.recomendacion_medica ?? false,
+    descripcion_recomendacion: info.descripcion_recomendacion || '',
+    id_tipo_sanguineo: persona.id_tipo_sanguineo ?? datosDeportista.id_tipo_sanguineo ?? datos.id_tipo_sanguineo ?? null,
+    id_ciudad_recidencia: persona.id_ciudad_recidencia ?? datosDeportista.id_ciudad_recidencia ?? datos.id_ciudad_recidencia ?? null,
+    id_eps: persona.id_eps ?? datosDeportista.id_eps ?? datos.id_eps ?? null,
+    id_deporte: info.id_deporte ?? null,
+    id_escuela: info.id_escuela ?? null,
+    id_institucion_registro: info.id_institucion_registro ?? null,
+    id_categoria: info.id_categoria ?? datosDeportista.id_categoria ?? datos.id_categoria ?? null,
+    id_tipo_enfermedad: tipoEnfermedadInicial ? Number(tipoEnfermedadInicial) : null,
+    diagnosticos: diagnosticosSalud
+      .map(item => item?.id_diagnostico)
+      .filter(id => id !== undefined && id !== null)
+      .map(id => Number(id))
+  };
+}
+
+function inicializarFormulario() {
+  formData.value = crearEstadoInicial(props.datos);
+}
+
+function normalizarNumeroParaInput(valor) {
+  if (valor === null || valor === undefined) return '';
+  const numero = Number(valor);
+  return Number.isFinite(numero) ? numero.toString() : '';
+}
+
+function normalizarFechaParaInput(valor) {
+  if (!valor) return '';
+
+  if (typeof valor === 'number') {
+    return `${valor}-01-01`;
+  }
+
+  if (typeof valor === 'string') {
+    const trimmed = valor.trim();
+    if (!trimmed) return '';
+    if (/^\d{4}$/.test(trimmed)) {
+      return `${trimmed}-01-01`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const parsed = new Date(trimmed);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return '';
+  }
+
+  if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
+    return valor.toISOString().slice(0, 10);
+  }
+
+  return '';
+}
+
+function prepararFechaParaEnvio(valor) {
+  if (!valor) return null;
+
+  if (typeof valor === 'number') {
+    return `${valor}-01-01`;
+  }
+
+  if (typeof valor === 'string') {
+    const trimmed = valor.trim();
+    if (!trimmed) return null;
+    if (/^\d{4}$/.test(trimmed)) {
+      return `${trimmed}-01-01`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+    const parsed = new Date(trimmed);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString().slice(0, 10);
+    }
+    return null;
+  }
+
+  if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
+    return valor.toISOString().slice(0, 10);
+  }
+
+  return null;
+}
+
+function limpiarTexto(valor) {
+  if (valor === null || valor === undefined) return '';
+  return String(valor).trim();
+}
+
+function convertirEntero(valor) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  const numero = parseInt(valor, 10);
+  return Number.isNaN(numero) ? null : numero;
+}
+
+function convertirDecimal(valor) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  const numero = parseFloat(String(valor).replace(',', '.'));
+  return Number.isNaN(numero) ? null : numero;
+}
+
+function limpiarObjeto(obj, opciones = {}) {
+  const resultado = {};
+  const mantenerBooleanos = opciones.mantenerBooleanos ?? false;
+  Object.entries(obj).forEach(([clave, valor]) => {
+    if (mantenerBooleanos && typeof valor === 'boolean') {
+      resultado[clave] = valor;
+      return;
+    }
+    if (valor !== null && valor !== undefined && valor !== '') {
+      resultado[clave] = valor;
+    }
+  });
+  return resultado;
+}
+
+function filtrarCamposPermitidos(payload, tipo, opciones = {}) {
+  const permisos = permisosRol.value[tipo];
+  if (!permisos) return {};
+  if (permisos === '*') {
+    return limpiarObjeto(payload, opciones);
+  }
+
+  const filtrado = {};
+  permisos.forEach(campo => {
+    if (campo in payload) {
+      filtrado[campo] = payload[campo];
+    }
+  });
+
+  return limpiarObjeto(filtrado, opciones);
+}
+
+function iniciarEdicion() {
+  inicializarFormulario();
+  emit('editar');
+}
+
+function cancelarEdicion() {
+  inicializarFormulario();
+  emit('cancelar');
+}
+
+async function guardarCambios() {
+  if (!props.datos) {
+    return;
+  }
+
+  if (!idPersona.value || !idDeportista.value) {
+    alert('No se encontraron identificadores para actualizar el deportista.');
+    return;
+  }
+
+  const camposObligatorios = [
+    { campo: 'primer_nombre', etiqueta: 'primer nombre' },
+    { campo: 'primer_apellido', etiqueta: 'primer apellido' },
+    { campo: 'documento', etiqueta: 'documento' },
+    { campo: 'correo_electronico', etiqueta: 'correo electrónico' },
+    { campo: 'telefono', etiqueta: 'teléfono' }
+  ];
+
+  const faltantes = camposObligatorios.filter(({ campo }) => !limpiarTexto(formData.value[campo]));
+  if (faltantes.length > 0) {
+    const lista = faltantes.map(item => item.etiqueta).join(', ');
+    alert(`Por favor completa los siguientes campos obligatorios: ${lista}.`);
+    return;
+  }
+
+  if (formData.value.recomendacion_medica) {
+    if (!formData.value.id_tipo_enfermedad) {
+      alert('Selecciona un tipo de enfermedad para registrar la recomendación médica.');
+      return;
+    }
+    if (!formData.value.diagnosticos || formData.value.diagnosticos.length === 0) {
+      alert('Selecciona al menos un diagnóstico asociado a la recomendación médica.');
+      return;
+    }
+  }
+
+  guardando.value = true;
+
+  try {
+    const payloadPersona = construirPayloadPersona();
+    if (Object.keys(payloadPersona).length > 0) {
+      await personasService.actualizarPersona(idPersona.value, payloadPersona);
+    }
+
+    const payloadDatosDeportista = construirPayloadDatosDeportista();
+    const payloadInformacionDeportiva = construirPayloadInformacionDeportiva();
+    const payloadSalud = construirPayloadSalud();
+
+    let respuestaActualizacion = null;
+    if (
+      Object.keys(payloadDatosDeportista).length > 0 ||
+      Object.keys(payloadInformacionDeportiva).length > 0 ||
+      payloadSalud.necesitaActualizacion
+    ) {
+      const datosActualizacion = {
+        datos_deportista: payloadDatosDeportista,
+        datos_informacion_deportiva: payloadInformacionDeportiva
+      };
+
+      if (payloadSalud.necesitaActualizacion) {
+        if ('tipo_enfermedad' in payloadSalud) {
+          datosActualizacion.tipo_enfermedad = payloadSalud.tipo_enfermedad;
+        }
+        if ('diagnostico' in payloadSalud) {
+          datosActualizacion.diagnostico = payloadSalud.diagnostico;
+        }
+      }
+
+      respuestaActualizacion = await deportistasService.actualizarDeportista(idDeportista.value, datosActualizacion);
+    }
+
+    inicializarFormulario();
+
+    alert('✅ Información del deportista actualizada correctamente');
+    emit('guardar', respuestaActualizacion);
+  } catch (error) {
+    console.error('Error al guardar cambios del deportista:', error);
+    alert(`Error al guardar los cambios: ${error.message || 'Error desconocido'}`);
+  } finally {
+    guardando.value = false;
+  }
+}
+
+function construirPayloadPersona() {
+  const payload = {};
+  const mapaCampos = {
+    primer_nombre: 'primer_nombre',
+    segundo_nombre: 'segundo_nombre',
+    primer_apellido: 'primer_apellido',
+    segundo_apellido: 'segundo_apellido',
+    direccion: 'direccion'
+  };
+
+  Object.entries(mapaCampos).forEach(([campoFormulario, campoBackend]) => {
+    const valor = limpiarTexto(formData.value[campoFormulario]);
+    if (valor) {
+      payload[campoBackend] = valor;
+    }
+  });
+
+  const documento = limpiarTexto(formData.value.documento);
+  if (documento) {
+    payload.documento = documento;
+  }
+
+  const correo = limpiarTexto(formData.value.correo_electronico);
+  if (correo) {
+    payload.correo_electronico = correo.toLowerCase();
+  }
+
+  const telefono = limpiarTexto(formData.value.telefono);
+  if (telefono) {
+    payload.telefono = telefono;
+  }
+
+  return filtrarCamposPermitidos(payload, 'persona');
+}
+
+function construirPayloadDatosDeportista() {
+  const payload = {
+    peso: convertirDecimal(formData.value.peso),
+    altura: convertirDecimal(formData.value.altura),
+    fecha_nacimiento: prepararFechaParaEnvio(formData.value.fecha_nacimiento),
+    id_categoria: convertirEntero(formData.value.id_categoria),
+    id_tipo_sanguineo: convertirEntero(formData.value.id_tipo_sanguineo),
+    id_ciudad_recidencia: convertirEntero(formData.value.id_ciudad_recidencia),
+    id_eps: convertirEntero(formData.value.id_eps)
+  };
+
+  return filtrarCamposPermitidos(payload, 'datos');
+}
+
+function construirPayloadInformacionDeportiva() {
+  const payload = {
+    practica_otro_deporte: !!formData.value.practica_otro_deporte,
+    participa_escuela: !!formData.value.participa_escuela,
+    recomendacion_medica: !!formData.value.recomendacion_medica,
+    descripcion_recomendacion: formData.value.recomendacion_medica
+      ? limpiarTexto(formData.value.descripcion_recomendacion) || null
+      : null,
+    id_escuela: formData.value.participa_escuela ? convertirEntero(formData.value.id_escuela) : null,
+    id_deporte: convertirEntero(formData.value.id_deporte),
+    id_institucion_registro: convertirEntero(formData.value.id_institucion_registro),
+    id_categoria: convertirEntero(formData.value.id_categoria)
+  };
+
+  return filtrarCamposPermitidos(payload, 'informacion', { mantenerBooleanos: true });
+}
+
+function construirPayloadSalud() {
+  const puedeEditarTipo = campoEditable('salud', 'id_tipo_enfermedad');
+  const puedeEditarDiagnosticos = campoEditable('salud', 'diagnosticos');
+
+  if (!puedeEditarTipo && !puedeEditarDiagnosticos) {
+    return { necesitaActualizacion: false };
+  }
+
+  const recomendacion = !!formData.value.recomendacion_medica;
+  const tipo = convertirEntero(formData.value.id_tipo_enfermedad);
+  const diagnosticosSeleccionados = Array.isArray(formData.value.diagnosticos)
+    ? formData.value.diagnosticos
+        .map(id => convertirEntero(id))
+        .filter(id => id !== null && id !== undefined)
+    : [];
+
+  if (!recomendacion) {
+    return {
+      necesitaActualizacion: true,
+      tipo_enfermedad: null,
+      diagnostico: []
+    };
+  }
+
+  return {
+    necesitaActualizacion: tipo !== null || diagnosticosSeleccionados.length > 0,
+    ...(puedeEditarTipo && tipo !== null ? { tipo_enfermedad: tipo } : {}),
+    ...(puedeEditarDiagnosticos ? { diagnostico: diagnosticosSeleccionados } : {})
+  };
+}
+
 // Cargar catálogos al montar el componente
 onMounted(async () => {
   try {
     await cargarCatalogos();
+    inicializarFormulario();
     // catalogosCargados se establece dentro de cargarCatalogos()
     // Si ya estamos en modo edición y hay datos, inicializar
-    if (props.modoEdicion && props.datos) {
+    if (modoEdicionLocal.value && props.datos) {
       console.log('🔄 onMounted: Inicializando formulario en modo edición');
-      inicializarFormulario();
     }
   } catch (error) {
     console.error('Error crítico al cargar catálogos:', error);
@@ -543,7 +1271,7 @@ function obtenerCategoria() {
 
 // Acceso a datos del deportista (puede venir en diferentes estructuras)
 const datosDeportista = computed(() => {
-  if (props.modoEdicion) {
+  if (isEditing.value) {
     // En modo edición, usar formData
     return {
       peso: formData.value.peso,
@@ -556,7 +1284,7 @@ const datosDeportista = computed(() => {
 });
 
 const fechaNacimiento = computed(() => {
-  if (props.modoEdicion) {
+  if (isEditing.value) {
     return formData.value.fecha_nacimiento;
   }
   // Buscar fecha de nacimiento en diferentes ubicaciones según la estructura del backend
@@ -817,6 +1545,37 @@ function obtenerTipoDocumento() {
 
 .info-row span {
   color: #6c757d;
+}
+
+.medidas-aviso {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #d39e00;
+}
+
+.diagnosticos-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+}
+
+.checkbox-line input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+}
+
+.diagnosticos-vacio {
+  color: #6c757d;
+  font-style: italic;
 }
 
 .info-subsection {
