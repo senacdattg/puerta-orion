@@ -33,10 +33,12 @@ class Usuario(BaseModel):
     usuario = Column(String(200), nullable=False, unique=True)
     password = Column(String(200), nullable=False)
     estado = Column(Boolean, default=True, nullable=False)
+    rol_activo_id = Column(Integer, ForeignKey('puerta_orion_roles.id_rol'), nullable=True)
     
     # Relaciones
     persona = relationship('Persona', uselist=False)
     roles = relationship('Rol', secondary='puerta_orion_usuario_rol', back_populates='usuarios')
+    rol_activo = relationship('Rol', foreign_keys=[rol_activo_id], lazy='joined', back_populates='usuarios_activos')
     # Nota: RolUsuario es una tabla de asociación para la relación muchos a muchos entre Usuario y Rol.
     # Si RolUsuario es un modelo aparte para añadir atributos a la relación, entonces esta definición está bien.
     # Si es solo una tabla de unión simple, se puede simplificar la relación 'roles'.
@@ -82,5 +84,15 @@ class Usuario(BaseModel):
             'id_usuario': self.id_usuario,
             'id_persona': self.id_persona,
             'usuario': self.usuario,
-            'estado': self.estado
+            'estado': self.estado,
+            'rol_activo': self.rol_activo.nombre_rol if self.rol_activo else None
         }
+
+    def set_rol_activo(self, rol):
+        """
+        Define el rol activo del usuario.
+
+        Args:
+            rol (Rol | None): Rol que se establecerá como activo.
+        """
+        self.rol_activo = rol

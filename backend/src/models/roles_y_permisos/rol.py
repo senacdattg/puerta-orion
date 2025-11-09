@@ -17,6 +17,12 @@ class Rol(BaseModel):
     
     # Relaciones many-to-many con usuarios
     usuarios = db.relationship('Usuario', secondary='puerta_orion_usuario_rol', back_populates='roles')
+    usuarios_activos = db.relationship(
+        'Usuario',
+        back_populates='rol_activo',
+        lazy='dynamic',
+        foreign_keys='Usuario.rol_activo_id'
+    )
     
     def __repr__(self):
         return f'<Rol {self.nombre_rol}>'
