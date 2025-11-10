@@ -12,7 +12,9 @@ Responsabilidad:
 Este archivo sigue el principio SRP: solo se encarga de la inicialización y arranque de la app.
 """
 
-from flask import Flask, request, make_response
+from typing import Iterable, Sequence
+
+from flask import Blueprint, Flask, Response, make_response, request
 from flask_migrate import Migrate
 from config import config, get_config, validate_config
 from src.models.base import db
@@ -27,7 +29,10 @@ try:
 except ImportError:
     pass
 
-def create_app(config_name=None):
+migrate = Migrate()
+
+
+def create_app(config_name: str | None = None) -> Flask:
     """
     Crea y configura la aplicación Flask según el entorno especificado.
 
@@ -37,65 +42,145 @@ def create_app(config_name=None):
     Returns:
         Flask: Instancia de la aplicación Flask configurada.
     """
-    if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
+    selected_config = _resolve_config_name(config_name)
+    app = _build_flask_app()
 
-    app = Flask(__name__, static_folder='static', static_url_path='/static')
-    
-    # Cargar configuración
+    _load_configuration(app, selected_config)
+    _configure_cors(app)
+    _register_preflight_handler(app)
+    _initialize_extensions(app)
+    _register_blueprints(app)
+    _register_status_routes(app, selected_config)
+
+    return app
+
+def _resolve_config_name(config_name: str | None) -> str:
+    """Obtiene el nombre de configuración a utilizar."""
+    return config_name or os.environ.get('FLASK_ENV', 'development')
+
+
+def _build_flask_app() -> Flask:
+    """Crea la instancia base de Flask con configuración de estáticos controlada."""
+    return Flask(
+        __name__,
+        static_folder='static',
+        static_url_path='/static'
+    )
+
+
+def _load_configuration(app: Flask, config_name: str) -> None:
+    """Carga y valida la configuración de la aplicación."""
     app.config.from_object(config[config_name])
-    
-    # Validar configuración (solo mostrar advertencias, no fallar)
     is_valid, errors = validate_config()
     if not is_valid:
-        app.logger.warning(f"Configuración con problemas: {', '.join(errors)}")
-    
-    # Configurar CORS usando flask-cors con configuración desde config.py
-    origins = app.config.get('CORS_ORIGINS', ['*'])
-    CORS(app, 
-         origins=origins,
-         methods=app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']),
-         allow_headers=app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
-         supports_credentials=app.config.get('CORS_SUPPORTS_CREDENTIALS', True))
-    
-    # Handler global para OPTIONS (preflight CORS) - debe ir DESPUÉS de CORS
+        app.logger.warning("Configuración con problemas: %s", ", ".join(errors))
+
+
+def _configure_cors(app: Flask) -> Sequence[str]:
+    """Configura CORS reforzando reglas seguras."""
+    configured_origins = _normalize_origins(app.config.get('CORS_ORIGINS', []))
+    supports_credentials = bool(app.config.get('CORS_SUPPORTS_CREDENTIALS', False))
+
+    if supports_credentials and (not configured_origins or '*' in configured_origins):
+        supports_credentials = False
+        configured_origins = [origin for origin in configured_origins if origin != '*']
+        app.logger.warning(
+            "CORS soportaba credenciales, pero se deshabilitó por orígenes no seguros."
+        )
+
+    if not configured_origins:
+        app.logger.warning(
+            "No se definieron orígenes específicos para CORS; se usará '*' sin credenciales."
+        )
+
+    CORS(
+        app,
+        origins=configured_origins or "*",
+        methods=app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']),
+        allow_headers=app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
+        supports_credentials=supports_credentials,
+    )
+
+    effective_origins = tuple(configured_origins or ['*'])
+    app.config['EFFECTIVE_CORS_ORIGINS'] = effective_origins
+    app.config['EFFECTIVE_CORS_SUPPORTS_CREDENTIALS'] = supports_credentials
+    return effective_origins
+
+
+def _register_preflight_handler(app: Flask) -> None:
+    """Registra un handler seguro para solicitudes OPTIONS."""
+
     @app.before_request
-    def handle_preflight():
-        """Maneja peticiones OPTIONS (preflight CORS) antes de cualquier otra lógica."""
-        if request.method == 'OPTIONS':
-            response = make_response()
-            origin = request.headers.get('Origin')
-            
-            if origin:
-                response.headers['Access-Control-Allow-Origin'] = origin
-            else:
-                response.headers['Access-Control-Allow-Origin'] = '*'
-            
-            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+    def handle_preflight() -> Response | None:
+        if request.method != 'OPTIONS':
+            return None
+
+        response = make_response()
+        origin = request.headers.get('Origin')
+        allowed_origin = _select_origin_for_response(app, origin)
+
+        if allowed_origin:
+            response.headers['Access-Control-Allow-Origin'] = allowed_origin
+
+        allowed_methods = ', '.join(app.config.get(
+            'CORS_METHODS', ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+        ))
+        response.headers['Access-Control-Allow-Methods'] = allowed_methods
+
+        allowed_headers = ', '.join(app.config.get(
+            'CORS_HEADERS', ['Content-Type', 'Authorization', 'X-Requested-With']
+        ))
+        response.headers['Access-Control-Allow-Headers'] = allowed_headers
+
+        if app.config.get('EFFECTIVE_CORS_SUPPORTS_CREDENTIALS', False) and allowed_origin:
             response.headers['Access-Control-Allow-Credentials'] = 'true'
-            response.headers['Access-Control-Max-Age'] = '3600'
-            response.status_code = 200
-            
-            app.logger.info(f"OPTIONS preflight handled for: {request.path}")
-            return response
 
-    # Inicializar sistema de logs
+        response.headers['Access-Control-Max-Age'] = '3600'
+        response.status_code = 200
+
+        app.logger.info("OPTIONS preflight handled for: %s", request.path)
+        return response
+
+
+def _select_origin_for_response(app: Flask, request_origin: str | None) -> str | None:
+    """Determina qué origin devolver en el preflight."""
+    if request_origin:
+        return request_origin
+
+    effective_origins: Sequence[str] = app.config.get('EFFECTIVE_CORS_ORIGINS', ())
+    if effective_origins:
+        first_origin = effective_origins[0]
+        if first_origin == '*':
+            return '*'
+        return first_origin
+
+    return None
+
+
+def _initialize_extensions(app: Flask) -> None:
+    """Configura logs, base de datos y migraciones."""
     gestor_logs.inicializar_aplicacion(app)
-
-    # Configurar base de datos
     db.init_app(app)
+    migrate.init_app(app, db)
 
-    # Configurar migraciones
-    migrate = Migrate(app, db)
 
-    # Registrar blueprints de rutas
+def _register_blueprints(app: Flask) -> None:
+    """Registra todos los blueprints de la aplicación."""
+    _register_auth_blueprints(app)
+    _register_domain_blueprints(app)
+
+
+def _register_auth_blueprints(app: Flask) -> None:
+    """Registra los blueprints relacionados con autenticación."""
     from src.routes.auth_routes import registrar_auth_routes
-    registrar_auth_routes(app)
-
     from src.routes.auth_reset import registrar_auth_reset_routes
+
+    registrar_auth_routes(app)
     registrar_auth_reset_routes(app)
 
+
+def _register_domain_blueprints(app: Flask) -> None:
+    """Registra los blueprints del dominio de negocio."""
     from src.routes.pagos_routes import pagos_bp
     from src.routes.catalogos_routes import catalogos_bp
     from src.routes.dynamic_data_routes import dynamic_data_bp
@@ -106,46 +191,65 @@ def create_app(config_name=None):
     from src.routes.galeria_routes import galeria_bp
     from src.routes.archivos_routes import archivos_bp
     from src.routes.mensualidades_routes import mensualidades_bp
-    
-    app.register_blueprint(pagos_bp, url_prefix='/api')
-    app.register_blueprint(catalogos_bp)
-    app.register_blueprint(dynamic_data_bp, url_prefix='/api')
-    app.register_blueprint(personas_bp, url_prefix='/api')
-    app.register_blueprint(eventos_bp, url_prefix='/api')
-    app.register_blueprint(usuarios_bp)  # Ya tiene url_prefix='/api/usuarios'
-    app.register_blueprint(deportistas_bp, url_prefix='/api/deportistas')
-    app.register_blueprint(galeria_bp)  # Ya tiene url_prefix='/api/galeria'
-    app.register_blueprint(archivos_bp)  # Ya tiene url_prefix='/api/archivos'
-    app.register_blueprint(mensualidades_bp)  # url_prefix en el blueprint
+
+    blueprint_configs: tuple[tuple[Blueprint, str | None], ...] = (
+        (pagos_bp, '/api'),
+        (catalogos_bp, None),
+        (dynamic_data_bp, '/api'),
+        (personas_bp, '/api'),
+        (eventos_bp, '/api'),
+        (usuarios_bp, None),
+        (deportistas_bp, '/api/deportistas'),
+        (galeria_bp, None),
+        (archivos_bp, None),
+        (mensualidades_bp, None),
+    )
+
+    for blueprint, prefix in blueprint_configs:
+        if prefix:
+            app.register_blueprint(blueprint, url_prefix=prefix)
+        else:
+            app.register_blueprint(blueprint)
+
+
+def _register_status_routes(app: Flask, config_name: str) -> None:
+    """Registra endpoints básicos de estado y configuración."""
 
     @app.route('/')
-    def index():
+    def index() -> dict[str, str]:
         return {'message': 'API de Puerta Orion funcionando correctamente'}
 
     @app.route('/health')
-    def health():
+    def health() -> dict[str, object]:
+        database_status = 'connected' if db.engine else 'disconnected'
         return {
-            'status': 'healthy', 
+            'status': 'healthy',
             'environment': config_name,
             'debug': app.config.get('DEBUG', False),
-            'database': 'connected' if db.engine else 'disconnected'
+            'database': database_status
         }
 
     @app.route('/config')
-    def config_info():
+    def config_info() -> dict[str, object]:
         """Endpoint para verificar configuración (solo en desarrollo)"""
         if app.config.get('DEBUG'):
+            database_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+            masked_uri = database_uri.split('@')[0] + '@***' if '@' in database_uri else database_uri
             return {
                 'environment': config_name,
                 'debug': app.config.get('DEBUG'),
-                'database_uri': app.config.get('SQLALCHEMY_DATABASE_URI', '').split('@')[0] + '@***',  # Ocultar credenciales
-                'cors_origins': app.config.get('CORS_ORIGINS'),
+                'database_uri': masked_uri,
+                'cors_origins': list(app.config.get('EFFECTIVE_CORS_ORIGINS', ())),
                 'jwt_expires': str(app.config.get('JWT_ACCESS_TOKEN_EXPIRES')),
                 'log_level': app.config.get('LOG_LEVEL')
             }
         return {'message': 'Configuración no disponible en producción'}
 
-    return app
+
+def _normalize_origins(origins: Iterable[str]) -> list[str]:
+    """Normaliza la lista de orígenes eliminando vacíos y espacios."""
+    return [origin.strip() for origin in origins if origin and origin.strip()]
+
 
 # Instancia global de la aplicación Flask
 app = create_app()
@@ -155,9 +259,5 @@ if __name__ == '__main__':
     config_obj = get_config()
     
     app.run(
-        # host=config_obj.HOST,
-        # port=config_obj.PORT,
-        # debug=config_obj.DEBUG,
-        # use_reloader=config_obj.FLASK_RUN_RELOAD
         host='0.0.0.0', port=5000, debug=True
     )
