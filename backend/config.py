@@ -1,9 +1,13 @@
+import logging
 import os
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env si existe
 if os.path.exists('.env'):
     load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 class Config:
     """Configuración base de la aplicación Flask"""
@@ -29,9 +33,11 @@ class Config:
         db_name = os.environ.get('DB_NAME', 'puerta_orion')
         
         if db_password:
-            database_url = f'mysql+pymysql://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}'
+            password = quote_plus(db_password)
+            database_url = f'mysql+pymysql://{db_username}:{password}@{db_host}:{db_port}/{db_name}'
         else:
-            database_url = f'mysql+pymysql://{db_username}@{db_host}:{db_port}/{db_name}'
+            logger.warning('DB_PASSWORD no está definida; utilizando SQLite como alternativa segura.')
+            database_url = None
     
     # Si no hay configuración de MySQL, usar SQLite como fallback
     if not database_url:
@@ -41,12 +47,10 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Configuración de CORS
-    CORS_ORIGINS = os.environ.get(
-        'CORS_ORIGINS',
-        'http://localhost:3000,http://localhost:5173,http://localhost:5174,'
-        'http://localhost:4173,http://localhost:8080,http://127.0.0.1:5173,'
-        'http://127.0.0.1:3000,http://frontend,http://frontend:80,http://frontend:8080'
-    ).split(',')
+    cors_origins_env = os.environ.get('CORS_ORIGINS', '')
+    CORS_ORIGINS = [
+        origin.strip() for origin in cors_origins_env.split(',') if origin.strip()
+    ]
     CORS_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']
     CORS_HEADERS = ['Content-Type', 'Authorization']
     CORS_SUPPORTS_CREDENTIALS = True

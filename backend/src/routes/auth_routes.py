@@ -9,6 +9,8 @@ Responsabilidad:
 Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
+from typing import Final
+
 from flask import Blueprint, request, jsonify, current_app
 
 from ..services.Auth.usuario_service import usuario_service, UsuarioServiceError
@@ -21,12 +23,17 @@ from ..services.Auth.role_permission_service import (
 )
 from ..middleware.auth_decorator import token_required, get_current_user
 from ..utils.logger import obtener_registrador
-from ..services.Auth.usuario_service import usuario_service
 
 
 # Crear Blueprint de autenticación
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 logger = obtener_registrador('aplicacion')
+
+ERROR_USUARIO_NO_ENCONTRADO: Final[str] = 'Usuario no encontrado'
+ERROR_USUARIO_NO_ENCONTRADO_CONTEXTO: Final[str] = 'Usuario no encontrado en el contexto'
+ERROR_USUARIO_NO_AUTENTICADO: Final[str] = 'Usuario no autenticado'
+ERROR_CONTENT_TYPE_JSON: Final[str] = 'Content-Type debe ser application/json'
+ERROR_INTERNO_SERVIDOR: Final[str] = 'Error interno del servidor'
 
 
 @auth_bp.route('/setup-roles', methods=['POST'])
@@ -123,7 +130,7 @@ def asignar_rol():
         if not usuario:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado',
+                'error': ERROR_USUARIO_NO_ENCONTRADO,
                 'status_code': 404
             }), 404
         
@@ -186,7 +193,7 @@ def obtener_permisos_usuario():
         if not usuario_data:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no autenticado',
+                'error': ERROR_USUARIO_NO_AUTENTICADO,
                 'status_code': 401
             }), 401
         
@@ -196,7 +203,7 @@ def obtener_permisos_usuario():
         if not usuario_actual:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado',
+                'error': ERROR_USUARIO_NO_ENCONTRADO,
                 'status_code': 404
             }), 404
         
@@ -257,7 +264,7 @@ def obtener_permisos_por_rol():
         if not usuario_data:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no autenticado',
+                'error': ERROR_USUARIO_NO_AUTENTICADO,
                 'status_code': 401
             }), 401
         
@@ -277,7 +284,7 @@ def obtener_permisos_por_rol():
         if not usuario_actual:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado',
+                'error': ERROR_USUARIO_NO_ENCONTRADO,
                 'status_code': 404
             }), 404
         
@@ -328,7 +335,7 @@ def obtener_permisos_por_rol():
         logger.error(f'Error al obtener permisos del rol: {str(e)}')
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -440,7 +447,7 @@ def registrar_usuario():
         if not request.is_json:
             return jsonify({
                 'success': False,
-                'error': 'Content-Type debe ser application/json',
+                'error': ERROR_CONTENT_TYPE_JSON,
                 'status_code': 400
             }), 400
         
@@ -534,7 +541,7 @@ def registrar_usuario():
         logger.error(f"Error inesperado en registro: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -561,7 +568,7 @@ def login_usuario():
         if not request.is_json:
             return jsonify({
                 'success': False,
-                'error': 'Content-Type debe ser application/json',
+                'error': ERROR_CONTENT_TYPE_JSON,
                 'status_code': 400
             }), 400
         
@@ -633,7 +640,7 @@ def login_usuario():
         logger.error(f"Error inesperado en login: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -660,7 +667,7 @@ def obtener_perfil():
         if not user:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado en el contexto',
+                'error': ERROR_USUARIO_NO_ENCONTRADO_CONTEXTO,
                 'status_code': 401
             }), 401
         
@@ -730,7 +737,7 @@ def obtener_perfil():
         logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -746,7 +753,7 @@ def obtener_roles_disponibles():
         if not user_context:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no autenticado',
+                'error': ERROR_USUARIO_NO_AUTENTICADO,
                 'status_code': 401
             }), 401
 
@@ -758,7 +765,7 @@ def obtener_roles_disponibles():
             if not usuario_obj:
                 return jsonify({
                     'success': False,
-                    'error': 'Usuario no encontrado',
+                    'error': ERROR_USUARIO_NO_ENCONTRADO,
                     'status_code': 404
                 }), 404
 
@@ -782,7 +789,7 @@ def obtener_roles_disponibles():
         logger.error(f"Error al obtener roles disponibles: {str(exc)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -797,7 +804,7 @@ def cambiar_rol_activo_endpoint():
         if not request.is_json:
             return jsonify({
                 'success': False,
-                'error': 'Content-Type debe ser application/json',
+                'error': ERROR_CONTENT_TYPE_JSON,
                 'status_code': 400
             }), 400
 
@@ -819,7 +826,7 @@ def cambiar_rol_activo_endpoint():
         if not usuario_obj:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado',
+                'error': ERROR_USUARIO_NO_ENCONTRADO,
                 'status_code': 404
             }), 404
 
@@ -858,7 +865,7 @@ def cambiar_rol_activo_endpoint():
         logger.error(f"Error inesperado al cambiar rol activo: {str(exc)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -879,7 +886,7 @@ def obtener_perfil_detalle():
             logger.warning("⚠️ Usuario no encontrado en el contexto de autenticación")
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado en el contexto',
+                'error': ERROR_USUARIO_NO_ENCONTRADO_CONTEXTO,
                 'status_code': 401
             }), 401
 
@@ -936,7 +943,7 @@ def obtener_perfil_detalle():
         logger.error(f"Error inesperado al obtener detalle de perfil: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -988,7 +995,7 @@ def logout_usuario():
         logger.error(f"Error inesperado en logout: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -1013,7 +1020,7 @@ def verificar_token():
         if not request.is_json:
             return jsonify({
                 'success': False,
-                'error': 'Content-Type debe ser application/json',
+                'error': ERROR_CONTENT_TYPE_JSON,
                 'status_code': 400
             }), 400
         
@@ -1056,7 +1063,7 @@ def verificar_token():
         logger.error(f"Error inesperado al verificar token: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -1082,7 +1089,7 @@ def verificar_estado_perfil():
         if not user:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado en el contexto',
+                'error': ERROR_USUARIO_NO_ENCONTRADO_CONTEXTO,
                 'status_code': 401
             }), 401
 
@@ -1109,7 +1116,7 @@ def verificar_estado_perfil():
         logger.error(f"Error inesperado al verificar estado del perfil: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -1150,7 +1157,7 @@ def completar_perfil_deportista():
         if not request.is_json:
             return jsonify({
                 'success': False,
-                'error': 'Content-Type debe ser application/json',
+                'error': ERROR_CONTENT_TYPE_JSON,
                 'status_code': 400
             }), 400
 
@@ -1160,7 +1167,7 @@ def completar_perfil_deportista():
         if not user:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado en el contexto',
+                'error': ERROR_USUARIO_NO_ENCONTRADO_CONTEXTO,
                 'status_code': 401
             }), 401
 
@@ -1201,7 +1208,7 @@ def completar_perfil_deportista():
         logger.error(f"Error inesperado al completar perfil como deportista: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -1233,7 +1240,7 @@ def completar_perfil_acudiente():
         if request.content_length and request.content_length > 0 and not request.is_json:
             return jsonify({
                 'success': False,
-                'error': 'Content-Type debe ser application/json',
+                'error': ERROR_CONTENT_TYPE_JSON,
                 'status_code': 400
             }), 400
 
@@ -1243,7 +1250,7 @@ def completar_perfil_acudiente():
         if not user:
             return jsonify({
                 'success': False,
-                'error': 'Usuario no encontrado en el contexto',
+                'error': ERROR_USUARIO_NO_ENCONTRADO_CONTEXTO,
                 'status_code': 401
             }), 401
 
@@ -1298,7 +1305,7 @@ def completar_perfil_acudiente():
         logger.error(f"Error inesperado al completar perfil como acudiente: {str(e)}")
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -1319,7 +1326,8 @@ def _obtener_ip_origen() -> str:
             return request.headers.get('X-Real-IP')
         else:
             return request.remote_addr or '127.0.0.1'
-    except:
+    except Exception as error:
+        logger.debug("No se pudo obtener la IP de origen: %s", error)
         return '127.0.0.1'
 
 
@@ -1332,7 +1340,8 @@ def _obtener_user_agent() -> str:
     """
     try:
         return request.headers.get('User-Agent', 'Unknown')[:500]
-    except:
+    except Exception as error:
+        logger.debug("No se pudo leer el User-Agent: %s", error)
         return 'Unknown'
 
 
@@ -1375,7 +1384,7 @@ def internal_error(error):
     """Manejador de errores 500 (Internal Server Error)."""
     return jsonify({
         'success': False,
-        'error': 'Error interno del servidor',
+        'error': ERROR_INTERNO_SERVIDOR,
         'message': 'Contacte al administrador',
         'status_code': 500
     }), 500
