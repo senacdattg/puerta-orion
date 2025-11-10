@@ -12,105 +12,22 @@
         </button>
       </div>
 
-      <!-- Paso 1: Selección de Rol -->
-      <div v-if="paso === 1" class="modal-body">
-        <div class="seleccion-rol">
-          <h3 class="paso-titulo">Paso 1: Selecciona el tipo de usuario</h3>
-          <p class="paso-descripcion">Elige el rol que mejor describa al nuevo usuario del sistema</p>
-
-          <div class="roles-grid">
-            <div
-              v-for="rol in rolesDisponibles"
-              :key="rol.id"
-              class="rol-option"
-              :class="{ seleccionado: rolSeleccionado?.id === rol.id }"
-              @click="seleccionarRol(rol)"
-            >
-              <div class="rol-icono">
-                <i :class="rol.icono"></i>
-              </div>
-              <div class="rol-info">
-                <h4 class="rol-nombre">{{ rol.nombre }}</h4>
-                <p class="rol-descripcion">{{ rol.descripcion }}</p>
-              </div>
-              <div class="rol-check">
-                <i v-if="rolSeleccionado?.id === rol.id" class="fas fa-check"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Paso 2: Formulario de Registro -->
-      <div v-if="paso === 2" class="modal-body">
-        <div class="formulario-registro">
-          <div class="paso-header">
-            <button class="btn-volver" @click="volverPaso1">
-              <i class="fas fa-arrow-left"></i>
-              Volver
-            </button>
-            <h3 class="paso-titulo">
-              Paso 2: Registro de {{ rolSeleccionado?.nombre }}
-            </h3>
-          </div>
-
-          <!-- Formulario según el rol -->
-          <FormularioGeneral
-            v-if="rolSeleccionado?.tipo === 'general'"
-            :modo="'registrar'"
-            @submit="manejarRegistro"
-            @cancel="cancelarRegistro"
-          />
-
-          <FormularioDeportista
-            v-else-if="rolSeleccionado?.tipo === 'deportista'"
-            :modo="'registrar'"
-            @submit="manejarRegistro"
-            @cancel="cancelarRegistro"
-          />
-
-          <FormularioEntrenador
-            v-else-if="rolSeleccionado?.tipo === 'entrenador'"
-            :modo="'registrar'"
-            @submit="manejarRegistro"
-            @cancel="cancelarRegistro"
-          />
-
-          <FormularioAcudiente
-            v-else-if="rolSeleccionado?.tipo === 'acudiente'"
-            :modo="'registrar'"
-            @submit="manejarRegistro"
-            @cancel="cancelarRegistro"
-          />
-        </div>
-      </div>
-
-      <!-- Footer del Modal -->
-      <div class="modal-footer">
-        <div v-if="paso === 1" class="footer-acciones">
-          <button class="btn btn--outline" @click="cerrarModal">
-            Cancelar
-          </button>
-          <button
-            class="btn btn--primary"
-            :disabled="!rolSeleccionado"
-            @click="siguientePaso"
-          >
-            Continuar
-            <i class="fas fa-arrow-right"></i>
-          </button>
-        </div>
+      <!-- Formulario de Registro -->
+      <div class="modal-body">
+        <FormularioGeneral
+          :modo="'registrar'"
+          :mostrar-boton-login="false"
+          texto-boton-registrar="Registrar"
+          @submit="manejarRegistro"
+          @cancel="cancelarRegistro"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
 import FormularioGeneral from '../formularios/formulario-general.vue';
-import FormularioDeportista from '../formularios/formulario-deportista.vue';
-import FormularioEntrenador from '../formularios/formulario-entrenador.vue';
-import FormularioAcudiente from '../formularios/formulario-acudiente.vue';
 
 // Props
 const props = defineProps({
@@ -120,100 +37,34 @@ const props = defineProps({
   }
 });
 
-// Debug: Log cuando cambie la prop mostrar
-watch(() => props.mostrar, (nuevoValor) => {
-  console.log('Modal mostrar cambió a:', nuevoValor);
-});
-
 // Emits
 const emit = defineEmits(['cerrar', 'usuario-registrado']);
 
-// Estado reactivo
-const paso = ref(1);
-const rolSeleccionado = ref(null);
-
-// Roles disponibles para registro
-const rolesDisponibles = ref([
-  {
-    id: 'usuario',
-    nombre: 'Usuario',
-    tipo: 'general',
-    icono: 'fas fa-user-plus',
-    descripcion: 'Usuario nuevo que desea ingresar al club deportivo'
-  },
-  {
-    id: 'deportista',
-    nombre: 'Deportista',
-    tipo: 'deportista',
-    icono: 'fas fa-running',
-    descripcion: 'Atleta activo que participa en actividades deportivas'
-  },
-  {
-    id: 'acudiente',
-    nombre: 'Acudiente',
-    tipo: 'acudiente',
-    icono: 'fa-solid fa-user-group',
-    descripcion: 'Responsable legal de un deportista menor de edad'
-  },
-  {
-    id: 'entrenador',
-    nombre: 'Entrenador',
-    tipo: 'entrenador',
-    icono: 'fa-solid fa-chalkboard-user',
-    descripcion: 'Profesional que dirige y entrena a los deportistas'
-  }
-]);
-
-// Funciones
-function seleccionarRol(rol) {
-  rolSeleccionado.value = rol;
-}
-
-function siguientePaso() {
-  if (rolSeleccionado.value) {
-    paso.value = 2;
-  }
-}
-
-function volverPaso1() {
-  paso.value = 1;
-  rolSeleccionado.value = null;
-}
-
 function cerrarModal() {
   emit('cerrar');
-  resetearModal();
 }
 
 function cancelarRegistro() {
   if (confirm('¿Estás seguro de que deseas cancelar el registro?')) {
-    volverPaso1();
+    cerrarModal();
   }
 }
 
 function manejarRegistro(datos) {
-  // Agregar el rol seleccionado a los datos
   const datosCompletos = {
     ...datos,
-    rol: rolSeleccionado.value.id,
-    tipoUsuario: rolSeleccionado.value.tipo
+    rol: 'usuario',
+    tipoUsuario: 'general'
   };
-
-  console.log('Nuevo usuario registrado:', datosCompletos);
 
   // Emitir evento con los datos completos
   emit('usuario-registrado', datosCompletos);
 
   // Mostrar mensaje de éxito
-  alert(`¡${rolSeleccionado.value.nombre} registrado exitosamente!`);
+  alert('¡Usuario registrado exitosamente!');
 
   // Cerrar modal y resetear
   cerrarModal();
-}
-
-function resetearModal() {
-  paso.value = 1;
-  rolSeleccionado.value = null;
 }
 </script>
 

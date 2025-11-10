@@ -221,7 +221,7 @@
           Cancelar
         </button>
         <button
-          v-if="modo === 'registrar'"
+          v-if="modo === 'registrar' && mostrarBotonLogin"
           type="button"
           class="boton-secundario"
           style="width: 150px;"
@@ -254,6 +254,14 @@ const props = defineProps({
   datos: {
     type: Object,
     default: () => ({})
+  },
+  mostrarBotonLogin: {
+    type: Boolean,
+    default: true
+  },
+  textoBotonRegistrar: {
+    type: String,
+    default: 'Registrarse'
   }
 })
 
@@ -374,7 +382,7 @@ function obtenerTitulo() {
 function obtenerTextoBoton() {
   switch (props.modo) {
     case 'registrar':
-      return 'Registrarse'
+      return props.textoBotonRegistrar
     case 'actualizar':
       return 'Actualizar'
     default:
