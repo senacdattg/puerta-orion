@@ -1,298 +1,324 @@
 """
 Rutas para manejo de pagos con Mercado Pago.
-Proporciona endpoints para crear preferencias, verificar pagos y webhooks.
+
+Responsabilidad:
+- Crear preferencias de pago y verificar transacciones.
+- Gestionar webhooks y consultar estadísticas.
+
+Se aplican principios SOLID, KISS y DRY.
 """
 
-from flask import Blueprint, request, jsonify
-from src.services.mercadopago_service import MercadoPagoService
-from src.models.base import db
-from src.models.pagos import TransaccionMercadoPago
-from src.utils.logger import logger
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple
 
-# Crear blueprint para las rutas de pagos
+from flask import Blueprint, Flask, Response, current_app, jsonify, request
+from sqlalchemy import func
+
+from ..models.base import db
+from ..models.pagos.cuota import Cuota
+from ..models.pagos.transaccion_mercadopago import TransaccionMercadoPago
+from ..services.mercadopago_service import MercadoPagoService
+from ..utils.logger import obtener_registrador
+from ..utils.request_validators import RequestValidationError, obtener_json_requerido
+
 pagos_bp = Blueprint('pagos', __name__)
-
-# Inicializar servicio de Mercado Pago
+logger = obtener_registrador('aplicacion')
 mercadopago_service = MercadoPagoService()
+
+DEFAULT_ORIGIN = 'http://localhost:5173'
+DEFAULT_LIMIT = 50
+DEFAULT_OFFSET = 0
+MIN_LIMIT = 1
+MIN_MONTO = 0
+
+ERROR_SIN_DATOS = 'No se proporcionaron datos'
+ERROR_TIPO_PAGO_REQUERIDO = 'Tipo de pago requerido'
+ERROR_NOMBRE_REQUERIDO = 'Nombre del pagador requerido'
+ERROR_EMAIL_REQUERIDO = 'Email del pagador requerido'
+ERROR_TIPO_PAGO_INVALIDO = 'Tipo de pago no válido'
+ERROR_ID_CUOTA_REQUERIDO = 'ID de cuota requerido'
+ERROR_ID_MENSUALIDAD_REQUERIDO = 'ID de mensualidad requerido'
+ERROR_MONTO_INVALIDO = 'El monto debe ser mayor a 0'
+ERROR_ID_PAGO_REQUERIDO = 'ID de pago requerido'
+ERROR_SIN_DATOS_WEBHOOK = 'No se recibieron datos'
+ERROR_TRANSACCION_NO_ENCONTRADA = 'Transacción no encontrada'
+ERROR_CUOTA_NO_ENCONTRADA = 'Cuota no encontrada'
+
+JsonResponse = Tuple[Response, int]
+
+
+def _validar_campos_requeridos(
+    data: Dict[str, Any],
+    campos: Iterable[Tuple[str, str]],
+) -> None:
+    """Valida que los campos requeridos existan y no estén vacíos."""
+    for campo, mensaje in campos:
+        if not data.get(campo):
+            raise RequestValidationError(mensaje, status_code=400)
+
+
+def _enriquecer_urls(data: Dict[str, Any]) -> None:
+    """Completa datos con URLs requeridas por Mercado Pago."""
+    origin = request.headers.get('Origin') or DEFAULT_ORIGIN
+    data.setdefault('url_exito', f"{origin}/pago-exitoso")
+    data.setdefault('url_fallo', f"{origin}/pago-fallido")
+    data.setdefault('url_pendiente', f"{origin}/pago-pendiente")
+
+    host_url = request.host_url.rstrip('/')
+    webhook_config = current_app.config.get('MERCADOPAGO_WEBHOOK_URL')
+    data.setdefault('url_notificacion', webhook_config or f"{host_url}/api/mercadopago/webhook")
+
+
+def _crear_preferencia_cuota(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Crea la preferencia de pago para una cuota."""
+    if not data.get('id_cuota'):
+        raise RequestValidationError(ERROR_ID_CUOTA_REQUERIDO, status_code=400)
+
+    monto_pago = data.get('monto')
+    if monto_pago is not None and monto_pago <= MIN_MONTO:
+        raise RequestValidationError(ERROR_MONTO_INVALIDO, status_code=400)
+
+    return mercadopago_service.crear_pago_cuota(
+        id_cuota=data['id_cuota'],
+        datos_pagador=data,
+        monto_pago=monto_pago,
+    )
+
+
+def _crear_preferencia_mensualidad(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Crea la preferencia de pago para una mensualidad."""
+    if not data.get('id_mensualidad'):
+        raise RequestValidationError(ERROR_ID_MENSUALIDAD_REQUERIDO, status_code=400)
+
+    return mercadopago_service.crear_pago_mensualidad(
+        id_mensualidad=data['id_mensualidad'],
+        datos_pagador=data,
+    )
+
+
+def _obtener_manejador_preferencia(tipo_pago: str) -> Callable[[Dict[str, Any]], Dict[str, Any]]:
+    """Obtiene el manejador adecuado según el tipo de pago."""
+    handlers: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {
+        'cuota': _crear_preferencia_cuota,
+        'mensualidad': _crear_preferencia_mensualidad,
+    }
+    try:
+        return handlers[tipo_pago]
+    except KeyError as exc:
+        raise RequestValidationError(ERROR_TIPO_PAGO_INVALIDO, status_code=400) from exc
+
+
+def _normalizar_paginacion(limit_param: Optional[int], offset_param: Optional[int]) -> Tuple[int, int]:
+    """Normaliza los parámetros de paginación."""
+    limit = max(MIN_LIMIT, limit_param or DEFAULT_LIMIT)
+    offset = max(DEFAULT_OFFSET, offset_param or DEFAULT_OFFSET)
+    return limit, offset
+
+
+def _procesar_creacion_preferencia(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Ejecuta el flujo de creación de preferencia."""
+    _validar_campos_requeridos(
+        data,
+        (
+            ('tipo_pago', ERROR_TIPO_PAGO_REQUERIDO),
+            ('nombre_pagador', ERROR_NOMBRE_REQUERIDO),
+            ('email_pagador', ERROR_EMAIL_REQUERIDO),
+        ),
+    )
+    _enriquecer_urls(data)
+    handler = _obtener_manejador_preferencia(data['tipo_pago'])
+    return handler(data)
+
+
+def _formatear_respuesta_preferencia(resultado: Dict[str, Any]) -> JsonResponse:
+    """Genera la respuesta HTTP para la creación de preferencia."""
+    if resultado.get('success'):
+        logger.info("Preferencia creada exitosamente: %s", resultado.get('preference_id'))
+        return jsonify(resultado), 200
+
+    logger.error("Error al crear preferencia: %s", resultado.get('error'))
+    return jsonify(resultado), 500
 
 
 @pagos_bp.route('/mercadopago/crear-preferencia', methods=['POST'])
-def crear_preferencia():
-    """
-    Endpoint para crear una preferencia de pago en Mercado Pago.
-    
-    Body JSON esperado:
-    {
-        "tipo_pago": "cuota" | "mensualidad",
-        "id_cuota": 123 (opcional si tipo_pago = "cuota"),
-        "id_mensualidad": 456 (opcional si tipo_pago = "mensualidad"),
-        "nombre_pagador": "Juan Pérez",
-        "email_pagador": "juan@email.com",
-        "numero_documento": "12345678",
-        "tipo_documento": "CC"
-    }
-    """
+def crear_preferencia() -> JsonResponse:
+    """Crea una preferencia de pago en Mercado Pago."""
     try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({"success": False, "error": "No se proporcionaron datos"}), 400
-        
-        # Validar datos requeridos
-        if not data.get('tipo_pago'):
-            return jsonify({"success": False, "error": "Tipo de pago requerido"}), 400
-        
-        if not data.get('nombre_pagador'):
-            return jsonify({"success": False, "error": "Nombre del pagador requerido"}), 400
-        
-        if not data.get('email_pagador'):
-            return jsonify({"success": False, "error": "Email del pagador requerido"}), 400
-        
-        # Enriquecer con URLs por defecto requeridas por Mercado Pago
-        origin = request.headers.get('Origin') or 'http://localhost:5173'
-        base_success = f"{origin}/pago-exitoso"
-        base_failure = f"{origin}/pago-fallido"
-        base_pending = f"{origin}/pago-pendiente"
-        # back_urls obligatorias cuando se usa auto_return
-        data.setdefault('url_exito', base_success)
-        data.setdefault('url_fallo', base_failure)
-        data.setdefault('url_pendiente', base_pending)
-        # webhook por defecto
-        try:
-            from flask import current_app
-            host_url = request.host_url.rstrip('/')
-            data.setdefault('url_notificacion', current_app.config.get('MERCADOPAGO_WEBHOOK_URL') or f"{host_url}/api/mercadopago/webhook")
-        except Exception:
-            data.setdefault('url_notificacion', f"{request.host_url.rstrip('/')}/api/mercadopago/webhook")
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo='Content-Type debe ser application/json',
+            mensaje_vacio=ERROR_SIN_DATOS,
+        )
+        resultado = _procesar_creacion_preferencia(data)
+        return _formatear_respuesta_preferencia(resultado)
 
-        # Crear preferencia según el tipo de pago
-        if data['tipo_pago'] == 'cuota':
-            if not data.get('id_cuota'):
-                return jsonify({"success": False, "error": "ID de cuota requerido"}), 400
-            
-            # Validar monto si se proporciona
-            monto_pago = data.get('monto')
-            if monto_pago and monto_pago <= 0:
-                return jsonify({"success": False, "error": "El monto debe ser mayor a 0"}), 400
-            
-            resultado = mercadopago_service.crear_pago_cuota(
-                id_cuota=data['id_cuota'],
-                datos_pagador=data,
-                monto_pago=monto_pago
-            )
-            
-        elif data['tipo_pago'] == 'mensualidad':
-            if not data.get('id_mensualidad'):
-                return jsonify({"success": False, "error": "ID de mensualidad requerido"}), 400
-            
-            resultado = mercadopago_service.crear_pago_mensualidad(
-                id_mensualidad=data['id_mensualidad'],
-                datos_pagador=data
-            )
-        else:
-            return jsonify({"success": False, "error": "Tipo de pago no válido"}), 400
-        
-        if resultado["success"]:
-            logger.info(f"Preferencia creada exitosamente: {resultado.get('preference_id')}")
-            return jsonify(resultado), 200
-        else:
-            logger.error(f"Error al crear preferencia: {resultado.get('error')}")
-            return jsonify(resultado), 500
-            
-    except Exception as e:
-        logger.error(f"Error en crear_preferencia endpoint: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+    except RequestValidationError as exc:
+        logger.warning("Validación en crear_preferencia: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), exc.status_code
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error en crear_preferencia endpoint: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @pagos_bp.route('/mercadopago/verificar-pago/<payment_id>', methods=['GET'])
-def verificar_pago(payment_id):
-    """
-    Endpoint para verificar el estado de un pago.
-    
-    Args:
-        payment_id (str): ID del pago en Mercado Pago
-    """
+def verificar_pago(payment_id: str) -> JsonResponse:
+    """Verifica el estado de un pago en Mercado Pago."""
     try:
         if not payment_id:
-            return jsonify({"success": False, "error": "ID de pago requerido"}), 400
-        
+            return jsonify({"success": False, "error": ERROR_ID_PAGO_REQUERIDO}), 400
+
         resultado = mercadopago_service.verificar_pago(payment_id)
-        
-        if resultado["success"]:
-            logger.info(f"Pago verificado: {payment_id} - Estado: {resultado.get('estado')}")
+        if resultado.get('success'):
+            logger.info("Pago verificado: %s - Estado: %s", payment_id, resultado.get('estado'))
             return jsonify(resultado), 200
-        else:
-            logger.error(f"Error al verificar pago: {resultado.get('error')}")
-            return jsonify(resultado), 500
-            
-    except Exception as e:
-        logger.error(f"Error en verificar_pago endpoint: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
+        logger.error("Error al verificar pago %s: %s", payment_id, resultado.get('error'))
+        return jsonify(resultado), 500
+
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error en verificar_pago endpoint: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @pagos_bp.route('/mercadopago/webhook', methods=['POST'])
-def webhook_mercadopago():
-    """
-    Endpoint para recibir webhooks de Mercado Pago.
-    Procesa notificaciones de cambios en el estado de pagos.
-    """
+def webhook_mercadopago() -> JsonResponse:
+    """Procesa las notificaciones webhook de Mercado Pago."""
     try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({"success": False, "error": "No se recibieron datos"}), 400
-        
-        logger.info(f"Webhook recibido: {data}")
-        
-        # Procesar el webhook
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo='Content-Type debe ser application/json',
+            mensaje_vacio=ERROR_SIN_DATOS_WEBHOOK,
+        )
+        logger.info("Webhook recibido: %s", data)
+
         resultado = mercadopago_service.procesar_webhook(data)
-        
-        if resultado["success"]:
+        if resultado.get('success'):
             logger.info("Webhook procesado exitosamente")
             return jsonify(resultado), 200
-        else:
-            logger.error(f"Error al procesar webhook: {resultado.get('error')}")
-            return jsonify(resultado), 500
-            
-    except Exception as e:
-        logger.error(f"Error en webhook endpoint: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
+        logger.error("Error al procesar webhook: %s", resultado.get('error'))
+        return jsonify(resultado), 500
+
+    except RequestValidationError as exc:
+        logger.warning("Validación en webhook Mercado Pago: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), exc.status_code
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error en webhook endpoint: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @pagos_bp.route('/mercadopago/transacciones', methods=['GET'])
-def listar_transacciones():
-    """
-    Endpoint para listar transacciones de Mercado Pago.
-    
-    Query parameters:
-    - estado: Filtrar por estado (opcional)
-    - limit: Límite de resultados (opcional, default: 50)
-    - offset: Offset para paginación (opcional, default: 0)
-    """
+def listar_transacciones() -> JsonResponse:
+    """Lista transacciones registradas en Mercado Pago."""
     try:
         estado = request.args.get('estado')
-        limit = int(request.args.get('limit', 50))
-        offset = int(request.args.get('offset', 0))
-        
-        # Construir consulta
+        limit_param = request.args.get('limit', type=int)
+        offset_param = request.args.get('offset', type=int)
+        limit, offset = _normalizar_paginacion(limit_param, offset_param)
+
         query = TransaccionMercadoPago.query
-        
         if estado:
             query = query.filter_by(estado=estado)
-        
-        # Aplicar paginación y ordenar por fecha
-        transacciones = query.order_by(
-            TransaccionMercadoPago.fecha_creacion.desc()
-        ).offset(offset).limit(limit).all()
-        
-        # Convertir a diccionarios
+
+        transacciones = (
+            query.order_by(TransaccionMercadoPago.fecha_creacion.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
         transacciones_data = [transaccion.to_dict() for transaccion in transacciones]
-        
-        logger.info(f"Transacciones listadas: {len(transacciones_data)}")
-        
+
+        logger.info("Transacciones listadas: %s", len(transacciones_data))
         return jsonify({
             "success": True,
             "transacciones": transacciones_data,
             "total": len(transacciones_data)
         }), 200
-        
-    except Exception as e:
-        logger.error(f"Error en listar_transacciones endpoint: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error en listar_transacciones endpoint: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @pagos_bp.route('/mercadopago/transacciones/<int:transaccion_id>', methods=['GET'])
-def obtener_transaccion(transaccion_id):
-    """
-    Endpoint para obtener una transacción específica.
-    
-    Args:
-        transaccion_id (int): ID de la transacción en nuestra base de datos
-    """
+def obtener_transaccion(transaccion_id: int) -> JsonResponse:
+    """Obtiene una transacción específica almacenada en la base de datos."""
     try:
         transaccion = TransaccionMercadoPago.query.get(transaccion_id)
-        
         if not transaccion:
-            return jsonify({"success": False, "error": "Transacción no encontrada"}), 404
-        
-        logger.info(f"Transacción obtenida: {transaccion_id}")
-        
+            return jsonify({"success": False, "error": ERROR_TRANSACCION_NO_ENCONTRADA}), 404
+
+        logger.info("Transacción obtenida: %s", transaccion_id)
         return jsonify({
             "success": True,
             "transaccion": transaccion.to_dict()
         }), 200
-        
-    except Exception as e:
-        logger.error(f"Error en obtener_transaccion endpoint: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error en obtener_transaccion endpoint: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @pagos_bp.route('/mercadopago/estadisticas', methods=['GET'])
-def obtener_estadisticas():
-    """
-    Endpoint para obtener estadísticas de pagos.
-    """
+def obtener_estadisticas() -> JsonResponse:
+    """Obtiene estadísticas agregadas de las transacciones de Mercado Pago."""
     try:
-        from sqlalchemy import func
-        
-        # Contar transacciones por estado
         estadisticas = db.session.query(
             TransaccionMercadoPago.estado,
             func.count(TransaccionMercadoPago.id_transaccion).label('cantidad'),
-            func.sum(TransaccionMercadoPago.monto).label('total_monto')
+            func.sum(TransaccionMercadoPago.monto).label('total_monto'),
         ).group_by(TransaccionMercadoPago.estado).all()
-        
-        # Convertir a diccionario
-        stats_dict = {}
-        for stat in estadisticas:
-            stats_dict[stat.estado] = {
-                "cantidad": stat.cantidad,
-                "total_monto": float(stat.total_monto) if stat.total_monto else 0
+
+        stats_dict: Dict[str, Dict[str, Any]] = {}
+        for estado, cantidad, total_monto in estadisticas:
+            stats_dict[estado] = {
+                "cantidad": cantidad,
+                "total_monto": float(total_monto) if total_monto else 0,
             }
-        
+
         logger.info("Estadísticas obtenidas exitosamente")
-        
         return jsonify({
             "success": True,
             "estadisticas": stats_dict
         }), 200
-        
-    except Exception as e:
-        logger.error(f"Error en obtener_estadisticas endpoint: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error en obtener_estadisticas endpoint: %s", str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
 
 
 @pagos_bp.route('/cuota/<int:cuota_id>/saldo', methods=['GET'])
-def consultar_saldo_cuota(cuota_id):
-    """
-    Consulta el saldo pendiente de una cuota específica.
-    
-    GET /api/cuota/{cuota_id}/saldo
-    """
+def consultar_saldo_cuota(cuota_id: int) -> JsonResponse:
+    """Consulta el saldo pendiente de una cuota específica."""
     try:
-        from src.models.pagos.cuota import Cuota
-        
         cuota = Cuota.query.get(cuota_id)
         if not cuota:
             return jsonify({
                 'success': False,
-                'error': 'Cuota no encontrada'
+                'error': ERROR_CUOTA_NO_ENCONTRADA
             }), 404
-        
-        # Calcular saldo pendiente
+
         saldo_pendiente = cuota.calcular_saldo_pendiente()
-        
+        monto_total = float(cuota.monto_cuota)
+        pagado = monto_total - saldo_pendiente
+        porcentaje_pagado = round(pagado / monto_total * 100, 2) if monto_total else 0
+
         return jsonify({
             'success': True,
             'data': {
                 'cuota_id': cuota.id_cuota,
-                'monto_total': float(cuota.monto_cuota),
+                'monto_total': monto_total,
                 'saldo_pendiente': saldo_pendiente,
-                'pagado': float(cuota.monto_cuota) - saldo_pendiente,
-                'porcentaje_pagado': round((float(cuota.monto_cuota) - saldo_pendiente) / float(cuota.monto_cuota) * 100, 2)
+                'pagado': pagado,
+                'porcentaje_pagado': porcentaje_pagado
             }
         }), 200
-        
-    except Exception as e:
-        logger.error(f"Error consultando saldo de cuota: {str(e)}")
-        return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Error consultando saldo de cuota %s: %s", cuota_id, str(exc))
+        return jsonify({"success": False, "error": str(exc)}), 500
+
+
+def registrar_pagos_routes(app: Flask) -> None:
+    """Registra las rutas de pagos en la aplicación Flask."""
+    app.register_blueprint(pagos_bp)
+    logger.info("Rutas de pagos registradas exitosamente")
