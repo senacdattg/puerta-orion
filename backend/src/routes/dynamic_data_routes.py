@@ -1,6 +1,8 @@
 import re
 
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import IntegrityError
+
 from src.models.base import db
 from src.models import (
     Parentesco,
@@ -376,14 +378,16 @@ def eliminar_dato_dinamico(tema, id):
         # Verificar si está siendo usado (opcional - puedes implementar esta validación)
         # Por ahora solo desactivamos o eliminamos
         
-        # Desactivar registro (soft delete) si tiene campo estado, sino eliminar físicamente
-        if hasattr(registro, 'estado'):
-            registro.estado = False
-        else:
-            db.session.delete(registro)
-        
-        # Guardar cambios
-        db.session.commit()
+        # Eliminar físicamente el registro. Si existen referencias el commit fallará.
+        db.session.delete(registro)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            return jsonify({
+                'success': False,
+                'error': 'No se puede eliminar el registro porque está siendo utilizado por otros elementos.'
+            }), 409
         
         return jsonify({
             'success': True,
