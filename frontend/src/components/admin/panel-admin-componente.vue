@@ -145,6 +145,7 @@ import ModalEditarDato from '@/components/admin/modal-editar-dato.vue';
 import TablaUsuarios from '@/components/admin/tabla-usuarios.vue';
 import TablaDatosDinamicos from '@/components/admin/tabla-datos-dinamicos.vue';
 import usuariosService from '@/services/usuariosService';
+import Swal from 'sweetalert2';
 
 // Estado del modal
 const mostrarModalRegistro = ref(false);
@@ -332,7 +333,11 @@ async function onGuardarDato(payload) {
 
     // Si no está en el mapeo, mostrar mensaje de que no está disponible
     if (!tema) {
-      alert(`⚠️ La creación de "${payload.entidad}" aún no está disponible mediante esta interfaz.`)
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Función no disponible',
+        text: `La creación de "${payload.entidad}" aún no está disponible desde esta interfaz.`
+      })
       return
     }
 
@@ -393,26 +398,46 @@ async function onGuardarDato(payload) {
     const result = await response.json()
 
     if (result.success) {
-      alert(`✅ ${payload.entidad} creado exitosamente`)
+      await Swal.fire({
+        icon: 'success',
+        title: 'Dato creado',
+        text: `${payload.entidad} creado exitosamente.`,
+        timer: 1500,
+        showConfirmButton: false
+      })
       // Recargar la tabla de datos
       recargarTablaDatos.value = !recargarTablaDatos.value
       cerrarModalDatos()
     } else {
-      alert(`❌ Error: ${result.error || 'No se pudo crear el registro'}`)
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo crear',
+        text: result.error || 'No se pudo crear el registro.'
+      })
     }
   } catch (error) {
     console.error('Error al guardar dato:', error)
-    alert(`❌ Error de conexión: ${error.message}`)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: error.message || 'No pudimos comunicarnos con el servidor.'
+    })
   }
 }
 
-function manejarUsuarioRegistrado(datosUsuario) {
+async function manejarUsuarioRegistrado(datosUsuario) {
   console.log('Usuario registrado desde admin-manager:', datosUsuario);
   // Cerrar el modal después del registro exitoso
   cerrarModalRegistro();
   // Aquí puedes agregar lógica adicional como actualizar la lista de usuarios
   // o mostrar notificaciones
-  alert('Usuario registrado exitosamente');
+  await Swal.fire({
+    icon: 'success',
+    title: 'Usuario registrado',
+    text: 'El nuevo usuario fue registrado correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
 }
 
 // Handlers para eventos del hijo

@@ -260,6 +260,7 @@
 <script>
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
 
 const LOCALE_COL = 'es-CO';
 const MAX_TITULO = 120;
@@ -652,7 +653,11 @@ export default {
                 errores.push('La hora de fin debe ser posterior a la hora de inicio');
             }
             if (errores.length > 0) {
-                alert('Errores de validación:\n' + errores.join('\n'));
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Corrige los errores',
+                    html: errores.join('<br>')
+                });
                 return;
             }
 
@@ -661,14 +666,22 @@ export default {
 
                 if (this.modoEdicion) {
                     if (!this.puedeEditar) {
-                        alert('No tienes permisos para editar eventos');
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Sin permisos',
+                            text: 'No tienes permisos para editar eventos.'
+                        });
                         return;
                     }
                     await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
                     this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
                 } else {
                     if (!this.puedeCrear) {
-                        alert('No tienes permisos para crear eventos');
+                        await Swal.fire({
+                            icon: 'warning',
+                            title: 'Sin permisos',
+                            text: 'No tienes permisos para crear eventos.'
+                        });
                         return;
                     }
                     await calendarioService.crearEvento(this.nuevoEvento);
@@ -684,9 +697,16 @@ export default {
 
                     // Solo preguntar si ya hay eventos en ese día (más de 1 porque acabamos de crear uno)
                     if (eventosDelDia && eventosDelDia.length > 1) {
-                        const quiereAgregarOtro = confirm('¿Deseas agregar otro evento en este mismo día?');
+                        const confirmacion = await Swal.fire({
+                            icon: 'question',
+                            title: '¿Agregar otro evento?',
+                            text: 'Ya existen eventos en este día. ¿Quieres crear otro de inmediato?',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, agregar',
+                            cancelButtonText: 'No'
+                        });
 
-                        if (quiereAgregarOtro) {
+                        if (confirmacion.isConfirmed) {
                             // Limpiar formulario pero mantener la fecha y el modal abierto
                             this.limpiarFormulario();
                             this.nuevoEvento.fecha = fechaActual;
@@ -714,7 +734,16 @@ export default {
         async eliminarEvento() {
             if (!this.puedeEliminar) return; // Solo roles con permisos de eliminación pueden eliminar
 
-            if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+            const confirmacion = await Swal.fire({
+                icon: 'question',
+                title: '¿Eliminar evento?',
+                text: 'Esta acción no se puede deshacer.',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (confirmacion.isConfirmed) {
                 try {
                     this.cargando = true;
                     await calendarioService.eliminarEvento(this.eventoSeleccionado.id);

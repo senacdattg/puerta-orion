@@ -273,39 +273,93 @@
         <div class="info-grid-detalle">
           <div class="info-item-detalle">
             <label>Username</label>
-            <input v-model="formularioEdicion.datos_usuario.usuario" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_usuario.usuario"
+              type="text"
+              class="control-input"
+              @input="onUsuarioInput"
+              @blur="onUsuarioInput"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Primer Nombre</label>
-            <input v-model="formularioEdicion.datos_persona.primer_nombre" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.primer_nombre"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('primer_nombre')"
+              @blur="onNombreInput('primer_nombre')"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Segundo Nombre</label>
-            <input v-model="formularioEdicion.datos_persona.segundo_nombre" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.segundo_nombre"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('segundo_nombre')"
+              @blur="onNombreInput('segundo_nombre')"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Primer Apellido</label>
-            <input v-model="formularioEdicion.datos_persona.primer_apellido" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.primer_apellido"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('primer_apellido')"
+              @blur="onNombreInput('primer_apellido')"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Segundo Apellido</label>
-            <input v-model="formularioEdicion.datos_persona.segundo_apellido" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.segundo_apellido"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('segundo_apellido')"
+              @blur="onNombreInput('segundo_apellido')"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Documento</label>
-            <input v-model="formularioEdicion.datos_persona.documento" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.documento"
+              type="text"
+              class="control-input"
+              @input="onDocumentoInput"
+              @blur="onDocumentoInput"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Correo</label>
-            <input v-model="formularioEdicion.datos_persona.correo_electronico" type="email" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.correo_electronico"
+              type="email"
+              class="control-input"
+              @input="onEmailInput"
+              @blur="onEmailInput"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Teléfono</label>
-            <input v-model="formularioEdicion.datos_persona.telefono" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.telefono"
+              type="text"
+              class="control-input"
+              @input="onTelefonoInput"
+              @blur="onTelefonoInput"
+            />
           </div>
           <div class="info-item-detalle">
             <label>Dirección</label>
-            <input v-model="formularioEdicion.datos_persona.direccion" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.direccion"
+              type="text"
+              class="control-input"
+              @input="onDireccionInput"
+              @blur="onDireccionInput"
+            />
           </div>
         </div>
         <div class="botones-acciones-detalle" style="margin-top:20px;">
@@ -412,6 +466,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import usuariosService from '@/services/usuariosService';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   searchTerm: { type: String, default: '' },
@@ -432,7 +487,6 @@ const usuariosVisibles = ref(4); // Mostrar solo 4 usuarios inicialmente en la v
 const offset = ref(0);
 const totalUsuarios = ref(0);
 const hasMore = ref(false);
-const cargandoMas = ref(false);
 
 // Estado del modal de detalle
 const mostrarModalDetalle = ref(false);
@@ -469,6 +523,84 @@ const rolesSeleccionados = ref([]);
 
 // Obtener ID del usuario actual para prevenir auto-desactivación
 const currentUserId = computed(() => authStore.user?.id_usuario);
+
+const DOC_MIN = 6;
+const DOC_MAX = 20;
+const PHONE_MIN = 7;
+const PHONE_MAX = 15;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+
+function limpiarEspacios(valor = '') {
+  return valor.replace(/\s+/g, ' ').trim();
+}
+
+function normalizarNombre(valor = '') {
+  const limpio = limpiarEspacios(valor).replace(/[^\p{L}\s]/gu, '');
+  return limpio.toUpperCase();
+}
+
+function normalizarUsername(valor = '') {
+  return limpiarEspacios(valor).replace(/\s/g, '').toLowerCase();
+}
+
+function normalizarDocumentoValor(valor = '') {
+  return valor.replace(/\D/g, '').slice(0, DOC_MAX);
+}
+
+function normalizarTelefonoValor(valor = '') {
+  return valor.replace(/\D/g, '').slice(0, PHONE_MAX);
+}
+
+function normalizarDireccionValor(valor = '') {
+  const permitido = limpiarEspacios(valor).replace(/[^A-Za-z0-9#.\-\s]/g, '');
+  return permitido.toUpperCase();
+}
+
+function normalizarEmailValor(valor = '') {
+  return limpiarEspacios(valor).toLowerCase();
+}
+
+function onNombreInput(campo) {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona[campo] = normalizarNombre(formularioEdicion.value.datos_persona[campo] || '');
+}
+
+function onUsuarioInput() {
+  if (!formularioEdicion.value?.datos_usuario) return;
+  formularioEdicion.value.datos_usuario.usuario = normalizarUsername(formularioEdicion.value.datos_usuario.usuario || '');
+}
+
+function onDocumentoInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.documento = normalizarDocumentoValor(formularioEdicion.value.datos_persona.documento || '');
+}
+
+function onTelefonoInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.telefono = normalizarTelefonoValor(formularioEdicion.value.datos_persona.telefono || '');
+}
+
+function onDireccionInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.direccion = normalizarDireccionValor(formularioEdicion.value.datos_persona.direccion || '');
+}
+
+function onEmailInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.correo_electronico = normalizarEmailValor(formularioEdicion.value.datos_persona.correo_electronico || '');
+}
+
+function normalizarFormularioEdicion() {
+  onUsuarioInput();
+  onNombreInput('primer_nombre');
+  onNombreInput('segundo_nombre');
+  onNombreInput('primer_apellido');
+  onNombreInput('segundo_apellido');
+  onDocumentoInput();
+  onEmailInput();
+  onTelefonoInput();
+  onDireccionInput();
+}
 
 // Cargar datos al montar el componente
 onMounted(async () => {
@@ -514,7 +646,7 @@ async function cargarDatos() {
       if (usuariosResponse.success) {
         todosUsuarios = [...todosUsuarios, ...usuariosResponse.data];
         total = usuariosResponse.total || todosUsuarios.length;
-        
+
         // Si la respuesta tiene menos usuarios que el límite, no hay más
         if (usuariosResponse.data.length < usuariosPorPagina) {
           hayMas = false;
@@ -522,7 +654,7 @@ async function cargarDatos() {
           // Verificar si hay más según el total
           hayMas = todosUsuarios.length < total;
         }
-        
+
         currentOffset += usuariosResponse.data.length;
     } else {
         throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
@@ -533,7 +665,7 @@ async function cargarDatos() {
     users.value = todosUsuarios;
     totalUsuarios.value = total;
     offset.value = currentOffset;
-    
+
     // hasMore se calculará basado en usuariosVisibles vs total
     hasMore.value = usuariosVisibles.value < users.value.length;
 
@@ -551,10 +683,10 @@ async function cargarDatos() {
 // Mostrar más usuarios (solo incrementa la visualización, no hace petición)
 function cargarMasUsuarios() {
   if (!hasMore.value) return;
-  
+
   // Incrementar usuarios visibles en 4
   usuariosVisibles.value += 4;
-  
+
   // hasMore se actualizará automáticamente por el watch
 }
 
@@ -697,7 +829,11 @@ async function updateRoles(user, selectedRoleIds) {
   } catch (err) {
     error.value = err.message;
     console.error('Error al actualizar roles:', err);
-    alert(`❌ Error al actualizar roles: ${err.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar roles',
+      text: err.message || 'No pudimos actualizar los roles. Intenta nuevamente.'
+    });
   } finally {
     loading.value = false;
   }
@@ -745,18 +881,27 @@ async function toggleEstadoUsuario(user) {
   const idUsuario = user.id_usuario || user.usuario?.id_usuario || user.usuario?.id_usuario;
 
   if (idUsuario === currentUserId.value) {
-    alert('⚠️ No puedes desactivar tu propio usuario');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No puedes desactivar tu propio usuario.'
+    });
     return;
   }
 
   const estadoActual = user.estado !== undefined ? user.estado : (user.usuario?.estado !== false);
   const nuevoEstado = !estadoActual;
 
-  const confirmacion = confirm(
-    `¿Estás seguro de que deseas ${nuevoEstado ? 'activar' : 'desactivar'} al usuario "${user.usuario || user.usuario?.usuario || 'este usuario'}"?`
-  );
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: `${nuevoEstado ? '¿Activar' : '¿Desactivar'} usuario?`,
+    text: `Se ${nuevoEstado ? 'activará' : 'desactivará'} el usuario "${user.usuario || user.usuario?.usuario || 'este usuario'}".`,
+    showCancelButton: true,
+    confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
+    cancelButtonText: 'Cancelar'
+  });
 
-  if (!confirmacion) {
+  if (!confirmacion.isConfirmed) {
     return;
   }
 
@@ -783,14 +928,23 @@ async function toggleEstadoUsuario(user) {
         }
       }
 
-      alert(`✅ Usuario ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
+      await Swal.fire({
+        icon: 'success',
+        title: `Usuario ${nuevoEstado ? 'activado' : 'desactivado'}`,
+        timer: 1500,
+        showConfirmButton: false
+      });
     } else {
       throw new Error(response.error || 'Error al cambiar estado del usuario');
     }
   } catch (err) {
     error.value = err.message;
     console.error('Error al cambiar estado del usuario:', err);
-    alert(`❌ Error al cambiar estado: ${err.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudo cambiar el estado',
+      text: err.message || 'Intenta nuevamente en unos minutos.'
+    });
   } finally {
     loading.value = false;
   }
@@ -817,6 +971,8 @@ function abrirModalEdicion(user) {
       direccion: persona.direccion || ''
     }
   };
+  normalizarFormularioEdicion();
+  errorEdicion.value = null;
   mostrarModalEdicion.value = true;
 }
 
@@ -827,21 +983,86 @@ function cerrarModalEdicion() {
 
 async function guardarEdicion() {
   if (!usuarioDetalle.value) return;
+  normalizarFormularioEdicion();
+
   const idUsuario = usuarioDetalle.value.usuario?.id_usuario || usuarioDetalle.value.id_usuario;
+  const usuarioForm = formularioEdicion.value.datos_usuario || {};
+  const personaForm = formularioEdicion.value.datos_persona || {};
+
+  const username = usuarioForm.usuario || '';
+  const primerNombre = personaForm.primer_nombre || '';
+  const segundoNombre = personaForm.segundo_nombre || '';
+  const primerApellido = personaForm.primer_apellido || '';
+  const segundoApellido = personaForm.segundo_apellido || '';
+  const documento = personaForm.documento || '';
+  const correo = personaForm.correo_electronico || '';
+  const telefono = personaForm.telefono || '';
+  const direccion = personaForm.direccion || '';
+
+  const errores = [];
+
+  if (!username || username.length < 4 || !/^[a-z0-9._-]+$/i.test(username)) {
+    errores.push('El username debe tener al menos 4 caracteres y solo puede incluir letras, números, puntos, guiones o guiones bajos.');
+  }
+  if (!primerNombre || primerNombre.length < 2) {
+    errores.push('El primer nombre es obligatorio y debe tener al menos 2 caracteres.');
+  }
+  if (!primerApellido || primerApellido.length < 2) {
+    errores.push('El primer apellido es obligatorio y debe tener al menos 2 caracteres.');
+  }
+  if (!documento || documento.length < DOC_MIN || documento.length > DOC_MAX) {
+    errores.push(`El documento debe tener entre ${DOC_MIN} y ${DOC_MAX} dígitos.`);
+  }
+  if (!correo || !emailRegex.test(correo)) {
+    errores.push('Debes ingresar un correo electrónico válido.');
+  }
+  if (telefono && (telefono.length < PHONE_MIN || telefono.length > PHONE_MAX)) {
+    errores.push(`El teléfono debe tener entre ${PHONE_MIN} y ${PHONE_MAX} dígitos si lo proporcionas.`);
+  }
+  if (direccion && direccion.length < 5) {
+    errores.push('La dirección debe tener al menos 5 caracteres.');
+  }
+
+  if (errores.length > 0) {
+    errorEdicion.value = errores[0];
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los campos',
+      html: `<ul style="text-align:left;margin:0;padding-left:18px;">${errores.map(err => `<li>${err}</li>`).join('')}</ul>`
+    });
+    return;
+  }
+
+  const payload = {
+    datos_usuario: {
+      usuario: username
+    },
+    datos_persona: {
+      primer_nombre: primerNombre,
+      segundo_nombre: segundoNombre,
+      primer_apellido: primerApellido,
+      segundo_apellido: segundoApellido,
+      documento,
+      correo_electronico: correo,
+      telefono,
+      direccion
+    }
+  };
+
   try {
     guardandoEdicion.value = true;
     errorEdicion.value = null;
-    const resp = await usuariosService.actualizarUsuario(idUsuario, formularioEdicion.value);
+    const resp = await usuariosService.actualizarUsuario(idUsuario, payload);
     if (!resp.success) throw new Error(resp.error || 'Error al actualizar');
 
     // Actualizar en tabla
     const idx = users.value.findIndex(u => u.id_usuario === idUsuario);
     if (idx !== -1) {
-      if (formularioEdicion.value.datos_usuario?.usuario) {
-        users.value[idx].usuario = formularioEdicion.value.datos_usuario.usuario;
+      if (payload.datos_usuario?.usuario) {
+        users.value[idx].usuario = payload.datos_usuario.usuario;
       }
       if (users.value[idx].persona) {
-        Object.assign(users.value[idx].persona, formularioEdicion.value.datos_persona || {});
+        Object.assign(users.value[idx].persona, payload.datos_persona || {});
       }
       emit('usuario-actualizado', users.value[idx]);
     }
@@ -852,12 +1073,22 @@ async function guardarEdicion() {
       usuarioDetalle.value = refreshed.data;
     }
 
+    formularioEdicion.value = JSON.parse(JSON.stringify(payload));
     cerrarModalEdicion();
-    alert('✅ Usuario actualizado');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Usuario actualizado',
+      timer: 1500,
+      showConfirmButton: false
+    });
   } catch (e) {
     console.error(e);
     errorEdicion.value = e.message;
-    alert(`❌ ${e.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar',
+      text: e.message || 'No se pudieron guardar los cambios.'
+    });
   } finally {
     guardandoEdicion.value = false;
   }
@@ -958,11 +1189,20 @@ async function guardarRoles() {
     }
 
     cerrarModalRoles();
-    alert('✅ Roles actualizados exitosamente');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Roles actualizados',
+      timer: 1500,
+      showConfirmButton: false
+    });
   } catch (err) {
     console.error('Error al guardar roles:', err);
     errorRoles.value = err.message;
-    alert(`❌ Error al actualizar roles: ${err.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar roles',
+      text: err.message || 'No pudimos guardar los cambios.'
+    });
   } finally {
     guardandoRoles.value = false;
   }

@@ -346,6 +346,10 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import catalogosService from "@/services/catalogosService";
+import Swal from "sweetalert2";
+function notificar(icon, title, text) {
+  Swal.fire({ icon, title, text });
+}
 
 // Props del componente
 const props = defineProps({
@@ -478,62 +482,62 @@ function normalizarFormulario() {
 
 function validarFormulario() {
   if (!form.value.primer_nombre || !form.value.primer_apellido) {
-    alert('Los nombres y apellidos principales son obligatorios');
+    notificar('warning', 'Campos obligatorios', 'Los nombres y apellidos principales son obligatorios');
     return false;
   }
 
   if (!REGEX_NOMBRE.test(form.value.primer_nombre)) {
-    alert('El primer nombre solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El primer nombre solo debe contener letras y espacios');
     return false;
   }
 
   if (form.value.segundo_nombre && !REGEX_NOMBRE.test(form.value.segundo_nombre)) {
-    alert('El segundo nombre solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El segundo nombre solo debe contener letras y espacios');
     return false;
   }
 
   if (!REGEX_NOMBRE.test(form.value.primer_apellido)) {
-    alert('El primer apellido solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El primer apellido solo debe contener letras y espacios');
     return false;
   }
 
   if (form.value.segundo_apellido && !REGEX_NOMBRE.test(form.value.segundo_apellido)) {
-    alert('El segundo apellido solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El segundo apellido solo debe contener letras y espacios');
     return false;
   }
 
   if (!form.value.documento || form.value.documento.length < MIN_DOCUMENTO || form.value.documento.length > MAX_DOCUMENTO) {
-    alert(`El documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+    notificar('warning', 'Documento inválido', `El documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
     return false;
   }
 
   if (!/^\d+$/.test(form.value.documento)) {
-    alert('El documento solo debe contener dígitos');
+    notificar('warning', 'Documento inválido', 'El documento solo debe contener dígitos');
     return false;
   }
 
   if (!form.value.telefono || form.value.telefono.length !== MIN_TELEFONO) {
-    alert(`El teléfono debe tener exactamente ${MIN_TELEFONO} dígitos`);
+    notificar('warning', 'Teléfono inválido', `El teléfono debe tener exactamente ${MIN_TELEFONO} dígitos`);
     return false;
   }
 
   if (!/^\d{10}$/.test(form.value.telefono)) {
-    alert('El teléfono solo debe contener 10 dígitos');
+    notificar('warning', 'Teléfono inválido', 'El teléfono solo debe contener 10 dígitos');
     return false;
   }
 
   if (!REGEX_CORREO.test(form.value.correo_electronico)) {
-    alert('Ingrese un correo electrónico válido');
+    notificar('warning', 'Correo inválido', 'Ingrese un correo electrónico válido');
     return false;
   }
 
   if (!form.value.direccion) {
-    alert('La dirección es obligatoria');
+    notificar('warning', 'Dirección obligatoria', 'La dirección es obligatoria');
     return false;
   }
 
   if (!form.value.password_hash) {
-    alert('La contraseña es obligatoria');
+    notificar('warning', 'Contraseña requerida', 'La contraseña es obligatoria');
     return false;
   }
 
@@ -584,12 +588,12 @@ function manejarSubmit() {
   normalizarFormulario();
 
   if (form.value.password_hash !== form.value.confirmar_password) {
-    alert("Las contraseñas no coinciden");
+    notificar('warning', 'Validación', 'Las contraseñas no coinciden');
     return;
   }
 
   if (!form.value.id_tipo_documento || !form.value.id_sexo || !form.value.id_deportista || !form.value.id_parentesco) {
-    alert("Por favor complete todos los campos obligatorios");
+    notificar('warning', 'Campos incompletos', 'Completa todos los campos obligatorios.');
     return;
   }
 
@@ -598,7 +602,7 @@ function manejarSubmit() {
   }
 
   if (!form.value.autorizacion_deportiva || !form.value.autorizacion_medica) {
-    alert("Debe autorizar la participación deportiva y la atención médica");
+    notificar('warning', 'Autorizaciones requeridas', 'Debes autorizar la participación deportiva y la atención médica.');
     return;
   }
 

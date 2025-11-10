@@ -11,16 +11,6 @@
       </div>
 
       <div class="actualizar-content">
-        <div v-if="error" class="alert alert-error">
-          <i class="fas fa-exclamation-circle"></i>
-          {{ error }}
-        </div>
-
-        <div v-if="mensajeExito" class="alert alert-success">
-          <i class="fas fa-check-circle"></i>
-          {{ mensajeExito }}
-        </div>
-
         <form @submit.prevent="actualizarInformacion" class="form-actualizar" v-if="!isLoading">
           <!-- Información Personal -->
           <div class="form-section">
@@ -611,6 +601,7 @@ import catalogosService from '@/services/catalogosService'
 import { API_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -1051,12 +1042,34 @@ async function cargarDatosUsuario() {
   } catch (err) {
     console.error('Error al cargar datos del usuario:', err)
     error.value = 'Error al cargar los datos del usuario. Por favor, recarga la página.'
+    await Swal.fire({
+      icon: 'error',
+      title: 'No pudimos cargar tus datos',
+      text: 'Recarga la página o intenta más tarde.'
+    })
   } finally {
     isLoading.value = false
   }
 }
 
 const actualizarInformacion = async () => {
+  if (guardando.value) {
+    return
+  }
+
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Guardar cambios?',
+    text: 'Se actualizará tu perfil con la información ingresada.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, actualizar',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (!confirmacion.isConfirmed) {
+    return
+  }
+
   guardando.value = true
   error.value = null
   mensajeExito.value = null
@@ -1064,7 +1077,7 @@ const actualizarInformacion = async () => {
   try {
     const idUsuario = authStore.user?.id_usuario
     if (!idUsuario) {
-      throw new Error('No se pudo obtener el ID del usuario')
+      throw new Error('No se pudo obtener el ID del usuario.')
     }
 
     // Preparar datos_persona según permisos del rol
@@ -1116,14 +1129,6 @@ const actualizarInformacion = async () => {
 
       if (idDeportista) {
         // Validar que solo Entrenador y Administrador puedan actualizar peso y altura
-        if ((formDataDeportista.value.peso !== null || formDataDeportista.value.altura !== null) &&
-            !puedeEditarPesoAltura.value) {
-          // No permitir actualizar peso y altura si no tiene permisos
-          // Solo enviar los campos permitidos
-          delete formDataDeportista.value.peso
-          delete formDataDeportista.value.altura
-        }
-
         const datosDeportistaActualizar = {
           datos_deportista: {
             // Solo incluir campos que el usuario tiene permiso para editar
@@ -1213,24 +1218,44 @@ const actualizarInformacion = async () => {
 
     mensajeExito.value = 'Información actualizada correctamente'
 
+    await Swal.fire({
+      icon: 'success',
+      title: 'Cambios guardados',
+      text: 'Tu perfil se actualizó correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    })
+
     // Recargar datos del usuario
     await authStore.loadUserProfileDetail()
     await authStore.loadUserProfile()
 
-    // Redirigir al perfil después de un breve delay
-    setTimeout(() => {
-      router.push('/perfil')
-    }, 1500)
+    router.push('/perfil')
   } catch (err) {
     console.error('Error actualizando información:', err)
     error.value = err.message || 'Error al actualizar la información. Por favor, intenta nuevamente.'
+    await Swal.fire({
+      icon: 'error',
+      title: 'No pudimos actualizar',
+      text: err.message || 'Intenta de nuevo en unos minutos.'
+    })
   } finally {
     guardando.value = false
   }
 }
 
-const cancelar = () => {
-  router.push('/perfil')
+const cancelar = async () => {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Descartar cambios?',
+    text: 'Los cambios sin guardar se perderán.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, salir',
+    cancelButtonText: 'Continuar editando'
+  })
+  if (result.isConfirmed) {
+    router.push('/perfil')
+  }
 }
 
 onMounted(async () => {

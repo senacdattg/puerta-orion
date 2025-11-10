@@ -282,6 +282,10 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import catalogosService from "@/services/catalogosService";
+import Swal from "sweetalert2";
+function notificar(icon, title, text) {
+  Swal.fire({ icon, title, text });
+}
 
 // Props del componente
 const props = defineProps({
@@ -468,70 +472,70 @@ function normalizarFormulario() {
 
 function validarFormulario() {
   if (!form.value.nombre1 || !NAME_REGEX.test(form.value.nombre1)) {
-    alert('El primer nombre solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El primer nombre solo debe contener letras y espacios');
     return false;
   }
 
   if (form.value.nombre2 && !NAME_REGEX.test(form.value.nombre2)) {
-    alert('El segundo nombre solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El segundo nombre solo debe contener letras y espacios');
     return false;
   }
 
   if (!form.value.apellido1 || !NAME_REGEX.test(form.value.apellido1)) {
-    alert('El primer apellido solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El primer apellido solo debe contener letras y espacios');
     return false;
   }
 
   if (form.value.apellido2 && !NAME_REGEX.test(form.value.apellido2)) {
-    alert('El segundo apellido solo debe contener letras y espacios');
+    notificar('warning', 'Dato inválido', 'El segundo apellido solo debe contener letras y espacios');
     return false;
   }
 
   if (!form.value.numeroDocumento || form.value.numeroDocumento.length < MIN_DOCUMENTO || form.value.numeroDocumento.length > MAX_DOCUMENTO) {
-    alert(`El documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+    notificar('warning', 'Documento inválido', `El documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
     return false;
   }
 
   if (!/^\d+$/.test(form.value.numeroDocumento)) {
-    alert('El documento solo debe contener dígitos');
+    notificar('warning', 'Documento inválido', 'El documento solo debe contener dígitos');
     return false;
   }
 
   if (!form.value.telefono || form.value.telefono.length !== MIN_TELEFONO) {
-    alert(`El teléfono debe tener exactamente ${MIN_TELEFONO} dígitos`);
+    notificar('warning', 'Teléfono inválido', `El teléfono debe tener exactamente ${MIN_TELEFONO} dígitos`);
     return false;
   }
 
   if (!/^\d{10}$/.test(form.value.telefono)) {
-    alert('El teléfono solo debe contener 10 dígitos');
+    notificar('warning', 'Teléfono inválido', 'El teléfono solo debe contener 10 dígitos');
     return false;
   }
 
   if (!EMAIL_REGEX.test(form.value.correo)) {
-    alert('Ingrese un correo electrónico válido');
+    notificar('warning', 'Correo inválido', 'Ingrese un correo electrónico válido');
     return false;
   }
 
   const telefonoEmergencia = form.value.contactoEmergencia.telefono;
   if (!telefonoEmergencia || telefonoEmergencia.length !== MIN_TELEFONO || !/^\d{10}$/.test(telefonoEmergencia)) {
-    alert('El teléfono de emergencia debe contener exactamente 10 dígitos');
+    notificar('warning', 'Teléfono de emergencia inválido', 'Debe contener exactamente 10 dígitos');
     return false;
   }
 
   if (form.value.contactoEmergencia.correo && !EMAIL_REGEX.test(form.value.contactoEmergencia.correo)) {
-    alert('Ingrese un correo válido para el contacto de emergencia');
+    notificar('warning', 'Correo de emergencia inválido', 'Ingrese un correo válido para el contacto de emergencia');
     return false;
   }
 
   const telefono1 = form.value.referencias.telefono1;
   if (telefono1 && !/^\d{10}$/.test(telefono1)) {
-    alert('El teléfono de referencia 1 debe contener exactamente 10 dígitos');
+    notificar('warning', 'Teléfono de referencia inválido', 'El teléfono de referencia 1 debe contener exactamente 10 dígitos');
     return false;
   }
 
   const telefono2 = form.value.referencias.telefono2;
   if (telefono2 && !/^\d{10}$/.test(telefono2)) {
-    alert('El teléfono de referencia 2 debe contener exactamente 10 dígitos');
+    notificar('warning', 'Teléfono de referencia inválido', 'El teléfono de referencia 2 debe contener exactamente 10 dígitos');
     return false;
   }
 
@@ -621,7 +625,7 @@ function manejarSubmit() {
 
   // Validar contraseñas
   if (form.value.contrasena !== form.value.confirmarContrasena) {
-    alert("Las contraseñas no coinciden");
+    notificar('warning', 'Validación', 'Las contraseñas no coinciden');
     return;
   }
 
@@ -629,7 +633,7 @@ function manejarSubmit() {
   if (!form.value.nombre1 || !form.value.apellido1 || !form.value.tipoDocumento ||
     !form.value.numeroDocumento || !form.value.correo || !form.value.telefono ||
     !form.value.ciudad || !form.value.direccion || !form.value.contrasena) {
-    alert("Por favor complete todos los campos obligatorios");
+    notificar('warning', 'Campos incompletos', 'Por favor completa todos los campos obligatorios.');
     return;
   }
 

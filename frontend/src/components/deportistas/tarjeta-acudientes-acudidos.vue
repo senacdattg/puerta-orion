@@ -26,6 +26,7 @@
 
 <script setup>
 import { defineProps, ref, computed } from "vue";
+import Swal from "sweetalert2";
 
 const props = defineProps({
   rol: {
@@ -65,10 +66,18 @@ const personas = ref(
 
 // Métodos
 function verPersona(persona) {
-  alert(`Mostrando información de: ${persona.nombre}`);
+  Swal.fire({
+    icon: "info",
+    title: persona.nombre,
+    text: "Información simulada del registro.",
+  });
 }
 
 function agregar() {
-  alert("Agregar nuevo registro");
+  Swal.fire({
+    icon: "info",
+    title: "Función en desarrollo",
+    text: "Aquí podrás agregar un nuevo registro.",
+  });
 }
 </script>

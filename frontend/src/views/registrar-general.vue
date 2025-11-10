@@ -1,17 +1,31 @@
 <script setup>
 import FormularioGeneral from '../components/formularios/formulario-general.vue';
+import Swal from 'sweetalert2';
 
 // Función para manejar el registro
-function manejarRegistro(datos) {
+async function manejarRegistro(datos) {
   console.log("Datos del nuevo deportista:", datos);
   // Aquí iría la lógica para enviar a la API
-  alert("Deportista registrado exitosamente!");
+  await Swal.fire({
+    icon: 'success',
+    title: 'Registro exitoso',
+    text: 'El deportista se registró correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
 }
 
 // Función para manejar la cancelación
-function manejarCancelacion() {
-  if (confirm("¿Está seguro de que desea cancelar el registro?")) {
-    // Aquí podrías redirigir o limpiar el formulario
+async function manejarCancelacion() {
+  const resultado = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar registro?',
+    text: 'Los datos ingresados se perderán.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Continuar llenando'
+  });
+  if (resultado.isConfirmed) {
     console.log("Registro cancelado");
   }
 }

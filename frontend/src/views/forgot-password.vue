@@ -21,24 +21,6 @@
           <p class="login-subtitle-volleyball">Te enviaremos un enlace para restablecer tu contraseña</p>
         </div>
 
-        <!-- Mensajes de error y éxito -->
-        <Transition name="bounce">
-          <div v-if="mensajeError" class="alert-volleyball alert-error-volleyball">
-            <svg class="alert-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ mensajeError }}</span>
-          </div>
-        </Transition>
-        <Transition name="bounce">
-          <div v-if="mensajeExito" class="alert-volleyball alert-success-volleyball">
-            <svg class="alert-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ mensajeExito }}</span>
-          </div>
-        </Transition>
-
         <form class="login-form-volleyball" @submit.prevent="handleForgotPassword" v-if="!enviado">
           <!-- Campo de email -->
           <div class="input-group-volleyball">
@@ -56,7 +38,6 @@
               placeholder="Ingresa tu correo electrónico"
               required
               :disabled="cargando"
-              @input="limpiarMensajes"
               @focus="handleInputFocus"
             />
           </div>
@@ -122,6 +103,7 @@ import { ref } from "vue"
 import { useRouter } from "vue-router"
 import authService from "@/services/authService"
 import "@/assets/css/login.css"
+import Swal from "sweetalert2"
 
 const router = useRouter()
 
@@ -129,15 +111,7 @@ const router = useRouter()
 const email = ref("")
 const cargando = ref(false)
 const enviado = ref(false)
-const mensajeError = ref("")
-const mensajeExito = ref("")
 const countdown = ref(5)
-
-// Función para limpiar mensajes
-function limpiarMensajes() {
-  mensajeError.value = ""
-  mensajeExito.value = ""
-}
 
 // Función para manejar el foco de los inputs
 function handleInputFocus(event) {
@@ -159,33 +133,52 @@ function startCountdown() {
 // Función para manejar la solicitud de recuperación
 async function handleForgotPassword() {
   if (!email.value) {
-    mensajeError.value = "Por favor ingresa tu correo electrónico"
+    Swal.fire({
+      icon: "warning",
+      title: "Correo requerido",
+      text: "Por favor ingresa tu correo electrónico para continuar."
+    })
     return
   }
 
   // Validar formato de email básico
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email.value)) {
-    mensajeError.value = "Por favor ingresa un correo electrónico válido"
+    Swal.fire({
+      icon: "warning",
+      title: "Correo no válido",
+      text: "Revisa el formato del correo electrónico e inténtalo nuevamente."
+    })
     return
   }
 
   cargando.value = true
-  mensajeError.value = ""
-  mensajeExito.value = ""
 
   try {
     const resultado = await authService.forgotPassword(email.value)
 
     if (resultado.success) {
-      mensajeExito.value = resultado.message || "Se ha enviado un correo con las instrucciones para restablecer tu contraseña."
+      await Swal.fire({
+        icon: "success",
+        title: "¡Correo enviado!",
+        text: resultado.message || "Te enviamos un enlace para restablecer tu contraseña.",
+        confirmButtonText: "Entendido"
+      })
       enviado.value = true
       startCountdown()
     } else {
-      mensajeError.value = resultado.error || "Error al enviar el correo de recuperación"
+      Swal.fire({
+        icon: "error",
+        title: "No pudimos enviar el correo",
+        text: resultado.error || "Inténtalo de nuevo en unos minutos."
+      })
     }
   } catch (error) {
-    mensajeError.value = error.message || "Error de conexión"
+    Swal.fire({
+      icon: "error",
+      title: "Error de conexión",
+      text: error.message || "No logramos comunicarnos con el servidor."
+    })
   } finally {
     cargando.value = false
   }

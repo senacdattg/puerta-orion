@@ -95,6 +95,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { API_CONFIG } from '@/config/environment'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   recargar: { type: Boolean, default: false }
@@ -204,12 +205,16 @@ function editarDato(dato) {
 
 async function confirmarEliminar(dato) {
   const nombre = obtenerNombre(dato)
-  const confirmacion = confirm(
-    `¿Estás seguro de que deseas eliminar "${nombre}"?\n\n` +
-    `Esta acción ${tieneEstado.value ? 'desactivará' : 'eliminará'} el registro.`
-  )
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: `¿Eliminar "${nombre}"?`,
+    text: `Esta acción ${tieneEstado.value ? 'desactivará' : 'eliminará'} el registro.`,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  })
 
-  if (!confirmacion) return
+  if (!confirmacion.isConfirmed) return
 
   await eliminarDato(dato)
 }
@@ -218,7 +223,10 @@ async function eliminarDato(dato) {
   const id = obtenerId(dato)
   
   if (!id) {
-    alert('❌ Error: No se pudo obtener el ID del registro')
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudo obtener el ID del registro'
+    })
     return
   }
   
@@ -247,14 +255,24 @@ async function eliminarDato(dato) {
     const result = await response.json()
     
     if (result.success) {
-      alert('✅ Registro eliminado exitosamente')
+      await Swal.fire({
+        icon: 'success',
+        title: 'Registro eliminado',
+        text: 'El registro se eliminó correctamente.',
+        timer: 1500,
+        showConfirmButton: false
+      })
       emit('dato-eliminado')
       await cargarDatos()
     } else {
       throw new Error(result.error || 'Error al eliminar')
     }
   } catch (err) {
-    alert(`❌ Error: ${err.message}`)
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudo eliminar',
+      text: err.message || 'Ocurrió un error al eliminar el registro.'
+    })
     console.error('Error eliminando dato:', err)
   }
 }

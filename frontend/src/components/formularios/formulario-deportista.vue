@@ -307,15 +307,6 @@
       </div>
     </section>
   </form>
-
-  <!-- Modal de éxito/error -->
-  <div v-if="showModal" class="modal-overlay" @click="cerrarModal">
-    <div class="modal-content" :class="modalTitle === 'Éxito' ? 'success-modal' : 'error-modal'" @click.stop>
-      <h3>{{ modalTitle }}</h3>
-      <p>{{ modalMessage }}</p>
-      <button @click="cerrarModal">{{ modalTitle === 'Éxito' ? 'Continuar' : 'Cerrar' }}</button>
-    </div>
-  </div>
 </template>
 
 <script setup>
@@ -324,6 +315,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import catalogosService from '@/services/catalogosService';
 import deportistasService from '@/services/deportistasService';
+import Swal from 'sweetalert2';
 
 const route = useRoute();
 const router = useRouter();
@@ -344,9 +336,6 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'cancel']);
 
 const isSubmitting = ref(false);
-const showModal = ref(false);
-const modalTitle = ref('');
-const modalMessage = ref('');
 // Variables de acudiente eliminadas - ya no se usa en el registro
 
 const catalogos = ref({
@@ -519,15 +508,14 @@ function seleccionarEnfermedades(tiene) {
 // Funciones relacionadas con acudiente eliminadas - ya no se usan en el registro
 
 function mostrarModal(titulo, mensaje) {
-  modalTitle.value = titulo;
-  modalMessage.value = mensaje;
-  showModal.value = true;
-}
-
-function cerrarModal() {
-  console.log('🔒 Cerrando modal');
-  showModal.value = false;
-  // NO resetear el formulario aquí
+  const icon = titulo === 'Éxito' ? 'success' : titulo === 'Advertencia' ? 'warning' : 'error';
+  const html = (mensaje || '').replace(/\n/g, '<br>');
+  return Swal.fire({
+    icon,
+    title: titulo,
+    html,
+    confirmButtonText: titulo === 'Éxito' ? 'Continuar' : 'Cerrar'
+  });
 }
 
 async function manejarSubmit(event) {
@@ -658,7 +646,7 @@ async function manejarSubmit(event) {
       const result = await deportistasService.actualizarDeportista(idDeportista, datosEnvio);
 
       if (result.success) {
-        mostrarModal('Éxito', 'Deportista actualizado exitosamente.');
+        await mostrarModal('Éxito', 'Deportista actualizado exitosamente.');
         emit('submit', result);
       } else {
         const mensajeError = result.message || 'Error al actualizar deportista';
@@ -720,12 +708,13 @@ async function manejarSubmit(event) {
       console.log('Respuesta del servidor:', response.status, result);
 
       if (response.ok && result.status === 'success') {
-        mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
+        if (props.modo !== 'registrar') {
+          await mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
+        }
         emit('submit', result);
 
         // Limpiar formulario después de 3 segundos
         setTimeout(() => {
-          showModal.value = false;
           Object.keys(form.value).forEach(key => {
             if (key === 'diagnostico') {
               form.value[key] = [];
@@ -764,7 +753,7 @@ async function manejarSubmit(event) {
     console.error('Stack:', error.stack);
     const mensajeError = error.message || 'Error al procesar la solicitud. Por favor, intente de nuevo.';
     console.error('Mostrando modal con error:', mensajeError);
-    mostrarModal('Error', mensajeError);
+      mostrarModal('Error', mensajeError);
     // NO redirigir ni resetear el formulario aquí - solo mostrar el error
   } finally {
     isSubmitting.value = false;

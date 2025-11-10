@@ -111,6 +111,7 @@
 import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import Swal from 'sweetalert2'
 
 // Definir nombre del componente para evitar error del linter
 defineOptions({
@@ -212,10 +213,24 @@ function handleMenuLinkClick() {
 }
 
 async function handleLogout() {
-  const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
-  if (confirmar) {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cerrar sesión?',
+    text: 'Se finalizará tu sesión actual.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, salir',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (result.isConfirmed) {
     closeMenu()
     await authStore.logout()
+    await Swal.fire({
+      icon: 'success',
+      title: 'Sesión cerrada',
+      timer: 1200,
+      showConfirmButton: false
+    })
     router.replace('/login')
   }
 }
@@ -343,10 +358,23 @@ function editarPerfil() {
 
 async function cerrarSesion() {
   showProfileMenu.value = false
-  const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cerrar sesión?',
+    text: 'Se finalizará tu sesión actual.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, salir',
+    cancelButtonText: 'Cancelar'
+  })
 
-  if (confirmar) {
+  if (result.isConfirmed) {
     await authStore.logout()
+    await Swal.fire({
+      icon: 'success',
+      title: 'Sesión cerrada',
+      timer: 1200,
+      showConfirmButton: false
+    })
     router.replace('/login')
   }
 }

@@ -517,6 +517,7 @@ import deportistasService from '@/services/deportistasService';
 import personasService from '@/services/personasService';
 import { getApiUrl } from '@/config/environment';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
 
 defineOptions({
   name: 'PerfilDeportistaVista'
@@ -868,7 +869,11 @@ async function guardarCambios() {
   }
 
   if (!idPersona.value || !idDeportista.value) {
-    alert('No se encontraron identificadores para actualizar el deportista.');
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se puede actualizar',
+      text: 'No encontramos los identificadores del deportista.'
+    });
     return;
   }
 
@@ -883,17 +888,29 @@ async function guardarCambios() {
   const faltantes = camposObligatorios.filter(({ campo }) => !limpiarTexto(formData.value[campo]));
   if (faltantes.length > 0) {
     const lista = faltantes.map(item => item.etiqueta).join(', ');
-    alert(`Por favor completa los siguientes campos obligatorios: ${lista}.`);
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Campos obligatorios',
+      text: `Completa: ${lista}.`
+    });
     return;
   }
 
   if (formData.value.recomendacion_medica) {
     if (!formData.value.id_tipo_enfermedad) {
-      alert('Selecciona un tipo de enfermedad para registrar la recomendación médica.');
+      await Swal.fire({
+        icon: 'info',
+        title: 'Dato requerido',
+        text: 'Selecciona un tipo de enfermedad para la recomendación médica.'
+      });
       return;
     }
     if (!formData.value.diagnosticos || formData.value.diagnosticos.length === 0) {
-      alert('Selecciona al menos un diagnóstico asociado a la recomendación médica.');
+      await Swal.fire({
+        icon: 'info',
+        title: 'Dato requerido',
+        text: 'Selecciona al menos un diagnóstico asociado.'
+      });
       return;
     }
   }
@@ -935,11 +952,21 @@ async function guardarCambios() {
 
     inicializarFormulario();
 
-    alert('✅ Información del deportista actualizada correctamente');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Cambios guardados',
+      text: 'Información del deportista actualizada correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    });
     emit('guardar', respuestaActualizacion);
   } catch (error) {
     console.error('Error al guardar cambios del deportista:', error);
-    alert(`Error al guardar los cambios: ${error.message || 'Error desconocido'}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al guardar',
+      text: error.message || 'No fue posible guardar los cambios.'
+    });
   } finally {
     guardando.value = false;
   }

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import authService from '@/services/authService';
 import { API_CONFIG } from '@/config/environment';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -45,7 +46,11 @@ onMounted(async () => {
     await cargarParentescos();
   } catch (error) {
     console.error('Error al cargar datos del usuario:', error);
-    alert('Error al cargar los datos del usuario');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No pudimos cargar tus datos. Intenta nuevamente.'
+    });
   }
 });
 
@@ -157,13 +162,21 @@ async function buscarDeportistaPorCedula() {
 async function completarRegistroAcudiente() {
   // Validar que se haya encontrado un deportista
   if (!deportistaEncontrado.value) {
-    alert('Debe buscar y seleccionar un deportista primero');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Falta seleccionar deportista',
+      text: 'Busca y selecciona un deportista antes de continuar.'
+    });
     return;
   }
 
   // Validar que se haya seleccionado un parentesco
   if (!idParentesco.value) {
-    alert('Debe seleccionar el parentesco con el deportista');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Parentesco requerido',
+      text: 'Selecciona el parentesco con el deportista.'
+    });
     return;
   }
 
@@ -175,7 +188,11 @@ async function completarRegistroAcudiente() {
   // Verificar si el deportista encontrado tiene el mismo id_persona que el usuario actual
   if (deportistaEncontrado.value.id_persona === idPersonaUsuario ||
       deportistaEncontrado.value.persona?.id_persona === idPersonaUsuario) {
-    alert('No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.');
+    await Swal.fire({
+      icon: 'info',
+      title: 'Acción no permitida',
+      text: 'No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.'
+    });
     return;
   }
 
@@ -193,7 +210,12 @@ async function completarRegistroAcudiente() {
     const resultado = await authService.completarPerfilAcudiente(datosAcudiente);
 
     if (resultado.success) {
-      alert(resultado.message || "¡Perfil de acudiente completado exitosamente!");
+      await Swal.fire({
+        icon: 'success',
+        title: 'Perfil completado',
+        text: resultado.message || '¡Perfil de acudiente completado exitosamente!',
+        confirmButtonText: 'Continuar'
+      });
 
       // Recargar el perfil del usuario para actualizar los roles en el store
       try {
@@ -205,43 +227,45 @@ async function completarRegistroAcudiente() {
           await authStore.setActiveRole('Acudiente');
           console.log('✅ Rol activo establecido como Acudiente');
 
-          // Verificar que el activeRole se estableció correctamente antes de redirigir
-          if (authStore.activeRole === 'Acudiente') {
-            // Redirigir al dashboard del acudiente
-            router.push('/acudiente/dashboard');
-          } else {
-            // Si no se estableció, esperar un momento y redirigir de todas formas
-            setTimeout(() => {
-              router.push('/acudiente/dashboard');
-            }, 500);
-          }
+          router.push('/acudiente/dashboard');
         } else {
-          // Si no tiene el rol de Acudiente aún, redirigir de todas formas
-          setTimeout(() => {
-            router.push('/acudiente/dashboard');
-          }, 500);
+          router.push('/acudiente/dashboard');
         }
       } catch (error) {
         console.warn('No se pudo recargar el perfil en el store, pero el registro fue exitoso:', error);
         // Redirigir de todas formas en caso de error
-        setTimeout(() => {
-          router.push('/acudiente/dashboard');
-        }, 500);
+        router.push('/acudiente/dashboard');
       }
     } else {
-      alert(`Error: ${resultado.error}`);
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo completar',
+        text: resultado.error || 'Ocurrió un error al completar el registro.'
+      });
     }
   } catch (error) {
     console.error("Error al completar perfil de acudiente:", error);
-    alert("Error al completar el perfil. Por favor intenta nuevamente.");
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No pudimos completar el perfil. Intenta nuevamente.'
+    });
   } finally {
     cargando.value = false;
   }
 }
 
 // Función para manejar la cancelación
-function manejarCancelacion() {
-  if (confirm("¿Está seguro de que desea cancelar el registro? Se perderá toda la información ingresada.")) {
+async function manejarCancelacion() {
+  const resultado = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar registro?',
+    text: 'Se perderá toda la información ingresada.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Continuar'
+  });
+  if (resultado.isConfirmed) {
     // Determinar la ruta de redirección según el rol del usuario
     const userRoles = authStore.userRoles || [];
     const roleNames = userRoles.map(role => typeof role === 'string' ? role : role.nombre_rol);

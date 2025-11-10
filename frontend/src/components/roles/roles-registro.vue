@@ -35,6 +35,7 @@ import { useRouter, useRoute } from "vue-router"
 import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
 import usuariosService from "@/services/usuariosService"
+import Swal from "sweetalert2"
 
 const router = useRouter()
 const route = useRoute()
@@ -95,7 +96,11 @@ function tieneRol(rol) {
 // Función para seleccionar un rol
 async function seleccionarRol(rol) {
   if (!tieneRol(rol)) {
-    alert('No tienes acceso a este rol')
+    await Swal.fire({
+      icon: 'info',
+      title: 'Rol no disponible',
+      text: 'No tienes acceso a este rol con tu cuenta.'
+    })
     return
   }
 
@@ -105,6 +110,15 @@ async function seleccionarRol(rol) {
 
     // Guardar rol activo en el store (esto también cargará los permisos del rol)
     await authStore.setActiveRole(nombreRol)
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Rol seleccionado',
+      text: `Ingresarás con el rol ${nombreRol}.`,
+      timer: 1200,
+      timerProgressBar: true,
+      showConfirmButton: false
+    })
 
     // Redirigir según el rol seleccionado
     redirigirSegunRol(nombreRol)
@@ -162,10 +176,20 @@ async function cargarRoles() {
       todosRoles.value = response.data
     } else {
       error.value = 'No se pudieron cargar los roles'
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al cargar roles',
+        text: response.error || 'Intenta recargar la página.'
+      })
     }
   } catch (err) {
     console.error('Error cargando roles:', err)
     error.value = 'Error al cargar roles'
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No pudimos obtener tus roles. Revisa tu conexión e intenta de nuevo.'
+    })
   } finally {
     loading.value = false
   }
@@ -175,11 +199,20 @@ function irFormulario(ruta) {
   router.push(ruta)
 }
 
-function accionBoton() {
+async function accionBoton() {
   if (esSeleccionRol.value) {
-    // Cerrar sesión
-    authStore.logout()
-    router.replace("/login")
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar sesión?',
+      text: 'Perderás el progreso actual y volverás a la pantalla de login.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar sesión',
+      cancelButtonText: 'Cancelar'
+    })
+    if (confirm.isConfirmed) {
+      await authStore.logout()
+      router.replace("/login")
+    }
   } else {
     router.replace("/login")
   }

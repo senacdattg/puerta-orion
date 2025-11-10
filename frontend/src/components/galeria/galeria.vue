@@ -164,6 +164,7 @@
 <script>
 import { useAuthStore } from '@/stores/auth'
 import galeriaService from '@/services/galeriaService'
+import Swal from 'sweetalert2'
 
 const LOCALE_COL = 'es-CO'
 const MAX_TITULO = 120
@@ -392,19 +393,27 @@ export default {
       this.cambiandoImagen = false;
       this.mostrarFormulario = true;
     },
-    manejarSeleccionArchivo(event) {
+    async manejarSeleccionArchivo(event) {
       const file = event.target.files[0];
       if (file) {
         // Validar tipo de archivo
         if (!file.type.startsWith('image/')) {
-          alert('Por favor selecciona un archivo de imagen válido');
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Archivo inválido',
+            text: 'Selecciona una imagen en formato válido.'
+          });
           event.target.value = '';
           return;
         }
 
         // Validar tamaño (16MB máximo)
         if (file.size > 16 * 1024 * 1024) {
-          alert('El archivo es demasiado grande. Tamaño máximo: 16MB');
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Archivo demasiado grande',
+            text: 'El tamaño máximo permitido es 16MB.'
+          });
           event.target.value = '';
           return;
         }
@@ -441,7 +450,11 @@ export default {
           errores.push('Debes seleccionar una imagen')
         }
         if (errores.length > 0) {
-          alert('Corrige los siguientes errores:\n' + errores.join('\n'))
+          await Swal.fire({
+            icon: 'error',
+            title: 'Corrige los errores',
+            html: errores.join('<br>')
+          });
           return
         }
 
@@ -494,7 +507,11 @@ export default {
         this.mostrarFormulario = false;
       } catch (error) {
         console.error('Error guardando evento:', error);
-        alert('Error al guardar el evento: ' + error.message);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al guardar',
+          text: error.message || 'No se pudo guardar el evento.'
+        });
       }
     },
 
@@ -522,7 +539,11 @@ export default {
         this.limpiarFormulario();
       } catch (error) {
         console.error('Error eliminando evento:', error);
-        alert('Error al eliminar el evento: ' + error.message);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: error.message || 'No se pudo eliminar el evento.'
+        });
       }
     },
 

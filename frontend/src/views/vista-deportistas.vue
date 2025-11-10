@@ -9,6 +9,7 @@ import Pie from '../components/layout/pie.vue';
 import { ref, onMounted } from 'vue';
 import deportistasService from '@/services/deportistasService';
 import usuariosService from '@/services/usuariosService';
+import Swal from 'sweetalert2';
 
 // Estado de deportistas cargados desde el backend
 const deportistas = ref([]);
@@ -121,15 +122,19 @@ async function verDeportista(deportista) {
   mostrarFormulario.value = true;
 }
 
-function eliminarDeportista(deportista) {
+function eliminarDeportista() {
   // Función deshabilitada - solo se puede ver la información
   console.log('Eliminación deshabilitada - solo modo visualización');
 }
 
-function agregarDeportista() {
+async function agregarDeportista() {
   // Función deshabilitada - solo modo visualización
   console.log('Agregar deportista deshabilitado - solo modo visualización');
-  alert('La funcionalidad de agregar deportistas está deshabilitada. Solo se permite visualizar información.');
+  await Swal.fire({
+    icon: 'info',
+    title: 'Funcionalidad no disponible',
+    text: 'La creación de deportistas está deshabilitada. Solo se permite visualizar información.'
+  });
 }
 
 // Funciones para manejar el formulario
@@ -138,7 +143,7 @@ function cerrarFormulario() {
   deportistaEditando.value = null;
 }
 
-async function manejarSubmitFormulario(resultado) {
+async function manejarSubmitFormulario() {
   try {
     if (modoFormulario.value === 'actualizar') {
       // Recargar la lista de deportistas
@@ -160,7 +165,11 @@ async function manejarSubmitFormulario(resultado) {
     }
   } catch (err) {
     console.error('Error al guardar deportista:', err);
-    alert('Error al guardar deportista. Por favor, intenta de nuevo.');
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudo guardar',
+      text: 'Error al guardar deportista. Intenta nuevamente.'
+    });
   }
 }
 
@@ -176,23 +185,38 @@ function cambiarAModoVer() {
 async function cambiarEstadoDeportista(deportista) {
   // Verificar que el deportista tenga un usuario asociado
   if (!deportista.id_usuario) {
-    alert('⚠️ Este deportista no tiene un usuario asociado. No se puede cambiar el estado.');
+    await Swal.fire({
+      icon: 'info',
+      title: 'Estado no disponible',
+      text: 'Este deportista no tiene un usuario asociado. No se puede cambiar el estado.'
+    });
     return;
   }
 
   // Confirmar el cambio
   const nuevoEstado = deportista.estado === 'activo' ? false : true;
   const accion = nuevoEstado ? 'activar' : 'desactivar';
-  const confirmar = confirm(`¿Estás seguro de que deseas ${accion} a ${deportista.nombre}?`);
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: `¿Deseas ${accion} a ${deportista.nombre}?`,
+    text: 'Podrás revertirlo en cualquier momento.',
+    showCancelButton: true,
+    confirmButtonText: `Sí, ${accion}`,
+    cancelButtonText: 'Cancelar'
+  });
 
-  if (!confirmar) {
+  if (!confirmacion.isConfirmed) {
     return;
   }
 
   // Encontrar el índice del deportista en la lista
   const index = deportistas.value.findIndex(d => d.id === deportista.id);
   if (index === -1) {
-    alert('❌ Error: No se encontró el deportista en la lista');
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se encontró el deportista',
+      text: 'Actualiza la tabla e inténtalo nuevamente.'
+    });
     return;
   }
 
@@ -208,7 +232,13 @@ async function cambiarEstadoDeportista(deportista) {
 
     if (response.success || response.status === 'success') {
       // Mostrar mensaje de éxito
-      alert(`✅ Usuario ${accion}ado exitosamente`);
+      await Swal.fire({
+        icon: 'success',
+        title: `Usuario ${accion}ado`,
+        text: 'El estado se actualizó correctamente.',
+        timer: 1500,
+        showConfirmButton: false
+      });
 
       // Recargar la lista para asegurar que los datos estén sincronizados
       await cargarDeportistas();
@@ -223,7 +253,11 @@ async function cambiarEstadoDeportista(deportista) {
       deportistas.value[index].estado = estadoAnterior;
     }
     console.error('Error al cambiar estado:', error);
-    alert(`❌ Error al ${accion} el usuario: ${error.message || 'Error desconocido'}`);
+    await Swal.fire({
+      icon: 'error',
+      title: `No se pudo ${accion}`,
+      text: error.message || 'Error desconocido.'
+    });
   }
 }
 

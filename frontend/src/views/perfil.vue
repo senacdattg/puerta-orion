@@ -410,6 +410,7 @@ import { API_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import SelectorRoles from '@/components/layout/selector-roles.vue'
+import Swal from 'sweetalert2'
 
 defineOptions({
   name: 'PerfilPage'
@@ -802,7 +803,11 @@ async function buscarAcudientes() {
         acudientesEncontrados.value = [result.data]
       } else {
         acudientesEncontrados.value = []
-        alert(result.message || 'No se encontró ningún acudiente')
+        await Swal.fire({
+          icon: 'info',
+          title: 'Sin coincidencias',
+          text: result.message || 'No encontramos un acudiente con ese documento.'
+        })
       }
     } else {
       acudientesEncontrados.value = []
@@ -810,6 +815,11 @@ async function buscarAcudientes() {
   } catch (error) {
     console.error('Error al buscar acudientes:', error)
     acudientesEncontrados.value = []
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de búsqueda',
+      text: 'Ocurrió un problema al buscar acudientes. Intenta nuevamente.'
+    })
   }
 }
 
@@ -819,12 +829,20 @@ function seleccionarAcudiente(acudiente) {
 
 async function asociarAcudiente() {
   if (!acudienteSeleccionado.value || !idParentesco.value) {
-    alert('Por favor, selecciona un acudiente y un parentesco.')
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Información incompleta',
+      text: 'Selecciona un acudiente y un parentesco para continuar.'
+    })
     return
   }
 
   if (!detalle.value?.deportista?.id_deportista) {
-    alert('No se encontró información del deportista.')
+    await Swal.fire({
+      icon: 'error',
+      title: 'Perfil incompleto',
+      text: 'No encontramos la información del deportista. Actualiza la página y vuelve a intentarlo.'
+    })
     return
   }
 
@@ -848,16 +866,28 @@ async function asociarAcudiente() {
     const result = await response.json()
 
     if (response.ok && result.success) {
-      alert('✅ Acudiente asociado exitosamente')
+      await Swal.fire({
+        icon: 'success',
+        title: 'Acudiente asociado',
+        text: 'El acudiente fue asociado correctamente al deportista.'
+      })
       cerrarModalAsignarAcudiente()
       await cargarAcudientesDeportista()
       await cargarDetalle()
     } else {
-      alert(`❌ Error al asociar acudiente: ${result.error || 'Error desconocido'}`)
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo asociar',
+        text: result.error || 'Ocurrió un error al asociar el acudiente.'
+      })
     }
   } catch (error) {
     console.error('Error al asociar acudiente:', error)
-    alert(`Error al asociar acudiente: ${error.message || 'Error desconocido'}`)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error inesperado',
+      text: error.message || 'No logramos completar la asociación.'
+    })
   } finally {
     asociando.value = false
   }

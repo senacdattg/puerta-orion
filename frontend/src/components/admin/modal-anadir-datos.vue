@@ -50,8 +50,8 @@
           <section class="seccion-formulario">
             <h3>Crear {{ seleccionado?.nombre }}</h3>
 
-            <component 
-              :is="componenteFormulario" 
+            <component
+              :is="componenteFormulario"
               v-model="form"
             />
 
@@ -80,6 +80,7 @@ import Ciudad from '../datos-dinamicos/ciudad.vue'
 import Eps from '../datos-dinamicos/eps.vue'
 import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
 import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false },
@@ -99,8 +100,8 @@ const items = ref([
 
 const paso = ref(1)
 const seleccionado = ref(null)
-const form = ref({ 
-  nombre: '', 
+const form = ref({
+  nombre: '',
   codigo: '',
   descripcion: '',
   estado: true
@@ -122,7 +123,7 @@ const componenteFormulario = computed(() => {
   return componentes[seleccionado.value.id] || null
 })
 
-const REGEX_CODIGO_EPS = /^[A-Z0-9\-]{2,20}$/
+const REGEX_CODIGO_EPS = /^[A-Z0-9-]{2,20}$/
 const NAME_MIN_LENGTH = 2
 
 function validarFormulario() {
@@ -164,8 +165,8 @@ function cerrar() {
   // Limpiar selección y resetear al cerrar
   seleccionado.value = null
   paso.value = 1
-  form.value = { 
-    nombre: '', 
+  form.value = {
+    nombre: '',
     codigo: '',
     descripcion: '',
     estado: true
@@ -200,8 +201,8 @@ watch(() => props.mostrar, (nuevoValor) => {
       seleccionado.value = null
       paso.value = 1
     }
-    form.value = { 
-      nombre: '', 
+    form.value = {
+      nombre: '',
       codigo: '',
       descripcion: '',
       estado: true
@@ -222,22 +223,32 @@ function seleccionar(item){
 
 function volverPaso1(){
   paso.value = 1
-  form.value = { 
-    nombre: '', 
+  form.value = {
+    nombre: '',
     codigo: '',
     descripcion: '',
     estado: true
   }
 }
 
-function enviar(){
+async function enviar(){
   const errores = validarFormulario()
   if (errores.length > 0) {
-    alert('Corrige los siguientes errores:\n' + errores.join('\n'))
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: errores.join('<br>')
+    })
     return
   }
 
   emit('guardar-dato', { entidad: seleccionado.value.id, ...form.value })
+  await Swal.fire({
+    icon: 'success',
+    title: 'Dato creado',
+    timer: 1500,
+    showConfirmButton: false
+  })
   volverPaso1()
   cerrar()
 }

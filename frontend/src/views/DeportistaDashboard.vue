@@ -42,7 +42,7 @@
                   <h3>Mi Perfil</h3>
                   <p>Gestiona tu información personal y deportiva</p>
                 </div>
-              </div>
+          </div>
 
               <div class="dashboard-card" @click="navigateTo('/mensualidades')">
                 <div class="card-icon">

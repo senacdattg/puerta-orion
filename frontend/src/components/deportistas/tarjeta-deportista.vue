@@ -2,7 +2,7 @@
   <div class="tarjeta-deportista" @click="verDetalle">
     <div class="imagen-deportista">
       <img
-        :src="deportista.imagen || '/src/assets/imgs/perfil.png'"
+        :src="avatarDefault"
         :alt="`Perfil de ${deportista.nombre}`"
         @error="imagenPorDefecto"
       />
@@ -34,6 +34,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import avatarDefault from '@/assets/imgs/perfil.png';
 
 const router = useRouter();
 
@@ -79,7 +80,7 @@ function cambiarEstado() {
 }
 
 function imagenPorDefecto(event) {
-  event.target.src = '/src/assets/imgs/perfil.png';
+  event.target.src = avatarDefault;
 }
 
 // Exponer cambiandoEstado para que el padre pueda controlarlo

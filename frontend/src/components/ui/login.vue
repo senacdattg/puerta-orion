@@ -22,24 +22,6 @@
           <p class="login-subtitle-volleyball">Inicia sesión en la cancha</p>
         </div>
 
-        <!-- Mensajes de error y éxito -->
-        <Transition name="bounce">
-          <div v-if="mensajeError" class="alert-volleyball alert-error-volleyball">
-            <svg class="alert-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ mensajeError }}</span>
-          </div>
-        </Transition>
-        <Transition name="bounce">
-          <div v-if="mensajeExito" class="alert-volleyball alert-success-volleyball">
-            <svg class="alert-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ mensajeExito }}</span>
-          </div>
-        </Transition>
-
         <form class="login-form-volleyball" @submit.prevent="handleLogin">
           <!-- Campo de usuario -->
           <div class="input-group-volleyball" :class="{ 'input-active': username }">
@@ -56,7 +38,6 @@
               placeholder="Ingresa tu usuario"
               required
               :disabled="cargando"
-              @input="limpiarMensajes"
               @focus="handleInputFocus('username')"
               @blur="handleInputBlur('username')"
             />
@@ -78,7 +59,6 @@
                 placeholder="Ingresa tu contraseña"
                 required
                 :disabled="cargando"
-                @input="limpiarMensajes"
                 @focus="handleInputFocus('password')"
                 @blur="handleInputBlur('password')"
               />
@@ -156,6 +136,7 @@ import { ref, onMounted, onBeforeUnmount } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import "@/assets/css/login.css"
+import Swal from "sweetalert2"
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -164,15 +145,7 @@ const authStore = useAuthStore()
 const username = ref("")
 const password = ref("")
 const cargando = ref(false)
-const mensajeError = ref("")
-const mensajeExito = ref("")
 const showPassword = ref(false)
-
-// Función para limpiar mensajes
-function limpiarMensajes() {
-  mensajeError.value = ""
-  mensajeExito.value = ""
-}
 
 // Función para manejar el foco de los inputs
 function handleInputFocus(field) {
@@ -186,13 +159,16 @@ function handleInputBlur(field) {
 // Función para manejar el login
 async function handleLogin() {
   if (!username.value || !password.value) {
-    mensajeError.value = "Por favor completa todos los campos"
+    Swal.fire({
+      icon: "warning",
+      title: "Campos incompletos",
+      text: "Por favor completa el usuario y la contraseña.",
+      confirmButtonText: "Entendido"
+    })
     return
   }
 
   cargando.value = true
-  mensajeError.value = ""
-  mensajeExito.value = ""
 
   try {
     const resultado = await authStore.login({
@@ -201,7 +177,6 @@ async function handleLogin() {
     })
 
     if (resultado.success) {
-      mensajeExito.value = "¡Login exitoso! Redirigiendo..."
 
       // Verificar si el usuario tiene múltiples roles
       const userRoles = resultado.user?.roles || []
@@ -229,15 +204,31 @@ async function handleLogin() {
         }
       }
 
-      // Redirigir después de 1 segundo
-      setTimeout(() => {
-        router.push(rutaDestino)
-      }, 1000)
+      await Swal.fire({
+        icon: "success",
+        title: "¡Inicio de sesión exitoso!",
+        text: "Redirigiendo a tu panel...",
+        timer: 1500,
+        timerProgressBar: true,
+        showConfirmButton: false
+      })
+
+      router.push(rutaDestino)
     } else {
-      mensajeError.value = resultado.error || "Error al iniciar sesión"
+      Swal.fire({
+        icon: "error",
+        title: "No pudimos iniciar sesión",
+        text: resultado.error || "Verifica tus credenciales e inténtalo nuevamente.",
+        confirmButtonText: "Intentar de nuevo"
+      })
     }
   } catch (error) {
-    mensajeError.value = error.message || "Error de conexión"
+    Swal.fire({
+      icon: "error",
+      title: "Error de conexión",
+      text: error.message || "No logramos comunicarnos con el servidor.",
+      confirmButtonText: "Reintentar"
+    })
   } finally {
     cargando.value = false
   }

@@ -3,6 +3,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { computed } from 'vue';
 import FormularioDeportista from '../components/formularios/formulario-deportista.vue';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 const route = useRoute();
@@ -35,43 +36,60 @@ async function manejarRegistroDeportista(datos) {
         }
 
         // Mostrar mensaje de éxito
-        let mensaje = '¡Registro completado exitosamente! 🎉 Ahora eres un deportista.'
+        const detalles = datos?.data || {}
+        let mensaje = '¡Registro completado exitosamente! Ahora eres un deportista.'
         if (asignarAcudienteAuto.value) {
           mensaje += ' Has sido asignado a tu acudiente.'
         }
-        alert(mensaje);
+        const extra = []
+        if (detalles.categoria) extra.push(`Categoría: ${detalles.categoria}`)
+        if (detalles.nombre_persona) extra.push(`Nombre: ${detalles.nombre_persona}`)
+        const html = [mensaje, ...extra].join('<br>')
+        await Swal.fire({
+          icon: 'success',
+          title: 'Registro completado',
+          html,
+          confirmButtonText: 'Continuar'
+        });
 
         // Redirigir según el contexto
-        setTimeout(() => {
-          if (asignarAcudienteAuto.value) {
-            console.log('🚀 Redirigiendo a /ver-acudidos');
-            router.push('/ver-acudidos');
-          } else {
-            console.log('🚀 Redirigiendo a /deportista/dashboard con rol Deportista');
-            router.push('/deportista/dashboard');
-          }
-        }, 500);
+        if (asignarAcudienteAuto.value) {
+          console.log('🚀 Redirigiendo a /ver-acudidos');
+          router.push('/ver-acudidos');
+        } else {
+          console.log('🚀 Redirigiendo a /deportista/dashboard con rol Deportista');
+          router.push('/deportista/dashboard');
+        }
       } else {
         console.warn('⚠️ El rol Deportista no está presente, redirigiendo de todas formas');
-        alert('¡Registro completado! Redirigiendo al dashboard...');
-        setTimeout(() => {
-          router.push('/deportista/dashboard');
-        }, 1000);
+        await Swal.fire({
+          icon: 'success',
+          title: 'Registro completado',
+          text: 'Redirigiendo al dashboard...',
+          confirmButtonText: 'Continuar'
+        });
+        router.push('/deportista/dashboard');
       }
     } else {
       console.warn('⚠️ No se pudo actualizar el perfil, pero el registro fue exitoso');
-      alert('¡Registro completado! Redirigiendo al dashboard...');
-      setTimeout(() => {
-        router.push('/deportista/dashboard');
-      }, 1500);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Registro completado',
+        text: 'Redirigiendo al dashboard...',
+        confirmButtonText: 'Continuar'
+      });
+      router.push('/deportista/dashboard');
     }
   } catch (error) {
     console.error('❌ Error al recargar perfil:', error);
     // Redirigir de todas formas después de un delay
-    alert('¡Registro completado! Redirigiendo al dashboard...');
-    setTimeout(() => {
-      router.push('/deportista/dashboard');
-    }, 2000);
+    await Swal.fire({
+      icon: 'success',
+      title: 'Registro completado',
+      text: 'Redirigiendo al dashboard...',
+      confirmButtonText: 'Continuar'
+    });
+    router.push('/deportista/dashboard');
   }
 }
 
@@ -97,9 +115,16 @@ async function asignarDeportistaAAcudiente(idDeportista) {
 }
 
 // Función para manejar la cancelación
-function manejarCancelacion() {
-  if (confirm("¿Está seguro de que desea cancelar el registro?")) {
-    // Si venía desde el panel de gestión de acudidos, volver allí
+async function manejarCancelacion() {
+  const resultado = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar registro?',
+    text: 'Los datos ingresados se perderán.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Continuar llenando'
+  });
+  if (resultado.isConfirmed) {
     if (route.query.asignarAcudiente === 'true') {
       router.push('/ver-acudidos');
     } else {

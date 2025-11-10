@@ -28,6 +28,7 @@
 
 <script setup>
 import FormularioGeneral from '../formularios/formulario-general.vue';
+import Swal from 'sweetalert2';
 
 // Props
 const props = defineProps({
@@ -44,13 +45,21 @@ function cerrarModal() {
   emit('cerrar');
 }
 
-function cancelarRegistro() {
-  if (confirm('¿Estás seguro de que deseas cancelar el registro?')) {
+async function cancelarRegistro() {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar registro?',
+    text: 'Los datos ingresados se perderán.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Seguir registrando'
+  });
+  if (result.isConfirmed) {
     cerrarModal();
   }
 }
 
-function manejarRegistro(datos) {
+async function manejarRegistro(datos) {
   const datosCompletos = {
     ...datos,
     rol: 'usuario',
@@ -60,8 +69,13 @@ function manejarRegistro(datos) {
   // Emitir evento con los datos completos
   emit('usuario-registrado', datosCompletos);
 
-  // Mostrar mensaje de éxito
-  alert('¡Usuario registrado exitosamente!');
+  await Swal.fire({
+    icon: 'success',
+    title: 'Usuario registrado',
+    text: 'El nuevo usuario fue registrado correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
 
   // Cerrar modal y resetear
   cerrarModal();

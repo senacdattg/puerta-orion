@@ -54,10 +54,6 @@
         <TarjetaDeportista v-for="deportista in deportistasFiltrados" :key="deportista.id" :deportista="deportista"
           @editar="editarDeportista" @eliminar="eliminarDeportista" @ver="verDeportista" @cambiar-estado="cambiarEstadoDeportista" />
 
-        <!-- Botón para agregar deportista - Oculto en modo solo visualización -->
-        <!-- <div class="boton-agregar" @click="agregarDeportista">
-          +
-        </div> -->
       </div>
 
       <!-- Mensaje cuando no hay resultados -->
@@ -68,7 +64,6 @@
           <p class="empty-sub">Prueba limpiar los filtros o crea un nuevo deportista.</p>
           <div class="empty-actions">
             <button @click="limpiarFiltros" class="btn btn-primary">Limpiar filtros</button>
-            <button @click="agregarDeportista" class="btn btn-secondary">Nuevo deportista</button>
           </div>
         </div>
       </div>
@@ -168,10 +163,6 @@ function limpiarFiltros() {
   filtroEstado.value = '';
 }
 
-// Función deshabilitada - solo modo visualización
-// function agregarDeportista() {
-//   emit('agregar');
-// }
 
 function verDeportista(deportista) {
   emit('ver', deportista);

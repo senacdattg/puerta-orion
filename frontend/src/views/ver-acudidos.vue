@@ -201,6 +201,7 @@ import deportistasService from '@/services/deportistasService'
 import authService from '@/services/authService'
 import catalogosService from '@/services/catalogosService'
 import PerfilDeportistaVista from '@/components/deportistas/perfil-deportista-vista.vue'
+import Swal from 'sweetalert2'
 
 const authStore = useAuthStore()
 
@@ -292,12 +293,20 @@ const verDetalle = async (acudido) => {
     if (response.success && response.data) {
       deportistaSeleccionadoPerfil.value = response.data
     } else {
-      alert('Error al cargar la información del deportista')
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo cargar el deportista',
+        text: 'Intenta nuevamente más tarde.'
+      })
       mostrarModalPerfil.value = false
     }
   } catch (error) {
     console.error('Error al obtener perfil del deportista:', error)
-    alert('Error al cargar la información del deportista')
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'Error al cargar la información del deportista.'
+    })
     mostrarModalPerfil.value = false
   } finally {
     cargandoPerfil.value = false
@@ -353,7 +362,11 @@ const abrirModalAcudir = async () => {
     console.log('✅ Parentescos cargados:', parentescos.value)
   } catch (error) {
     console.error('❌ Error al cargar parentescos:', error)
-    alert('Error al cargar parentescos. Por favor, intenta de nuevo.')
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudieron cargar los parentescos',
+      text: 'Por favor, intenta de nuevo.'
+    })
   }
 }
 
@@ -395,7 +408,11 @@ const buscarDeportistas = async () => {
     }
   } catch (error) {
     console.error('❌ Error al buscar deportistas:', error)
-    alert('Error al buscar deportistas. Por favor, intenta de nuevo.')
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al buscar deportistas',
+      text: 'Por favor, intenta de nuevo.'
+    })
     deportistasEncontrados.value = []
   } finally {
     buscando.value = false
@@ -409,7 +426,11 @@ const seleccionarDeportista = (deportista) => {
 
 const asociarDeportista = async () => {
   if (!deportistaSeleccionado.value || !idParentesco.value) {
-    alert('Por favor, selecciona un deportista y un parentesco.')
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Datos incompletos',
+      text: 'Selecciona un deportista y un parentesco antes de continuar.'
+    })
     return
   }
 
@@ -420,7 +441,11 @@ const asociarDeportista = async () => {
   // Verificar si el deportista seleccionado tiene el mismo id_persona que el usuario actual
   if (deportistaSeleccionado.value.id_persona === idPersonaUsuario ||
       deportistaSeleccionado.value.persona?.id_persona === idPersonaUsuario) {
-    alert('No puedes acudirte a ti mismo. Un deportista no puede ser su propio acudiente.')
+    await Swal.fire({
+      icon: 'info',
+      title: 'Acción no permitida',
+      text: 'No puedes acudirte a ti mismo.'
+    })
     return
   }
 
@@ -444,18 +469,32 @@ const asociarDeportista = async () => {
     }
 
     if (response.success) {
-      alert('✅ Deportista asociado exitosamente')
+      await Swal.fire({
+        icon: 'success',
+        title: 'Deportista asociado',
+        text: 'La asociación se realizó correctamente.',
+        timer: 1500,
+        showConfirmButton: false
+      })
       cerrarModalAcudir()
       // Recargar la lista de acudidos
       await cargarAcudidos()
       // Recargar el perfil del usuario
       await authStore.loadUserProfile()
     } else {
-      alert(`❌ Error al asociar deportista: ${response.error || 'Error desconocido'}`)
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo asociar',
+        text: response.error || 'Error desconocido.'
+      })
     }
   } catch (error) {
     console.error('❌ Error al asociar deportista:', error)
-    alert(`Error al asociar deportista: ${error.message || 'Error desconocido'}`)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: error.message || 'No pudimos completar la asociación.'
+    })
   } finally {
     asociando.value = false
   }

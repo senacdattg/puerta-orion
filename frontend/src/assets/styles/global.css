@@ -86,6 +86,18 @@ img {
   display: block;
 }
 
+/* SweetAlert always above app modals */
+.swal2-container {
+  z-index: 2147483647 !important;
+}
+
+.modal-overlay,
+.modal-overlay-detalle,
+.modal-overlay-deportistas,
+.perfil-modal-overlay {
+  z-index: 1200 !important;
+}
+
 /* Listas */
 ul, ol {
   margin-bottom: var(--espaciado-md);
@@ -276,3 +288,7 @@ th {
   }
 }
 
+/* Asegura que SweetAlert siempre esté por encima de nuestros modales */
+.swal2-container {
+  z-index: 20000 !important;
+}

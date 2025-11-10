@@ -42,6 +42,7 @@ import Ciudad from '../datos-dinamicos/ciudad.vue'
 import Eps from '../datos-dinamicos/eps.vue'
 import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
 import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false },
@@ -54,7 +55,7 @@ const emit = defineEmits(['cerrar', 'guardado'])
 const guardando = ref(false)
 const formData = ref({})
 
-const REGEX_CODIGO_EPS = /^[A-Z0-9\-]{2,20}$/
+const REGEX_CODIGO_EPS = /^[A-Z0-9-]{2,20}$/
 const NAME_MIN_LENGTH = 2
 
 function validarDatos() {
@@ -167,14 +168,21 @@ async function guardar() {
     const id = obtenerId(props.dato)
     
     if (!id) {
-      alert('❌ Error: No se pudo obtener el ID del registro')
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo obtener el ID del registro'
+      })
       guardando.value = false
       return
     }
     
     const errores = validarDatos()
     if (errores.length > 0) {
-      alert('❌ Corrige los siguientes errores:\n' + errores.join('\n'))
+      await Swal.fire({
+        icon: 'error',
+        title: 'Corrige los errores',
+        html: errores.join('<br>')
+      })
       guardando.value = false
       return
     }
@@ -220,15 +228,28 @@ async function guardar() {
     const result = await response.json()
 
     if (result.success) {
-      alert('✅ Registro actualizado exitosamente')
+      await Swal.fire({
+        icon: 'success',
+        title: 'Registro actualizado',
+        timer: 1500,
+        showConfirmButton: false
+      })
       emit('guardado', result.data)
       cerrar()
     } else {
-      alert(`❌ Error: ${result.error || 'No se pudo actualizar el registro'}`)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar',
+        text: result.error || 'No se pudo actualizar el registro'
+      })
     }
   } catch (error) {
     console.error('Error al guardar:', error)
-    alert(`❌ Error: ${error.message || 'Error de conexión'}`)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al guardar',
+      text: error.message || 'Error de conexión'
+    })
   } finally {
     guardando.value = false
   }

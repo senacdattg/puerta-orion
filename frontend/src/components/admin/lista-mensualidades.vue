@@ -246,12 +246,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import TarjetaMensualidad from './tarjeta-mensualidad.vue';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
+import Swal from 'sweetalert2';
 
 // Props
 const props = defineProps({
@@ -404,7 +405,7 @@ function abrirModalEnModoEdicion(mensualidad) {
   modalDetalleCompletoVisible.value = true;
 }
 
-function guardarCambiosMensualidad(mensualidadActualizada) {
+async function guardarCambiosMensualidad(mensualidadActualizada) {
   console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
   
   const index = props.mensualidades.findIndex(m => m.id === mensualidadActualizada.id);
@@ -412,15 +413,38 @@ function guardarCambiosMensualidad(mensualidadActualizada) {
     Object.assign(props.mensualidades[index], mensualidadActualizada);
   }
   emit('editar', mensualidadActualizada);
-  alert('Cambios guardados exitosamente');
+  const estabaVisible = modalDetalleCompletoVisible.value;
+  if (estabaVisible) {
+    modalDetalleCompletoVisible.value = false;
+    await nextTick();
+  }
+  await Swal.fire({
+    icon: 'success',
+    title: 'Cambios guardados',
+    text: 'La mensualidad se actualizó correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
+  if (estabaVisible) {
+    mensualidadSeleccionada.value = { ...mensualidadActualizada };
+    modalDetalleCompletoVisible.value = true;
+  }
   modalDetalleEnEdicion.value = false;
 }
 
 // función de reporte eliminada
 
-function eliminarMensualidad(mensualidad) {
+async function eliminarMensualidad(mensualidad) {
   if (!mensualidad || !mensualidad.id) return;
-  if (!confirm('¿Deseas eliminar esta mensualidad? Se desactivará en el sistema.')) return;
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Eliminar mensualidad?',
+    text: 'Se desactivará en el sistema.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+  if (!confirmacion.isConfirmed) return;
   emit('eliminar', mensualidad);
 }
 
@@ -434,7 +458,11 @@ function limpiarFiltros() {
 // Funciones del formulario
 async function abrirFormulario() {
   if (!esAdmin.value) {
-    alert('No tienes permiso para crear mensualidades');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No tienes permiso para crear mensualidades.'
+    });
     return;
   }
   limpiarFormulario();
@@ -642,12 +670,15 @@ function validarFormularioMensualidad() {
   };
 }
 
-function guardarMensualidad() {
+async function guardarMensualidad() {
   const { errores, monto, saldo } = validarFormularioMensualidad();
 
   if (errores.length > 0) {
-    const mensaje = errores.join('\n');
-    alert('Corrige los siguientes errores:\n' + mensaje);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: errores.join('<br>')
+    });
     return;
   }
 
