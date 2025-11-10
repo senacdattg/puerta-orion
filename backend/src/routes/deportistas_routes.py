@@ -6,6 +6,9 @@ servicios del dominio de deportistas y catálogos. Cada módulo cumple con un
 propósito único siguiendo SRP, DRY y KISS. 
 """
 
+from typing import Any, Dict, List, Optional, Tuple
+from datetime import date
+from flask import jsonify, Response
 from flask import Blueprint, request, jsonify
 from src.services.deportista_service import DeportistaService
 from src.services.registro_deportista_service import RegistroDeportistaService
@@ -135,35 +138,37 @@ def registrar_deportista():
         return jsonify({'status': 'error', 'message': 'Error interno del servidor', 'status_code': 500}), 500
 
 @deportistas_bp.route('/<int:id_deportista>', methods=['GET'])
-def obtenerDeportistaPorId(id_deportista):
+def obtener_deportista_por_id(id_deportista):
     """
     Obtiene la información completa de un deportista por su ID.
-    
+
     Incluye:
     - Datos personales (nombre, documento, tipo sanguíneo, ciudad, EPS)
     - Información deportiva (deporte, escuela, institución, categoría)
     - Diagnósticos médicos asociados
-    
+
     Args:
         id_deportista: ID del deportista (parámetro en la URL)
-        
+
     Returns:
         JSON con toda la información del deportista o error 404 si no existe
     """
+    # Validar que el ID sea numérico y positivo
+    if not isinstance(id_deportista, int) or id_deportista <= 0:
+        return jsonify({
+            'status': 'error',
+            'message': 'El ID del deportista debe ser un número entero positivo'
+        }), 400
+
     try:
-        # Validar que el ID sea numérico y positivo
-        if not isinstance(id_deportista, int) or id_deportista <= 0:
-            return jsonify({
-                'status': 'error',
-                'message': 'El ID del deportista debe ser un número entero positivo'
-            }), 400
-        
         # Obtener información completa del deportista
         result = RegistroDeportistaService.obtener_informacion_completa_deportista(id_deportista)
-        
+
         return jsonify(result), result.get("status_code", 200)
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener deportista: {str(e)}")
+    except Exception as err:
+        logger.error(f"Error inesperado al obtener deportista: {str(err)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return jsonify({
             'status': 'error',
             'message': 'Error interno del servidor'
@@ -451,106 +456,132 @@ def obtener_acudientes_por_deportista(id_deportista):
             'data': []
         }), 500
 
+DEFAUL_CATEGORY_LABEL: str = 'Sin categoría'
+DEFAULT_PARENTESCO_LABEL: str = 'No especificado'
+
+def _is_valid_acudiente_id(id_acudiente: int) -> bool:
+    """Valida si el id_acudiente es un entero positivo.
+
+    Args:
+        id_acudiente (int): ID a validar.
+
+    Returns:
+        bool: True si es válido, False en caso contrario.
+    """
+    return isinstance(id_acudiente, int) and id_acudiente > 0
+
+def _calculate_age(fecha_nacimiento: Any) -> Optional[int]:
+    """Calcula la edad dado una fecha de nacimiento o año.
+
+    Args:
+        fecha_nacimiento (Any): Fecha de nacimiento (datetime.date o int (año)).
+
+    Returns:
+        Optional[int]: Edad, None si no es posible calcularla.
+    """
+    if not fecha_nacimiento:
+        return None
+    today = date.today()
+    if isinstance(fecha_nacimiento, date):
+        return today.year - fecha_nacimiento.year - (
+            (today.month, today.day) < (fecha_nacimiento.month, fecha_nacimiento.day)
+        )
+    if isinstance(fecha_nacimiento, int):
+        return today.year - fecha_nacimiento
+    return None
+
+def _serialize_deportista(
+    deportista: Any, relacion: Any
+) -> Dict[str, Any]:
+    """Serializa la información de un deportista junto a la relación.
+
+    Args:
+        deportista (Any): Instancia del modelo Deportista.
+        relacion (Any): Instancia de la relación DeportistaAcudiente.
+
+    Returns:
+        Dict[str, Any]: Diccionario serializado.
+    """
+    edad = _calculate_age(deportista.fecha_nacimiento)
+    return {
+        "id": deportista.id_deportista,
+        "nombre_completo": deportista.persona.nombre_completo,
+        "documento": deportista.persona.documento,
+        "correo_electronico": deportista.persona.correo_electronico,
+        "telefono": deportista.persona.telefono,
+        "categoria": deportista.categoria.nombre_categoria if deportista.categoria else DEFAUL_CATEGORY_LABEL,
+        "edad": edad,
+        "es_responsable": getattr(relacion, "es_responsable", False) or False,
+        "parentesco": relacion.parentesco.nombre if getattr(relacion, "parentesco", None) else DEFAULT_PARENTESCO_LABEL,
+    }
+
 @deportistas_bp.route('/acudiente/<int:id_acudiente>', methods=['GET'])
 @token_required()
-def obtener_deportistas_por_acudiente(id_acudiente):
+def obtener_deportistas_por_acudiente(id_acudiente: int) -> Tuple[Response, int]:
     """
-    Obtiene todos los deportistas asociados a un acudiente específico.
-    
+    Endpoint para obtener todos los deportistas asociados a un acudiente específico.
+
     Args:
-        id_acudiente: ID del acudiente
-        
+        id_acudiente (int): ID del acudiente.
+
     Returns:
-        JSON con lista de deportistas asociados al acudiente
+        Tuple[Response, int]: Respuesta HTTP con la información requerida.
     """
+    from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
+    from ..models.deportistas.deportista import Deportista
+
     try:
-        from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
-        from ..models.deportistas.deportista import Deportista
-        from ..models.personas.persona import Persona
-        from ..models.categorias.categoria import Categoria
-        from datetime import date
-        
         logger.info(f"🔍 Buscando deportistas para acudiente ID: {id_acudiente}")
-        
-        # Validar que el ID sea positivo
-        if not isinstance(id_acudiente, int) or id_acudiente <= 0:
+
+        # Validación de ID de acudiente
+        if not _is_valid_acudiente_id(id_acudiente):
             logger.warning(f"⚠️ ID de acudiente inválido: {id_acudiente}")
             return jsonify({
-                'success': False,
-                'message': 'El ID del acudiente debe ser un número entero positivo',
-                'data': []
+                "success": False,
+                "message": "El ID del acudiente debe ser un número entero positivo",
+                "data": []
             }), 400
-        
-        # Obtener todas las relaciones deportista-acudiente para este acudiente
+
         relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=id_acudiente).all()
         logger.info(f"📊 Relaciones encontradas: {len(relaciones)}")
-        
+
         if not relaciones:
             logger.warning(f"⚠️ No se encontraron relaciones para acudiente {id_acudiente}")
             return jsonify({
-                'success': True,
-                'message': 'No se encontraron deportistas asociados a este acudiente',
-                'data': []
+                "success": True,
+                "message": "No se encontraron deportistas asociados a este acudiente",
+                "data": []
             }), 200
-        
-        # Construir lista de deportistas con información completa
-        deportistas_data = []
+
+        deportistas_data: List[Dict[str, Any]] = []
         for relacion in relaciones:
             logger.info(f"🔍 Procesando relación - Deportista ID: {relacion.id_deportista}, Acudiente ID: {relacion.id_acudiente}")
-            
             deportista = Deportista.query.filter_by(id_deportista=relacion.id_deportista).first()
-            
             if not deportista:
                 logger.warning(f"⚠️ Deportista {relacion.id_deportista} no encontrado")
                 continue
-            
-            if not deportista.persona:
+            if not getattr(deportista, "persona", None):
                 logger.warning(f"⚠️ Deportista {relacion.id_deportista} no tiene persona asociada")
                 continue
-            
-            logger.info(f"✅ Deportista encontrado: {deportista.persona.nombre_completo}")
-            
-            # Calcular edad
-            edad = None
-            if deportista.fecha_nacimiento:
-                hoy = date.today()
-                # Manejar tanto fecha completa como año solo
-                if isinstance(deportista.fecha_nacimiento, date):
-                    edad = hoy.year - deportista.fecha_nacimiento.year - ((hoy.month, hoy.day) < (deportista.fecha_nacimiento.month, deportista.fecha_nacimiento.day))
-                elif isinstance(deportista.fecha_nacimiento, int):
-                    # Compatibilidad con años antiguos
-                    edad = hoy.year - deportista.fecha_nacimiento
-            
-            deportista_dict = {
-                'id': deportista.id_deportista,
-                'nombre_completo': deportista.persona.nombre_completo,
-                'documento': deportista.persona.documento,
-                'correo_electronico': deportista.persona.correo_electronico,
-                'telefono': deportista.persona.telefono,
-                'categoria': deportista.categoria.nombre_categoria if deportista.categoria else 'Sin categoría',
-                'edad': edad,
-                'es_responsable': relacion.es_responsable if relacion.es_responsable is not None else False,
-                'parentesco': relacion.parentesco.nombre if relacion.parentesco else 'No especificado'
-            }
+            deportista_dict = _serialize_deportista(deportista, relacion)
             logger.info(f"📝 Datos del deportista: {deportista_dict}")
             deportistas_data.append(deportista_dict)
-        
+
         logger.info(f"✅ Total deportistas procesados: {len(deportistas_data)}")
-        
         return jsonify({
-            'success': True,
-            'message': f'Se encontraron {len(deportistas_data)} deportista(s) asociado(s)',
-            'data': deportistas_data
+            "success": True,
+            "message": f"Se encontraron {len(deportistas_data)} deportista(s) asociado(s)",
+            "data": deportistas_data
         }), 200
-        
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener deportistas por acudiente: {str(e)}")
+
+    except Exception as exc:
+        logger.error(f"Error inesperado al obtener deportistas por acudiente: {str(exc)}")
         import traceback
         logger.error(traceback.format_exc())
         return jsonify({
-            'success': False,
-            'message': 'Error interno del servidor',
-            'data': []
+            "success": False,
+            "message": "Error interno del servidor",
+            "data": []
         }), 500
 
 @deportistas_bp.route('/<int:id_deportista>', methods=['PATCH', 'PUT'])
@@ -788,9 +819,3 @@ def catalogo_diagnosticos_por_tipo(id_tipo_enfermedad):
     except Exception as e:
         logger.error(f"Error inesperado al obtener diagnósticos por tipo: {str(e)}")
         return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
-
-# Notas:
-# - La lógica de negocio y validaciones están separadas en src/services/deportista_service.py y src/services/catalogos_service.py
-# - Esto hace el controlador sencillo, DRY y orientado a una sola responsabilidad.
-# - Las URLs siguen convenciones RESTful y están organizadas por recurso.
-
