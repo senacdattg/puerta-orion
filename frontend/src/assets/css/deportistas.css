@@ -20,6 +20,12 @@
 }
 
 /* ===== TARJETA DE DEPORTISTA ===== */
+.grid-deportistas {
+  --listado-grid-min: 320px;
+  --listado-grid-gap: 2rem;
+  margin-bottom: 2rem;
+}
+
 .tarjeta-deportista {
   background: var(--color-blanco);
   border-radius: var(--radio-borde);
@@ -182,10 +188,10 @@
   }
 
   .grid-deportistas {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
+    --listado-grid-min: 1fr;
+    --listado-grid-gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
 
 .tarjeta-deportista {
     grid-template-columns: 1fr;

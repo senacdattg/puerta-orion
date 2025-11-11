@@ -1,6 +1,6 @@
 <template>
   <div class="modal-overlay" @click="$emit('cerrar')">
-    <div class="modal-contenido" @click.stop>
+    <div class="modal-content mensualidades-modal" @click.stop>
       <div class="modal-header">
         <h3>{{ editando ? 'Editar Mensualidad' : 'Detalles Completos de Mensualidad' }}</h3>
         <div class="header-actions">

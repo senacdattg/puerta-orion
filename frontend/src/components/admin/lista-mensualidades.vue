@@ -101,7 +101,7 @@
 
       <!-- Modal de formulario para nueva mensualidad -->
       <div v-if="mostrarFormulario && esAdmin" class="modal-overlay">
-        <div class="modal-content" @click.stop>
+        <div class="modal-content mensualidades-modal" @click.stop>
           <div class="modal-header">
             <h3>Agregar Nueva Mensualidad</h3>
             <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
@@ -233,8 +233,8 @@
             </div>
 
             <div class="acciones centrado">
-              <button type="submit" class="btn-principal">Guardar</button>
-              <button type="button" class="btn-secundario" @click="cerrarFormulario">Cancelar</button>
+              <button type="submit" class="btn btn-primary btn-lg">Guardar</button>
+              <button type="button" class="btn btn-danger btn-lg" @click="cerrarFormulario">Cancelar</button>
             </div>
           </form>
         </div>

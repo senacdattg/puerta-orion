@@ -64,7 +64,7 @@
 
     <!-- Modal de formulario -->
     <div v-if="mostrarFormulario" class="modal-overlay">
-      <div class="modal-content" @click.stop>
+      <div class="modal-content galeria-modal" @click.stop>
         <div class="modal-header">
           <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
           <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
@@ -145,9 +145,9 @@
           </div>
 
           <div class="acciones centrado">
-            <button type="submit" class="btn-principal" v-if="puedeEditarFoto">{{ editando !== null ? 'Actualizar' : 'Crear' }}</button>
-            <button type="button" class="btn-principal" v-if="!puedeEditarFoto" @click="cerrarFormulario">Cerrar</button>
-            <button type="button" class="btn-secundario" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
+            <button type="submit" class="btn btn-success" v-if="puedeEditarFoto">{{ editando !== null ? 'Actualizar' : 'Crear' }}</button>
+            <button type="button" class="btn btn-secondary" v-if="!puedeEditarFoto" @click="cerrarFormulario">Cerrar</button>
+            <button type="button" class="btn btn-danger" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
           </div>
         </form>
 
@@ -925,81 +925,23 @@ export default {
   color: #6c757d;
 }
 
-/* Estilos para el modal */
-.modal-content {
+.galeria-modal {
+  --modal-header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --modal-header-color: #ffffff;
   max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
 }
 
-.modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
-  border-radius: 8px 8px 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.btn-cerrar {
+.galeria-modal .btn-cerrar {
   background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
+  color: #ffffff;
 }
 
-.btn-cerrar:hover {
+.galeria-modal .btn-cerrar:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
 .formulario-evento {
   padding: 20px;
-}
-
-.btn-principal {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s ease;
-}
-
-.btn-principal:hover {
-  background: #218838;
-}
-
-.btn-secundario {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s ease;
-}
-
-.btn-secundario:hover {
-  background: #c82333;
 }
 
 .btn-limpiar-filtros {

@@ -136,9 +136,11 @@
 .cuadricula-tarjetas,
 .grid-deportistas,
 .grid-mensualidades {
+  --listado-grid-min: 280px;
+  --listado-grid-gap: 30px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--listado-grid-min), 1fr));
+  gap: var(--listado-grid-gap);
   width: 100%;
   padding: 0 15px;
 }

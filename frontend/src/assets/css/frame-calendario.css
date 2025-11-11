@@ -1,73 +1,24 @@
-/* Estilos consolidados del modal - Solo lo esencial */
-
-/* Overlay del modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+.calendario-modal {
+  --modal-header-bg: linear-gradient(135deg, #ffd700, #fbbf24);
+  --modal-header-color: #1a202c;
+  --modal-footer-bg: #f8fafc;
 }
 
-/* Contenido del modal */
-.modal-content {
-  background: white;
-  opacity: 1;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
-  border: none;
-  position: relative;
-}
-
-/* Header del modal */
-.modal-header {
-  background: #FFD700;
-  padding: 1.5rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.modal-header h3 {
-  margin: 0;
+.calendario-modal .btn-cerrar {
+  background: rgba(255, 255, 255, 0.85);
   color: #1a202c;
-  font-size: 1.5rem;
-  font-weight: bold;
 }
 
-.btn-cerrar {
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  color: #1a202c;
-  font-size: 1rem;
+.calendario-modal .btn-cerrar:hover {
+  background: #ff0000;
+  color: #ffffff;
 }
 
-.btn-cerrar:hover {
-  background: rgb(255, 0, 0);
-  transform: scale(1.1);
-}
-
-.modal-content.selector-eventos {
+.calendario-modal.selector-eventos {
   max-width: 500px;
 }
 
-.modal-content h3 {
+.calendario-modal h3 {
   margin-top: 0;
   color: #1e293b;
   text-align: center;
@@ -183,12 +134,8 @@
   margin: 0 !important;
 }
 
-.botones-modal .btn-principal,
-.botones-modal .btn-secundario,
-.botones-modal .btn-eliminar,
-.botones-modal button.btn-principal,
-.botones-modal button.btn-secundario,
-.botones-modal button.btn-eliminar {
+.botones-modal .btn,
+.botones-modal button.btn {
   width: 150px !important;
   min-width: 150px !important;
   max-width: 150px !important;
@@ -198,25 +145,16 @@
   max-height: 48px !important;
 }
 
-.botones-modal .btn-principal {
+.botones-modal .btn.btn-success {
   background: #28a745 !important;
   color: white !important;
 }
 
-.botones-modal .btn-principal:hover {
+.botones-modal .btn.btn-success:hover {
   background: #218838 !important;
 }
 
-.botones-modal .btn-secundario {
-  background: #ff0000 !important;
-  color: white !important;
-}
-
-.botones-modal .btn-secundario:hover {
-  background: #cc0000 !important;
-}
-
-.botones-modal .btn-eliminar {
+.botones-modal .btn.btn-danger {
   background: #ff0000 !important;
   color: white !important;
   width: 150px !important;
@@ -228,14 +166,12 @@
   max-height: 48px !important;
 }
 
-.botones-modal .btn-eliminar:hover {
+.botones-modal .btn.btn-danger:hover {
   background: #cc0000 !important;
 }
 
 /* Selector aún más específico para asegurar el ancho */
-.modal-content .botones-modal button.btn-eliminar,
-.modal-content .botones-modal button.btn-secundario,
-.modal-content .botones-modal button.btn-principal {
+.modal-content .botones-modal button.btn {
   width: 150px !important;
   min-width: 150px !important;
   max-width: 150px !important;
@@ -441,9 +377,7 @@
     gap: 0.75rem;
   }
 
-  .botones-modal .btn-principal,
-  .botones-modal .btn-secundario,
-  .botones-modal .btn-eliminar {
+  .botones-modal .btn {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;

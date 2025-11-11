@@ -7,15 +7,15 @@
 
 @media (max-width: 1200px) {
 	.cuadricula-tarjetas {
-		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-		gap: 25px;
+		--listado-grid-min: 250px;
+		--listado-grid-gap: 25px;
 	}
 }
 
 @media (max-width: 992px) {
 	.cuadricula-tarjetas {
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-		gap: 20px;
+		--listado-grid-min: 220px;
+		--listado-grid-gap: 20px;
 	}
 }
 
@@ -25,14 +25,15 @@
 	}
 
 	.cuadricula-tarjetas {
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 20px;
+		--listado-grid-min: 280px;
+		--listado-grid-gap: 20px;
 	}
 }
 
 @media (max-width: 480px) {
 	.cuadricula-tarjetas {
-		grid-template-columns: 1fr;
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
 		max-width: 100%;
 		padding: 0 10px;
 	}
@@ -134,24 +135,6 @@
 	/* 🔹 Efecto al pasar el mouse */
 	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
   }
-
-.btn-principal {
-	background-color: #0753bd;
-	color: white;
-	border: none;
-	padding: 12px 24px;
-	border-radius: 8px;
-	font-weight: bold;
-	cursor: pointer;
-	transition: background-color 0.3s;
-	display: inline-flex;
-	justify-content: center;
-	align-items: center;
-}
-
-.btn-principal:hover {
-	background-color: #0753bd;
-}
 
 /* Placeholder de imagen */
 .imagen-placeholder {

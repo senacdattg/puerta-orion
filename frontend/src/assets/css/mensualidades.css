@@ -59,6 +59,12 @@
   justify-content: center;
 }
 
+.grid-mensualidades {
+  --listado-grid-min: 320px;
+  --listado-grid-gap: 16px;
+  margin-bottom: 16px;
+}
+
 /* ===== TARJETA DE MENSUALIDAD ===== */
 .tarjeta-mensualidad {
   background: #ffffff;
@@ -364,80 +370,22 @@
   margin: 12px 0;
 }
 
-/* ===== MODAL DE DETALLES COMPLETOS ===== */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+.mensualidades-modal {
+  --modal-header-bg: linear-gradient(135deg, var(--color-secundario), #ffb300);
+  --modal-header-color: var(--color-gris-oscuro);
+  --modal-footer-bg: #f8fafc;
   width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999; /* por encima del header fijo */
-  padding: 1rem;
-}
-
-.modal-contenido {
-  background: var(--color-blanco);
-  border-radius: 16px;
-  box-shadow: var(--sombra-fuerte);
   max-width: 700px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalEntrada 0.3s ease-out;
+  animation: modal-fade-up 0.3s ease-out;
 }
 
-@keyframes modalEntrada {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* ===== HEADER DEL MODAL ===== */
-.modal-header {
-  background: linear-gradient(135deg, var(--color-secundario), #ffb300);
-  color: var(--color-gris-oscuro);
-  padding: 1.5rem;
-  border-radius: var(--radio-borde) var(--radio-borde) 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 3px solid rgba(0, 0, 0, 0.1);
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-shadow: black;
-}
-
-.btn-cerrar {
+.mensualidades-modal .btn-cerrar {
   background: rgba(0, 0, 0, 0.2);
-  border: none;
   color: var(--color-gris-oscuro);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transicion);
 }
 
-.btn-cerrar:hover {
+.mensualidades-modal .btn-cerrar:hover {
   background: rgba(0, 0, 0, 0.3);
-  transform: scale(1.1);
 }
 
 /* ===== CUERPO DEL MODAL ===== */
@@ -834,65 +782,7 @@
   justify-content: center;
 }
 
-.btn-principal {
-  background: linear-gradient(135deg, var(--color-primario), #0056cc);
-  color: var(--color-blanco);
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transicion);
-  box-shadow: var(--sombra-suave);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  min-width: 120px;
-}
-
-.btn-principal:hover {
-  background: linear-gradient(135deg, #0056cc, #0047ab);
-  transform: translateY(-2px);
-  box-shadow: var(--sombra-media);
-}
-
-.btn-principal:active {
-  transform: translateY(0);
-}
-
-.btn-secundario {
-  background: #dc3545;
-  color: var(--color-gris-oscuro) !important;
-  border: 2px solid var(--color-gris-medio);
-  padding: 1rem 2rem;
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transicion);
-  min-width: 120px;
-}
-
-.btn-secundario:hover {
-  background: #fc3e51;
-  color: var(--color-blanco) !important;
-  transform: translateY(-2px);
-  box-shadow: var(--sombra-suave);
-}
-
-/* Modal específico para formulario */
-.modal-content {
-  background: var(--color-blanco);
-  border-radius: var(--radio-borde);
-  box-shadow: var(--sombra-fuerte);
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalEntrada 0.3s ease-out;
-}
-
-.modal-header {
+.mensualidades-modal .modal-header {
   background: linear-gradient(135deg, var(--color-primario), #FFD700);
   color: var(--color-blanco);
   padding: 1.5rem;
@@ -964,8 +854,8 @@
     flex-direction: column;
   }
 
-  .btn-principal,
-  .btn-secundario {
+  .btn.btn-primary,
+  .btn.btn-danger {
     width: 100%;
     justify-content: center;
   }
@@ -991,10 +881,10 @@
   }
 
   .grid-mensualidades {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
+    --listado-grid-min: 320px;
+    --listado-grid-gap: 16px;
+    margin-bottom: 16px;
+  }
 
 .tarjeta-mensualidad {
     grid-template-columns: 1fr;
@@ -1061,8 +951,8 @@
 /* ===== RESPONSIVE EXTRA - TABLET ===== */
 @media (max-width: 1024px) {
   .grid-mensualidades {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
+    --listado-grid-min: 300px;
+    --listado-grid-gap: 1rem;
   }
   .estadisticas {
     grid-template-columns: repeat(2, 1fr);
@@ -1101,7 +991,7 @@
 /* ===== RESPONSIVE EXTRA - MÓVIL PEQUEÑO ===== */
 @media (max-width: 420px) {
   .grid-mensualidades {
-    grid-template-columns: 1fr;
+    --listado-grid-min: 1fr;
   }
   .avatar-deportista {
     width: 50px;

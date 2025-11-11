@@ -1,0 +1,106 @@
+/* ===== Estilos base para modales reutilizables ===== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: var(--modal-bg, #ffffff);
+  border-radius: var(--modal-radius, 16px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  width: min(90vw, 700px);
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: modal-fade-up 0.3s ease-out;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--modal-header-bg, linear-gradient(135deg, #0047ab, #1e3a8a));
+  color: var(--modal-header-color, #ffffff);
+  border-radius: var(--modal-radius, 16px) var(--modal-radius, 16px) 0 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+  background: var(--modal-footer-bg, #f8fafc);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0 0 var(--modal-radius, 16px) var(--modal-radius, 16px);
+}
+
+.btn-cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--modal-header-color, #1f2937);
+  font-size: 0.95rem;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-cerrar:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.btn-cerrar:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.4);
+  outline-offset: 2px;
+}
+
+@keyframes modal-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: min(95vw, 600px);
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+}
+
+

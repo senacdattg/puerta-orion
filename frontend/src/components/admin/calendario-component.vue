@@ -66,7 +66,7 @@
 
         <!-- Modal para agregar/editar eventos -->
         <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
-            <div class="modal-content" @click.stop>
+            <div class="modal-content calendario-modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}</h3>
                     <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
@@ -171,7 +171,7 @@
                         <button 
                             type="button" 
                             @click="cerrarModal" 
-                            class="btn-secundario"
+                            class="btn btn-secondary"
                             style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
                         >
                             Cerrar
@@ -180,7 +180,7 @@
                             v-if="puedeEliminar && modoEdicion" 
                             type="button" 
                             @click="eliminarEvento" 
-                            class="btn-eliminar"
+                            class="btn btn-danger"
                             style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
                         >
                             Eliminar
@@ -188,7 +188,7 @@
                         <button 
                             v-if="puedeCrear || (puedeEditar && modoEdicion)" 
                             type="submit" 
-                            class="btn-principal"
+                            class="btn btn-success"
                             style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
                         >
                             {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
@@ -200,7 +200,7 @@
 
         <!-- Modal para seleccionar evento a editar -->
         <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
-            <div class="modal-content selector-eventos" @click.stop>
+            <div class="modal-content selector-eventos calendario-modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ puedeEditar ? 'Eventos del Día' : 'Eventos del Día' }}</h3>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
