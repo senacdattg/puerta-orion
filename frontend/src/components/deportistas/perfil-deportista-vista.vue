@@ -1076,7 +1076,7 @@ onMounted(async () => {
     inicializarFormulario();
     // catalogosCargados se establece dentro de cargarCatalogos()
     // Si ya estamos en modo edición y hay datos, inicializar
-    if (modoEdicionLocal.value && props.datos) {
+    if (isEditing.value && props.datos) {
       console.log('🔄 onMounted: Inicializando formulario en modo edición');
     }
   } catch (error) {

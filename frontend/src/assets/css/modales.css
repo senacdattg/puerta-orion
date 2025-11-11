@@ -15,8 +15,8 @@
   background: var(--modal-bg, #ffffff);
   border-radius: var(--modal-radius, 16px);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
-  width: min(90vw, 700px);
-  max-height: 90vh;
+  width: min(90vw, var(--modal-max-width, 700px));
+  max-height: var(--modal-max-height, 90vh);
   overflow-y: auto;
   position: relative;
   animation: modal-fade-up 0.3s ease-out;
@@ -41,7 +41,9 @@
 }
 
 .modal-body {
-  padding: 1.5rem;
+  padding: var(--modal-body-padding, 1.5rem);
+  max-height: var(--modal-body-max-height, none);
+  overflow-y: auto;
 }
 
 .modal-footer {
@@ -93,7 +95,7 @@
 
 @media (max-width: 768px) {
   .modal-content {
-    width: min(95vw, 600px);
+    width: min(95vw, var(--modal-max-width, 600px));
   }
 
   .modal-footer {
@@ -101,6 +103,22 @@
     align-items: stretch;
     gap: 0.5rem;
   }
+}
+
+.modal-overlay.modal-overlay--blur {
+  backdrop-filter: blur(4px);
+}
+
+.modal-content.modal-md {
+  --modal-max-width: 600px;
+}
+
+.modal-content.modal-lg {
+  --modal-max-width: 800px;
+}
+
+.modal-content.modal-xl {
+  --modal-max-width: 960px;
 }
 
 

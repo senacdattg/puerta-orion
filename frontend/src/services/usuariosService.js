@@ -5,7 +5,7 @@
 import { useAuthStore } from '@/stores/auth'
 import { getApiBaseUrl } from '@/config/environment'
 
-const API_BASE_URL = getApiBaseUrl()
+const buildUrl = (path = '') => `${getApiBaseUrl()}${path}`
 
 class UsuariosService {
   constructor() {
@@ -39,9 +39,9 @@ class UsuariosService {
       }
       params.append('limit', limit)
       params.append('offset', offset)
-      
-      const url = `${API_BASE_URL}/usuarios/?${params.toString()}`
-      
+
+      const url = buildUrl(`/usuarios?${params.toString()}`)
+
       const response = await fetch(url, {
         method: 'GET',
         headers: this.getAuthHeaders()
@@ -64,7 +64,7 @@ class UsuariosService {
    */
   async listarRoles() {
     try {
-      const response = await fetch(`${API_BASE_URL}/dynamic-data/roles`, {
+      const response = await fetch(buildUrl('/dynamic-data/roles'), {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
@@ -88,8 +88,8 @@ class UsuariosService {
     try {
       // Normalizar: si viene un solo número, convertirlo a array
       const rolesArray = Array.isArray(idRoles) ? idRoles : [idRoles]
-      
-      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/rol`, {
+
+      const response = await fetch(buildUrl(`/usuarios/${idUsuario}/rol`), {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ id_roles: rolesArray })
@@ -112,7 +112,7 @@ class UsuariosService {
    */
   async cambiarEstadoUsuario(idUsuario, estado) {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/estado`, {
+      const response = await fetch(buildUrl(`/usuarios/${idUsuario}/estado`), {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify({ estado: estado })
@@ -136,7 +136,7 @@ class UsuariosService {
    */
   async obtenerDetalleUsuario(idUsuario) {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}/detalle`, {
+      const response = await fetch(buildUrl(`/usuarios/${idUsuario}/detalle`), {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
@@ -160,7 +160,7 @@ class UsuariosService {
    */
   async actualizarUsuario(idUsuario, body) {
     try {
-      const response = await fetch(`${API_BASE_URL}/usuarios/${idUsuario}`, {
+      const response = await fetch(buildUrl(`/usuarios/${idUsuario}`), {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(body)

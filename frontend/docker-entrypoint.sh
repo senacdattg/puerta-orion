@@ -10,14 +10,20 @@ mkdir -p "${RUNTIME_DIR}"
 
 cat <<EOF > "${RUNTIME_FILE}"
 (function () {
-  const envApiUrl = "${VITE_API_URL}";
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1";
-
-  let apiUrl = envApiUrl;
+  var envApiUrl = "${VITE_API_URL}";
+  var hostname = window.location.hostname || "";
+  var protocol = window.location.protocol || "http:";
+  var isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]" || hostname === "::1";
+  var apiUrl = envApiUrl;
 
   if (!apiUrl || apiUrl === "auto" || apiUrl === "undefined" || apiUrl === "null") {
-    apiUrl = isLocalhost ? "http://localhost:5000" : "http://backend:5000";
+    if (isLocalhost) {
+      apiUrl = "http://localhost:5000";
+    } else if (hostname) {
+      apiUrl = protocol + "//" + hostname;
+    } else {
+      apiUrl = "http://localhost:5000";
+    }
   }
 
   window.RUNTIME_CONFIG = {

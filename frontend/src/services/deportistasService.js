@@ -5,7 +5,7 @@
 import { useAuthStore } from '@/stores/auth'
 import { getApiBaseUrl } from '@/config/environment'
 
-const API_BASE_URL = getApiBaseUrl()
+const getBaseUrl = () => getApiBaseUrl()
 
 class DeportistasService {
   constructor() {
@@ -32,7 +32,8 @@ class DeportistasService {
    */
   async listarDeportistas(page = 1, perPage = 100) {
     try {
-      const response = await fetch(`${API_BASE_URL}/deportistas?page=${page}&per_page=${perPage}`, {
+      const baseURL = getBaseUrl()
+      const response = await fetch(`${baseURL}/deportistas?page=${page}&per_page=${perPage}`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
@@ -56,7 +57,8 @@ class DeportistasService {
    */
   async obtenerDeportistaPorId(idDeportista) {
     try {
-      const response = await fetch(`${API_BASE_URL}/deportistas/${idDeportista}`, {
+      const baseURL = getBaseUrl()
+      const response = await fetch(`${baseURL}/deportistas/${idDeportista}`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
@@ -95,7 +97,8 @@ class DeportistasService {
             datos_informacion_deportiva: datos.datos_informacion_deportiva || {}
           }
 
-      const response = await fetch(`${API_BASE_URL}/deportistas/${idDeportista}`, {
+      const baseURL = getBaseUrl()
+      const response = await fetch(`${baseURL}/deportistas/${idDeportista}`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(datosEnvio)
@@ -121,7 +124,8 @@ class DeportistasService {
    */
   async crearDeportista(datos) {
     try {
-      const response = await fetch(`${API_BASE_URL}/deportistas`, {
+      const baseURL = getBaseUrl()
+      const response = await fetch(`${baseURL}/deportistas`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(datos)
@@ -146,7 +150,8 @@ class DeportistasService {
    */
   async eliminarDeportista(idDeportista) {
     try {
-      const response = await fetch(`${API_BASE_URL}/deportistas/${idDeportista}`, {
+      const baseURL = getBaseUrl()
+      const response = await fetch(`${baseURL}/deportistas/${idDeportista}`, {
         method: 'DELETE',
         headers: this.getAuthHeaders()
       })
