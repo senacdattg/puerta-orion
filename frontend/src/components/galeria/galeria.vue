@@ -48,7 +48,7 @@
       </div>
 
       <!-- Mensaje cuando no hay resultados -->
-      <div v-if="!cargando && eventosFiltrados.length === 0" class="sin-resultados mejorado">
+      <div v-if="!cargando && eventosFiltrados.length === 0" class="sin-resultados mejorado sin-resultados--con-boton">
         <div class="empty-card">
           <div class="empty-icon">🗂️</div>
           <h4 class="empty-title">No se encontraron fotos</h4>
@@ -141,7 +141,7 @@
               Descripción *
             </label>
             <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
-              class="input-evento" :readonly="!puedeEditarFoto" @input="manejarDescripcion" required></textarea>
+              class="input-evento" :readonly="!puedeEditarFoto" @input="manejarDescripcion"></textarea>
           </div>
 
           <div class="acciones centrado">
@@ -166,7 +166,6 @@ import { useAuthStore } from '@/stores/auth'
 import galeriaService from '@/services/galeriaService'
 import Swal from 'sweetalert2'
 
-const LOCALE_COL = 'es-CO'
 const MAX_TITULO = 120
 const MAX_DESCRIPCION = 500
 
@@ -248,16 +247,18 @@ export default {
       return valor ? valor.replace(/\s+/g, " ").trim() : ""
     },
     normalizarTitulo(valor = "") {
-      if (!valor) return ""
-      const mayus = valor.toLocaleUpperCase(LOCALE_COL)
-      const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, "")
-      return this.normalizarEspacios(limpio).slice(0, MAX_TITULO)
+      if (valor === null || valor === undefined) return ""
+      const texto = valor.toString()
+      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\-\s]/g, "")
+      const colapsado = permitido.replace(/\s{2,}/g, " ")
+      return colapsado.slice(0, MAX_TITULO)
     },
     normalizarDescripcion(valor = "") {
-      if (!valor) return ""
-      const mayus = valor.toLocaleUpperCase(LOCALE_COL)
-      const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, "")
-      return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION)
+      if (valor === null || valor === undefined) return ""
+      const texto = valor.toString()
+      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9#\-.,;:¿?¡!()\s]/g, "")
+      const colapsado = permitido.replace(/\s{2,}/g, " ")
+      return colapsado.slice(0, MAX_DESCRIPCION)
     },
     manejarTitulo(event) {
       const valor = event?.target?.value ?? this.form.titulo
@@ -442,9 +443,6 @@ export default {
         }
         if (!this.form.id_tipo_evento) {
           errores.push('Debes seleccionar un tipo de evento')
-        }
-        if (!this.form.descripcion) {
-          errores.push('La descripción es obligatoria')
         }
         if (this.imagenRequerida && !this.archivoSeleccionado) {
           errores.push('Debes seleccionar una imagen')
@@ -735,6 +733,7 @@ export default {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 3;
 }
 
 .tipo {

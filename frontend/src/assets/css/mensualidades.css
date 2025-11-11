@@ -1,4 +1,5 @@
 /* ===== ESTILOS PARA MENSUALIDADES - VERSIÓN MODERNA ===== */
+@import './listados.css';
 
 /* ===== VARIABLES CSS INCLUIDAS DIRECTAMENTE ===== */
 :root {
@@ -42,132 +43,6 @@
 }
 
 /* ===== FILTROS Y BÚSQUEDA ===== */
-.contenedor-filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  align-items: center;
-  justify-content: space-between;
-}
-/* toolbar look */
-.contenedor-filtros {
-  background: #fff;
-  border: 1px solid #eef0f2;
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: var(--sombra-suave);
-}
-
-.buscador {
-  position: relative;
-  flex: 1;
-  min-width: 300px;
-}
-
-.entrada-busqueda {
-  width: 100%;
-  padding: 1rem 3rem 1rem 1.5rem;
-  border: none;
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  background: var(--color-blanco);
-  box-shadow: var(--sombra-suave);
-  transition: var(--transicion);
-}
-
-.entrada-busqueda:focus {
-  outline: none;
-  box-shadow: var(--sombra-media);
-  transform: translateY(-2px);
-}
-
-.icono-busqueda {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.2rem;
-  color: var(--color-gris);
-}
-
-.filtros {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.filtro-select {
-  padding: 0.75rem 1rem;
-  border: 2px solid transparent;
-  border-radius: var(--radio-borde);
-  background: var(--color-blanco);
-  color: var(--color-gris-oscuro);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transicion);
-  box-shadow: var(--sombra-suave);
-}
-
-.filtro-select:focus {
-  outline: none;
-  border-color: var(--color-secundario);
-  box-shadow: var(--sombra-media);
-}
-
-/* ===== ESTADÍSTICAS ===== */
-.estadisticas {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px;
-  margin: 4px 0 8px;
-}
-
-.estadisticas.ordenadas {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
-  justify-content: center;
-}
-
-.stat-card {
-  background: var(--color-blanco);
-  padding: 16px 12px;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: var(--sombra-suave);
-  transition: var(--transicion);
-  border: 2px solid transparent;
-  width: 220px;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--sombra-media);
-}
-
-/* Centrar contenido interno de stat cards */
-.estadisticas .stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-numero {
-  display: block;
-  font-size: 36px;
-  font-weight: bold;
-  color: var(--color-primario);
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-
 #statCard { border: none !important; }
 #statCard:hover {
   transform: scale(1.04);
@@ -182,14 +57,6 @@
   margin-bottom: 2rem;
   flex-wrap: wrap;
   justify-content: center;
-}
-
-/* ===== GRID DE MENSUALIDADES ===== */
-.grid-mensualidades {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
 }
 
 /* ===== TARJETA DE MENSUALIDAD ===== */
@@ -894,39 +761,6 @@
   font-size: 1.1rem;
 }
 
-/* ===== SIN RESULTADOS ===== */
-.sin-resultados {
-  text-align: center;
-  padding: 2rem;
-  background: var(--color-blanco);
-  border-radius: 16px;
-  box-shadow: var(--sombra-suave);
-}
-
-.sin-resultados.mejorado { display: flex; justify-content: center; }
-.sin-resultados.mejorado .empty-card {
-  width: 100%;
-  max-width: 900px;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.empty-icon { font-size: 36px; opacity: .75; }
-.empty-title { margin: 0; font-size: 20px; color: #0b4fb3; }
-.empty-sub { margin: 0; color: #6b7280; font-size: 14px; }
-.empty-actions { display: flex; gap: 12px; margin-top: 8px; }
-
-.sin-resultados p {
-  font-size: 1.1rem;
-  color: var(--color-gris);
-  margin-bottom: 1.5rem;
-}
-
 /* ===== FORMULARIO MODAL PARA NUEVA MENSUALIDAD ===== */
 .formulario-mensualidad {
   padding: 1.5rem;
@@ -1157,6 +991,12 @@
   }
 
   .grid-mensualidades {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tarjeta-mensualidad {
     grid-template-columns: 1fr;
     gap: 1rem;
   }

@@ -280,6 +280,7 @@
               @input="onUsuarioInput"
               @blur="onUsuarioInput"
             />
+            <small v-if="erroresCamposEdicion.username" class="input-error">{{ erroresCamposEdicion.username }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Primer Nombre</label>
@@ -290,6 +291,7 @@
               @input="onNombreInput('primer_nombre')"
               @blur="onNombreInput('primer_nombre')"
             />
+            <small v-if="erroresCamposEdicion.primer_nombre" class="input-error">{{ erroresCamposEdicion.primer_nombre }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Segundo Nombre</label>
@@ -300,6 +302,7 @@
               @input="onNombreInput('segundo_nombre')"
               @blur="onNombreInput('segundo_nombre')"
             />
+            <small v-if="erroresCamposEdicion.segundo_nombre" class="input-error">{{ erroresCamposEdicion.segundo_nombre }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Primer Apellido</label>
@@ -310,6 +313,7 @@
               @input="onNombreInput('primer_apellido')"
               @blur="onNombreInput('primer_apellido')"
             />
+            <small v-if="erroresCamposEdicion.primer_apellido" class="input-error">{{ erroresCamposEdicion.primer_apellido }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Segundo Apellido</label>
@@ -320,6 +324,7 @@
               @input="onNombreInput('segundo_apellido')"
               @blur="onNombreInput('segundo_apellido')"
             />
+            <small v-if="erroresCamposEdicion.segundo_apellido" class="input-error">{{ erroresCamposEdicion.segundo_apellido }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Documento</label>
@@ -330,6 +335,7 @@
               @input="onDocumentoInput"
               @blur="onDocumentoInput"
             />
+            <small v-if="erroresCamposEdicion.documento" class="input-error">{{ erroresCamposEdicion.documento }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Correo</label>
@@ -340,6 +346,7 @@
               @input="onEmailInput"
               @blur="onEmailInput"
             />
+            <small v-if="erroresCamposEdicion.correo_electronico" class="input-error">{{ erroresCamposEdicion.correo_electronico }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Teléfono</label>
@@ -350,6 +357,7 @@
               @input="onTelefonoInput"
               @blur="onTelefonoInput"
             />
+            <small v-if="erroresCamposEdicion.telefono" class="input-error">{{ erroresCamposEdicion.telefono }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Dirección</label>
@@ -360,6 +368,7 @@
               @input="onDireccionInput"
               @blur="onDireccionInput"
             />
+            <small v-if="erroresCamposEdicion.direccion" class="input-error">{{ erroresCamposEdicion.direccion }}</small>
           </div>
         </div>
         <div class="botones-acciones-detalle" style="margin-top:20px;">
@@ -529,13 +538,25 @@ const DOC_MAX = 20;
 const PHONE_MIN = 7;
 const PHONE_MAX = 15;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+const erroresCamposEdicion = ref({
+  username: '',
+  primer_nombre: '',
+  segundo_nombre: '',
+  primer_apellido: '',
+  segundo_apellido: '',
+  documento: '',
+  correo_electronico: '',
+  telefono: '',
+  direccion: ''
+});
 
 function limpiarEspacios(valor = '') {
   return valor.replace(/\s+/g, ' ').trim();
 }
 
 function normalizarNombre(valor = '') {
-  const limpio = limpiarEspacios(valor).replace(/[^\p{L}\s]/gu, '');
+  const limpio = limpiarEspacios(valor)
+    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
   return limpio.toUpperCase();
 }
 
@@ -558,6 +579,28 @@ function normalizarDireccionValor(valor = '') {
 
 function normalizarEmailValor(valor = '') {
   return limpiarEspacios(valor).toLowerCase();
+}
+
+function obtenerNombreUsuarioLegible(user) {
+  const username =
+    typeof user?.usuario === 'string'
+      ? user.usuario
+      : typeof user?.usuario?.usuario === 'string'
+        ? user.usuario.usuario
+        : '';
+  if (username) return username;
+
+  const personaBase = user?.persona || user?.usuario?.persona || {};
+  const nombreCompleto = [
+    personaBase.primer_nombre || '',
+    personaBase.segundo_nombre || '',
+    personaBase.primer_apellido || '',
+    personaBase.segundo_apellido || ''
+  ].map(parte => (typeof parte === 'string' ? parte.trim() : '')).filter(Boolean).join(' ');
+
+  if (nombreCompleto) return nombreCompleto;
+
+  return 'este usuario';
 }
 
 function onNombreInput(campo) {
@@ -600,6 +643,20 @@ function normalizarFormularioEdicion() {
   onEmailInput();
   onTelefonoInput();
   onDireccionInput();
+}
+
+function resetErroresCampos() {
+  erroresCamposEdicion.value = {
+    username: '',
+    primer_nombre: '',
+    segundo_nombre: '',
+    primer_apellido: '',
+    segundo_apellido: '',
+    documento: '',
+    correo_electronico: '',
+    telefono: '',
+    direccion: ''
+  };
 }
 
 // Cargar datos al montar el componente
@@ -891,11 +948,12 @@ async function toggleEstadoUsuario(user) {
 
   const estadoActual = user.estado !== undefined ? user.estado : (user.usuario?.estado !== false);
   const nuevoEstado = !estadoActual;
+  const nombreUsuario = obtenerNombreUsuarioLegible(user);
 
   const confirmacion = await Swal.fire({
     icon: 'question',
     title: `${nuevoEstado ? '¿Activar' : '¿Desactivar'} usuario?`,
-    text: `Se ${nuevoEstado ? 'activará' : 'desactivará'} el usuario "${user.usuario || user.usuario?.usuario || 'este usuario'}".`,
+    text: `Se ${nuevoEstado ? 'activará' : 'desactivará'} el usuario "${nombreUsuario}".`,
     showCancelButton: true,
     confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
     cancelButtonText: 'Cancelar'
@@ -931,6 +989,7 @@ async function toggleEstadoUsuario(user) {
       await Swal.fire({
         icon: 'success',
         title: `Usuario ${nuevoEstado ? 'activado' : 'desactivado'}`,
+        text: `El usuario "${nombreUsuario}" se ${nuevoEstado ? 'activó' : 'desactivó'} correctamente.`,
         timer: 1500,
         showConfirmButton: false
       });
@@ -972,6 +1031,7 @@ function abrirModalEdicion(user) {
     }
   };
   normalizarFormularioEdicion();
+  resetErroresCampos();
   errorEdicion.value = null;
   mostrarModalEdicion.value = true;
 }
@@ -979,6 +1039,7 @@ function abrirModalEdicion(user) {
 function cerrarModalEdicion() {
   mostrarModalEdicion.value = false;
   errorEdicion.value = null;
+  resetErroresCampos();
 }
 
 async function guardarEdicion() {
@@ -1000,30 +1061,49 @@ async function guardarEdicion() {
   const direccion = personaForm.direccion || '';
 
   const errores = [];
+  const nuevosErrores = {
+    username: '',
+    primer_nombre: '',
+    segundo_nombre: '',
+    primer_apellido: '',
+    segundo_apellido: '',
+    documento: '',
+    correo_electronico: '',
+    telefono: '',
+    direccion: ''
+  };
 
   if (!username || username.length < 4 || !/^[a-z0-9._-]+$/i.test(username)) {
+    nuevosErrores.username = 'Mínimo 4 caracteres, solo letras, números, punto, guion o guion bajo.';
     errores.push('El username debe tener al menos 4 caracteres y solo puede incluir letras, números, puntos, guiones o guiones bajos.');
   }
   if (!primerNombre || primerNombre.length < 2) {
+    nuevosErrores.primer_nombre = 'Debes ingresar al menos 2 letras.';
     errores.push('El primer nombre es obligatorio y debe tener al menos 2 caracteres.');
   }
   if (!primerApellido || primerApellido.length < 2) {
+    nuevosErrores.primer_apellido = 'Debes ingresar al menos 2 letras.';
     errores.push('El primer apellido es obligatorio y debe tener al menos 2 caracteres.');
   }
   if (!documento || documento.length < DOC_MIN || documento.length > DOC_MAX) {
+    nuevosErrores.documento = `Debe tener entre ${DOC_MIN} y ${DOC_MAX} dígitos.`;
     errores.push(`El documento debe tener entre ${DOC_MIN} y ${DOC_MAX} dígitos.`);
   }
   if (!correo || !emailRegex.test(correo)) {
+    nuevosErrores.correo_electronico = 'Correo inválido.';
     errores.push('Debes ingresar un correo electrónico válido.');
   }
   if (telefono && (telefono.length < PHONE_MIN || telefono.length > PHONE_MAX)) {
+    nuevosErrores.telefono = `Debe tener entre ${PHONE_MIN} y ${PHONE_MAX} dígitos.`;
     errores.push(`El teléfono debe tener entre ${PHONE_MIN} y ${PHONE_MAX} dígitos si lo proporcionas.`);
   }
   if (direccion && direccion.length < 5) {
+    nuevosErrores.direccion = 'Debe tener al menos 5 caracteres.';
     errores.push('La dirección debe tener al menos 5 caracteres.');
   }
 
   if (errores.length > 0) {
+    erroresCamposEdicion.value = nuevosErrores;
     errorEdicion.value = errores[0];
     await Swal.fire({
       icon: 'error',
@@ -1032,6 +1112,8 @@ async function guardarEdicion() {
     });
     return;
   }
+
+  erroresCamposEdicion.value = nuevosErrores;
 
   const payload = {
     datos_usuario: {
@@ -2058,6 +2140,13 @@ button.btn-editar,
 
 .control-input:hover {
   border-color: #d1d5db;
+}
+
+.input-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
 }
 
 /* Estilos para modal de gestión de roles */

@@ -104,8 +104,15 @@
                             <i class="fas fa-calendar"></i>
                             Fecha *
                         </label>
-                        <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
-                            :disabled="true" readonly />
+                        <input
+                            id="fecha"
+                            v-model="nuevoEvento.fecha"
+                            type="date"
+                            required
+                            class="input-evento"
+                            :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
+                            :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
+                        />
                     </div>
 
                     <div class="fila-dos-columnas">
@@ -251,7 +258,7 @@
         </div>
 
         <!-- Botón flotante para agregar evento (solo para roles con permisos de creación) -->
-        <button v-if="puedeCrear" @click="abrirModal" class="btn-flotante" title="Agregar evento">
+        <button v-if="puedeCrear" @click="abrirModal()" class="btn-flotante" title="Agregar evento">
             <i class="fas fa-plus"></i>
         </button>
     </div>
@@ -301,6 +308,7 @@ export default {
                 descripcion: '',
                 fecha: null
             },
+            fechaBloqueada: false,
             cargando: false,
             error: null,
             tiposEvento: [],
@@ -553,9 +561,7 @@ export default {
                 this.eventosDelDia = dia.eventos;
                 this.mostrarSelectorEventos(dia.fecha);
             } else if (this.puedeCrear) {
-                // Solo roles con permisos de creación pueden crear eventos en días vacíos
-                this.nuevoEvento.fecha = dia.fecha;
-                this.abrirModal();
+                this.abrirModal({ fecha: dia.fecha, bloquear: true });
             }
             // Si no tiene permisos de creación y no hay eventos, no hace nada
         },
@@ -566,25 +572,26 @@ export default {
                 event.stopPropagation();
             }
             if (!dia.esMesActual || !this.puedeCrear) return;
-            this.nuevoEvento.fecha = dia.fecha;
-            this.abrirModal();
+            this.abrirModal({ fecha: dia.fecha, bloquear: true });
         },
 
-        abrirModal() {
+        abrirModal(opciones = {}) {
+            const { fecha = null, bloquear = false } = opciones;
             if (!this.puedeCrear) return; // Solo roles con permisos de creación pueden abrir modal
 
+            this.fechaBloqueada = bloquear;
             this.modalVisible = true;
             this.modoEdicion = false;
-            this.limpiarFormulario();
-            this.normalizarCamposEvento();
+            this.limpiarFormulario(fecha);
 
-            if (!this.nuevoEvento.fecha) {
+            if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
             }
         },
 
         cerrarModal() {
             this.modalVisible = false;
+            this.fechaBloqueada = false;
             this.limpiarFormulario();
         },
 
@@ -594,17 +601,19 @@ export default {
             if (fecha) {
                 this.nuevoEvento.fecha = fecha;
             }
+            this.fechaBloqueada = true;
         },
 
         cerrarSelectorEventos() {
             this.selectorEventosVisible = false;
             this.eventosDelDia = [];
+            this.fechaBloqueada = false;
         },
 
         abrirModalDesdeSelector() {
             // Cerrar el selector y abrir el modal de creación
             this.selectorEventosVisible = false;
-            this.abrirModal();
+            this.abrirModal({ fecha: this.nuevoEvento.fecha, bloquear: true });
             // La fecha ya está guardada en nuevoEvento.fecha desde mostrarSelectorEventos
         },
 
@@ -618,6 +627,7 @@ export default {
             this.normalizarCamposEvento();
             this.modoEdicion = true;
             this.selectorEventosVisible = false;
+            this.fechaBloqueada = true;
             this.modalVisible = true;
         },
 
@@ -627,6 +637,7 @@ export default {
             this.normalizarCamposEvento();
             this.modoEdicion = false;
             this.selectorEventosVisible = false;
+            this.fechaBloqueada = true;
             this.modalVisible = true;
 
             // Para usuarios no-admin, mostrar solo información de lectura
@@ -759,7 +770,8 @@ export default {
             }
         },
 
-        limpiarFormulario() {
+        limpiarFormulario(fechaPrefijada = null) {
+            const fechaBase = fechaPrefijada ?? (this.fechaBloqueada ? this.nuevoEvento.fecha : null);
             this.nuevoEvento = {
                 titulo: '',
                 idTipoEvento: '',
@@ -768,8 +780,14 @@ export default {
                 horaInicio: '',
                 horaFin: '',
                 descripcion: '',
-                fecha: this.nuevoEvento.fecha || this.obtenerFechaActual()
+                fecha: fechaBase || null
             };
+            if (this.fechaBloqueada && !this.nuevoEvento.fecha) {
+                this.nuevoEvento.fecha = this.obtenerFechaActual();
+            }
+            if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
+                this.nuevoEvento.fecha = this.obtenerFechaActual();
+            }
             this.normalizarCamposEvento();
             this.eventoSeleccionado = null;
             this.modoEdicion = false;
