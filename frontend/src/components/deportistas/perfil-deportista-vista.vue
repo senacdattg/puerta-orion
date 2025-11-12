@@ -1535,6 +1535,7 @@ function obtenerTipoDocumento() {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
+  color: white !important;
 }
 
 .card-header h4 {
