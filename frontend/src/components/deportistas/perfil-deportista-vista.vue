@@ -915,6 +915,26 @@ async function guardarCambios() {
     }
   }
 
+  // Validar edad mínima (5 años) si se está actualizando la fecha de nacimiento
+  if (formData.value.fecha_nacimiento) {
+    const fechaNacimiento = new Date(formData.value.fecha_nacimiento);
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+    const mesDiferencia = hoy.getMonth() - fechaNacimiento.getMonth();
+    if (mesDiferencia < 0 || (mesDiferencia === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
+      edad--;
+    }
+
+    if (edad < 5) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Edad inválida',
+        text: 'El deportista debe tener mínimo 5 años de edad. La edad mínima de la categoría Pre-infantil es 5 años.'
+      });
+      return;
+    }
+  }
+
   guardando.value = true;
 
   try {

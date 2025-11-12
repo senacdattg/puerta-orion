@@ -528,6 +528,20 @@ class DeportistaService:
                                     'message': 'Formato de fecha_nacimiento inválido. Use YYYY-MM-DD',
                                     'status_code': 400
                                 }
+                        
+                        # Validar edad mínima (5 años) si se está actualizando fecha_nacimiento
+                        if campo == 'fecha_nacimiento' and valor:
+                            fecha_nacimiento_date = valor if isinstance(valor, date) else datetime.fromisoformat(str(valor)).date()
+                            hoy = date.today()
+                            edad = hoy.year - fecha_nacimiento_date.year - ((hoy.month, hoy.day) < (fecha_nacimiento_date.month, fecha_nacimiento_date.day))
+                            
+                            if edad < 5:
+                                return {
+                                    'success': False,
+                                    'message': 'El deportista debe tener mínimo 5 años de edad. La edad mínima de la categoría Pre-infantil es 5 años.',
+                                    'status_code': 400
+                                }
+                        
                         # Convertir fecha_ingreso si viene como string
                         if campo == 'fecha_ingreso' and isinstance(valor, str):
                             try:
