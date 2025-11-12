@@ -1,6 +1,6 @@
 <template>
   <div class="modal-overlay" @click="$emit('cerrar')">
-    <div class="modal-content mensualidades-modal" @click.stop>
+    <div class="modal-content mensualidades-modal form-modal" @click.stop>
       <div class="modal-header">
         <h3>{{ editando ? 'Editar Mensualidad' : 'Detalles Completos de Mensualidad' }}</h3>
         <div class="header-actions">
@@ -14,7 +14,7 @@
           <div class="deportista-info">
             <div class="avatar-deportista">
               <img
-                :src="mensualidad.avatar || '/src/assets/imgs/perfil.png'"
+                :src="mensualidad.avatar || defaultAvatar"
                 :alt="`Avatar de ${mensualidad.nombre}`"
               />
             </div>
@@ -85,7 +85,7 @@
               </div>
             </div>
             <div class="linea-abajo" style="margin:12px 0;" v-if="false"></div>
-
+            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='editar'"></div>
             <!-- Sección: Datos de pago -->
             <div class="seccion-form" v-if="activeTab==='editar'">
               <h6>Datos de pago</h6>
@@ -176,7 +176,7 @@
                 </div>
               </div>
             </div>
-            <div class="linea-abajo" style="margin:12px 0;"></div>
+            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='editar'"></div>
 
             <!-- Sección: Fechas y estado -->
             <div class="seccion-form" v-if="activeTab==='editar'">
@@ -393,6 +393,7 @@ import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
+import defaultAvatar from '@/assets/imgs/perfil.png';
 
 // Props
 const props = defineProps({
@@ -434,7 +435,6 @@ const abonos = ref([]);
 const abonoEditIndex = ref(null);
 const abonoEdit = ref({ fecha: '', monto: undefined, id_metodo_pago: undefined });
 
-const LOCALE_COL = 'es-CO';
 const MIN_DOCUMENTO = 6;
 const MAX_DOCUMENTO = 10;
 
@@ -1091,26 +1091,6 @@ const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());
 function obtenerValorNumericoMensualidad() {
   if (!props.mensualidad.valor) return 0;
   return parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
-}
-
-function getEstadoPago() {
-  const sp = props.mensualidad.saldo_pendiente_raw;
-  if (sp !== undefined && sp !== null) return Number(sp) === 0 ? 'Pagado' : 'Pendiente';
-  const totalPagado = calcularTotalPagado();
-  const totalMensualidad = obtenerValorNumericoMensualidad();
-  if (totalPagado === 0) return 'Sin pagos';
-  if (totalPagado === totalMensualidad) return 'Pagado';
-  if (totalPagado < totalMensualidad) return 'Pendiente';
-  return 'Pagado';
-}
-
-function getClaseEstado() {
-  const totalPagado = calcularTotalPagado();
-  const totalMensualidad = obtenerValorNumericoMensualidad();
-  if (totalPagado === 0) return 'sin-pagos';
-  if (totalPagado === totalMensualidad) return 'completo';
-  if (totalPagado < totalMensualidad) return 'parcial';
-  return 'pagado';
 }
 
 function formatearFecha(fecha) {

@@ -371,26 +371,29 @@
 }
 
 .mensualidades-modal {
-  --modal-header-bg: linear-gradient(135deg, var(--color-secundario), #ffb300);
-  --modal-header-color: var(--color-gris-oscuro);
-  --modal-footer-bg: #f8fafc;
-  width: 100%;
-  max-width: 700px;
+  width: auto;
+  max-width: var(--modal-max-width, 720px);
+  margin: 0 auto;
   animation: modal-fade-up 0.3s ease-out;
+  --modal-max-width: 780px;
+  --modal-radius: 20px;
 }
 
 .mensualidades-modal .btn-cerrar {
-  background: rgba(0, 0, 0, 0.2);
-  color: var(--color-gris-oscuro);
+  background: rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .mensualidades-modal .btn-cerrar:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
 /* ===== CUERPO DEL MODAL ===== */
-.modal-body {
-  padding: 1.5rem;
+.mensualidades-modal .modal-body {
+  padding: var(--modal-body-padding, 1.1rem);
+  background: #ffffff;
 }
 
 /* Tabla de historial: visual limpia */
@@ -710,10 +713,6 @@
 }
 
 /* ===== FORMULARIO MODAL PARA NUEVA MENSUALIDAD ===== */
-.formulario-mensualidad {
-  padding: 1.5rem;
-}
-
 .campo-formulario {
   margin-bottom: 1.5rem;
 }
@@ -783,10 +782,10 @@
 }
 
 .mensualidades-modal .modal-header {
-  background: linear-gradient(135deg, var(--color-primario), #FFD700);
-  color: var(--color-blanco);
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
   padding: 1.5rem;
-  border-radius: var(--radio-borde) var(--radio-borde) 0 0;
+  border-radius: var(--modal-radius, 16px) var(--modal-radius, 16px) 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -844,10 +843,6 @@
 
   .modal-header h3 {
     font-size: 1.3rem;
-  }
-
-  .formulario-mensualidad {
-    padding: 1rem;
   }
 
   .acciones {

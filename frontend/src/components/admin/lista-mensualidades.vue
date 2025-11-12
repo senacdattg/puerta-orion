@@ -101,7 +101,7 @@
 
       <!-- Modal de formulario para nueva mensualidad -->
       <div v-if="mostrarFormulario && esAdmin" class="modal-overlay">
-        <div class="modal-content mensualidades-modal" @click.stop>
+        <div class="modal-content mensualidades-modal form-modal" @click.stop>
           <div class="modal-header">
             <h3>Agregar Nueva Mensualidad</h3>
             <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
@@ -109,7 +109,7 @@
             </button>
           </div>
 
-          <form @submit.prevent="guardarMensualidad" class="formulario-mensualidad" :key="formKey" autocomplete="off">
+          <form @submit.prevent="guardarMensualidad" class="form-modal-panel" :key="formKey" autocomplete="off">
             <div class="campo-formulario">
               <label for="docPersona">
                 <i class="fas fa-id-card"></i>

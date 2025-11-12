@@ -64,21 +64,22 @@
 
     <!-- Modal de formulario -->
     <div v-if="mostrarFormulario" class="modal-overlay">
-      <div class="modal-content galeria-modal" @click.stop>
-        <div class="modal-header">
-          <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
-          <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+      <div class="modal-content mensualidades-modal galeria-modal form-modal" @click.stop>
+         <div class="modal-header">
+           <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
+           <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
+             <i class="fas fa-times"></i>
+           </button>
+         </div>
 
-        <form @submit.prevent="guardarEvento" class="formulario-evento">
+        <div class="modal-body">
+        <form @submit.prevent="guardarEvento" class="formulario-evento form-modal-panel">
           <div class="campo-formulario">
             <label for="titulo">
               <i class="fas fa-heading"></i>
               Título del evento *
             </label>
-            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
+            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento input-mensualidad" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
           </div>
           <div class="campo-formulario">
             <label for="archivo_imagen">
@@ -103,7 +104,7 @@
                 type="file"
                 accept="image/*"
                 @change="manejarSeleccionArchivo"
-                class="input-evento"
+                class="input-evento input-mensualidad"
                 :required="imagenRequerida"
               />
               <div v-if="archivoSeleccionado" class="archivo-info">
@@ -120,7 +121,7 @@
               <i class="fas fa-tag"></i>
               Tipo de evento *
             </label>
-            <select v-model="form.id_tipo_evento" class="select-evento" :disabled="!puedeEditarFoto" required>
+            <select v-model="form.id_tipo_evento" class="select-evento select-mensualidad" :disabled="!puedeEditarFoto" required>
               <option value="">Selecciona tipo de evento</option>
               <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">{{ tipo.nombre }}</option>
             </select>
@@ -130,7 +131,7 @@
               <i class="fas fa-list"></i>
               Categoría
             </label>
-            <select v-model="form.id_categoria" class="select-evento" :disabled="!puedeEditarFoto">
+            <select v-model="form.id_categoria" class="select-evento select-mensualidad" :disabled="!puedeEditarFoto">
               <option value="">Selecciona categoría</option>
               <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">{{ categoria.nombre_categoria }}</option>
             </select>
@@ -141,7 +142,7 @@
               Descripción *
             </label>
             <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
-              class="input-evento" :readonly="!puedeEditarFoto" @input="manejarDescripcion"></textarea>
+              class="input-evento input-mensualidad" :readonly="!puedeEditarFoto" @input="manejarDescripcion"></textarea>
           </div>
 
           <div class="acciones centrado">
@@ -150,6 +151,7 @@
             <button type="button" class="btn btn-danger" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
           </div>
         </form>
+        </div>
 
       </div>
 
@@ -830,61 +832,59 @@ export default {
 }
 
 .imagen-actual {
-  margin-top: 8px;
+  margin-top: 0.5rem;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background: #f8fafc;
 }
 
-.imagen-actual img {
-  width: 100%;
-  max-height: 400px;
-  min-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #dee2e6;
-  object-fit: contain;
-  display: block;
-  background: #f8f9fa;
-}
-
+.imagen-actual img,
 .imagen-preview {
   width: 100%;
-  max-height: 400px;
-  min-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #dee2e6;
-  object-fit: contain;
-  display: block;
-  background: #f8f9fa;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
 }
 
 .texto-imagen-actual {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: 0.85rem;
+  color: #475569;
   font-style: italic;
   text-align: center;
 }
 
 .btn-cambiar-imagen {
-  margin-top: 8px;
-  padding: 6px 12px;
-  background: #007bff;
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background 0.2s ease;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-cambiar-imagen:hover {
-  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
 }
 
 .btn-cambiar-imagen i {
-  margin-right: 4px;
+  margin-right: 0;
 }
 
 /* Mejorar estilos del formulario */
@@ -906,42 +906,46 @@ export default {
   width: 16px;
 }
 
-.input-evento, .select-evento {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-}
-
-.input-evento:focus, .select-evento:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
 .input-evento::placeholder {
   color: #6c757d;
 }
 
 .galeria-modal {
-  --modal-header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --modal-header-color: #ffffff;
-  max-width: 600px;
+  --modal-max-width: 780px;
+  --modal-radius: 20px;
+  border-radius: var(--modal-radius, 20px);
+}
+
+.modal-content.galeria-modal {
+  border-radius: var(--modal-radius, 20px);
+  overflow: hidden;
+}
+
+.galeria-modal .modal-header h3 {
+  font-size: 1.65rem;
+}
+
+.galeria-modal .form-modal-panel {
+  background: #ffffff;
+  padding: 1.35rem 1.5rem 1.6rem;
+  gap: 1.15rem;
+  border-radius: 16px;
 }
 
 .galeria-modal .btn-cerrar {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .galeria-modal .btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
-.formulario-evento {
-  padding: 20px;
+.textarea-evento {
+  resize: vertical;
+  min-height: 140px;
 }
 
 .btn-limpiar-filtros {

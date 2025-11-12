@@ -66,7 +66,7 @@
 
         <!-- Modal para agregar/editar eventos -->
         <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
-            <div class="modal-content calendario-modal" @click.stop>
+            <div class="modal-content mensualidades-modal calendario-modal form-modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}</h3>
                     <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
@@ -74,14 +74,14 @@
                     </button>
                 </div>
 
-                <form @submit.prevent="guardarEvento" class="formulario-evento">
+                <form @submit.prevent="guardarEvento" class="formulario-evento form-modal-panel">
                     <div class="campo-formulario">
                         <label for="titulo">
                             <i class="fas fa-heading"></i>
                             Título del evento *
                         </label>
                         <input id="titulo" v-model="nuevoEvento.titulo" type="text"
-                            placeholder="Ej: Entrenamiento de fuerza" required class="input-evento"
+                            placeholder="Ej: Entrenamiento de fuerza" required class="input-evento input-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion" @input="manejarTitulo" />
                     </div>
 
@@ -90,7 +90,7 @@
                             <i class="fas fa-tag"></i>
                             Tipo de evento *
                         </label>
-                        <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento"
+                        <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento select-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion">
                             <option value="">Seleccionar tipo</option>
                             <option v-for="tipo in tiposEvento" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">
@@ -109,7 +109,7 @@
                             v-model="nuevoEvento.fecha"
                             type="date"
                             required
-                            class="input-evento"
+                            class="input-evento input-mensualidad"
                             :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
                             :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
                         />
@@ -121,7 +121,7 @@
                                 <i class="fas fa-clock"></i>
                                 Hora Inicio *
                             </label>
-                            <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento"
+                            <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento input-mensualidad"
                                 :disabled="!puedeCrear && !modoEdicion" />
                         </div>
                         <div class="campo-formulario">
@@ -129,7 +129,7 @@
                                 <i class="fas fa-clock"></i>
                                 Hora Fin *
                             </label>
-                            <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento"
+                            <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento input-mensualidad"
                                 :disabled="!puedeCrear && !modoEdicion" />
                         </div>
                     </div>
@@ -139,7 +139,7 @@
                             <i class="fas fa-layer-group"></i>
                             Categoría *
                         </label>
-                        <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento"
+                        <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento select-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion">
                             <option value="">Seleccionar categoría</option>
                             <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">
@@ -154,7 +154,7 @@
                             Lugar *
                         </label>
                         <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
-                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
+                            required class="input-evento input-mensualidad" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
                     </div>
 
                     <div class="campo-formulario">
@@ -163,33 +163,30 @@
                             Descripción
                         </label>
                         <textarea id="descripcion" v-model="nuevoEvento.descripcion"
-                            placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento"
+                            placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento input-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion" @input="manejarDescripcion"></textarea>
                     </div>
 
-                    <div class="botones-modal">
-                        <button 
-                            type="button" 
-                            @click="cerrarModal" 
+                    <div class="acciones">
+                        <button
+                            type="button"
+                            @click="cerrarModal"
                             class="btn btn-secondary"
-                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
                         >
                             Cerrar
                         </button>
-                        <button 
-                            v-if="puedeEliminar && modoEdicion" 
-                            type="button" 
-                            @click="eliminarEvento" 
+                        <button
+                            v-if="puedeEliminar && modoEdicion"
+                            type="button"
+                            @click="eliminarEvento"
                             class="btn btn-danger"
-                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
                         >
                             Eliminar
                         </button>
-                        <button 
-                            v-if="puedeCrear || (puedeEditar && modoEdicion)" 
-                            type="submit" 
+                        <button
+                            v-if="puedeCrear || (puedeEditar && modoEdicion)"
+                            type="submit"
                             class="btn btn-success"
-                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
                         >
                             {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
                         </button>
@@ -200,7 +197,7 @@
 
         <!-- Modal para seleccionar evento a editar -->
         <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
-            <div class="modal-content selector-eventos calendario-modal" @click.stop>
+            <div class="modal-content mensualidades-modal selector-eventos calendario-modal form-modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ puedeEditar ? 'Eventos del Día' : 'Eventos del Día' }}</h3>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
@@ -208,51 +205,55 @@
                     </button>
                 </div>
 
-                <div class="lista-eventos">
-                    <div v-for="evento in eventosDelDia" :key="evento.id"
-                        @click="puedeEditar ? editarEvento(evento) : verEvento(evento)" class="evento-item"
-                        :class="{ 'evento-item-usuario': !puedeEditar }">
-                        <div class="evento-info">
-                            <div class="evento-titulo">{{ evento.titulo }}</div>
-                            <div class="evento-detalles">
-                                <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
-                                    {{ evento.tipo }}
-                                </span>
-                                <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
-                                    <i class="fas fa-tag"></i>
-                                    {{ evento.categoria.nombre_categoria }}
-                                </span>
-                                <span class="evento-hora">
-                                    <i class="fas fa-clock"></i>
-                                    {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}
-                                </span>
-                                <span class="evento-lugar">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    {{ evento.lugar }}
-                                </span>
-                            </div>
-                            <div v-if="!puedeEditar" class="evento-descripcion">
-                                <i class="fas fa-align-left"></i>
-                                {{ evento.descripcion || 'Sin descripción' }}
+                <div class="modal-body">
+                    <div class="panel-selector-eventos">
+                        <div class="lista-eventos">
+                            <div v-for="evento in eventosDelDia" :key="evento.id"
+                                @click="puedeEditar ? editarEvento(evento) : verEvento(evento)" class="evento-item"
+                                :class="{ 'evento-item-usuario': !puedeEditar }">
+                                <div class="evento-info">
+                                    <div class="evento-titulo">{{ evento.titulo }}</div>
+                                    <div class="evento-detalles">
+                                        <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
+                                            {{ evento.tipo }}
+                                        </span>
+                                        <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
+                                            <i class="fas fa-tag"></i>
+                                            {{ evento.categoria.nombre_categoria }}
+                                        </span>
+                                        <span class="evento-hora">
+                                            <i class="fas fa-clock"></i>
+                                            {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}
+                                        </span>
+                                        <span class="evento-lugar">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            {{ evento.lugar }}
+                                        </span>
+                                    </div>
+                                    <div v-if="!puedeEditar" class="evento-descripcion">
+                                        <i class="fas fa-align-left"></i>
+                                        {{ evento.descripcion || 'Sin descripción' }}
+                                    </div>
+                                </div>
+                                <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
+                                    :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
                             </div>
                         </div>
-                        <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
-                            :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
+
+                        <!-- Botón para agregar nuevo evento (solo si tiene permisos de creación) -->
+                        <div v-if="puedeCrear" class="botones-selector">
+                            <button @click="abrirModalDesdeSelector" class="btn-agregar-evento">
+                                <i class="fas fa-plus"></i>
+                                Agregar Otro Evento
+                            </button>
+                        </div>
+
+                        <!-- Mensaje informativo -->
+                        <div v-if="puedeCrear && eventosDelDia.length > 0" class="info-multiple-eventos">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Puedes agregar varios eventos en este día. Solo verifica que los horarios no se solapen.</span>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Botón para agregar nuevo evento (solo si tiene permisos de creación) -->
-                <div v-if="puedeCrear" class="botones-selector">
-                    <button @click="abrirModalDesdeSelector" class="btn-agregar-evento">
-                        <i class="fas fa-plus"></i>
-                        Agregar Otro Evento
-                    </button>
-                </div>
-
-                <!-- Mensaje informativo -->
-                <div v-if="puedeCrear && eventosDelDia.length > 0" class="info-multiple-eventos">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Puedes agregar varios eventos en este día. Solo verifica que los horarios no se solapen.</span>
                 </div>
             </div>
         </div>
