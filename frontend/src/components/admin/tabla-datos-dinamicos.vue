@@ -45,6 +45,7 @@
     </div>
 
     <table v-else class="tabla-datos">
+      <caption class="sr-only">Tabla de datos dinámicos mostrando información de {{ temaSeleccionado }}</caption>
       <thead>
         <tr>
           <th>ID</th>
@@ -70,15 +71,15 @@
           </td>
           <td class="acciones-col">
             <div class="acciones-buttons">
-              <button 
-                class="btn-icon btn-edit" 
+              <button
+                class="btn-icon btn-edit"
                 @click="editarDato(dato)"
                 title="Editar"
               >
                 <i class="fas fa-edit"></i>
               </button>
-              <button 
-                class="btn-icon btn-delete" 
+              <button
+                class="btn-icon btn-delete"
                 @click="confirmarEliminar(dato)"
                 title="Eliminar"
               >
@@ -181,7 +182,7 @@ async function cargarDatos() {
     }
 
     const result = await response.json()
-    
+
     if (result.success) {
       datos.value = result.data || []
     } else {
@@ -221,7 +222,7 @@ async function confirmarEliminar(dato) {
 
 async function eliminarDato(dato) {
   const id = obtenerId(dato)
-  
+
   if (!id) {
     await Swal.fire({
       icon: 'error',
@@ -229,7 +230,7 @@ async function eliminarDato(dato) {
     })
     return
   }
-  
+
   try {
     const base = API_CONFIG.baseURL || ''
     const response = await fetch(`${base}/api/dynamic-data/${temaSeleccionado.value}/${id}`, {
@@ -253,7 +254,7 @@ async function eliminarDato(dato) {
     }
 
     const result = await response.json()
-    
+
     if (result.success) {
       await Swal.fire({
         icon: 'success',

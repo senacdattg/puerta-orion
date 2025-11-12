@@ -69,7 +69,7 @@
         <TarjetaMensualidad v-for="mensualidad in mensualidadesFiltradas" :key="mensualidad.id"
           :mensualidad="mensualidad" @ver-detalle-completo="verDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
           @eliminar="eliminarMensualidad" />
-          
+
         <div v-if="esAdmin" class="boton-agregar" @click="abrirFormulario">
           +
         </div>
@@ -95,7 +95,7 @@
       <!-- Modal de Detalles Completos -->
       <ModalDetalles v-if="modalDetalleCompletoVisible" :mensualidad="mensualidadSeleccionada"
         :modo-edicion="modalDetalleEnEdicion"
-        @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion" 
+        @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
         @guardar-cambios="guardarCambiosMensualidad" />
 
 
@@ -287,7 +287,6 @@ const esAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNam
 const estados = ['Pagado', 'Pendiente', 'Vencido'];
 
 // Constantes de validación
-const LOCALE_COL = 'es-CO';
 const MIN_DOCUMENTO = 6;
 const MAX_DOCUMENTO = 10;
 
@@ -407,7 +406,7 @@ function abrirModalEnModoEdicion(mensualidad) {
 
 async function guardarCambiosMensualidad(mensualidadActualizada) {
   console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
-  
+
   const index = props.mensualidades.findIndex(m => m.id === mensualidadActualizada.id);
   if (index !== -1) {
     Object.assign(props.mensualidades[index], mensualidadActualizada);
@@ -452,7 +451,6 @@ function limpiarFiltros() {
   busqueda.value = '';
   filtroMes.value = '';
   filtroEstado.value = '';
-  filtroVencimiento.value = '';
 }
 
 // Funciones del formulario

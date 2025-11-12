@@ -103,7 +103,7 @@
             </div>
           </div>
           <div class="panel-body">
-            <TablaDatosDinamicos 
+            <TablaDatosDinamicos
               :recargar="recargarTablaDatos"
               @editar-dato="abrirModalEdicion"
               @crear-nuevo="abrirModalDatosConTema"
@@ -119,15 +119,15 @@
       @usuario-registrado="manejarUsuarioRegistrado" />
 
     <!-- Modal Añadir Datos -->
-    <ModalAnadirDatos 
-      :mostrar="mostrarModalDatos" 
+    <ModalAnadirDatos
+      :mostrar="mostrarModalDatos"
       :tema-inicial="temaParaCrear"
-      @cerrar="cerrarModalDatos" 
-      @guardar-dato="onGuardarDato" 
+      @cerrar="cerrarModalDatos"
+      @guardar-dato="onGuardarDato"
     />
 
     <!-- Modal Editar Dato -->
-    <ModalEditarDato 
+    <ModalEditarDato
       :mostrar="mostrarModalEdicion"
       :tema="temaEdicion"
       :dato="datoEdicion"
@@ -227,7 +227,6 @@ const tarjetasStats = computed(() => {
       iconClass = 'fas fa-user-friends';
       statClass = 'stat-icon--acudiente';
     } else if (rolLower.includes('usuario')) {
-      iconClass = 'fas fa-user';
       statClass = 'stat-icon--usuario';
     }
 
@@ -315,75 +314,87 @@ function onDatoEliminado() {
   // La tabla ya se recarga automáticamente en el componente
 }
 
+function obtenerTemaBackend(entidad) {
+  const temaMap = {
+    'tipo_documento': 'tipo-documento',
+    'sexo': 'sexo',
+    'ciudad': 'ciudad-residencia',
+    'eps': 'eps',
+    'tipo-evento': 'tipo-evento',
+    'metodo_pago': 'metodo-pago'
+  }
+  return temaMap[entidad]
+}
+
+async function mostrarErrorEntidadNoDisponible(entidad) {
+  await Swal.fire({
+    icon: 'warning',
+    title: 'Función no disponible',
+    text: `La creación de "${entidad}" aún no está disponible desde esta interfaz.`
+  })
+}
+
+function prepararDatosMetodoPago(nombre, payload) {
+  const datos = { nombre_metodo: nombre.trim() }
+  datos.estado = payload.estado !== undefined ? payload.estado : true
+  return datos
+}
+
+function prepararDatosEPS(nombre, codigo, payload) {
+  const datos = { nombre_eps: nombre.trim() }
+  if (codigo) {
+    datos.codigo_eps = codigo.trim()
+  }
+  datos.estado = payload.estado !== undefined ? payload.estado : true
+  return datos
+}
+
+function prepararDatosTipoEvento(nombre, payload) {
+  const datos = { nombre: nombre.trim() }
+  if (payload.descripcion) {
+    datos.descripcion = payload.descripcion.trim()
+  }
+  return datos
+}
+
+function prepararDatosPorEntidad(entidad, nombre, codigo, payload) {
+  const mapeoCampos = {
+    'tipo_documento': { nombre_documento: nombre.trim() },
+    'sexo': { nombre: nombre.trim() },
+    'ciudad': { nombre_ciudad: nombre.trim() }
+  }
+
+  if (mapeoCampos[entidad]) {
+    return mapeoCampos[entidad]
+  }
+
+  if (entidad === 'metodo_pago') {
+    return prepararDatosMetodoPago(nombre, payload)
+  }
+
+  if (entidad === 'eps') {
+    return prepararDatosEPS(nombre, codigo, payload)
+  }
+
+  if (entidad === 'tipo-evento') {
+    return prepararDatosTipoEvento(nombre, payload)
+  }
+
+  return { nombre: nombre.trim() }
+}
+
 async function onGuardarDato(payload) {
   try {
     const { entidad, nombre, codigo } = payload
 
-    // Mapear entidad del frontend al tema del backend en dynamic-data
-    const temaMap = {
-      'tipo_documento': 'tipo-documento',
-      'sexo': 'sexo',
-      'ciudad': 'ciudad-residencia',
-      'eps': 'eps',
-      'tipo-evento': 'tipo-evento',
-      'metodo_pago': 'metodo-pago'
-    }
+    const tema = obtenerTemaBackend(entidad)
 
-    const tema = temaMap[entidad]
-
-    // Si no está en el mapeo, mostrar mensaje de que no está disponible
     if (!tema) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Función no disponible',
-        text: `La creación de "${payload.entidad}" aún no está disponible desde esta interfaz.`
-      })
+      await mostrarErrorEntidadNoDisponible(payload.entidad)
       return
     }
 
-    // Preparar datos según el tipo
-    let datos = {}
-
-    if (entidad === 'metodo_pago') {
-      // Para método de pago, el campo es nombre_metodo
-      datos.nombre_metodo = nombre.trim()
-      // El estado se envía automáticamente si está en el payload
-      if (payload.estado !== undefined) {
-        datos.estado = payload.estado
-      } else {
-        datos.estado = true // Por defecto activo
-      }
-    } else if (entidad === 'tipo_documento') {
-      // Para tipo documento, el campo es nombre_documento
-      datos.nombre_documento = nombre.trim()
-    } else if (entidad === 'sexo') {
-      // Para sexo, el campo es nombre
-      datos.nombre = nombre.trim()
-    } else if (entidad === 'ciudad') {
-      // Para ciudad, el campo es nombre_ciudad
-      datos.nombre_ciudad = nombre.trim()
-    } else if (entidad === 'eps') {
-      // Para EPS, el campo es nombre_eps
-      datos.nombre_eps = nombre.trim()
-      if (codigo) {
-        datos.codigo_eps = codigo.trim()
-      }
-      // El estado se envía automáticamente si está en el payload
-      if (payload.estado !== undefined) {
-        datos.estado = payload.estado
-      } else {
-        datos.estado = true // Por defecto activo
-      }
-    } else if (entidad === 'tipo-evento') {
-      // Para tipo evento, el campo es nombre
-      datos.nombre = nombre.trim()
-      if (payload.descripcion) {
-        datos.descripcion = payload.descripcion.trim()
-      }
-    } else {
-      // Por defecto, usar nombre
-      datos.nombre = nombre.trim()
-    }
+    const datos = prepararDatosPorEntidad(entidad, nombre, codigo, payload)
 
     const base = API_CONFIG.baseURL || ''
     const response = await fetch(`${base}/api/dynamic-data/${tema}`, {
@@ -543,23 +554,23 @@ function actualizarUsuario(usuarioActualizado) {
   min-height: 400px;
 }
 
-.modal-body-form :deep(.formulario-datos) {
+.modal-body-form ::v-deep .formulario-datos {
   width: 100% !important;
   max-width: 700px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
-.modal-body-form :deep(.seccion-formulario) {
+.modal-body-form ::v-deep .seccion-formulario {
   margin: 0 auto;
   width: 100%;
 }
 
-.modal-body-form :deep(.seccion-formulario h3) {
+.modal-body-form ::v-deep .seccion-formulario h3 {
   text-align: center;
 }
 
-.modal-body-form :deep(.fila-texto) {
+.modal-body-form ::v-deep .fila-texto {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
@@ -567,28 +578,28 @@ function actualizarUsuario(usuarioActualizado) {
   width: 100%;
 }
 
-.modal-body-form :deep(.fila-texto input),
-.modal-body-form :deep(.fila-texto select) {
+.modal-body-form ::v-deep .fila-texto input,
+.modal-body-form ::v-deep .fila-texto select {
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Campos que ocupan todo el ancho */
-.modal-body-form :deep(.fila-texto:has(input[placeholder*="Número de documento"])),
-.modal-body-form :deep(.fila-texto:has(input[placeholder*="Dirección"])),
-.modal-body-form :deep(.fila-texto:has(input[placeholder*="Nombre de usuario"])) {
+/* Campos que ocupan todo el ancho - aplicado directamente a los inputs */
+.modal-body-form ::v-deep .fila-texto input[placeholder*="Número de documento"],
+.modal-body-form ::v-deep .fila-texto input[placeholder*="Dirección"],
+.modal-body-form ::v-deep .fila-texto input[placeholder*="Nombre de usuario"] {
   grid-column: 1 / -1;
 }
 
 /* Botones centrados */
-.modal-body-form :deep(.botones-formulario) {
+.modal-body-form ::v-deep .botones-formulario {
   justify-content: center;
   gap: 15px;
   margin-top: 30px;
 }
 
 /* Ocultar el botón "Volver al login" en el modal del admin */
-.modal-body-form :deep(.boton-secundario) {
+.modal-body-form ::v-deep .boton-secundario {
   display: none;
 }
 </style>

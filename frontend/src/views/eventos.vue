@@ -228,7 +228,7 @@ const getEstadoClass = (estado) => {
 }
 
 /* Hacer que el footer se salga del padding del main y se comporte como footer */
-.eventos-page :deep(.footer-enhanced) {
+.eventos-page ::v-deep .footer-enhanced {
   margin-left: -1rem;
   margin-right: -1rem;
   width: calc(100% + 2rem);

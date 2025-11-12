@@ -270,49 +270,31 @@ async function manejarCancelacion() {
     const userRoles = authStore.userRoles || [];
     const roleNames = userRoles.map(role => typeof role === 'string' ? role : role.nombre_rol);
 
-    // Si tiene rol activo, usar ese
-    if (authStore.activeRole) {
-      switch(authStore.activeRole) {
+    const obtenerRutaPorRol = (rol) => {
+      switch(rol) {
         case 'SuperAdmin':
         case 'Administrador':
-          router.push('/admin-manager');
-          return;
-        case 'Entrenador':
-          router.push('/home');
-          return;
+          return '/admin-manager'
         case 'Deportista':
-          router.push('/deportista/dashboard');
-          return;
+          return '/deportista/dashboard'
         case 'Acudiente':
-          router.push('/acudiente/dashboard');
-          return;
+          return '/acudiente/dashboard'
+        case 'Entrenador':
         default:
-          router.push('/home');
-          return;
+          return '/home'
       }
+    }
+
+    // Si tiene rol activo, usar ese
+    if (authStore.activeRole) {
+      router.push(obtenerRutaPorRol(authStore.activeRole))
+      return
     }
 
     // Si no hay rol activo, verificar roles del usuario
     if (roleNames.length === 1) {
-      const singleRole = roleNames[0];
-      switch(singleRole) {
-        case 'SuperAdmin':
-        case 'Administrador':
-          router.push('/admin-manager');
-          return;
-        case 'Entrenador':
-          router.push('/home');
-          return;
-        case 'Deportista':
-          router.push('/deportista/dashboard');
-          return;
-        case 'Acudiente':
-          router.push('/acudiente/dashboard');
-          return;
-        default:
-          router.push('/home');
-          return;
-      }
+      router.push(obtenerRutaPorRol(roleNames[0]))
+      return
     }
 
     // Si tiene múltiples roles, redirigir a selección de rol

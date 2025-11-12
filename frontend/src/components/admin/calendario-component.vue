@@ -368,21 +368,21 @@ export default {
         normalizarTitulo(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ.\-\s]/g, '');
             return this.normalizarEspacios(limpio).slice(0, MAX_TITULO);
         },
 
         normalizarLugar(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '');
             return this.normalizarEspacios(limpio).slice(0, MAX_LUGAR);
         },
 
         normalizarDescripcion(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.,;:¿?¡!()\s]/g, '');
             return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION);
         },
 
@@ -648,28 +648,153 @@ export default {
             }
         },
 
+        validarTitulo() {
+            return !this.nuevoEvento.titulo ? 'El título debe tener al menos 3 caracteres' : null;
+        },
+
+        validarTipoEvento() {
+            return !this.nuevoEvento.idTipoEvento ? 'Debe seleccionar un tipo de evento' : null;
+        },
+
+        validarFecha() {
+            return !this.nuevoEvento.fecha ? 'Debe especificar una fecha' : null;
+        },
+
+        validarHoraInicio() {
+            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) {
+                return 'Debe especificar una hora de inicio';
+            }
+            return null;
+        },
+
+        validarHoras() {
+            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) {
+                return 'Debe especificar hora de inicio y fin';
+            }
+            return null;
+        },
+
+        validarCategoria() {
+            return !this.nuevoEvento.idCategoria ? 'Debe seleccionar una categoría' : null;
+        },
+
+        validarLugar() {
+            return !this.nuevoEvento.lugar ? 'El lugar debe tener al menos 3 caracteres' : null;
+        },
+
+        validarRangoHoras() {
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
+                return 'La hora de fin debe ser posterior a la hora de inicio';
+            }
+            return null;
+        },
+
+        validarEvento() {
+            const validaciones = [
+                this.validarTitulo(),
+                this.validarTipoEvento(),
+                this.validarFecha(),
+                this.validarHoraInicio(),
+                this.validarHoras(),
+                this.validarCategoria(),
+                this.validarLugar(),
+                this.validarRangoHoras()
+            ];
+            return validaciones.filter(error => error !== null);
+        },
+
+        async mostrarErroresValidacion(errores) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Corrige los errores',
+                html: errores.join('<br>')
+            });
+        },
+
+        async validarPermisosEdicion() {
+            if (!this.puedeEditar) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin permisos',
+                    text: 'No tienes permisos para editar eventos.'
+                });
+                return false;
+            }
+            return true;
+        },
+
+        async validarPermisosCreacion() {
+            if (!this.puedeCrear) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin permisos',
+                    text: 'No tienes permisos para crear eventos.'
+                });
+                return false;
+            }
+            return true;
+        },
+
+        async actualizarEventoExistente() {
+            if (!(await this.validarPermisosEdicion())) {
+                return;
+            }
+            await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+            this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
+            this.actualizarCalendario();
+            this.cerrarModal();
+        },
+
+        async preguntarAgregarOtroEvento(fechaActual) {
+            const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
+            if (!eventosDelDia || eventosDelDia.length <= 1) {
+                return false;
+            }
+
+            const confirmacion = await Swal.fire({
+                icon: 'question',
+                title: '¿Agregar otro evento?',
+                text: 'Ya existen eventos en este día. ¿Quieres crear otro de inmediato?',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, agregar',
+                cancelButtonText: 'No'
+            });
+
+            if (confirmacion.isConfirmed) {
+                this.limpiarFormulario();
+                this.nuevoEvento.fecha = fechaActual;
+                return true;
+            }
+            return false;
+        },
+
+        async crearNuevoEvento() {
+            if (!(await this.validarPermisosCreacion())) {
+                return;
+            }
+
+            await calendarioService.crearEvento(this.nuevoEvento);
+            this.mostrarNotificacion('Evento creado exitosamente', 'success');
+
+            await calendarioService.cargarEventos();
+            this.actualizarCalendario();
+
+            const fechaActual = this.nuevoEvento.fecha;
+            const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+
+            if (!quiereAgregarOtro) {
+                this.cerrarModal();
+            }
+        },
+
         async guardarEvento() {
-            if (!this.puedeCrear && !this.puedeEditar) return; // Verificar permisos
+            if (!this.puedeCrear && !this.puedeEditar) return;
 
             this.normalizarCamposEvento();
-            // Validar datos del evento
-            const errores = [];
-            if (!this.nuevoEvento.titulo) errores.push('El título debe tener al menos 3 caracteres');
-            if (!this.nuevoEvento.idTipoEvento) errores.push('Debe seleccionar un tipo de evento');
-            if (!this.nuevoEvento.fecha) errores.push('Debe especificar una fecha');
-            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) errores.push('Debe especificar una hora de inicio');
-            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) errores.push('Debe especificar hora de inicio y fin');
-            if (!this.nuevoEvento.idCategoria) errores.push('Debe seleccionar una categoría');
-            if (!this.nuevoEvento.lugar) errores.push('El lugar debe tener al menos 3 caracteres');
-            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
-                errores.push('La hora de fin debe ser posterior a la hora de inicio');
-            }
+            const errores = this.validarEvento();
+
             if (errores.length > 0) {
-                await Swal.fire({
-                    icon: 'error',
-                    title: 'Corrige los errores',
-                    html: errores.join('<br>')
-                });
+                await this.mostrarErroresValidacion(errores);
                 return;
             }
 
@@ -677,64 +802,10 @@ export default {
                 this.cargando = true;
 
                 if (this.modoEdicion) {
-                    if (!this.puedeEditar) {
-                        await Swal.fire({
-                            icon: 'warning',
-                            title: 'Sin permisos',
-                            text: 'No tienes permisos para editar eventos.'
-                        });
-                        return;
-                    }
-                    await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
-                    this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
+                    await this.actualizarEventoExistente();
                 } else {
-                    if (!this.puedeCrear) {
-                        await Swal.fire({
-                            icon: 'warning',
-                            title: 'Sin permisos',
-                            text: 'No tienes permisos para crear eventos.'
-                        });
-                        return;
-                    }
-                    await calendarioService.crearEvento(this.nuevoEvento);
-                    this.mostrarNotificacion('Evento creado exitosamente', 'success');
-
-                    // Recargar eventos del calendario
-                    await calendarioService.cargarEventos();
-                    this.actualizarCalendario();
-
-                    // Verificar si hay eventos en esa fecha antes de preguntar
-                    const fechaActual = this.nuevoEvento.fecha;
-                    const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
-
-                    // Solo preguntar si ya hay eventos en ese día (más de 1 porque acabamos de crear uno)
-                    if (eventosDelDia && eventosDelDia.length > 1) {
-                        const confirmacion = await Swal.fire({
-                            icon: 'question',
-                            title: '¿Agregar otro evento?',
-                            text: 'Ya existen eventos en este día. ¿Quieres crear otro de inmediato?',
-                            showCancelButton: true,
-                            confirmButtonText: 'Sí, agregar',
-                            cancelButtonText: 'No'
-                        });
-
-                        if (confirmacion.isConfirmed) {
-                            // Limpiar formulario pero mantener la fecha y el modal abierto
-                            this.limpiarFormulario();
-                            this.nuevoEvento.fecha = fechaActual;
-                            // El modal permanece abierto para agregar otro evento
-                            return;
-                        }
-                    }
-
-                    // Cerrar el modal si no quiere agregar otro o si no hay eventos previos
-                    this.cerrarModal();
-                    return;
+                    await this.crearNuevoEvento();
                 }
-
-                // Esto solo se ejecuta si es edición
-                this.actualizarCalendario();
-                this.cerrarModal();
             } catch (error) {
                 console.error('Error al guardar evento:', error);
                 this.mostrarNotificacion(error.message || 'Error al guardar el evento', 'error');

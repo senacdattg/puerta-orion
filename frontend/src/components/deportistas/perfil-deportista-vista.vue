@@ -863,20 +863,19 @@ function cancelarEdicion() {
   emit('cancelar');
 }
 
-async function guardarCambios() {
-  if (!props.datos) {
-    return;
-  }
-
+async function validarIdentificadores() {
   if (!idPersona.value || !idDeportista.value) {
     await Swal.fire({
       icon: 'error',
       title: 'No se puede actualizar',
       text: 'No encontramos los identificadores del deportista.'
     });
-    return;
+    return false;
   }
+  return true;
+}
 
+async function validarCamposObligatorios() {
   const camposObligatorios = [
     { campo: 'primer_nombre', etiqueta: 'primer nombre' },
     { campo: 'primer_apellido', etiqueta: 'primer apellido' },
@@ -893,82 +892,136 @@ async function guardarCambios() {
       title: 'Campos obligatorios',
       text: `Completa: ${lista}.`
     });
+    return false;
+  }
+  return true;
+}
+
+async function validarRecomendacionMedica() {
+  if (!formData.value.recomendacion_medica) {
+    return true;
+  }
+
+  if (!formData.value.id_tipo_enfermedad) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Dato requerido',
+      text: 'Selecciona un tipo de enfermedad para la recomendación médica.'
+    });
+    return false;
+  }
+
+  if (!formData.value.diagnosticos || formData.value.diagnosticos.length === 0) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Dato requerido',
+      text: 'Selecciona al menos un diagnóstico asociado.'
+    });
+    return false;
+  }
+
+  return true;
+}
+
+function calcularEdad(fechaNacimiento) {
+  const fecha = new Date(fechaNacimiento);
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - fecha.getFullYear();
+  const mesDiferencia = hoy.getMonth() - fecha.getMonth();
+
+  if (mesDiferencia < 0 || (mesDiferencia === 0 && hoy.getDate() < fecha.getDate())) {
+    edad--;
+  }
+
+  return edad;
+}
+
+async function validarEdadMinima() {
+  if (!formData.value.fecha_nacimiento) {
+    return true;
+  }
+
+  const edad = calcularEdad(formData.value.fecha_nacimiento);
+  if (edad < 5) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Edad inválida',
+      text: 'El deportista debe tener mínimo 5 años de edad. La edad mínima de la categoría Pre-infantil es 5 años.'
+    });
+    return false;
+  }
+
+  return true;
+}
+
+async function actualizarPersona() {
+  const payloadPersona = construirPayloadPersona();
+  if (Object.keys(payloadPersona).length > 0) {
+    await personasService.actualizarPersona(idPersona.value, payloadPersona);
+  }
+}
+
+function construirDatosActualizacionDeportista() {
+  const payloadDatosDeportista = construirPayloadDatosDeportista();
+  const payloadInformacionDeportiva = construirPayloadInformacionDeportiva();
+  const payloadSalud = construirPayloadSalud();
+
+  const tieneCambios =
+    Object.keys(payloadDatosDeportista).length > 0 ||
+    Object.keys(payloadInformacionDeportiva).length > 0 ||
+    payloadSalud.necesitaActualizacion;
+
+  if (!tieneCambios) {
+    return null;
+  }
+
+  const datosActualizacion = {
+    datos_deportista: payloadDatosDeportista,
+    datos_informacion_deportiva: payloadInformacionDeportiva
+  };
+
+  if (payloadSalud.necesitaActualizacion) {
+    if ('tipo_enfermedad' in payloadSalud) {
+      datosActualizacion.tipo_enfermedad = payloadSalud.tipo_enfermedad;
+    }
+    if ('diagnostico' in payloadSalud) {
+      datosActualizacion.diagnostico = payloadSalud.diagnostico;
+    }
+  }
+
+  return datosActualizacion;
+}
+
+async function guardarCambios() {
+  if (!props.datos) {
     return;
   }
 
-  if (formData.value.recomendacion_medica) {
-    if (!formData.value.id_tipo_enfermedad) {
-      await Swal.fire({
-        icon: 'info',
-        title: 'Dato requerido',
-        text: 'Selecciona un tipo de enfermedad para la recomendación médica.'
-      });
-      return;
-    }
-    if (!formData.value.diagnosticos || formData.value.diagnosticos.length === 0) {
-      await Swal.fire({
-        icon: 'info',
-        title: 'Dato requerido',
-        text: 'Selecciona al menos un diagnóstico asociado.'
-      });
-      return;
-    }
+  if (!(await validarIdentificadores())) {
+    return;
   }
 
-  // Validar edad mínima (5 años) si se está actualizando la fecha de nacimiento
-  if (formData.value.fecha_nacimiento) {
-    const fechaNacimiento = new Date(formData.value.fecha_nacimiento);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-    const mesDiferencia = hoy.getMonth() - fechaNacimiento.getMonth();
-    if (mesDiferencia < 0 || (mesDiferencia === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
-      edad--;
-    }
+  if (!(await validarCamposObligatorios())) {
+    return;
+  }
 
-    if (edad < 5) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Edad inválida',
-        text: 'El deportista debe tener mínimo 5 años de edad. La edad mínima de la categoría Pre-infantil es 5 años.'
-      });
-      return;
-    }
+  if (!(await validarRecomendacionMedica())) {
+    return;
+  }
+
+  if (!(await validarEdadMinima())) {
+    return;
   }
 
   guardando.value = true;
 
   try {
-    const payloadPersona = construirPayloadPersona();
-    if (Object.keys(payloadPersona).length > 0) {
-      await personasService.actualizarPersona(idPersona.value, payloadPersona);
-    }
+    await actualizarPersona();
 
-    const payloadDatosDeportista = construirPayloadDatosDeportista();
-    const payloadInformacionDeportiva = construirPayloadInformacionDeportiva();
-    const payloadSalud = construirPayloadSalud();
-
-    let respuestaActualizacion = null;
-    if (
-      Object.keys(payloadDatosDeportista).length > 0 ||
-      Object.keys(payloadInformacionDeportiva).length > 0 ||
-      payloadSalud.necesitaActualizacion
-    ) {
-      const datosActualizacion = {
-        datos_deportista: payloadDatosDeportista,
-        datos_informacion_deportiva: payloadInformacionDeportiva
-      };
-
-      if (payloadSalud.necesitaActualizacion) {
-        if ('tipo_enfermedad' in payloadSalud) {
-          datosActualizacion.tipo_enfermedad = payloadSalud.tipo_enfermedad;
-        }
-        if ('diagnostico' in payloadSalud) {
-          datosActualizacion.diagnostico = payloadSalud.diagnostico;
-        }
-      }
-
-      respuestaActualizacion = await deportistasService.actualizarDeportista(idDeportista.value, datosActualizacion);
-    }
+    const datosActualizacion = construirDatosActualizacionDeportista();
+    const respuestaActualizacion = datosActualizacion
+      ? await deportistasService.actualizarDeportista(idDeportista.value, datosActualizacion)
+      : null;
 
     inicializarFormulario();
 
@@ -1343,61 +1396,80 @@ const fechaNacimiento = computed(() => {
          null;
 });
 
+// Función auxiliar para formatear una fecha Date a DD/MM/YYYY
+function formatearDateADDMYYYY(dateObj) {
+  const dia = dateObj.getDate().toString().padStart(2, '0');
+  const mes = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+  const año = dateObj.getFullYear();
+  return `${dia}/${mes}/${año}`;
+}
+
+// Función auxiliar para validar si un año es válido
+function esAnoValido(ano) {
+  const anoActual = new Date().getFullYear();
+  return ano >= 1900 && ano <= anoActual;
+}
+
+// Función auxiliar para formatear un número (año) a fecha
+function formatearNumeroComoFecha(fecha) {
+  if (!esAnoValido(fecha)) {
+    return fecha.toString();
+  }
+  const fechaCompleta = new Date(fecha, 0, 1);
+  return formatearDateADDMYYYY(fechaCompleta);
+}
+
+// Función auxiliar para formatear un string que es solo un año
+function formatearStringAno(fecha) {
+  const año = parseInt(fecha);
+  if (!esAnoValido(año)) {
+    return null;
+  }
+  return `01/01/${año}`;
+}
+
+// Función auxiliar para formatear un string como fecha ISO
+function formatearStringFecha(fecha) {
+  try {
+    const dateObj = new Date(fecha);
+    if (!isNaN(dateObj.getTime())) {
+      return formatearDateADDMYYYY(dateObj);
+    }
+  } catch (error) {
+    console.warn('Error al formatear fecha:', error);
+  }
+  return null;
+}
+
 // Función para formatear fecha de nacimiento
 function formatearFechaNacimiento(fecha) {
   if (!fecha) return null;
 
-  // Si es un número (año solo), convertir a fecha completa (1 de enero de ese año)
   if (typeof fecha === 'number') {
-    // Si es un año válido (4 dígitos), mostrarlo como fecha completa
-    if (fecha >= 1900 && fecha <= new Date().getFullYear()) {
-      // Crear fecha con 1 de enero del año dado
-      const fechaCompleta = new Date(fecha, 0, 1); // Mes 0 = enero, día 1
-      const dia = fechaCompleta.getDate().toString().padStart(2, '0');
-      const mes = (fechaCompleta.getMonth() + 1).toString().padStart(2, '0');
-      const año = fechaCompleta.getFullYear();
-      return `${dia}/${mes}/${año}`;
-    }
-    return fecha.toString();
+    return formatearNumeroComoFecha(fecha);
   }
 
-  // Si es un string (fecha completa o año)
   if (typeof fecha === 'string') {
-    // Si es solo un año (4 dígitos)
-    if (/^\d{4}$/.test(fecha)) {
-      const año = parseInt(fecha);
-      if (año >= 1900 && año <= new Date().getFullYear()) {
-        return `01/01/${año}`;
-      }
-    }
-
-    // Intentar parsear como fecha ISO (YYYY-MM-DD) o otros formatos
-    try {
-      const dateObj = new Date(fecha);
-      if (!isNaN(dateObj.getTime())) {
-        // Formatear como DD/MM/YYYY
-        const dia = dateObj.getDate().toString().padStart(2, '0');
-        const mes = (dateObj.getMonth() + 1).toString().padStart(2, '0');
-        const año = dateObj.getFullYear();
-        return `${dia}/${mes}/${año}`;
-      }
-    } catch (error) {
-      console.warn('Error al formatear fecha:', error);
-    }
-    return fecha;
+    return formatearFechaString(fecha);
   }
 
-  // Si es un objeto Date
-  if (fecha instanceof Date) {
-    if (!isNaN(fecha.getTime())) {
-      const dia = fecha.getDate().toString().padStart(2, '0');
-      const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-      const año = fecha.getFullYear();
-      return `${dia}/${mes}/${año}`;
-    }
+  if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+    return formatearDateADDMYYYY(fecha);
   }
 
   return fecha;
+}
+
+// Función auxiliar para formatear strings de fecha
+function formatearFechaString(fecha) {
+  if (/^\d{4}$/.test(fecha)) {
+    const fechaFormateada = formatearStringAno(fecha);
+    if (fechaFormateada) {
+      return fechaFormateada;
+    }
+  }
+  const fechaFormateada = formatearStringFecha(fecha);
+  return fechaFormateada || fecha;
 }
 
 function obtenerTipoEnfermedad(idTipoEnfermedad) {

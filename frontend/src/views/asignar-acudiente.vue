@@ -134,13 +134,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import Swal from 'sweetalert2'
-
-const router = useRouter()
 const searchTerm = ref('')
 const asignando = ref(false)
 const mostrarBusqueda = ref(false)

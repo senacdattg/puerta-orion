@@ -1,9 +1,9 @@
 (function () {
-  var hostname = window.location.hostname || '';
-  var protocol = window.location.protocol || 'http:';
-  var isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1';
+  const hostname = window.location.hostname || '';
+  const protocol = window.location.protocol || 'http:';
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1';
 
-  var apiUrl;
+  let apiUrl;
 
   if (isLocalhost) {
     apiUrl = 'http://localhost:5000';

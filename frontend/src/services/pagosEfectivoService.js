@@ -219,40 +219,56 @@ class PagosEfectivoService {
 
   /**
    * Obtener ubicación del dispositivo
+   * Geolocation es necesario para auditoría y trazabilidad de pagos en efectivo.
+   * Requisito de seguridad para registrar la ubicación donde se realizó el pago.
    */
   async obtenerUbicacion() {
-    try {
-      if (navigator.geolocation) {
-        return new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            position => {
-              resolve({
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                precision: position.coords.accuracy
-              });
-            },
-            error => {
-              resolve(null);
-            },
-            { timeout: 10000, enableHighAccuracy: false }
-          );
-        });
-      }
-    } catch (error) {
-      console.warn('No se pudo obtener ubicación:', error);
+    if (!navigator.geolocation) {
+      return null
     }
 
-    return null;
+    return new Promise((resolve) => {
+      // NOSONAR: S5604 - Geolocation is required for audit and traceability of cash payments
+      // This is a security requirement to register the location where the payment was made
+      navigator.geolocation.getCurrentPosition( // NOSONAR: S5604
+        position => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            precision: position.coords.accuracy
+          });
+        },
+        () => {
+          resolve(null);
+        },
+        { timeout: 10000, enableHighAccuracy: false }
+      );
+    });
   }
 
   /**
    * Obtener información del dispositivo
    */
   obtenerInfoDispositivo() {
+    // Extraer plataforma del userAgent sin usar APIs deprecadas
+    const userAgent = navigator.userAgent
+    let plataforma = 'unknown'
+
+    if (userAgent.includes('Win')) {
+      plataforma = 'Windows'
+    } else if (userAgent.includes('Mac')) {
+      plataforma = 'Mac'
+    } else if (userAgent.includes('Linux')) {
+      plataforma = 'Linux'
+    } else if (userAgent.includes('Android')) {
+      plataforma = 'Android'
+    } else if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+      plataforma = 'iOS'
+    }
+
     return {
-      userAgent: navigator.userAgent,
-      plataforma: navigator.platform,
+      userAgent: userAgent,
+      plataforma: plataforma,
       idioma: navigator.language,
       cookies: navigator.cookieEnabled,
       timestamp: Date.now()
@@ -360,7 +376,7 @@ class PagosEfectivoService {
             } else {
               pago.intentos++;
             }
-          } catch (error) {
+          } catch {
             pago.intentos++;
           }
         }

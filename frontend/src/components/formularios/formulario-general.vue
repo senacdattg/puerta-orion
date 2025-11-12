@@ -296,7 +296,6 @@ const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ ]+$/
 const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
 const MAX_DOCUMENTO = 10
 const MIN_DOCUMENTO = 6
-const MIN_TELEFONO = 10
 const MAX_TELEFONO = 10
 
 // Catálogos
@@ -318,7 +317,7 @@ function sanitizarNombre(valor = '', obligatorio = true) {
 
 function sanitizarDireccion(valor = '') {
   const mayus = transformarMayusculas(valor)
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
 }
 
 function manejarEntradaNombre(campo, event, obligatorio = true) {
@@ -579,7 +578,7 @@ onMounted(async () => {
   // Cargar datos si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
     Object.keys(props.datos).forEach(key => {
-      if (form.value.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(form.value, key)) {
         form.value[key] = props.datos[key]
       }
     })
@@ -591,7 +590,7 @@ onMounted(async () => {
 watch(() => props.datos, (nuevosDatos) => {
   if (nuevosDatos && Object.keys(nuevosDatos).length > 0) {
     Object.keys(nuevosDatos).forEach(key => {
-      if (form.value.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(form.value, key)) {
         form.value[key] = nuevosDatos[key]
       }
     })

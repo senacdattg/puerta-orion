@@ -31,7 +31,7 @@ import FormularioGeneral from '../formularios/formulario-general.vue';
 import Swal from 'sweetalert2';
 
 // Props
-const props = defineProps({
+defineProps({
   mostrar: {
     type: Boolean,
     default: false

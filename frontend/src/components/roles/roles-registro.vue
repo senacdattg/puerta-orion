@@ -130,15 +130,12 @@ async function seleccionarRol(rol) {
 
 // Función para redirigir según el rol seleccionado
 function redirigirSegunRol(rolNombre) {
-  let rutaDestino = '/home'
+  let rutaDestino
 
   switch(rolNombre) {
     case 'SuperAdmin':
     case 'Administrador':
       rutaDestino = '/admin-manager'
-      break
-    case 'Entrenador':
-      rutaDestino = '/home'
       break
     case 'Deportista':
       rutaDestino = '/deportista/dashboard'
@@ -146,8 +143,10 @@ function redirigirSegunRol(rolNombre) {
     case 'Acudiente':
       rutaDestino = '/acudiente/dashboard'
       break
+    case 'Entrenador':
     default:
       rutaDestino = '/home'
+      break
   }
 
   router.push(rutaDestino)

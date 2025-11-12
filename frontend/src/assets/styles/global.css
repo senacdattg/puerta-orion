@@ -86,7 +86,7 @@ img {
   display: block;
 }
 
-/* SweetAlert always above app modals */
+/* Asegura que SweetAlert siempre esté por encima de nuestros modales */
 .swal2-container {
   z-index: 2147483647 !important;
 }
@@ -286,9 +286,4 @@ th {
   .no-print {
     display: none !important;
   }
-}
-
-/* Asegura que SweetAlert siempre esté por encima de nuestros modales */
-.swal2-container {
-  z-index: 20000 !important;
 }

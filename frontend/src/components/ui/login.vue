@@ -38,8 +38,8 @@
               placeholder="Ingresa tu usuario"
               required
               :disabled="cargando"
-              @focus="handleInputFocus('username')"
-              @blur="handleInputBlur('username')"
+              @focus="handleInputFocus()"
+              @blur="handleInputBlur()"
             />
           </div>
 
@@ -59,8 +59,8 @@
                 placeholder="Ingresa tu contraseña"
                 required
                 :disabled="cargando"
-                @focus="handleInputFocus('password')"
-                @blur="handleInputBlur('password')"
+                @focus="handleInputFocus()"
+                @blur="handleInputBlur()"
               />
               <button
                 type="button"
@@ -138,6 +138,11 @@ import { useAuthStore } from "@/stores/auth"
 import "@/assets/css/login.css"
 import Swal from "sweetalert2"
 
+// Definir nombre del componente para evitar error del linter
+defineOptions({
+  name: 'LoginComponent'
+})
+
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -147,13 +152,13 @@ const password = ref("")
 const cargando = ref(false)
 const showPassword = ref(false)
 
-// Función para manejar el foco de los inputs
-function handleInputFocus(field) {
-  // Puedes agregar lógica adicional aquí si es necesario
+// Funciones para manejar el foco de los inputs (reservadas para futuras mejoras)
+function handleInputFocus() {
+  // Función reservada para futuras mejoras de UX
 }
 
-function handleInputBlur(field) {
-  // Puedes agregar lógica adicional aquí si es necesario
+function handleInputBlur() {
+  // Función reservada para futuras mejoras de UX
 }
 
 // Función para manejar el login
@@ -185,11 +190,11 @@ async function handleLogin() {
       // Si tiene un solo rol, redirigir directamente
       // Si tiene múltiples roles, mostrar selección
       let rutaDestino = "/seleccionar-rol"
-      
+
       if (roleNames.length === 1) {
         // Un solo rol, establecer automáticamente (esto también cargará los permisos)
         await authStore.setActiveRole(roleNames[0])
-        
+
         // Determinar ruta según el rol único
         if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
           rutaDestino = "/admin-manager"

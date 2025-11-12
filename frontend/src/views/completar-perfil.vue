@@ -337,10 +337,106 @@ function volverAtras() {
   tipoPerfilSeleccionado.value = null
 }
 
-// Cambia aquí: Redirigir a dashboard de deportista después de completar el perfil
-async function completarPerfilDeportista() {
+const validarCategoria = () => {
   if (!formDeportista.value.id_categoria) {
     mensajeError.value = 'Por favor selecciona una categoría'
+    return false
+  }
+  return true
+}
+
+const validarYProcesarPeso = (datosDeportista) => {
+  const pesoStr = formDeportista.value.peso
+  if (!pesoStr || pesoStr.toString().trim() === '') {
+    return true
+  }
+
+  const peso = parseFloat(pesoStr)
+  if (isNaN(peso) || peso <= 0 || peso > 300) {
+    mensajeError.value = 'El peso debe ser un número entre 1 y 300 kg'
+    return false
+  }
+
+  datosDeportista.peso = peso
+  return true
+}
+
+const validarYProcesarAltura = (datosDeportista) => {
+  const alturaStr = formDeportista.value.altura
+  if (!alturaStr || alturaStr.toString().trim() === '') {
+    return true
+  }
+
+  const altura = parseFloat(alturaStr)
+  if (isNaN(altura) || altura <= 0 || altura > 3) {
+    mensajeError.value = 'La altura debe ser un número entre 0.1 y 3 metros'
+    return false
+  }
+
+  datosDeportista.altura = altura
+  return true
+}
+
+const validarYProcesarFechaNacimiento = (datosDeportista) => {
+  const fechaStr = formDeportista.value.fecha_nacimiento
+  if (!fechaStr || fechaStr.toString().trim() === '') {
+    return true
+  }
+
+  const año = parseInt(fechaStr)
+  const añoActual = new Date().getFullYear()
+
+  if (isNaN(año) || año < 1900 || año > añoActual) {
+    mensajeError.value = `El año de nacimiento debe estar entre 1900 y ${añoActual}`
+    return false
+  }
+
+  datosDeportista.fecha_nacimiento = año
+  return true
+}
+
+const agregarCamposOpcionales = (datosDeportista) => {
+  if (formDeportista.value.id_tipo_sanguineo && formDeportista.value.id_tipo_sanguineo !== '') {
+    datosDeportista.id_tipo_sanguineo = parseInt(formDeportista.value.id_tipo_sanguineo)
+  }
+
+  if (formDeportista.value.id_eps && formDeportista.value.id_eps !== '') {
+    datosDeportista.id_eps = parseInt(formDeportista.value.id_eps)
+  }
+}
+
+const construirDatosDeportista = () => {
+  const datosDeportista = {
+    id_categoria: parseInt(formDeportista.value.id_categoria)
+  }
+
+  if (!validarYProcesarPeso(datosDeportista)) {
+    return null
+  }
+
+  if (!validarYProcesarAltura(datosDeportista)) {
+    return null
+  }
+
+  if (!validarYProcesarFechaNacimiento(datosDeportista)) {
+    return null
+  }
+
+  agregarCamposOpcionales(datosDeportista)
+  return datosDeportista
+}
+
+const manejarExitoCompletarPerfil = async () => {
+  mensajeExito.value = '¡Perfil completado exitosamente! Redirigiendo...'
+  await authStore.loadUserProfile()
+
+  setTimeout(() => {
+    router.push('/deportista/dashboard')
+  }, 2000)
+}
+
+async function completarPerfilDeportista() {
+  if (!validarCategoria()) {
     return
   }
 
@@ -348,63 +444,15 @@ async function completarPerfilDeportista() {
   limpiarMensajes()
 
   try {
-    // Preparar datos para enviar con validación mejorada
-    const datosDeportista = {
-      id_categoria: parseInt(formDeportista.value.id_categoria)
-    }
-
-    // Validar y agregar campos opcionales solo si tienen valor válido
-    if (formDeportista.value.peso && formDeportista.value.peso.trim() !== '') {
-      const peso = parseFloat(formDeportista.value.peso)
-      if (!isNaN(peso) && peso > 0 && peso <= 300) {
-        datosDeportista.peso = peso
-      } else {
-        mensajeError.value = 'El peso debe ser un número entre 1 y 300 kg'
-        return
-      }
-    }
-
-    if (formDeportista.value.altura && formDeportista.value.altura.trim() !== '') {
-      const altura = parseFloat(formDeportista.value.altura)
-      if (!isNaN(altura) && altura > 0 && altura <= 3) {
-        datosDeportista.altura = altura
-      } else {
-        mensajeError.value = 'La altura debe ser un número entre 0.1 y 3 metros'
-        return
-      }
-    }
-
-    if (formDeportista.value.fecha_nacimiento && formDeportista.value.fecha_nacimiento.trim() !== '') {
-      const año = parseInt(formDeportista.value.fecha_nacimiento)
-      const añoActual = new Date().getFullYear()
-      if (!isNaN(año) && año >= 1900 && año <= añoActual) {
-        datosDeportista.fecha_nacimiento = año
-      } else {
-        mensajeError.value = `El año de nacimiento debe estar entre 1900 y ${añoActual}`
-        return
-      }
-    }
-
-    if (formDeportista.value.id_tipo_sanguineo && formDeportista.value.id_tipo_sanguineo !== '') {
-      datosDeportista.id_tipo_sanguineo = parseInt(formDeportista.value.id_tipo_sanguineo)
-    }
-
-    if (formDeportista.value.id_eps && formDeportista.value.id_eps !== '') {
-      datosDeportista.id_eps = parseInt(formDeportista.value.id_eps)
+    const datosDeportista = construirDatosDeportista()
+    if (!datosDeportista) {
+      return
     }
 
     const resultado = await authService.completarPerfilDeportista(datosDeportista)
 
     if (resultado.success) {
-      mensajeExito.value = '¡Perfil completado exitosamente! Redirigiendo...'
-
-      // Recargar datos del usuario
-      await authStore.loadUserProfile()
-
-      // Aquí cambiamos la redirección al dashboard de deportista:
-      setTimeout(() => {
-        router.push('/deportista/dashboard')
-      }, 2000)
+      await manejarExitoCompletarPerfil()
     } else {
       mensajeError.value = resultado.error || 'Error al completar perfil'
     }

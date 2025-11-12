@@ -435,83 +435,91 @@ export default {
         this.$refs.fileInput.value = '';
       }
     },
+    validarFormulario() {
+      const errores = []
+      if (!this.form.titulo) {
+        errores.push('El título es obligatorio')
+      }
+      if (!this.form.id_tipo_evento) {
+        errores.push('Debes seleccionar un tipo de evento')
+      }
+      if (this.imagenRequerida && !this.archivoSeleccionado) {
+        errores.push('Debes seleccionar una imagen')
+      }
+      return errores
+    },
+    async mostrarErroresValidacion(errores) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Corrige los errores',
+        html: errores.join('<br>')
+      })
+    },
+    construirFormData() {
+      const formData = new FormData()
+      formData.append('file', this.archivoSeleccionado)
+      formData.append('titulo', this.form.titulo)
+      formData.append('descripcion', this.form.descripcion || '')
+      if (this.form.id_tipo_evento) {
+        formData.append('id_tipo_evento', this.form.id_tipo_evento)
+      }
+      if (this.form.id_categoria) {
+        formData.append('id_categoria', this.form.id_categoria)
+      }
+      return formData
+    },
+    async actualizarEventoConImagen() {
+      const formData = this.construirFormData()
+      await galeriaService.eliminarImagen(this.eventos[this.editando].id)
+      await galeriaService.crearImagenConArchivo(formData)
+    },
+    async actualizarEventoSinImagen() {
+      const datosImagen = {
+        titulo: this.form.titulo,
+        descripcion: this.form.descripcion,
+        id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
+        id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
+      }
+      await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen)
+    },
+    async crearNuevoEvento() {
+      const formData = this.construirFormData()
+      await galeriaService.crearImagenConArchivo(formData)
+    },
+    async manejarErrorGuardado(error) {
+      console.error('Error guardando evento:', error)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al guardar',
+        text: error.message || 'No se pudo guardar el evento.'
+      })
+    },
+    async finalizarGuardado() {
+      await this.cargarEventos()
+      this.mostrarFormulario = false
+    },
     async guardarEvento() {
       try {
-        this.normalizarFormulario();
-        // Validar campos requeridos
-        const errores = []
-        if (!this.form.titulo) {
-          errores.push('El título es obligatorio')
-        }
-        if (!this.form.id_tipo_evento) {
-          errores.push('Debes seleccionar un tipo de evento')
-        }
-        if (this.imagenRequerida && !this.archivoSeleccionado) {
-          errores.push('Debes seleccionar una imagen')
-        }
+        this.normalizarFormulario()
+        const errores = this.validarFormulario()
         if (errores.length > 0) {
-          await Swal.fire({
-            icon: 'error',
-            title: 'Corrige los errores',
-            html: errores.join('<br>')
-          });
+          await this.mostrarErroresValidacion(errores)
           return
         }
 
         if (this.editando !== null) {
-          // Actualizar evento existente
           if (this.archivoSeleccionado) {
-            // Si se seleccionó una nueva imagen, usar el endpoint de archivos
-            const formData = new FormData();
-            formData.append('file', this.archivoSeleccionado);
-            formData.append('titulo', this.form.titulo);
-            formData.append('descripcion', this.form.descripcion || '');
-            if (this.form.id_tipo_evento) {
-              formData.append('id_tipo_evento', this.form.id_tipo_evento);
-            }
-            if (this.form.id_categoria) {
-              formData.append('id_categoria', this.form.id_categoria);
-            }
-
-            // Primero eliminar la imagen actual
-            await galeriaService.eliminarImagen(this.eventos[this.editando].id);
-            // Luego crear la nueva
-            await galeriaService.crearImagenConArchivo(formData);
+            await this.actualizarEventoConImagen()
           } else {
-            // Solo actualizar datos sin cambiar imagen
-            const datosImagen = {
-              titulo: this.form.titulo,
-              descripcion: this.form.descripcion,
-              id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
-              id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
-            }
-            await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen);
+            await this.actualizarEventoSinImagen()
           }
         } else {
-          // Crear nuevo evento con archivo
-          const formData = new FormData();
-          formData.append('file', this.archivoSeleccionado);
-          formData.append('titulo', this.form.titulo);
-          formData.append('descripcion', this.form.descripcion || '');
-          if (this.form.id_tipo_evento) {
-            formData.append('id_tipo_evento', this.form.id_tipo_evento);
-          }
-          if (this.form.id_categoria) {
-            formData.append('id_categoria', this.form.id_categoria);
-          }
-
-          await galeriaService.crearImagenConArchivo(formData);
+          await this.crearNuevoEvento()
         }
 
-        await this.cargarEventos(); // Recargar la lista
-        this.mostrarFormulario = false;
+        await this.finalizarGuardado()
       } catch (error) {
-        console.error('Error guardando evento:', error);
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error al guardar',
-          text: error.message || 'No se pudo guardar el evento.'
-        });
+        await this.manejarErrorGuardado(error)
       }
     },
 

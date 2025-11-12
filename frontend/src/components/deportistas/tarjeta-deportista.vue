@@ -10,9 +10,9 @@
     <div class="contenido-deportista">
       <h3 class="nombre-deportista">{{ deportista.nombre }}</h3>
       <p class="categoria-deportista">{{ deportista.categoria }}</p>
-      <button 
+      <button
         v-if="deportista.id_usuario"
-        class="estado-deportista" 
+        class="estado-deportista"
         :class="deportista.estado"
         @click.stop="cambiarEstado"
         :disabled="cambiandoEstado"
@@ -33,10 +33,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import avatarDefault from '@/assets/imgs/perfil.png';
-
-const router = useRouter();
 
 // Props siguiendo SRP - solo recibe datos del deportista
 const props = defineProps({
@@ -64,18 +61,10 @@ function verDetalle() {
   emit('ver', props.deportista);
 }
 
-function editarDeportista() {
-  emit('editar', props.deportista);
-}
-
-function eliminarDeportista() {
-  emit('eliminar', props.deportista);
-}
-
 function cambiarEstado() {
   // Evitar múltiples clics mientras se procesa
   if (cambiandoEstado.value) return;
-  
+
   emit('cambiar-estado', props.deportista);
 }
 

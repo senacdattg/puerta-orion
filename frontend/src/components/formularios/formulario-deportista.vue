@@ -192,7 +192,7 @@
         </div>
       </div>
 
-      <!-- Todo el bloque de antecedentes médicos (se muestra solo si marca "Sí") -->
+      <!-- el bloque de antecedentes médicos (se muestra solo si marca "Sí") -->
       <div v-if="form.tiene_enfermedades === true">
         <!-- Campos de diagnóstico -->
         <div class="fila-texto">
@@ -507,15 +507,270 @@ function seleccionarEnfermedades(tiene) {
 
 // Funciones relacionadas con acudiente eliminadas - ya no se usan en el registro
 
+function obtenerIconoPorTitulo(titulo) {
+  if (titulo === 'Éxito') return 'success';
+  if (titulo === 'Advertencia') return 'warning';
+  return 'error';
+}
+
 function mostrarModal(titulo, mensaje) {
-  const icon = titulo === 'Éxito' ? 'success' : titulo === 'Advertencia' ? 'warning' : 'error';
+  const icon = obtenerIconoPorTitulo(titulo);
   const html = (mensaje || '').replace(/\n/g, '<br>');
+  const confirmButtonText = titulo === 'Éxito' ? 'Continuar' : 'Cerrar';
   return Swal.fire({
     icon,
     title: titulo,
     html,
-    confirmButtonText: titulo === 'Éxito' ? 'Continuar' : 'Cerrar'
+    confirmButtonText
   });
+}
+
+function validarToken() {
+  const token = localStorage.getItem('token');
+  console.log('🔑 Token encontrado:', token ? 'Sí' : 'No');
+  if (!token || token === 'null' || token === 'undefined') {
+    console.error('❌ No hay token válido');
+    mostrarModal('Error', 'Debe iniciar sesión para realizar esta acción.');
+    return false;
+  }
+  return token;
+}
+
+function calcularEdad(fechaNacimiento) {
+  const fecha = new Date(fechaNacimiento);
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - fecha.getFullYear();
+  const mesDiferencia = hoy.getMonth() - fecha.getMonth();
+  if (mesDiferencia < 0 || (mesDiferencia === 0 && hoy.getDate() < fecha.getDate())) {
+    edad--;
+  }
+  return edad;
+}
+
+function validarEdadMinima() {
+  if (!form.value.fecha_nacimiento) {
+    mostrarModal('Error', 'La fecha de nacimiento es obligatoria.');
+    return false;
+  }
+  const edad = calcularEdad(form.value.fecha_nacimiento);
+  if (edad < 5) {
+    mostrarModal('Error', 'El deportista debe tener mínimo 5 años de edad para poder registrarse. La edad mínima de la categoría Pre-infantil es 5 años.');
+    return false;
+  }
+  return true;
+}
+
+function validarCamposObligatorios() {
+  if (!form.value.id_tipo_sanguineo) {
+    mostrarModal('Error', 'Debe seleccionar un tipo sanguíneo.');
+    return false;
+  }
+  if (!form.value.id_ciudad_residencia) {
+    mostrarModal('Error', 'Debe seleccionar una ciudad de residencia.');
+    return false;
+  }
+  if (!form.value.id_eps) {
+    mostrarModal('Error', 'Debe seleccionar una EPS.');
+    return false;
+  }
+  if (!form.value.id_deporte) {
+    mostrarModal('Error', 'Debe seleccionar un deporte principal.');
+    return false;
+  }
+  if (!form.value.id_institucion_registro) {
+    mostrarModal('Error', 'Debe seleccionar una institución de registro.');
+    return false;
+  }
+  return true;
+}
+
+function validarCamposCondicionales() {
+  if (form.value.participa_escuela && !form.value.id_escuela) {
+    mostrarModal('Error', 'Si participa en escuela de formación, debe seleccionar una escuela.');
+    return false;
+  }
+  if (form.value.tiene_enfermedades === true && form.value.tipo_enfermedad && form.value.diagnostico.length === 0) {
+    mostrarModal('Error', 'Si selecciona un tipo de enfermedad, debe seleccionar al menos un diagnóstico.');
+    return false;
+  }
+  if (form.value.recomendacion_medica && !form.value.descripcion_recomendacion) {
+    mostrarModal('Error', 'Si existe recomendación médica, debe describirla.');
+    return false;
+  }
+  return true;
+}
+
+function construirDatosDeportista() {
+  return {
+    fecha_nacimiento: form.value.fecha_nacimiento,
+    id_tipo_sanguineo: form.value.id_tipo_sanguineo ? parseInt(form.value.id_tipo_sanguineo) : null,
+    id_ciudad_recidencia: form.value.id_ciudad_residencia ? parseInt(form.value.id_ciudad_residencia) : null,
+    id_eps: form.value.id_eps ? parseInt(form.value.id_eps) : null
+  };
+}
+
+function obtenerRecomendacionMedica() {
+  return form.value.tiene_enfermedades === true ? form.value.recomendacion_medica : false;
+}
+
+function obtenerDescripcionRecomendacion() {
+  const tieneEnfermedades = form.value.tiene_enfermedades === true;
+  const tieneRecomendacion = form.value.recomendacion_medica;
+  return tieneEnfermedades && tieneRecomendacion ? form.value.descripcion_recomendacion : null;
+}
+
+function obtenerIdEscuela() {
+  return form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null;
+}
+
+function construirInformacionDeportiva() {
+  return {
+    practica_otro_deporte: form.value.practica_otro_deporte || false,
+    participa_escuela: form.value.participa_escuela || false,
+    recomendacion_medica: obtenerRecomendacionMedica(),
+    descripcion_recomendacion: obtenerDescripcionRecomendacion(),
+    id_escuela: obtenerIdEscuela(),
+    id_deporte: form.value.id_deporte ? parseInt(form.value.id_deporte) : null,
+    id_institucion_registro: form.value.id_institucion_registro ? parseInt(form.value.id_institucion_registro) : null
+  };
+}
+
+function agregarDiagnosticos(datosEnvio) {
+  if (form.value.tiene_enfermedades === true) {
+    if (form.value.tipo_enfermedad) {
+      datosEnvio.tipo_enfermedad = parseInt(form.value.tipo_enfermedad);
+    }
+    if (form.value.diagnostico && form.value.diagnostico.length > 0) {
+      datosEnvio.diagnostico = form.value.diagnostico.map(d => parseInt(d));
+    }
+  } else if (form.value.tiene_enfermedades === false) {
+    datosEnvio.diagnostico = [];
+  }
+}
+
+function construirDatosActualizacion() {
+  const datosEnvio = {
+    datos_deportista: construirDatosDeportista(),
+    datos_informacion_deportiva: construirInformacionDeportiva()
+  };
+  agregarDiagnosticos(datosEnvio);
+  return datosEnvio;
+}
+
+function construirDatosRegistro() {
+  const datosEnvio = {
+    datos_deportista: {
+      fecha_nacimiento: form.value.fecha_nacimiento,
+      id_tipo_sanguineo: parseInt(form.value.id_tipo_sanguineo) || null,
+      id_ciudad_recidencia: parseInt(form.value.id_ciudad_residencia) || null,
+      id_eps: parseInt(form.value.id_eps) || null
+    },
+    informacion_deportiva: {
+      practica_otro_deporte: form.value.practica_otro_deporte || false,
+      participa_escuela: form.value.participa_escuela || false,
+      recomendacion_medica: form.value.tiene_enfermedades === true ? form.value.recomendacion_medica : false,
+      descripcion_recomendacion: form.value.tiene_enfermedades === true && form.value.recomendacion_medica ? form.value.descripcion_recomendacion : null,
+      id_escuela: form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null,
+      id_deporte: parseInt(form.value.id_deporte) || null,
+      id_institucion_registro: parseInt(form.value.id_institucion_registro) || null
+    }
+  };
+
+  if (form.value.tiene_enfermedades === true) {
+    datosEnvio.tipo_enfermedad = form.value.tipo_enfermedad || null;
+    datosEnvio.diagnostico = form.value.diagnostico && form.value.diagnostico.length > 0 ? form.value.diagnostico : [];
+  } else {
+    datosEnvio.diagnostico = [];
+  }
+
+  datosEnvio.acudientes = [];
+
+  if (route.query.asignarAcudiente === 'true') {
+    datosEnvio._metadata = {
+      desde_asignar_acudido: true
+    };
+  }
+
+  return datosEnvio;
+}
+
+async function procesarActualizacion() {
+  const datosEnvio = construirDatosActualizacion();
+  console.log('Datos a actualizar:', datosEnvio);
+
+  const idDeportista = props.datos?.id_deportista || props.datos?.id;
+  if (!idDeportista) {
+    mostrarModal('Error', 'No se pudo identificar el deportista a actualizar.');
+    return false;
+  }
+
+  const result = await deportistasService.actualizarDeportista(idDeportista, datosEnvio);
+  if (result.success) {
+    await mostrarModal('Éxito', 'Deportista actualizado exitosamente.');
+    emit('submit', result);
+    return true;
+  } else {
+    const mensajeError = result.message || 'Error al actualizar deportista';
+    throw new Error(mensajeError);
+  }
+}
+
+async function procesarRegistro(token) {
+  const datosEnvio = construirDatosRegistro();
+  console.log('📤 Datos a registrar:', datosEnvio);
+  console.log('🌐 Enviando a: http://localhost:5000/api/deportistas/registrar');
+
+  const response = await fetch('http://localhost:5000/api/deportistas/registrar', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(datosEnvio)
+  });
+
+  console.log('📥 Respuesta recibida, status:', response.status);
+  const result = await response.json();
+  console.log('Respuesta del servidor:', response.status, result);
+
+  if (response.ok && result.status === 'success') {
+    if (props.modo !== 'registrar') {
+      await mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
+    }
+    emit('submit', result);
+
+    setTimeout(() => {
+      Object.keys(form.value).forEach(key => {
+        if (key === 'diagnostico') {
+          form.value[key] = [];
+        } else if (key === 'tiene_enfermedades' || key === 'es_responsable') {
+          form.value[key] = null;
+        } else if (typeof form.value[key] === 'boolean') {
+          form.value[key] = false;
+        } else {
+          form.value[key] = '';
+        }
+      });
+    }, 3000);
+    return true;
+  } else {
+    console.error('Error en respuesta:', {
+      status: response.status,
+      statusText: response.statusText,
+      result: result
+    });
+
+    let mensajeError = 'Error al registrar deportista';
+    if (result.message) {
+      mensajeError = result.message;
+    } else if (result.error) {
+      mensajeError = result.error;
+    } else if (result.status === 'error') {
+      mensajeError = result.message || 'Error desconocido del servidor';
+    }
+
+    throw new Error(mensajeError);
+  }
 }
 
 async function manejarSubmit(event) {
@@ -531,236 +786,21 @@ async function manejarSubmit(event) {
   isSubmitting.value = true;
 
   try {
-    // Requiere sesión iniciada: el backend obtiene id_persona desde el token
-    const token = localStorage.getItem('token');
-    console.log('🔑 Token encontrado:', token ? 'Sí' : 'No');
-
-    if (!token || token === 'null' || token === 'undefined') {
-      console.error('❌ No hay token válido');
-      mostrarModal('Error', 'Debe iniciar sesión para realizar esta acción.');
+    const token = validarToken();
+    if (!token) {
       isSubmitting.value = false;
       return;
     }
 
-    // Validaciones básicas
-    if (!form.value.fecha_nacimiento) {
-      mostrarModal('Error', 'La fecha de nacimiento es obligatoria.');
+    if (!validarEdadMinima() || !validarCamposObligatorios() || !validarCamposCondicionales()) {
       isSubmitting.value = false;
       return;
     }
 
-    // Validar edad mínima (5 años)
-    const fechaNacimiento = new Date(form.value.fecha_nacimiento);
-    const hoy = new Date();
-    let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-    const mesDiferencia = hoy.getMonth() - fechaNacimiento.getMonth();
-    if (mesDiferencia < 0 || (mesDiferencia === 0 && hoy.getDate() < fechaNacimiento.getDate())) {
-      edad--;
-    }
-    
-    if (edad < 5) {
-      mostrarModal('Error', 'El deportista debe tener mínimo 5 años de edad para poder registrarse. La edad mínima de la categoría Pre-infantil es 5 años.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (!form.value.id_tipo_sanguineo) {
-      mostrarModal('Error', 'Debe seleccionar un tipo sanguíneo.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (!form.value.id_ciudad_residencia) {
-      mostrarModal('Error', 'Debe seleccionar una ciudad de residencia.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (!form.value.id_eps) {
-      mostrarModal('Error', 'Debe seleccionar una EPS.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (!form.value.id_deporte) {
-      mostrarModal('Error', 'Debe seleccionar un deporte principal.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (!form.value.id_institucion_registro) {
-      mostrarModal('Error', 'Debe seleccionar una institución de registro.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    // Validaciones de campos condicionales
-    if (form.value.participa_escuela && !form.value.id_escuela) {
-      mostrarModal('Error', 'Si participa en escuela de formación, debe seleccionar una escuela.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (form.value.tiene_enfermedades === true && form.value.tipo_enfermedad && form.value.diagnostico.length === 0) {
-      mostrarModal('Error', 'Si selecciona un tipo de enfermedad, debe seleccionar al menos un diagnóstico.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    if (form.value.recomendacion_medica && !form.value.descripcion_recomendacion) {
-      mostrarModal('Error', 'Si existe recomendación médica, debe describirla.');
-      isSubmitting.value = false;
-      return;
-    }
-
-    // Estructurar datos según el modo
     if (props.modo === 'actualizar') {
-      // Modo actualizar: usar el formato del nuevo endpoint
-      const datosEnvio = {
-        datos_deportista: {
-          fecha_nacimiento: form.value.fecha_nacimiento,
-          id_tipo_sanguineo: form.value.id_tipo_sanguineo ? parseInt(form.value.id_tipo_sanguineo) : null,
-          id_ciudad_recidencia: form.value.id_ciudad_residencia ? parseInt(form.value.id_ciudad_residencia) : null,
-          id_eps: form.value.id_eps ? parseInt(form.value.id_eps) : null
-        },
-        datos_informacion_deportiva: {
-          practica_otro_deporte: form.value.practica_otro_deporte || false,
-          participa_escuela: form.value.participa_escuela || false,
-          recomendacion_medica: form.value.tiene_enfermedades === true ? form.value.recomendacion_medica : false,
-          descripcion_recomendacion: form.value.tiene_enfermedades === true && form.value.recomendacion_medica ? form.value.descripcion_recomendacion : null,
-          id_escuela: form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null,
-          id_deporte: form.value.id_deporte ? parseInt(form.value.id_deporte) : null,
-          id_institucion_registro: form.value.id_institucion_registro ? parseInt(form.value.id_institucion_registro) : null
-        }
-      };
-
-      // Agregar información de diagnóstico si existe
-      if (form.value.tiene_enfermedades === true) {
-        if (form.value.tipo_enfermedad) {
-          datosEnvio.tipo_enfermedad = parseInt(form.value.tipo_enfermedad);
-        }
-        if (form.value.diagnostico && form.value.diagnostico.length > 0) {
-          datosEnvio.diagnostico = form.value.diagnostico.map(d => parseInt(d));
-        }
-      } else if (form.value.tiene_enfermedades === false) {
-        // Si marca "No", enviar arrays vacíos para limpiar diagnósticos
-        datosEnvio.diagnostico = [];
-      }
-
-      console.log('Datos a actualizar:', datosEnvio);
-
-      // Obtener el ID del deportista desde props.datos
-      const idDeportista = props.datos?.id_deportista || props.datos?.id;
-      if (!idDeportista) {
-        mostrarModal('Error', 'No se pudo identificar el deportista a actualizar.');
-        isSubmitting.value = false;
-        return;
-      }
-
-      // Llamar al servicio de actualización
-      const result = await deportistasService.actualizarDeportista(idDeportista, datosEnvio);
-
-      if (result.success) {
-        await mostrarModal('Éxito', 'Deportista actualizado exitosamente.');
-        emit('submit', result);
-      } else {
-        const mensajeError = result.message || 'Error al actualizar deportista';
-        throw new Error(mensajeError);
-      }
+      await procesarActualizacion();
     } else {
-      // Modo registrar: usar el formato del endpoint de registro
-      const datosEnvio = {
-        datos_deportista: {
-          fecha_nacimiento: form.value.fecha_nacimiento,
-          id_tipo_sanguineo: parseInt(form.value.id_tipo_sanguineo) || null,
-          id_ciudad_recidencia: parseInt(form.value.id_ciudad_residencia) || null,
-          id_eps: parseInt(form.value.id_eps) || null
-        },
-        informacion_deportiva: {
-          practica_otro_deporte: form.value.practica_otro_deporte || false,
-          participa_escuela: form.value.participa_escuela || false,
-          recomendacion_medica: form.value.tiene_enfermedades === true ? form.value.recomendacion_medica : false,
-          descripcion_recomendacion: form.value.tiene_enfermedades === true && form.value.recomendacion_medica ? form.value.descripcion_recomendacion : null,
-          id_escuela: form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null,
-          id_deporte: parseInt(form.value.id_deporte) || null,
-          id_institucion_registro: parseInt(form.value.id_institucion_registro) || null
-        }
-      };
-
-      // Agregar información de diagnóstico solo si marcó "Sí" a tener enfermedades
-      if (form.value.tiene_enfermedades === true) {
-        datosEnvio.tipo_enfermedad = form.value.tipo_enfermedad || null;
-        datosEnvio.diagnostico = form.value.diagnostico && form.value.diagnostico.length > 0 ? form.value.diagnostico : [];
-      } else {
-        datosEnvio.diagnostico = [];
-      }
-
-      datosEnvio.acudientes = [];
-
-      if (route.query.asignarAcudiente === 'true') {
-        datosEnvio._metadata = {
-          desde_asignar_acudido: true
-        };
-      }
-
-      console.log('📤 Datos a registrar:', datosEnvio);
-      console.log('🌐 Enviando a: http://localhost:5000/api/deportistas/registrar');
-
-      // Enviar al endpoint de registro
-      const response = await fetch('http://localhost:5000/api/deportistas/registrar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(datosEnvio)
-      });
-
-      console.log('📥 Respuesta recibida, status:', response.status);
-
-      const result = await response.json();
-
-      console.log('Respuesta del servidor:', response.status, result);
-
-      if (response.ok && result.status === 'success') {
-        if (props.modo !== 'registrar') {
-          await mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
-        }
-        emit('submit', result);
-
-        // Limpiar formulario después de 3 segundos
-        setTimeout(() => {
-          Object.keys(form.value).forEach(key => {
-            if (key === 'diagnostico') {
-              form.value[key] = [];
-            } else if (key === 'tiene_enfermedades' || key === 'es_responsable') {
-              form.value[key] = null;
-            } else if (typeof form.value[key] === 'boolean') {
-              form.value[key] = false;
-            } else {
-              form.value[key] = '';
-            }
-          });
-        }, 3000);
-      } else {
-        // Log detallado del error
-        console.error('Error en respuesta:', {
-          status: response.status,
-          statusText: response.statusText,
-          result: result
-        });
-
-        let mensajeError = 'Error al registrar deportista';
-        if (result.message) {
-          mensajeError = result.message;
-        } else if (result.error) {
-          mensajeError = result.error;
-        } else if (result.status === 'error') {
-          mensajeError = result.message || 'Error desconocido del servidor';
-        }
-
-        throw new Error(mensajeError);
-      }
+      await procesarRegistro(token);
     }
 
   } catch (error) {
@@ -794,112 +834,99 @@ function volverAtras() {
   }
 }
 
+function mapearCampoFormulario(campo, valorDeportista, valorInfoDeportiva, valorDirecto) {
+  if (valorDeportista !== undefined && valorDeportista !== null && valorDeportista !== '') {
+    form.value[campo] = typeof valorDeportista === 'number' ? valorDeportista.toString() : valorDeportista;
+  } else if (valorInfoDeportiva !== undefined && valorInfoDeportiva !== null && valorInfoDeportiva !== '') {
+    form.value[campo] = typeof valorInfoDeportiva === 'number' ? valorInfoDeportiva.toString() : valorInfoDeportiva;
+  } else if (valorDirecto !== undefined && valorDirecto !== null && valorDirecto !== '') {
+    form.value[campo] = typeof valorDirecto === 'number' ? valorDirecto.toString() : valorDirecto;
+  }
+}
+
+function mapearDatosDeportista(datosDeportista) {
+  mapearCampoFormulario('fecha_nacimiento', datosDeportista.fecha_nacimiento, null, props.datos.fecha_nacimiento);
+  mapearCampoFormulario('id_tipo_sanguineo', datosDeportista.id_tipo_sanguineo, null, props.datos.id_tipo_sanguineo);
+
+  const ciudadResidencia = datosDeportista.id_ciudad_recidencia || props.datos.id_ciudad_recidencia || props.datos.id_ciudad_residencia;
+  if (ciudadResidencia) {
+    form.value.id_ciudad_residencia = ciudadResidencia.toString();
+  }
+
+  mapearCampoFormulario('id_eps', datosDeportista.id_eps, null, props.datos.id_eps);
+}
+
+function mapearInformacionDeportiva(infoDeportiva) {
+  mapearCampoFormulario('id_deporte', null, infoDeportiva.id_deporte, props.datos.id_deporte);
+  mapearCampoFormulario('id_escuela', null, infoDeportiva.id_escuela, props.datos.id_escuela);
+  mapearCampoFormulario('id_institucion_registro', null, infoDeportiva.id_institucion_registro, props.datos.id_institucion_registro);
+
+  if (infoDeportiva.practica_otro_deporte !== undefined) {
+    form.value.practica_otro_deporte = infoDeportiva.practica_otro_deporte;
+  } else if (props.datos.practica_otro_deporte !== undefined) {
+    form.value.practica_otro_deporte = props.datos.practica_otro_deporte;
+  }
+
+  if (infoDeportiva.participa_escuela !== undefined) {
+    form.value.participa_escuela = infoDeportiva.participa_escuela;
+  } else if (props.datos.participa_escuela !== undefined) {
+    form.value.participa_escuela = props.datos.participa_escuela;
+  }
+
+  if (infoDeportiva.recomendacion_medica !== undefined) {
+    form.value.recomendacion_medica = infoDeportiva.recomendacion_medica;
+    form.value.tiene_enfermedades = infoDeportiva.recomendacion_medica ? true : false;
+  }
+
+  mapearCampoFormulario('descripcion_recomendacion', null, infoDeportiva.descripcion_recomendacion, props.datos.descripcion_recomendacion);
+}
+
+function mapearDiagnosticos() {
+  if (props.datos.salud?.diagnosticos && Array.isArray(props.datos.salud.diagnosticos)) {
+    form.value.diagnostico = props.datos.salud.diagnosticos.map(d =>
+      typeof d === 'object' ? d.id_diagnostico : d
+    );
+  } else if (props.datos.diagnosticos && Array.isArray(props.datos.diagnosticos)) {
+    form.value.diagnostico = props.datos.diagnosticos.map(d =>
+      typeof d === 'object' ? d.id_diagnostico : d
+    );
+  }
+}
+
+function mapearTipoEnfermedad() {
+  if (props.datos.salud?.tipos_enfermedad_ids && props.datos.salud.tipos_enfermedad_ids.length > 0) {
+    form.value.tipo_enfermedad = props.datos.salud.tipos_enfermedad_ids[0];
+    form.value.tiene_enfermedades = true;
+  } else if (props.datos.tipo_enfermedad) {
+    form.value.tipo_enfermedad = props.datos.tipo_enfermedad;
+    form.value.tiene_enfermedades = true;
+  }
+}
+
+function mapearCamposDirectos() {
+  Object.keys(props.datos).forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(form.value, key) &&
+        (form.value[key] === '' || form.value[key] === null || form.value[key] === undefined)) {
+      const valor = props.datos[key];
+      if (valor !== null && valor !== undefined && valor !== '') {
+        form.value[key] = valor;
+      }
+    }
+  });
+}
+
 onMounted(async () => {
   await cargarCatalogos();
 
-  // Cargar datos si están en props (modo actualizar o ver)
   if (props.datos && Object.keys(props.datos).length > 0) {
-    // Mapear datos del backend al formulario
-    // El backend puede devolver datos en diferentes estructuras
     const datosDeportista = props.datos.datos_deportista || props.datos.deportista || props.datos;
     const infoDeportiva = props.datos.informacion_deportiva || props.datos.datos_informacion_deportiva || {};
 
-    // Mapear campos del deportista
-    if (datosDeportista.fecha_nacimiento) {
-      form.value.fecha_nacimiento = datosDeportista.fecha_nacimiento;
-    } else if (props.datos.fecha_nacimiento) {
-      form.value.fecha_nacimiento = props.datos.fecha_nacimiento;
-    }
-
-    if (datosDeportista.id_tipo_sanguineo) {
-      form.value.id_tipo_sanguineo = datosDeportista.id_tipo_sanguineo.toString();
-    } else if (props.datos.id_tipo_sanguineo) {
-      form.value.id_tipo_sanguineo = props.datos.id_tipo_sanguineo.toString();
-    }
-
-    if (datosDeportista.id_ciudad_recidencia) {
-      form.value.id_ciudad_residencia = datosDeportista.id_ciudad_recidencia.toString();
-    } else if (props.datos.id_ciudad_recidencia || props.datos.id_ciudad_residencia) {
-      form.value.id_ciudad_residencia = (props.datos.id_ciudad_recidencia || props.datos.id_ciudad_residencia).toString();
-    }
-
-    if (datosDeportista.id_eps) {
-      form.value.id_eps = datosDeportista.id_eps.toString();
-    } else if (props.datos.id_eps) {
-      form.value.id_eps = props.datos.id_eps.toString();
-    }
-
-    // Mapear campos de información deportiva
-    if (infoDeportiva.id_deporte) {
-      form.value.id_deporte = infoDeportiva.id_deporte.toString();
-    } else if (props.datos.id_deporte) {
-      form.value.id_deporte = props.datos.id_deporte.toString();
-    }
-
-    if (infoDeportiva.id_escuela) {
-      form.value.id_escuela = infoDeportiva.id_escuela.toString();
-    } else if (props.datos.id_escuela) {
-      form.value.id_escuela = props.datos.id_escuela.toString();
-    }
-
-    if (infoDeportiva.id_institucion_registro) {
-      form.value.id_institucion_registro = infoDeportiva.id_institucion_registro.toString();
-    } else if (props.datos.id_institucion_registro) {
-      form.value.id_institucion_registro = props.datos.id_institucion_registro.toString();
-    }
-
-    if (infoDeportiva.practica_otro_deporte !== undefined) {
-      form.value.practica_otro_deporte = infoDeportiva.practica_otro_deporte;
-    } else if (props.datos.practica_otro_deporte !== undefined) {
-      form.value.practica_otro_deporte = props.datos.practica_otro_deporte;
-    }
-
-    if (infoDeportiva.participa_escuela !== undefined) {
-      form.value.participa_escuela = infoDeportiva.participa_escuela;
-    } else if (props.datos.participa_escuela !== undefined) {
-      form.value.participa_escuela = props.datos.participa_escuela;
-    }
-
-    if (infoDeportiva.recomendacion_medica !== undefined) {
-      form.value.recomendacion_medica = infoDeportiva.recomendacion_medica;
-      form.value.tiene_enfermedades = infoDeportiva.recomendacion_medica ? true : false;
-    }
-
-    if (infoDeportiva.descripcion_recomendacion) {
-      form.value.descripcion_recomendacion = infoDeportiva.descripcion_recomendacion;
-    } else if (props.datos.descripcion_recomendacion) {
-      form.value.descripcion_recomendacion = props.datos.descripcion_recomendacion;
-    }
-
-    // Mapear diagnósticos si existen
-    if (props.datos.salud?.diagnosticos && Array.isArray(props.datos.salud.diagnosticos)) {
-      form.value.diagnostico = props.datos.salud.diagnosticos.map(d =>
-        typeof d === 'object' ? d.id_diagnostico : d
-      );
-    } else if (props.datos.diagnosticos && Array.isArray(props.datos.diagnosticos)) {
-      form.value.diagnostico = props.datos.diagnosticos.map(d =>
-        typeof d === 'object' ? d.id_diagnostico : d
-      );
-    }
-
-    // Mapear tipo de enfermedad si existe
-    if (props.datos.salud?.tipos_enfermedad_ids && props.datos.salud.tipos_enfermedad_ids.length > 0) {
-      form.value.tipo_enfermedad = props.datos.salud.tipos_enfermedad_ids[0];
-      form.value.tiene_enfermedades = true;
-    } else if (props.datos.tipo_enfermedad) {
-      form.value.tipo_enfermedad = props.datos.tipo_enfermedad;
-      form.value.tiene_enfermedades = true;
-    }
-
-    // También mapear campos directos si existen
-    Object.keys(props.datos).forEach(key => {
-      if (Object.prototype.hasOwnProperty.call(form.value, key) && form.value[key] === '' || form.value[key] === null || form.value[key] === undefined) {
-        const valor = props.datos[key];
-        if (valor !== null && valor !== undefined && valor !== '') {
-          form.value[key] = valor;
-        }
-      }
-    });
+    mapearDatosDeportista(datosDeportista);
+    mapearInformacionDeportiva(infoDeportiva);
+    mapearDiagnosticos();
+    mapearTipoEnfermedad();
+    mapearCamposDirectos();
   }
 });
 </script>
@@ -948,6 +975,8 @@ onMounted(async () => {
 .modal-content h3 {
   margin-bottom: 1rem;
   color: #333;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 .modal-content p {
@@ -967,12 +996,6 @@ onMounted(async () => {
 
 .modal-content button:hover {
   background: #0056b3;
-}
-
-/* Estilo para el modal de éxito */
-.modal-content h3 {
-  font-size: 1.5rem;
-  font-weight: bold;
 }
 
 /* Estilo para mensajes de error en modal */

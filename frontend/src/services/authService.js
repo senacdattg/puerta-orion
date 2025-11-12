@@ -155,7 +155,7 @@ class AuthService {
       let data
       try {
         data = await response.json()
-      } catch (parseError) {
+      } catch {
         // Silenciar errores de parse cuando es un 401 esperado
         if (response.status === 401) {
           return { success: false, message: 'Token inválido o expirado' }
@@ -333,13 +333,13 @@ class AuthService {
         // Si es 401, el token expiró, retornar error controlado
         if (response.status === 401) {
           console.warn('⚠️ Token expirado al obtener detalle del perfil')
-          return { 
-            success: false, 
+          return {
+            success: false,
             error: 'Sesión inactiva o expirada',
-            expired: true 
+            expired: true
           }
         }
-        
+
         console.error('❌ Error en getProfileDetail:', {
           status: response.status,
           statusText: response.statusText,
@@ -363,9 +363,9 @@ class AuthService {
       if (!error.message.includes('expirado') && !error.message.includes('401')) {
         console.error('Error al obtener detalle del perfil:', error)
       }
-      return { 
-        success: false, 
-        error: error.message || 'Error al obtener detalle del perfil' 
+      return {
+        success: false,
+        error: error.message || 'Error al obtener detalle del perfil'
       }
     }
   }

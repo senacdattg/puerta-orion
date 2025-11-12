@@ -1,9 +1,8 @@
 <script setup>
-import { defineOptions } from 'vue';
+import { defineOptions, ref, onMounted } from 'vue';
 import Encabezado from '../components/layout/encabezado.vue';
 import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
 import Pie from '../components/layout/pie.vue';
-import { ref, onMounted } from 'vue';
 import mensualidadesService from '@/services/mensualidadesService';
 import { getApiUrl } from '@/config/environment';
 import Swal from 'sweetalert2';
@@ -74,21 +73,21 @@ function mapMensualidadToCard(m) {
 }
 
 async function cargarMensualidades() {
-  loading.value = true; 
+  loading.value = true;
   errorMsg.value = '';
   try {
     console.log('🔄 [Mensualidades] Iniciando carga de mensualidades...');
     const res = await mensualidadesService.list();
     console.log('📥 [Mensualidades] Respuesta del servicio:', res);
-    
+
     if (!res) {
       throw new Error('No se recibió respuesta del servidor');
     }
-    
+
     if (!res.success && res.error) {
       throw new Error(res.error || 'Error al cargar mensualidades');
     }
-    
+
     const items = res.data || [];
     console.log('📊 [Mensualidades] Items recibidos:', items.length);
     mensualidades.value = items.map(mapMensualidadToCard);

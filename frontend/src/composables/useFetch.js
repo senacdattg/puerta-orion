@@ -155,7 +155,7 @@ export function useFetch() {
  * Hook especializado para peticiones de datos con paginación
  */
 export function usePaginatedFetch() {
-  const { data, error, isLoading, execute, reset } = useFetch()
+  const { data, execute, reset } = useFetch()
 
   const currentPage = ref(1)
   const totalPages = ref(1)

@@ -788,7 +788,7 @@ const puedeEditarCampo = computed(() => {
     }
   } else if (rol === 'Entrenador') {
     return {
-      // Puede editar casi todo excepto tipo y número de documento
+      // Puede editar  excepto tipo y número de documento
       tipoDocumento: false,
       numeroDocumento: false,
       primerNombre: true,
@@ -891,7 +891,7 @@ async function cargarCatalogosDeportista() {
       try {
         const data = await res.json()
         return res.ok ? (data.data || data) : []
-      } catch (e) {
+      } catch {
         return []
       }
     }
@@ -922,12 +922,106 @@ async function cargarCatalogosDeportista() {
   }
 }
 
+const cargarDatosPersona = (persona) => {
+  if (!persona) return
+
+  formData.value.primer_nombre = persona.primer_nombre || ''
+  formData.value.segundo_nombre = persona.segundo_nombre || ''
+  formData.value.primer_apellido = persona.primer_apellido || ''
+  formData.value.segundo_apellido = persona.segundo_apellido || ''
+  formData.value.correo_electronico = persona.correo_electronico || ''
+  formData.value.telefono = persona.telefono || ''
+  formData.value.direccion = persona.direccion || ''
+  formData.value.documento = persona.documento || ''
+  formData.value.id_tipo_documento = persona.id_tipo_documento || null
+  formData.value.id_sexo = persona.id_sexo || null
+}
+
+const cargarDatosUsuarioForm = (detalle, usuario) => {
+  if (detalle?.usuario) {
+    formData.value.usuario = detalle.usuario.usuario || ''
+  } else if (usuario) {
+    formData.value.usuario = usuario.usuario || usuario.username || ''
+  }
+}
+
+const cargarDatosDeportista = (deportista) => {
+  if (!deportista) return
+
+  if (deportista.fecha_nacimiento) {
+    formDataDeportista.value.fecha_nacimiento = deportista.fecha_nacimiento
+  }
+  if (deportista.fecha_ingreso) {
+    formDataDeportista.value.fecha_ingreso = deportista.fecha_ingreso
+  }
+  if (deportista.peso !== undefined && deportista.peso !== null) {
+    formDataDeportista.value.peso = deportista.peso
+  }
+  if (deportista.altura !== undefined && deportista.altura !== null) {
+    formDataDeportista.value.altura = deportista.altura
+  }
+  if (deportista.id_tipo_sanguineo) {
+    formDataDeportista.value.id_tipo_sanguineo = deportista.id_tipo_sanguineo
+  }
+  if (deportista.id_ciudad_recidencia) {
+    formDataDeportista.value.id_ciudad_residencia = deportista.id_ciudad_recidencia
+  }
+  if (deportista.id_eps) {
+    formDataDeportista.value.id_eps = deportista.id_eps
+  }
+  if (deportista.id_categoria) {
+    formDataDeportista.value.id_categoria = deportista.id_categoria
+  }
+}
+
+const cargarInformacionDeportiva = (info) => {
+  if (!info) return
+
+  if (info.id_deporte) {
+    formDataDeportista.value.id_deporte = info.id_deporte
+  }
+  if (info.id_escuela) {
+    formDataDeportista.value.id_escuela = info.id_escuela
+  }
+  if (info.id_institucion_registro) {
+    formDataDeportista.value.id_institucion_registro = info.id_institucion_registro
+  }
+  if (info.practica_otro_deporte !== undefined) {
+    formDataDeportista.value.practica_otro_deporte = info.practica_otro_deporte
+  }
+  if (info.participa_escuela !== undefined) {
+    formDataDeportista.value.participa_escuela = info.participa_escuela
+  }
+  if (info.id_categoria) {
+    formDataDeportista.value.id_categoria = info.id_categoria
+  }
+  if (info.recomendacion_medica !== undefined) {
+    formDataDeportista.value.recomendacion_medica = info.recomendacion_medica
+  }
+  if (info.descripcion_recomendacion) {
+    formDataDeportista.value.descripcion_recomendacion = info.descripcion_recomendacion
+  }
+}
+
+const cargarDatosSalud = (salud) => {
+  if (!salud) return
+
+  if (salud.tipos_enfermedad_ids && salud.tipos_enfermedad_ids.length > 0) {
+    formDataDeportista.value.tipo_enfermedad = salud.tipos_enfermedad_ids[0]
+    formDataDeportista.value.tiene_enfermedades = true
+  }
+  if (salud.diagnosticos && Array.isArray(salud.diagnosticos)) {
+    formDataDeportista.value.diagnostico = salud.diagnosticos.map(d =>
+      typeof d === 'object' ? d.id_diagnostico : d
+    )
+  }
+}
+
 async function cargarDatosUsuario() {
   try {
     isLoading.value = true
     error.value = null
 
-    // Cargar detalle del perfil si no está cargado
     if (!authStore.userDetail) {
       await authStore.loadUserProfileDetail()
     }
@@ -936,108 +1030,23 @@ async function cargarDatosUsuario() {
     const usuario = authStore.user
 
     if (detalle?.persona) {
-      formData.value.primer_nombre = detalle.persona.primer_nombre || ''
-      formData.value.segundo_nombre = detalle.persona.segundo_nombre || ''
-      formData.value.primer_apellido = detalle.persona.primer_apellido || ''
-      formData.value.segundo_apellido = detalle.persona.segundo_apellido || ''
-      formData.value.correo_electronico = detalle.persona.correo_electronico || ''
-      formData.value.telefono = detalle.persona.telefono || ''
-      formData.value.direccion = detalle.persona.direccion || ''
-      formData.value.documento = detalle.persona.documento || ''
-      formData.value.id_tipo_documento = detalle.persona.id_tipo_documento || null
-      formData.value.id_sexo = detalle.persona.id_sexo || null
+      cargarDatosPersona(detalle.persona)
     } else if (usuario?.persona) {
-      // Fallback a datos del usuario si no hay detalle
-      const persona = usuario.persona
-      formData.value.primer_nombre = persona.primer_nombre || ''
-      formData.value.segundo_nombre = persona.segundo_nombre || ''
-      formData.value.primer_apellido = persona.primer_apellido || ''
-      formData.value.segundo_apellido = persona.segundo_apellido || ''
-      formData.value.correo_electronico = persona.correo_electronico || ''
-      formData.value.telefono = persona.telefono || ''
-      formData.value.direccion = persona.direccion || ''
-      formData.value.documento = persona.documento || ''
-      formData.value.id_tipo_documento = persona.id_tipo_documento || null
-      formData.value.id_sexo = persona.id_sexo || null
+      cargarDatosPersona(usuario.persona)
     }
 
-    // Cargar datos de usuario
-    if (detalle?.usuario) {
-      formData.value.usuario = detalle.usuario.usuario || ''
-    } else if (usuario) {
-      formData.value.usuario = usuario.usuario || usuario.username || ''
-    }
+    cargarDatosUsuarioForm(detalle, usuario)
 
-    // Cargar datos del deportista si es deportista
     if (detalle?.deportista) {
-      const deportista = detalle.deportista
-      if (deportista.fecha_nacimiento) {
-        formDataDeportista.value.fecha_nacimiento = deportista.fecha_nacimiento
-      }
-      if (deportista.fecha_ingreso) {
-        formDataDeportista.value.fecha_ingreso = deportista.fecha_ingreso
-      }
-      if (deportista.peso !== undefined && deportista.peso !== null) {
-        formDataDeportista.value.peso = deportista.peso
-      }
-      if (deportista.altura !== undefined && deportista.altura !== null) {
-        formDataDeportista.value.altura = deportista.altura
-      }
-      if (deportista.id_tipo_sanguineo) {
-        formDataDeportista.value.id_tipo_sanguineo = deportista.id_tipo_sanguineo
-      }
-      if (deportista.id_ciudad_recidencia) {
-        formDataDeportista.value.id_ciudad_residencia = deportista.id_ciudad_recidencia
-      }
-      if (deportista.id_eps) {
-        formDataDeportista.value.id_eps = deportista.id_eps
-      }
-      if (deportista.id_categoria) {
-        formDataDeportista.value.id_categoria = deportista.id_categoria
-      }
+      cargarDatosDeportista(detalle.deportista)
     }
 
-    // Cargar información deportiva
     if (detalle?.informacion_deportiva) {
-      const info = detalle.informacion_deportiva
-      if (info.id_deporte) {
-        formDataDeportista.value.id_deporte = info.id_deporte
-      }
-      if (info.id_escuela) {
-        formDataDeportista.value.id_escuela = info.id_escuela
-      }
-      if (info.id_institucion_registro) {
-        formDataDeportista.value.id_institucion_registro = info.id_institucion_registro
-      }
-      if (info.practica_otro_deporte !== undefined) {
-        formDataDeportista.value.practica_otro_deporte = info.practica_otro_deporte
-      }
-      if (info.participa_escuela !== undefined) {
-        formDataDeportista.value.participa_escuela = info.participa_escuela
-      }
-      if (info.id_categoria) {
-        formDataDeportista.value.id_categoria = info.id_categoria
-      }
-      if (info.recomendacion_medica !== undefined) {
-        formDataDeportista.value.recomendacion_medica = info.recomendacion_medica
-      }
-      if (info.descripcion_recomendacion) {
-        formDataDeportista.value.descripcion_recomendacion = info.descripcion_recomendacion
-      }
+      cargarInformacionDeportiva(detalle.informacion_deportiva)
     }
 
-    // Cargar datos de salud/diagnósticos
     if (detalle?.salud) {
-      const salud = detalle.salud
-      if (salud.tipos_enfermedad_ids && salud.tipos_enfermedad_ids.length > 0) {
-        formDataDeportista.value.tipo_enfermedad = salud.tipos_enfermedad_ids[0]
-        formDataDeportista.value.tiene_enfermedades = true
-      }
-      if (salud.diagnosticos && Array.isArray(salud.diagnosticos)) {
-        formDataDeportista.value.diagnostico = salud.diagnosticos.map(d =>
-          typeof d === 'object' ? d.id_diagnostico : d
-        )
-      }
+      cargarDatosSalud(detalle.salud)
     }
   } catch (err) {
     console.error('Error al cargar datos del usuario:', err)
@@ -1052,11 +1061,7 @@ async function cargarDatosUsuario() {
   }
 }
 
-const actualizarInformacion = async () => {
-  if (guardando.value) {
-    return
-  }
-
+const confirmarActualizacion = async () => {
   const confirmacion = await Swal.fire({
     icon: 'question',
     title: '¿Guardar cambios?',
@@ -1065,8 +1070,207 @@ const actualizarInformacion = async () => {
     confirmButtonText: 'Sí, actualizar',
     cancelButtonText: 'Cancelar'
   })
+  return confirmacion.isConfirmed
+}
 
-  if (!confirmacion.isConfirmed) {
+const prepararDatosPersona = () => {
+  const datosPersona = {
+    correo_electronico: formData.value.correo_electronico.trim()
+  }
+
+  if (puedeEditarCampo.value.telefono && formData.value.telefono?.trim()) {
+    datosPersona.telefono = formData.value.telefono.trim()
+  }
+  if (puedeEditarCampo.value.direccion && formData.value.direccion?.trim()) {
+    datosPersona.direccion = formData.value.direccion.trim()
+  }
+
+  if (rolUsuario.value === 'Entrenador') {
+    datosPersona.primer_nombre = formData.value.primer_nombre.trim()
+    datosPersona.primer_apellido = formData.value.primer_apellido.trim()
+    datosPersona.id_sexo = formData.value.id_sexo
+
+    if (formData.value.segundo_nombre?.trim()) {
+      datosPersona.segundo_nombre = formData.value.segundo_nombre.trim()
+    }
+    if (formData.value.segundo_apellido?.trim()) {
+      datosPersona.segundo_apellido = formData.value.segundo_apellido.trim()
+    }
+  }
+
+  return datosPersona
+}
+
+const prepararDatosUsuario = () => {
+  return {
+    usuario: formData.value.usuario.trim()
+  }
+}
+
+const prepararDatosDeportistaBasicos = () => {
+  const datosDeportista = {}
+
+  if (puedeEditarCampo.value.tipoSanguineo) {
+    datosDeportista.id_tipo_sanguineo = formDataDeportista.value.id_tipo_sanguineo || null
+  }
+  if (puedeEditarCampo.value.ciudadResidencia) {
+    datosDeportista.id_ciudad_recidencia = formDataDeportista.value.id_ciudad_residencia || null
+  }
+  if (puedeEditarCampo.value.eps) {
+    datosDeportista.id_eps = formDataDeportista.value.id_eps || null
+  }
+
+  return datosDeportista
+}
+
+const agregarDatosDeporte = (datosInfo) => {
+  if (puedeEditarCampo.value.deporte) {
+    datosInfo.id_deporte = formDataDeportista.value.id_deporte || null
+  }
+}
+
+const agregarDatosEscuela = (datosInfo) => {
+  if (puedeEditarCampo.value.escuela && formDataDeportista.value.participa_escuela && formDataDeportista.value.id_escuela) {
+    datosInfo.id_escuela = formDataDeportista.value.id_escuela
+  }
+}
+
+const agregarDatosInstitucion = (datosInfo) => {
+  if (puedeEditarCampo.value.institucionRegistro) {
+    datosInfo.id_institucion_registro = formDataDeportista.value.id_institucion_registro || null
+  }
+}
+
+const agregarDatosPracticaDeporte = (datosInfo) => {
+  if (puedeEditarCampo.value.practicaOtroDeporte !== undefined) {
+    datosInfo.practica_otro_deporte = puedeEditarCampo.value.practicaOtroDeporte
+      ? (formDataDeportista.value.practica_otro_deporte || false)
+      : undefined
+  }
+}
+
+const agregarDatosParticipaEscuela = (datosInfo) => {
+  if (puedeEditarCampo.value.participaEscuela !== undefined) {
+    datosInfo.participa_escuela = puedeEditarCampo.value.participaEscuela
+      ? (formDataDeportista.value.participa_escuela || false)
+      : undefined
+  }
+}
+
+const calcularRecomendacionMedica = () => {
+  if (formDataDeportista.value.tiene_enfermedades === true) {
+    return formDataDeportista.value.recomendacion_medica
+  }
+  return false
+}
+
+const calcularDescripcionRecomendacion = () => {
+  const tieneEnfermedades = formDataDeportista.value.tiene_enfermedades === true
+  const tieneRecomendacion = formDataDeportista.value.recomendacion_medica
+
+  if (tieneEnfermedades && tieneRecomendacion) {
+    return formDataDeportista.value.descripcion_recomendacion
+  }
+  return null
+}
+
+const agregarDatosAntecedentesMedicos = (datosInfo) => {
+  if (!puedeEditarCampo.value.antecedentesMedicos) {
+    return
+  }
+
+  datosInfo.recomendacion_medica = calcularRecomendacionMedica()
+  datosInfo.descripcion_recomendacion = calcularDescripcionRecomendacion()
+}
+
+const prepararDatosInformacionDeportiva = () => {
+  const datosInfo = {}
+
+  agregarDatosDeporte(datosInfo)
+  agregarDatosEscuela(datosInfo)
+  agregarDatosInstitucion(datosInfo)
+  agregarDatosPracticaDeporte(datosInfo)
+  agregarDatosParticipaEscuela(datosInfo)
+  agregarDatosAntecedentesMedicos(datosInfo)
+
+  return datosInfo
+}
+
+const limpiarObjetosVacios = (obj) => {
+  Object.keys(obj).forEach(key => {
+    if (obj[key] === undefined) {
+      delete obj[key]
+    }
+  })
+}
+
+const agregarDatosDiagnostico = (datosDeportistaActualizar) => {
+  if (!puedeEditarCampo.value.antecedentesMedicos) {
+    return
+  }
+
+  if (formDataDeportista.value.tiene_enfermedades === true) {
+    if (formDataDeportista.value.tipo_enfermedad) {
+      datosDeportistaActualizar.tipo_enfermedad = formDataDeportista.value.tipo_enfermedad
+    }
+    if (formDataDeportista.value.diagnostico && formDataDeportista.value.diagnostico.length > 0) {
+      datosDeportistaActualizar.diagnostico = formDataDeportista.value.diagnostico.map(d => parseInt(d))
+    }
+  } else if (formDataDeportista.value.tiene_enfermedades === false) {
+    datosDeportistaActualizar.diagnostico = []
+  }
+}
+
+const agregarPesoAltura = (datosDeportista) => {
+  if (!puedeEditarPesoAltura.value) {
+    return
+  }
+
+  if (formDataDeportista.value.peso !== null) {
+    datosDeportista.peso = parseFloat(formDataDeportista.value.peso)
+  }
+  if (formDataDeportista.value.altura !== null) {
+    datosDeportista.altura = parseFloat(formDataDeportista.value.altura)
+  }
+}
+
+const actualizarDeportista = async (idDeportista, datosDeportistaActualizar) => {
+  try {
+    const resultadoDeportista = await deportistasService.actualizarDeportista(
+      idDeportista,
+      datosDeportistaActualizar
+    )
+
+    if (!resultadoDeportista.success) {
+      console.warn('Error al actualizar deportista:', resultadoDeportista.message)
+    }
+  } catch (err) {
+    console.error('Error al actualizar datos del deportista:', err)
+  }
+}
+
+const mostrarExitoYRecargar = async () => {
+  mensajeExito.value = 'Información actualizada correctamente'
+
+  await Swal.fire({
+    icon: 'success',
+    title: 'Cambios guardados',
+    text: 'Tu perfil se actualizó correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  })
+
+  await authStore.loadUserProfileDetail()
+  await authStore.loadUserProfile()
+  router.push('/perfil')
+}
+
+const actualizarInformacion = async () => {
+  if (guardando.value) {
+    return
+  }
+
+  if (!(await confirmarActualizacion())) {
     return
   }
 
@@ -1080,157 +1284,39 @@ const actualizarInformacion = async () => {
       throw new Error('No se pudo obtener el ID del usuario.')
     }
 
-    // Preparar datos_persona según permisos del rol
-    const datosPersona = {
-      correo_electronico: formData.value.correo_electronico.trim()
-    }
+    const datosPersona = prepararDatosPersona()
+    const datosUsuario = prepararDatosUsuario()
 
-    // Solo agregar campos que el usuario tiene permiso para editar
-    if (puedeEditarCampo.value.telefono && formData.value.telefono?.trim()) {
-      datosPersona.telefono = formData.value.telefono.trim()
-    }
-    if (puedeEditarCampo.value.direccion && formData.value.direccion?.trim()) {
-      datosPersona.direccion = formData.value.direccion.trim()
-    }
-
-    // Campos que solo Entrenador puede editar
-    if (rolUsuario.value === 'Entrenador') {
-      datosPersona.primer_nombre = formData.value.primer_nombre.trim()
-      datosPersona.primer_apellido = formData.value.primer_apellido.trim()
-      datosPersona.id_sexo = formData.value.id_sexo
-
-      if (formData.value.segundo_nombre?.trim()) {
-        datosPersona.segundo_nombre = formData.value.segundo_nombre.trim()
-      }
-      if (formData.value.segundo_apellido?.trim()) {
-        datosPersona.segundo_apellido = formData.value.segundo_apellido.trim()
-      }
-    }
-
-    // Tipo y número de documento nunca se pueden editar (ningún rol)
-    // No se incluyen en datosPersona
-
-    // Preparar datos_usuario
-    const datosUsuario = {
-      usuario: formData.value.usuario.trim()
-    }
-
-    // Actualizar persona y usuario
     const resultado = await authService.updateUser(idUsuario, datosPersona, datosUsuario)
 
     if (!resultado.success) {
       throw new Error(resultado.error || 'Error al actualizar la información')
     }
 
-    // Si es deportista, actualizar también datos del deportista
     if (esDeportista.value) {
       const idDeportista = authStore.userDetail?.deportista?.id_deportista ||
                           authStore.user?.deportista?.id_deportista
 
       if (idDeportista) {
-        // Validar que solo Entrenador y Administrador puedan actualizar peso y altura
+        const datosDeportista = prepararDatosDeportistaBasicos()
+        const datosInfo = prepararDatosInformacionDeportiva()
+
         const datosDeportistaActualizar = {
-          datos_deportista: {
-            // Solo incluir campos que el usuario tiene permiso para editar
-            // fecha_nacimiento, fecha_ingreso y id_categoria nunca se incluyen (no son editables)
-            ...(puedeEditarCampo.value.tipoSanguineo && { id_tipo_sanguineo: formDataDeportista.value.id_tipo_sanguineo || null }),
-            ...(puedeEditarCampo.value.ciudadResidencia && { id_ciudad_recidencia: formDataDeportista.value.id_ciudad_residencia || null }),
-            ...(puedeEditarCampo.value.eps && { id_eps: formDataDeportista.value.id_eps || null })
-          },
-          datos_informacion_deportiva: {
-            // Solo incluir campos que el usuario tiene permiso para editar
-            ...(puedeEditarCampo.value.deporte && { id_deporte: formDataDeportista.value.id_deporte || null }),
-            ...(puedeEditarCampo.value.escuela && formDataDeportista.value.participa_escuela && formDataDeportista.value.id_escuela
-                ? { id_escuela: formDataDeportista.value.id_escuela }
-                : {}),
-            ...(puedeEditarCampo.value.institucionRegistro && { id_institucion_registro: formDataDeportista.value.id_institucion_registro || null }),
-            ...(puedeEditarCampo.value.practicaOtroDeporte !== undefined && {
-              practica_otro_deporte: puedeEditarCampo.value.practicaOtroDeporte ? (formDataDeportista.value.practica_otro_deporte || false) : undefined
-            }),
-            ...(puedeEditarCampo.value.participaEscuela !== undefined && {
-              participa_escuela: puedeEditarCampo.value.participaEscuela ? (formDataDeportista.value.participa_escuela || false) : undefined
-            }),
-            ...(puedeEditarCampo.value.antecedentesMedicos && {
-              recomendacion_medica: formDataDeportista.value.tiene_enfermedades === true
-                                    ? formDataDeportista.value.recomendacion_medica
-                                    : false,
-              descripcion_recomendacion: formDataDeportista.value.tiene_enfermedades === true
-                                         && formDataDeportista.value.recomendacion_medica
-                                         ? formDataDeportista.value.descripcion_recomendacion
-                                         : null
-            })
-          }
+          datos_deportista: datosDeportista,
+          datos_informacion_deportiva: datosInfo
         }
 
-        // Limpiar objetos vacíos después de agregar campos condicionalmente
-        Object.keys(datosDeportistaActualizar.datos_deportista).forEach(key => {
-          if (datosDeportistaActualizar.datos_deportista[key] === undefined) {
-            delete datosDeportistaActualizar.datos_deportista[key]
-          }
-        })
-        Object.keys(datosDeportistaActualizar.datos_informacion_deportiva).forEach(key => {
-          if (datosDeportistaActualizar.datos_informacion_deportiva[key] === undefined) {
-            delete datosDeportistaActualizar.datos_informacion_deportiva[key]
-          }
-        })
+        limpiarObjetosVacios(datosDeportistaActualizar.datos_deportista)
+        limpiarObjetosVacios(datosDeportistaActualizar.datos_informacion_deportiva)
 
-        // Agregar información de diagnóstico solo si tiene permisos
-        if (puedeEditarCampo.value.antecedentesMedicos) {
-          if (formDataDeportista.value.tiene_enfermedades === true) {
-            if (formDataDeportista.value.tipo_enfermedad) {
-              datosDeportistaActualizar.tipo_enfermedad = formDataDeportista.value.tipo_enfermedad
-            }
-            if (formDataDeportista.value.diagnostico && formDataDeportista.value.diagnostico.length > 0) {
-              datosDeportistaActualizar.diagnostico = formDataDeportista.value.diagnostico.map(d => parseInt(d))
-            }
-          } else if (formDataDeportista.value.tiene_enfermedades === false) {
-            // Si marca "No", enviar arrays vacíos para limpiar diagnósticos
-            datosDeportistaActualizar.diagnostico = []
-          }
-        }
+        agregarDatosDiagnostico(datosDeportistaActualizar)
+        agregarPesoAltura(datosDeportistaActualizar.datos_deportista)
 
-        // Agregar peso y altura solo si el usuario tiene permisos
-        if (puedeEditarPesoAltura.value) {
-          if (formDataDeportista.value.peso !== null) {
-            datosDeportistaActualizar.datos_deportista.peso = parseFloat(formDataDeportista.value.peso)
-          }
-          if (formDataDeportista.value.altura !== null) {
-            datosDeportistaActualizar.datos_deportista.altura = parseFloat(formDataDeportista.value.altura)
-          }
-        }
-
-        try {
-          const resultadoDeportista = await deportistasService.actualizarDeportista(
-            idDeportista,
-            datosDeportistaActualizar
-          )
-
-          if (!resultadoDeportista.success) {
-            console.warn('Error al actualizar deportista:', resultadoDeportista.message)
-            // No lanzar error, solo mostrar advertencia si persona/usuario se actualizó bien
-          }
-        } catch (err) {
-          console.error('Error al actualizar datos del deportista:', err)
-          // No lanzar error para que la actualización de persona/usuario se complete
-        }
+        await actualizarDeportista(idDeportista, datosDeportistaActualizar)
       }
     }
 
-    mensajeExito.value = 'Información actualizada correctamente'
-
-    await Swal.fire({
-      icon: 'success',
-      title: 'Cambios guardados',
-      text: 'Tu perfil se actualizó correctamente.',
-      timer: 1500,
-      showConfirmButton: false
-    })
-
-    // Recargar datos del usuario
-    await authStore.loadUserProfileDetail()
-    await authStore.loadUserProfile()
-
-    router.push('/perfil')
+    await mostrarExitoYRecargar()
   } catch (err) {
     console.error('Error actualizando información:', err)
     error.value = err.message || 'Error al actualizar la información. Por favor, intenta nuevamente.'
@@ -1290,7 +1376,7 @@ onMounted(async () => {
 }
 
 /* Hacer que el footer se salga del padding del main y se comporte como footer */
-.actualizar-info-page :deep(.footer-enhanced) {
+.actualizar-info-page ::v-deep .footer-enhanced {
   margin-left: -1rem;
   margin-right: -1rem;
   width: calc(100% + 2rem);
@@ -1482,7 +1568,7 @@ onMounted(async () => {
     padding-bottom: 0;
   }
 
-  .actualizar-info-page :deep(.footer-enhanced) {
+  .actualizar-info-page ::v-deep .footer-enhanced {
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     width: calc(100% + 1rem);

@@ -454,18 +454,18 @@ function applyLayoutOffsets() {
   align-items: center;
   justify-content: space-between;
   gap: var(--espaciado-md);
+  width: 100%;
+  max-width: 100%;
 }
 
 .header-left {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
+  align-items: center;
   gap: 10px; /* 8–10px entre botón y logo */
   white-space: nowrap;
   flex: 0 0 auto;
-  padding-top: var(--espaciado-xs);
-  position: relative;
-  left: calc(-5.5 * (var(--espaciado-xl) + var(--espaciado-md)));
 }
 
 .menu-trigger {
@@ -522,8 +522,6 @@ function applyLayoutOffsets() {
   align-items: center;
   gap: var(--espaciado-md);
   flex: 0 0 auto;
-  position: relative;
-  right: calc(-5.5 * (var(--espaciado-xl) + var(--espaciado-md)));
 }
 
 .profile-menu-container {
@@ -531,8 +529,8 @@ function applyLayoutOffsets() {
 }
 
 .profile-button {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 3px solid #FFD600;
   cursor: pointer;
   padding: 0;
   border-radius: var(--radio-borde-circular);
@@ -542,8 +540,6 @@ function applyLayoutOffsets() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid #FFD600;
-  background: transparent;
   position: relative;
 }
 

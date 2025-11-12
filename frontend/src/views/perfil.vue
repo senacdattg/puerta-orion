@@ -654,58 +654,80 @@ const nombreDiagnostico = (id) => {
   return item?.nombre || item?.nombre_diagnostico || '—'
 }
 
-// Función para formatear fecha de nacimiento
-function formatearFechaNacimiento(fecha) {
-  if (!fecha) return null
+const formatearDateADDMYYYY = (dateObj) => {
+  const dia = dateObj.getDate().toString().padStart(2, '0')
+  const mes = (dateObj.getMonth() + 1).toString().padStart(2, '0')
+  const año = dateObj.getFullYear()
+  return `${dia}/${mes}/${año}`
+}
 
-  // Si es un número (año solo), convertir a fecha completa (1 de enero de ese año)
-  if (typeof fecha === 'number') {
-    // Si es un año válido (4 dígitos), mostrarlo como fecha completa
-    if (fecha >= 1900 && fecha <= new Date().getFullYear()) {
-      // Crear fecha con 1 de enero del año dado
-      const fechaCompleta = new Date(fecha, 0, 1) // Mes 0 = enero, día 1
-      const dia = fechaCompleta.getDate().toString().padStart(2, '0')
-      const mes = (fechaCompleta.getMonth() + 1).toString().padStart(2, '0')
-      const año = fechaCompleta.getFullYear()
-      return `${dia}/${mes}/${año}`
-    }
+const validarAno = (año) => {
+  const añoActual = new Date().getFullYear()
+  return año >= 1900 && año <= añoActual
+}
+
+const formatearFechaComoNumero = (fecha) => {
+  if (!validarAno(fecha)) {
     return fecha.toString()
   }
 
-  // Si es un string (fecha completa o año)
-  if (typeof fecha === 'string') {
-    // Si es solo un año (4 dígitos)
-    if (/^\d{4}$/.test(fecha)) {
-      const año = parseInt(fecha)
-      if (año >= 1900 && año <= new Date().getFullYear()) {
-        return `01/01/${año}`
-      }
-    }
+  const fechaCompleta = new Date(fecha, 0, 1)
+  return formatearDateADDMYYYY(fechaCompleta)
+}
 
-    // Intentar parsear como fecha ISO (YYYY-MM-DD) o otros formatos
-    try {
-      const dateObj = new Date(fecha)
-      if (!isNaN(dateObj.getTime())) {
-        // Formatear como DD/MM/YYYY
-        const dia = dateObj.getDate().toString().padStart(2, '0')
-        const mes = (dateObj.getMonth() + 1).toString().padStart(2, '0')
-        const año = dateObj.getFullYear()
-        return `${dia}/${mes}/${año}`
-      }
-    } catch (error) {
-      console.warn('Error al formatear fecha:', error)
-    }
-    return fecha
+const esSoloAno = (fecha) => {
+  return /^\d{4}$/.test(fecha)
+}
+
+const formatearSoloAno = (fecha) => {
+  const año = parseInt(fecha)
+  if (validarAno(año)) {
+    return `01/01/${año}`
+  }
+  return fecha
+}
+
+const parsearFechaString = (fecha) => {
+  const dateObj = new Date(fecha)
+  if (!isNaN(dateObj.getTime())) {
+    return formatearDateADDMYYYY(dateObj)
+  }
+  return null
+}
+
+const formatearFechaComoString = (fecha) => {
+  if (esSoloAno(fecha)) {
+    return formatearSoloAno(fecha)
   }
 
-  // Si es un objeto Date
+  const fechaFormateada = parsearFechaString(fecha)
+  if (fechaFormateada) {
+    return fechaFormateada
+  }
+
+  return fecha
+}
+
+const formatearFechaComoDate = (fecha) => {
+  if (!isNaN(fecha.getTime())) {
+    return formatearDateADDMYYYY(fecha)
+  }
+  return null
+}
+
+function formatearFechaNacimiento(fecha) {
+  if (!fecha) return null
+
+  if (typeof fecha === 'number') {
+    return formatearFechaComoNumero(fecha)
+  }
+
+  if (typeof fecha === 'string') {
+    return formatearFechaComoString(fecha)
+  }
+
   if (fecha instanceof Date) {
-    if (!isNaN(fecha.getTime())) {
-      const dia = fecha.getDate().toString().padStart(2, '0')
-      const mes = (fecha.getMonth() + 1).toString().padStart(2, '0')
-      const año = fecha.getFullYear()
-      return `${dia}/${mes}/${año}`
-    }
+    return formatearFechaComoDate(fecha)
   }
 
   return fecha
@@ -1009,7 +1031,7 @@ const getRolId = (rol) => {
 }
 
 /* Reducir el margen del TituloClub en el perfil */
-.perfil-page :deep(.titulo-club) {
+.perfil-page ::v-deep .titulo-club {
   margin-top: 10px;
   margin-bottom: 10px;
 }
@@ -1044,7 +1066,7 @@ const getRolId = (rol) => {
 .hero-info .perfil-subtitle { margin: 6px 0 12px; color: #64748b; font-size: 0.95rem; }
 
 .hero-badges { display: flex; gap: 10px; flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; border: 1px solid #e5e7eb; background: #fff; color: #334155; font-weight: 600chem; font-size: 0.875rem; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; border: 1px solid #e5e7eb; background: #fff; color: #334155; font-weight: 600; font-size: 0.875rem; }
 .chip i { font-size: 0.875rem; color: inherit; }
 .chip.primary { border-color: #c7d2fe; background: #eef2ff; color: #3730a3; }
 .chip.success { border-color: #bbf7d0; background: #ecfdf5; color: #065f46; }
@@ -1158,22 +1180,6 @@ const getRolId = (rol) => {
 @keyframes shimmer {
   0% { background-position: 100% 0; }
   100% { background-position: 0 0; }
-}
-
-.info-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.badge-info {
-  background: #dbeafe;
-  color: #1e40af;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 0.8rem;
-  margin-right: 6px;
-  display: inline-block;
 }
 
 .mr-1 {

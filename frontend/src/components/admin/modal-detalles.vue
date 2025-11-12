@@ -293,6 +293,7 @@
               <h6>Fechas de pago y abonos</h6>
               <div v-if="listaPagosYAbonos().length > 0" class="pagos-list">
                 <table class="tabla-historial" style="width:100%; border-collapse:collapse;">
+                  <caption class="sr-only">Historial de fechas de pago y abonos de la mensualidad</caption>
                   <thead>
                     <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
                       <th style="padding:8px;">Fecha</th>
