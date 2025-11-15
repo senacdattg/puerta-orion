@@ -261,10 +261,10 @@ def crear_imagen() -> JsonResponse:
             id_tipo_evento=tipo_evento.id_tipo_evento,
             id_categoria=categoria.id_categoria if categoria else None,
         )
-
+        
         db.session.add(nueva_imagen)
         db.session.commit()
-
+        
         logger.info("Imagen creada: %s - %s", nueva_imagen.id_galeria, nueva_imagen.titulo)
         return _build_response(
             True,
@@ -318,12 +318,12 @@ def actualizar_imagen(id_galeria: int) -> JsonResponse:
 
         if 'id_tipo_evento' in data:
             imagen.id_tipo_evento = data['id_tipo_evento']
-
+        
         if 'id_categoria' in data:
             imagen.id_categoria = data['id_categoria']
-
+        
         db.session.commit()
-
+        
         logger.info("Imagen actualizada: %s - %s", imagen.id_galeria, imagen.titulo)
         return _build_response(
             True,
@@ -361,7 +361,7 @@ def eliminar_imagen(id_galeria: int) -> JsonResponse:
 
         db.session.delete(imagen)
         db.session.commit()
-
+        
         logger.info("Imagen eliminada: %s - %s", id_galeria, imagen.titulo)
         return _build_response(
             True,
@@ -399,7 +399,7 @@ def obtener_catalogos() -> JsonResponse:
     try:
         tipos_evento = [tipo.to_dict() for tipo in TipoEvento.query.all()]
         categorias = [cat.to_dict() for cat in Categoria.query.filter_by(estado=True).all()]
-
+        
         return _build_response(
             True,
             data={

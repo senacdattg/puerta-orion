@@ -3,42 +3,91 @@ Rutas para gestión de deportistas.
 
 Este archivo orquesta la definición de rutas y la delegación de lógica a los 
 servicios del dominio de deportistas y catálogos. Cada módulo cumple con un 
-propósito único siguiendo SRP, DRY y KISS. 
+propósito único siguiendo SRP, DRY, KISS, POO y Clean Code.
+
+Principios aplicados:
+- SRP: Cada función tiene una única responsabilidad
+- DRY: Uso de constantes y utilidades reutilizables
+- KISS: Código simple y directo
+- POO: Uso de clases para construcción de respuestas
+- Clean Code: Nombres descriptivos, funciones pequeñas, manejo de errores consistente
 """
 
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import date
-from flask import jsonify, Response
-from flask import Blueprint, request, jsonify
+import traceback
+
+from flask import Blueprint, request
+from flask import Response
+
 from src.services.deportista_service import DeportistaService
 from src.services.registro_deportista_service import RegistroDeportistaService
 from src.services.catalogos_service import CatalogosService
 from src.utils.logger import obtener_registrador
+from src.utils.http_responses import HttpResponseBuilder, handle_exception, JsonResponse
+from src.utils.error_messages import (
+    ERROR_INTERNO_SERVIDOR,
+    ERROR_CONTENT_TYPE_JSON,
+    ERROR_USUARIO_NO_AUTENTICADO,
+    ERROR_DEPORTISTA_NO_ENCONTRADO,
+    ERROR_ID_ENTERO_POSITIVO,
+)
 from src.middleware.auth_decorator import token_required, get_current_user
+from src.utils.request_validators import obtener_json_requerido, RequestValidationError
 
-deportistas_bp = Blueprint('deportistas', __name__)
+deportistas_bp = Blueprint('deportistas', __name__, url_prefix='/api/deportistas')
 logger = obtener_registrador('aplicacion')
 
-# ---- Rutas principales de deportistas (CRUD) ----
+# ============================================================================
+# RUTAS PRINCIPALES DE DEPORTISTAS (CRUD)
+# ============================================================================
 
 @deportistas_bp.route('/', methods=['POST'])
-def crear_deportista():
+def crear_deportista() -> JsonResponse:
+    """
+    Crea un nuevo deportista.
+    
+    POST /api/deportistas/
+    
+    Body JSON: Datos del deportista a crear.
+    
+    Returns:
+        Respuesta con el deportista creado o error.
+    """
     try:
-        if not request.is_json:
-            return jsonify({'success': False, 'message': 'El contenido debe ser JSON', 'status_code': 400}), 400
-
-        datos = request.get_json()
+        datos = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio='Los datos del deportista son requeridos'
+        )
+        
         result = DeportistaService.crear_deportista(datos)
-
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al crear deportista"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+            
+    except RequestValidationError as e:
+        return HttpResponseBuilder.bad_request(error=str(e))
     except Exception as e:
-        logger.error(f"Error inesperado al crear deportista: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "crear deportista")
 
 @deportistas_bp.route('/registro-completo', methods=['POST'])
-def registro_deportista_completo():
+def registro_deportista_completo() -> JsonResponse:
     """
-    Endpoint para registro completo de deportista.
+    Registra un deportista con información completa.
+    
+    POST /api/deportistas/registro-completo
     
     Permite registrar un deportista con toda su información:
     - Datos básicos del deportista
@@ -61,35 +110,56 @@ def registro_deportista_completo():
         },
         "diagnosticos": [1, 2, 3]
     }
+    
+    Returns:
+        Respuesta con el deportista registrado o error.
     """
     try:
-        if not request.is_json:
-            return jsonify({'success': False, 'message': 'El contenido debe ser JSON', 'status_code': 400}), 400
-
-        datos = request.get_json()
+        datos = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio='Los datos del registro completo son requeridos'
+        )
+        
         result = RegistroDeportistaService.registrar_deportista_nuevo(datos)
-
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al registrar deportista"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+            
+    except RequestValidationError as e:
+        return HttpResponseBuilder.bad_request(error=str(e))
     except Exception as e:
-        logger.error(f"Error inesperado al registrar deportista completo: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "registrar deportista completo")
 
 @deportistas_bp.route('/registrar', methods=['POST'])
 @token_required()
-def registrar_deportista():
+def registrar_deportista() -> JsonResponse:
     """
-    Endpoint para registrar un deportista con cálculo automático de categoría.
+    Registra un deportista con cálculo automático de categoría (autenticado).
+    
+    POST /api/deportistas/registrar
     
     Este endpoint:
     - Calcula automáticamente la categoría basándose en la fecha de nacimiento
     - Valida que todos los IDs existan en sus respectivas tablas
     - Maneja la transacción completa con rollback en caso de error
     - Valida la coherencia entre tipo de enfermedad y diagnósticos
+    - Usa el id_persona del usuario autenticado automáticamente
     
-    Body JSON según estructura:
+    Body JSON:
     {
         "datos_deportista": {
-            "id_persona": 10,
             "fecha_nacimiento": 2005,
             "id_tipo_sanguineo": 2,
             "id_ciudad_recidencia": 1,
@@ -107,21 +177,29 @@ def registrar_deportista():
         "tipo_enfermedad": 1,
         "diagnostico": [1,2,3]
     }
+    
+    Returns:
+        Respuesta con el deportista registrado o error.
     """
     try:
-        if not request.is_json:
-            return jsonify({'status': 'error', 'message': 'El contenido debe ser JSON', 'status_code': 400}), 400
-
-        datos = request.get_json()
+        datos = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio='Los datos del registro son requeridos'
+        )
 
         # Obtener id_persona del usuario autenticado (inyectado por el middleware)
         usuario_actual = get_current_user()
         if not usuario_actual or not usuario_actual.get('persona'):
-            return jsonify({'status': 'error', 'message': 'Usuario no autenticado', 'status_code': 401}), 401
+            return HttpResponseBuilder.unauthorized(
+                message='Usuario no autenticado o sin persona asociada'
+            )
 
         id_persona = usuario_actual['persona'].get('id_persona')
         if not id_persona:
-            return jsonify({'status': 'error', 'message': 'No se pudo determinar la persona del usuario', 'status_code': 401}), 401
+            return HttpResponseBuilder.unauthorized(
+                message='No se pudo determinar la persona del usuario'
+            )
 
         # Asegurar estructura base
         if 'datos_deportista' not in datos or datos['datos_deportista'] is None:
@@ -131,16 +209,32 @@ def registrar_deportista():
         datos['datos_deportista']['id_persona'] = id_persona
 
         result = RegistroDeportistaService.registrar_deportista_nuevo(datos)
-
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False) or result.get("status") == "success":
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al registrar deportista"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+            
+    except RequestValidationError as e:
+        return HttpResponseBuilder.bad_request(error=str(e))
     except Exception as e:
-        logger.error(f"Error inesperado al registrar deportista: {str(e)}")
-        return jsonify({'status': 'error', 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "registrar deportista")
 
 @deportistas_bp.route('/<int:id_deportista>', methods=['GET'])
-def obtener_deportista_por_id(id_deportista):
+def obtener_deportista_por_id(id_deportista: int) -> JsonResponse:
     """
     Obtiene la información completa de un deportista por su ID.
+
+    GET /api/deportistas/<id_deportista>
 
     Incluye:
     - Datos personales (nombre, documento, tipo sanguíneo, ciudad, EPS)
@@ -155,41 +249,83 @@ def obtener_deportista_por_id(id_deportista):
     """
     # Validar que el ID sea numérico y positivo
     if not isinstance(id_deportista, int) or id_deportista <= 0:
-        return jsonify({
-            'status': 'error',
-            'message': 'El ID del deportista debe ser un número entero positivo'
-        }), 400
+        return HttpResponseBuilder.bad_request(
+            error=ERROR_ID_ENTERO_POSITIVO,
+            message='El ID del deportista debe ser un número entero positivo'
+        )
 
     try:
         # Obtener información completa del deportista
         result = RegistroDeportistaService.obtener_informacion_completa_deportista(id_deportista)
-
-        return jsonify(result), result.get("status_code", 200)
-    except Exception as err:
-        logger.error(f"Error inesperado al obtener deportista: {str(err)}")
-        import traceback
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False) or result.get("status") == "success":
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        elif status_code == 404:
+            return HttpResponseBuilder.not_found(
+                error=ERROR_DEPORTISTA_NO_ENCONTRADO,
+                message=f'No se encontró un deportista con ID {id_deportista}'
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener deportista"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+            
+    except Exception as e:
+        logger.error(f"Error inesperado al obtener deportista: {str(e)}")
         logger.error(traceback.format_exc())
-        return jsonify({
-            'status': 'error',
-            'message': 'Error interno del servidor'
-        }), 500
+        return handle_exception(e, logger, "obtener deportista por ID")
 
 @deportistas_bp.route('/', methods=['GET'])
-def get_lista_deportistas():
+def get_lista_deportistas() -> JsonResponse:
+    """
+    Obtiene la lista paginada de deportistas.
+    
+    GET /api/deportistas/?page=1&per_page=10
+    
+    Query params:
+        page (int, opcional): Número de página (default: 1)
+        per_page (int, opcional): Elementos por página (default: 10)
+    
+    Returns:
+        Lista paginada de deportistas o error.
+    """
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
+        
         result = DeportistaService.listar_deportistas(page, per_page)
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al listar deportistas"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+            
     except Exception as e:
-        logger.error(f"Error inesperado al listar deportistas: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "listar deportistas")
 
-@deportistas_bp.route('/asociar-acudiente', methods=['POST'])
+@deportistas_bp.route('/<int:id_deportista>/acudientes', methods=['POST'])
 @token_required()
-def asociar_acudiente_deportista():
+def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
     """
-    Endpoint para asociar un acudiente existente con un deportista.
+    Asocia un acudiente existente con un deportista.
+    
+    POST /api/deportistas/<id_deportista>/acudientes
     
     Permite que un acudiente ya registrado se asocie con un deportista adicional.
     Valida que:
@@ -197,50 +333,40 @@ def asociar_acudiente_deportista():
     - El deportista no tenga más de 3 acudientes asociados
     - No exista ya esta relación
     
-    Headers requeridos:
-    Authorization: Bearer <token>
-    
-    Body JSON requerido:
+    Body JSON:
     {
-        "id_deportista": 123,              // OBLIGATORIO: ID del deportista
         "id_parentesco": 1,                // OBLIGATORIO: ID del tipo de parentesco
         "es_responsable": false            // OBLIGATORIO: Si es responsable legal (bool)
     }
     
     Returns:
-        JSON: Información de la relación creada
+        Información de la relación creada o error.
     """
     try:
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'Content-Type debe ser application/json',
-                'status_code': 400
-            }), 400
+        datos = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio='Los datos de la relación son requeridos'
+        )
         
         # Obtener usuario autenticado del contexto
         user = get_current_user()
         
         if not user:
-            return jsonify({
-                'success': False,
-                'error': 'Usuario no encontrado en el contexto',
-                'status_code': 401
-            }), 401
+            return HttpResponseBuilder.unauthorized(
+                message='Usuario no encontrado en el contexto'
+            )
         
         # Obtener datos del JSON
-        data = request.get_json()
-        id_deportista = data.get('id_deportista')
-        id_parentesco = data.get('id_parentesco')
-        es_responsable = data.get('es_responsable', False)
+        id_parentesco = datos.get('id_parentesco')
+        es_responsable = datos.get('es_responsable', False)
         
         # Validar que se proporcionen todos los datos requeridos
-        if not id_deportista or not id_parentesco:
-            return jsonify({
-                'success': False,
-                'error': 'Se requieren id_deportista e id_parentesco',
-                'status_code': 400
-            }), 400
+        if not id_parentesco:
+            return HttpResponseBuilder.bad_request(
+                error='Campo requerido',
+                message='Se requiere id_parentesco'
+            )
         
         # Importar modelos necesarios
         from src.models.acudientes.acudiente import Acudiente
@@ -253,58 +379,52 @@ def asociar_acudiente_deportista():
         # Obtener el acudiente del usuario autenticado
         id_persona = user.get('persona', {}).get('id_persona')
         if not id_persona:
-            return jsonify({
-                'success': False,
-                'error': 'No se encontró información de persona para el usuario',
-                'status_code': 400
-            }), 400
+            return HttpResponseBuilder.bad_request(
+                error='Datos incompletos',
+                message='No se encontró información de persona para el usuario'
+            )
         
         acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
         if not acudiente:
-            return jsonify({
-                'success': False,
-                'error': 'El usuario no está registrado como acudiente. Debe completar su perfil primero.',
-                'status_code': 400
-            }), 400
+            return HttpResponseBuilder.bad_request(
+                error='Perfil incompleto',
+                message='El usuario no está registrado como acudiente. Debe completar su perfil primero.'
+            )
         
         # Validar que el deportista existe
-        deportista = Deportista.query.filter_by(id_deportista=int(id_deportista)).first()
+        deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
         if not deportista:
-            return jsonify({
-                'success': False,
-                'error': f'El deportista con ID {id_deportista} no existe',
-                'status_code': 404
-            }), 404
+            return HttpResponseBuilder.not_found(
+                error=ERROR_DEPORTISTA_NO_ENCONTRADO,
+                message=f'No se encontró un deportista con ID {id_deportista}'
+            )
         
         # Validar que el deportista no se esté acudiendo a sí mismo
         if deportista.id_persona == id_persona:
-            return jsonify({
-                'success': False,
-                'error': 'Un deportista no puede acudirse a sí mismo',
-                'status_code': 400
-            }), 400
+            return HttpResponseBuilder.bad_request(
+                error='Validación fallida',
+                message='Un deportista no puede acudirse a sí mismo'
+            )
         
         # Validar que el parentesco existe
         parentesco = Parentesco.query.filter_by(id_parentesco=int(id_parentesco)).first()
         if not parentesco:
-            return jsonify({
-                'success': False,
-                'error': f'El parentesco con ID {id_parentesco} no existe',
-                'status_code': 404
-            }), 404
+            return HttpResponseBuilder.not_found(
+                error='Recurso no encontrado',
+                message=f'No se encontró un parentesco con ID {id_parentesco}'
+            )
         
         # Validar que no exista ya esta relación
         relacion_existente = DeportistaAcudiente.query.filter_by(
-            id_deportista=int(id_deportista),
+            id_deportista=id_deportista,
             id_acudiente=acudiente.id_acudiente
         ).first()
         
         if relacion_existente:
-            return jsonify({
-                'success': False,
-                'error': 'Ya existe una relación entre este acudiente y este deportista',
-                'status_code': 400
-            }), 400
+            return HttpResponseBuilder.bad_request(
+                error='Relación duplicada',
+                message='Ya existe una relación entre este acudiente y este deportista'
+            )
         
         # Validar que el acudiente no tenga más de 3 deportistas asociados
         deportistas_acudiente = DeportistaAcudiente.query.filter_by(
@@ -312,29 +432,27 @@ def asociar_acudiente_deportista():
         ).count()
         
         if deportistas_acudiente >= 3:
-            return jsonify({
-                'success': False,
-                'error': f'Un acudiente solo puede estar asociado a máximo 3 deportistas. '
-                        f'Este acudiente ya tiene {deportistas_acudiente} deportista(s) asociado(s).',
-                'status_code': 400
-            }), 400
+            return HttpResponseBuilder.bad_request(
+                error='Límite excedido',
+                message=f'Un acudiente solo puede estar asociado a máximo 3 deportistas. '
+                        f'Este acudiente ya tiene {deportistas_acudiente} deportista(s) asociado(s).'
+            )
         
         # Validar que el deportista no tenga más de 3 acudientes asociados
         acudientes_deportista = DeportistaAcudiente.query.filter_by(
-            id_deportista=int(id_deportista)
+            id_deportista=id_deportista
         ).count()
         
         if acudientes_deportista >= 3:
-            return jsonify({
-                'success': False,
-                'error': f'Un deportista solo puede estar asociado a máximo 3 acudientes. '
-                        f'Este deportista ya tiene {acudientes_deportista} acudiente(s) asociado(s).',
-                'status_code': 400
-            }), 400
+            return HttpResponseBuilder.bad_request(
+                error='Límite excedido',
+                message=f'Un deportista solo puede estar asociado a máximo 3 acudientes. '
+                        f'Este deportista ya tiene {acudientes_deportista} acudiente(s) asociado(s).'
+            )
         
         # Crear la relación DeportistaAcudiente
         deportista_acudiente = DeportistaAcudiente(
-            id_deportista=int(id_deportista),
+            id_deportista=id_deportista,
             id_acudiente=acudiente.id_acudiente,
             id_parentesco=int(id_parentesco),
             es_responsable=bool(es_responsable),
@@ -346,10 +464,8 @@ def asociar_acudiente_deportista():
         
         logger.info(f'Relación creada: Acudiente {acudiente.id_acudiente} - Deportista {id_deportista}')
         
-        return jsonify({
-            'success': True,
-            'message': 'Deportista asociado exitosamente al acudiente',
-            'data': {
+        return HttpResponseBuilder.created(
+            data={
                 'id_deportista_acudiente': deportista_acudiente.id_deportista_acudiente,
                 'id_deportista': deportista_acudiente.id_deportista,
                 'id_acudiente': deportista_acudiente.id_acudiente,
@@ -357,59 +473,55 @@ def asociar_acudiente_deportista():
                 'es_responsable': deportista_acudiente.es_responsable,
                 'fecha_registro': deportista_acudiente.fecha_registro.isoformat() if deportista_acudiente.fecha_registro else None
             },
-            'status_code': 201
-        }), 201
+            message='Deportista asociado exitosamente al acudiente'
+        )
         
+    except RequestValidationError as e:
+        return HttpResponseBuilder.bad_request(error=str(e))
     except Exception as e:
         logger.error(f"Error inesperado al asociar acudiente con deportista: {str(e)}")
-        import traceback
         logger.error(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+        return handle_exception(e, logger, "asociar acudiente con deportista")
 
 
 @deportistas_bp.route('/<int:id_deportista>/acudientes', methods=['GET'])
 @token_required()
-def obtener_acudientes_por_deportista(id_deportista):
+def obtener_acudientes_por_deportista(id_deportista: int) -> JsonResponse:
     """
     Obtiene todos los acudientes asociados a un deportista específico.
+    
+    GET /api/deportistas/<id_deportista>/acudientes
     
     Args:
         id_deportista: ID del deportista
         
     Returns:
-        JSON con lista de acudientes asociados al deportista
+        Lista de acudientes asociados al deportista o error.
     """
     try:
         from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
         from ..models.acudientes.acudiente import Acudiente
         from ..models.deportistas.deportista import Deportista
-        from datetime import date
         
-        logger.info(f"🔍 Buscando acudientes para deportista ID: {id_deportista}")
+        logger.info(f"Buscando acudientes para deportista ID: {id_deportista}")
         
         # Validar que el deportista existe
         deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
         if not deportista:
-            return jsonify({
-                'success': False,
-                'message': 'El deportista especificado no existe',
-                'data': []
-            }), 404
+            return HttpResponseBuilder.not_found(
+                error=ERROR_DEPORTISTA_NO_ENCONTRADO,
+                message='El deportista especificado no existe'
+            )
         
         # Obtener todas las relaciones deportista-acudiente para este deportista
         relaciones = DeportistaAcudiente.query.filter_by(id_deportista=id_deportista).all()
-        logger.info(f"📊 Relaciones encontradas: {len(relaciones)}")
+        logger.info(f"Relaciones encontradas: {len(relaciones)}")
         
         if not relaciones:
-            return jsonify({
-                'success': True,
-                'message': 'No se encontraron acudientes asociados a este deportista',
-                'data': []
-            }), 200
+            return HttpResponseBuilder.success(
+                data=[],
+                message='No se encontraron acudientes asociados a este deportista'
+            )
         
         # Construir lista de acudientes con información completa
         acudientes_data = []
@@ -438,23 +550,17 @@ def obtener_acudientes_por_deportista(id_deportista):
             }
             acudientes_data.append(acudiente_dict)
         
-        logger.info(f"✅ Total acudientes procesados: {len(acudientes_data)}")
+        logger.info(f"Total acudientes procesados: {len(acudientes_data)}")
         
-        return jsonify({
-            'success': True,
-            'message': f'Se encontraron {len(acudientes_data)} acudiente(s) asociado(s)',
-            'data': acudientes_data
-        }), 200
+        return HttpResponseBuilder.success(
+            data=acudientes_data,
+            message=f'Se encontraron {len(acudientes_data)} acudiente(s) asociado(s)'
+        )
         
     except Exception as e:
         logger.error(f"Error inesperado al obtener acudientes por deportista: {str(e)}")
-        import traceback
         logger.error(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'message': 'Error interno del servidor',
-            'data': []
-        }), 500
+        return handle_exception(e, logger, "obtener acudientes por deportista")
 
 DEFAUL_CATEGORY_LABEL: str = 'Sin categoría'
 DEFAULT_PARENTESCO_LABEL: str = 'No especificado'
@@ -515,78 +621,72 @@ def _serialize_deportista(
         "parentesco": relacion.parentesco.nombre if getattr(relacion, "parentesco", None) else DEFAULT_PARENTESCO_LABEL,
     }
 
-@deportistas_bp.route('/acudiente/<int:id_acudiente>', methods=['GET'])
+@deportistas_bp.route('/acudientes/<int:id_acudiente>/deportistas', methods=['GET'])
 @token_required()
-def obtener_deportistas_por_acudiente(id_acudiente: int) -> Tuple[Response, int]:
+def obtener_deportistas_por_acudiente(id_acudiente: int) -> JsonResponse:
     """
-    Endpoint para obtener todos los deportistas asociados a un acudiente específico.
+    Obtiene todos los deportistas asociados a un acudiente específico.
+    
+    GET /api/deportistas/acudientes/<id_acudiente>/deportistas
 
     Args:
         id_acudiente (int): ID del acudiente.
 
     Returns:
-        Tuple[Response, int]: Respuesta HTTP con la información requerida.
+        Lista de deportistas asociados al acudiente o error.
     """
     from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
     from ..models.deportistas.deportista import Deportista
 
     try:
-        logger.info(f"🔍 Buscando deportistas para acudiente ID: {id_acudiente}")
+        logger.info(f"Buscando deportistas para acudiente ID: {id_acudiente}")
 
         # Validación de ID de acudiente
         if not _is_valid_acudiente_id(id_acudiente):
-            logger.warning(f"⚠️ ID de acudiente inválido: {id_acudiente}")
-            return jsonify({
-                "success": False,
-                "message": "El ID del acudiente debe ser un número entero positivo",
-                "data": []
-            }), 400
+            logger.warning(f"ID de acudiente inválido: {id_acudiente}")
+            return HttpResponseBuilder.bad_request(
+                error=ERROR_ID_ENTERO_POSITIVO,
+                message="El ID del acudiente debe ser un número entero positivo"
+            )
 
         relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=id_acudiente).all()
-        logger.info(f"📊 Relaciones encontradas: {len(relaciones)}")
+        logger.info(f"Relaciones encontradas: {len(relaciones)}")
 
         if not relaciones:
-            logger.warning(f"⚠️ No se encontraron relaciones para acudiente {id_acudiente}")
-            return jsonify({
-                "success": True,
-                "message": "No se encontraron deportistas asociados a este acudiente",
-                "data": []
-            }), 200
+            logger.warning(f"No se encontraron relaciones para acudiente {id_acudiente}")
+            return HttpResponseBuilder.success(
+                data=[],
+                message="No se encontraron deportistas asociados a este acudiente"
+            )
 
         deportistas_data: List[Dict[str, Any]] = []
         for relacion in relaciones:
-            logger.info(f"🔍 Procesando relación - Deportista ID: {relacion.id_deportista}, Acudiente ID: {relacion.id_acudiente}")
+            logger.info(f"Procesando relación - Deportista ID: {relacion.id_deportista}, Acudiente ID: {relacion.id_acudiente}")
             deportista = Deportista.query.filter_by(id_deportista=relacion.id_deportista).first()
             if not deportista:
-                logger.warning(f"⚠️ Deportista {relacion.id_deportista} no encontrado")
+                logger.warning(f"Deportista {relacion.id_deportista} no encontrado")
                 continue
             if not getattr(deportista, "persona", None):
-                logger.warning(f"⚠️ Deportista {relacion.id_deportista} no tiene persona asociada")
+                logger.warning(f"Deportista {relacion.id_deportista} no tiene persona asociada")
                 continue
             deportista_dict = _serialize_deportista(deportista, relacion)
-            logger.info(f"📝 Datos del deportista: {deportista_dict}")
+            logger.info(f"Datos del deportista: {deportista_dict}")
             deportistas_data.append(deportista_dict)
 
-        logger.info(f"✅ Total deportistas procesados: {len(deportistas_data)}")
-        return jsonify({
-            "success": True,
-            "message": f"Se encontraron {len(deportistas_data)} deportista(s) asociado(s)",
-            "data": deportistas_data
-        }), 200
+        logger.info(f"Total deportistas procesados: {len(deportistas_data)}")
+        return HttpResponseBuilder.success(
+            data=deportistas_data,
+            message=f"Se encontraron {len(deportistas_data)} deportista(s) asociado(s)"
+        )
 
     except Exception as exc:
         logger.error(f"Error inesperado al obtener deportistas por acudiente: {str(exc)}")
-        import traceback
         logger.error(traceback.format_exc())
-        return jsonify({
-            "success": False,
-            "message": "Error interno del servidor",
-            "data": []
-        }), 500
+        return handle_exception(exc, logger, "obtener deportistas por acudiente")
 
 @deportistas_bp.route('/<int:id_deportista>', methods=['PATCH', 'PUT'])
 @token_required()
-def actualizar_deportista(id_deportista):
+def actualizar_deportista(id_deportista: int) -> JsonResponse:
     """
     Endpoint para actualizar un deportista.
     
@@ -645,24 +745,19 @@ def actualizar_deportista(id_deportista):
         JSON: Deportista actualizado con toda su información relacionada
     """
     try:
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'message': 'El contenido debe ser JSON',
-                'status_code': 400
-            }), 400
-        
-        datos = request.get_json()
+        datos = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio='Los datos de actualización son requeridos'
+        )
         
         # Obtener usuario autenticado
         usuario_actual = get_current_user()
         
         if not usuario_actual:
-            return jsonify({
-                'success': False,
-                'message': 'Usuario no autenticado',
-                'status_code': 401
-            }), 401
+            return HttpResponseBuilder.unauthorized(
+                message='Usuario no autenticado'
+            )
         
         # Extraer secciones de datos (todas opcionales)
         datos_deportista = datos.get('datos_deportista')
@@ -685,28 +780,45 @@ def actualizar_deportista(id_deportista):
                 diagnosticos=diagnosticos
             )
         
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
         
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al actualizar deportista"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        
+    except RequestValidationError as e:
+        return HttpResponseBuilder.bad_request(error=str(e))
     except Exception as e:
         logger.error(f"Error inesperado al actualizar deportista: {str(e)}")
-        import traceback
         logger.error(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'message': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+        return handle_exception(e, logger, "actualizar deportista")
 
 
-# ---- Rutas CATÁLOGOS de datos relacionados ----
+# ============================================================================
+# RUTAS DE CATÁLOGOS
+# ============================================================================
 
 @deportistas_bp.route('/catalogos/diagnosticos', methods=['GET'])
-def catalogo_diagnosticos():
+def catalogo_diagnosticos() -> JsonResponse:
     """
     Obtiene todos los diagnósticos disponibles o filtrados por tipo de enfermedad.
     
+    GET /api/deportistas/catalogos/diagnosticos?id_tipo_enfermedad=1
+    
     Query params:
         id_tipo_enfermedad (int, opcional): Filtra diagnósticos por tipo de enfermedad.
+    
+    Returns:
+        Lista de diagnósticos o error.
     """
     try:
         service = CatalogosService()
@@ -715,18 +827,35 @@ def catalogo_diagnosticos():
         id_tipo_enfermedad = request.args.get('id_tipo_enfermedad', type=int)
         
         result = service.obtener_diagnosticos(id_tipo_enfermedad=id_tipo_enfermedad)
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener diagnósticos"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener diagnósticos: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener diagnósticos")
 
 @deportistas_bp.route('/catalogos/tipos-enfermedad', methods=['GET'])
-def catalogo_tipos_enfermedad():
+def catalogo_tipos_enfermedad() -> JsonResponse:
     """
     Obtiene todos los tipos de enfermedad disponibles.
     
+    GET /api/deportistas/catalogos/tipos-enfermedad?incluir_diagnosticos=true
+    
     Query params:
         incluir_diagnosticos (bool, opcional): Si es 'true', incluye los diagnósticos relacionados.
+    
+    Returns:
+        Lista de tipos de enfermedad o error.
     """
     try:
         service = CatalogosService()
@@ -735,75 +864,209 @@ def catalogo_tipos_enfermedad():
         incluir_diagnosticos = request.args.get('incluir_diagnosticos', 'false').lower() == 'true'
         
         result = service.obtener_tipos_enfermedad(incluir_diagnosticos=incluir_diagnosticos)
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener tipos de enfermedad"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener tipos de enfermedad: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener tipos de enfermedad")
 
 @deportistas_bp.route('/catalogos/grupos-sanguineos', methods=['GET'])
-def catalogo_grupos_sanguineos():
+def catalogo_grupos_sanguineos() -> JsonResponse:
+    """
+    Obtiene todos los grupos sanguíneos disponibles.
+    
+    GET /api/deportistas/catalogos/grupos-sanguineos
+    
+    Returns:
+        Lista de grupos sanguíneos o error.
+    """
     try:
         service = CatalogosService()
         result = service.obtener_grupos_sanguineos()
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener grupos sanguíneos"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener grupos sanguíneos: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener grupos sanguíneos")
 
 @deportistas_bp.route('/catalogos/ciudades-residencia', methods=['GET'])
-def catalogo_ciudades_residencia():
+def catalogo_ciudades_residencia() -> JsonResponse:
+    """
+    Obtiene todas las ciudades de residencia disponibles.
+    
+    GET /api/deportistas/catalogos/ciudades-residencia
+    
+    Returns:
+        Lista de ciudades de residencia o error.
+    """
     try:
         service = CatalogosService()
         result = service.obtener_ciudades_residencia()
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener ciudades de residencia"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener ciudades residencia: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener ciudades de residencia")
 
 @deportistas_bp.route('/catalogos/eps', methods=['GET'])
-def catalogo_eps():
+def catalogo_eps() -> JsonResponse:
+    """
+    Obtiene todas las EPS disponibles.
+    
+    GET /api/deportistas/catalogos/eps
+    
+    Returns:
+        Lista de EPS o error.
+    """
     try:
         service = CatalogosService()
         result = service.obtener_eps()
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener EPS"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener eps: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener EPS")
 
 @deportistas_bp.route('/catalogos/deportes', methods=['GET'])
-def catalogo_deportes():
+def catalogo_deportes() -> JsonResponse:
+    """
+    Obtiene todos los deportes disponibles.
+    
+    GET /api/deportistas/catalogos/deportes
+    
+    Returns:
+        Lista de deportes o error.
+    """
     try:
         service = CatalogosService()
         result = service.obtener_deportes()
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener deportes"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener deportes: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener deportes")
 
 @deportistas_bp.route('/catalogos/escuelas', methods=['GET'])
-def catalogo_escuelas():
+def catalogo_escuelas() -> JsonResponse:
+    """
+    Obtiene todas las escuelas disponibles.
+    
+    GET /api/deportistas/catalogos/escuelas
+    
+    Returns:
+        Lista de escuelas o error.
+    """
     try:
         service = CatalogosService()
         result = service.obtener_escuelas()
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener escuelas"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener escuelas: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener escuelas")
 
 @deportistas_bp.route('/catalogos/instituciones-registro', methods=['GET'])
-def catalogo_instituciones_registro():
+def catalogo_instituciones_registro() -> JsonResponse:
+    """
+    Obtiene todas las instituciones de registro disponibles.
+    
+    GET /api/deportistas/catalogos/instituciones-registro
+    
+    Returns:
+        Lista de instituciones de registro o error.
+    """
     try:
         service = CatalogosService()
         result = service.obtener_instituciones_registro()
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener instituciones de registro"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener instituciones de registro: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener instituciones de registro")
 
 @deportistas_bp.route('/catalogos/diagnosticos-por-tipo/<int:id_tipo_enfermedad>', methods=['GET'])
-def catalogo_diagnosticos_por_tipo(id_tipo_enfermedad):
+def catalogo_diagnosticos_por_tipo(id_tipo_enfermedad: int) -> JsonResponse:
     """
     Obtiene diagnósticos filtrados por tipo de enfermedad.
+    
+    GET /api/deportistas/catalogos/diagnosticos-por-tipo/<id_tipo_enfermedad>
     
     Este endpoint permite al frontend:
     1. Mostrar lista de tipos de enfermedad
@@ -812,10 +1075,25 @@ def catalogo_diagnosticos_por_tipo(id_tipo_enfermedad):
     
     Args:
         id_tipo_enfermedad: ID del tipo de enfermedad
+    
+    Returns:
+        Lista de diagnósticos del tipo especificado o error.
     """
     try:
         result = RegistroDeportistaService.obtener_diagnosticos_por_tipo_enfermedad(id_tipo_enfermedad)
-        return jsonify(result), result.get("status_code", 200)
+        status_code = result.get("status_code", 200)
+        
+        if result.get("success", False):
+            return HttpResponseBuilder.success(
+                data=result.get("data"),
+                message=result.get("message"),
+                status_code=status_code
+            )
+        else:
+            return HttpResponseBuilder.error(
+                error=result.get("error", "Error al obtener diagnósticos por tipo"),
+                message=result.get("message"),
+                status_code=status_code
+            )
     except Exception as e:
-        logger.error(f"Error inesperado al obtener diagnósticos por tipo: {str(e)}")
-        return jsonify({'success': False, 'message': 'Error interno del servidor', 'status_code': 500}), 500
+        return handle_exception(e, logger, "obtener diagnósticos por tipo")

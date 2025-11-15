@@ -11,14 +11,18 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'ce296712a0ca'
-down_revision = '353e00bfc98f'
+down_revision = ('353e00bfc98f', '72e395f8ae95')
 branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    pass
+def upgrade() -> None:
+    """Merge heads ce296712a0ca <- (353e00bfc98f, 72e395f8ae95)."""
+    # No schema changes; merge migration only.
+    return None
 
 
-def downgrade():
-    pass
+def downgrade() -> None:
+    """Downgrade merge ce296712a0ca by re-splitting heads."""
+    # Nothing to revert for a pure merge migration.
+    return None
