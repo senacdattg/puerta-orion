@@ -78,7 +78,7 @@ MAPEO_SEXOS = {
 # En producción, configure CORS_ALLOWED_ORIGINS con URLs HTTPS en variables de entorno
 CORS_ALLOWED_ORIGINS = tuple(  # NOSONAR: python:S5332 - HTTP solo para desarrollo local
     origen.strip()
-    for origen in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+    for origen in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:8080').split(',')
     if origen.strip()
 )
 

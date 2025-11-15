@@ -211,7 +211,7 @@ def registrar_deportista() -> JsonResponse:
         result = RegistroDeportistaService.registrar_deportista_nuevo(datos)
         status_code = result.get("status_code", 200)
         
-        if result.get("success", False) or result.get("status") == "success":
+        if result.get("success", False):
             return HttpResponseBuilder.success(
                 data=result.get("data"),
                 message=result.get("message"),
