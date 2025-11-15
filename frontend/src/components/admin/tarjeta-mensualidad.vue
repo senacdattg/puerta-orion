@@ -3,7 +3,7 @@
     <div class="header-mensualidad">
       <div class="avatar-deportista">
         <img
-          :src="mensualidad.avatar || '/src/assets/imgs/perfil.png'"
+          :src="avatarDefault"
           :alt="`Avatar de ${mensualidad.nombre}`"
           @error="imagenPorDefecto"
         />
@@ -91,6 +91,8 @@
 import { computed } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { API_CONFIG } from '@/config/environment';
+import Swal from 'sweetalert2';
+import avatarDefault from '@/assets/imgs/perfil.png';
 
 // Props
 const props = defineProps({
@@ -260,7 +262,7 @@ function eliminarMensualidad() {
 }
 
 function imagenPorDefecto(event) {
-  event.target.src = '/src/assets/imgs/perfil.png';
+  event.target.src = avatarDefault;
 }
 
 function getIconoEstado() {
@@ -332,7 +334,11 @@ async function pagarConMercadoPago() {
     try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
     if (!resp.ok || !json.success) {
       const msg = json.error || json.message || text || 'No se pudo crear la preferencia';
-      alert(msg);
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo iniciar el pago',
+        text: msg
+      });
       return;
     }
     const url = json.init_point || json.preference_url || json.initPoint || json.url;
@@ -341,12 +347,23 @@ async function pagarConMercadoPago() {
   } catch (e) {
     try {
       if (typeof e === 'object' && e !== null && e.message) {
-        alert(e.message);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error en el pago',
+          text: e.message
+        });
   } else {
-        alert(typeof e === 'string' ? e : JSON.stringify(e));
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error en el pago',
+          text: typeof e === 'string' ? e : JSON.stringify(e)
+        });
       }
     } catch {
-      alert('Error iniciando pago con Mercado Pago');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error iniciando pago con Mercado Pago'
+      });
     }
   }
 }

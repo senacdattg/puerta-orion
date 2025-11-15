@@ -5,7 +5,13 @@ import { API_CONFIG } from '@/config/environment.js';
 
 class GaleriaService {
   constructor() {
-    this.baseURL = `${API_CONFIG.baseURL}/api`;
+    Object.defineProperty(this, 'baseURL', {
+      enumerable: true,
+      configurable: false,
+      get() {
+        return `${API_CONFIG.baseURL}/api`;
+      }
+    });
     this.imagenes = [];
     this.tiposEvento = [];
     this.categorias = [];

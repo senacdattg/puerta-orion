@@ -21,24 +21,6 @@
           <p class="login-subtitle-volleyball">Ingresa tu nueva contraseña</p>
         </div>
 
-        <!-- Mensajes de error y éxito -->
-        <Transition name="bounce">
-          <div v-if="mensajeError" class="alert-volleyball alert-error-volleyball">
-            <svg class="alert-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ mensajeError }}</span>
-          </div>
-        </Transition>
-        <Transition name="bounce">
-          <div v-if="mensajeExito" class="alert-volleyball alert-success-volleyball">
-            <svg class="alert-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-            </svg>
-            <span>{{ mensajeExito }}</span>
-          </div>
-        </Transition>
-
         <div v-if="!tokenValido" class="token-invalid-container">
           <div class="invalid-icon-wrapper">
             <svg class="invalid-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -76,7 +58,6 @@
                 placeholder="Ingresa tu nueva contraseña"
                 required
                 :disabled="cargando || exito"
-                @input="limpiarMensajes"
                 @focus="handleInputFocus"
               />
               <button
@@ -114,7 +95,6 @@
                 placeholder="Confirma tu nueva contraseña"
                 required
                 :disabled="cargando || exito"
-                @input="limpiarMensajes"
                 @focus="handleInputFocus"
               />
               <button
@@ -212,6 +192,7 @@ import { ref, computed, onMounted } from "vue"
 import { useRouter, useRoute } from "vue-router"
 import authService from "@/services/authService"
 import "@/assets/css/login.css"
+import Swal from "sweetalert2"
 
 const router = useRouter()
 const route = useRoute()
@@ -222,8 +203,6 @@ const newPassword = ref("")
 const confirmPassword = ref("")
 const cargando = ref(false)
 const exito = ref(false)
-const mensajeError = ref("")
-const mensajeExito = ref("")
 const tokenValido = ref(true)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
@@ -259,12 +238,6 @@ const passwordStrengthText = computed(() => {
   return 'Contraseña fuerte'
 })
 
-// Función para limpiar mensajes
-function limpiarMensajes() {
-  mensajeError.value = ""
-  mensajeExito.value = ""
-}
-
 // Función para manejar el foco de los inputs
 function handleInputFocus(event) {
   event.target.parentElement.classList.add('input-focused')
@@ -277,7 +250,11 @@ onMounted(() => {
     token.value = tokenParam
   } else {
     tokenValido.value = false
-    mensajeError.value = "No se proporcionó un token válido en la URL"
+    Swal.fire({
+      icon: "error",
+      title: "Token inválido",
+      text: "No se proporcionó un enlace válido. Solicita nuevamente la recuperación."
+    })
   }
 })
 
@@ -297,29 +274,43 @@ function startCountdown() {
 async function handleResetPassword() {
   // Validaciones
   if (!newPassword.value || !confirmPassword.value) {
-    mensajeError.value = "Por favor completa todos los campos"
+    Swal.fire({
+      icon: "warning",
+      title: "Campos incompletos",
+      text: "Por favor completa ambos campos de contraseña."
+    })
     return
   }
 
   if (newPassword.value.length < 6) {
-    mensajeError.value = "La contraseña debe tener al menos 6 caracteres"
+    Swal.fire({
+      icon: "warning",
+      title: "Contraseña muy corta",
+      text: "La contraseña debe tener al menos 6 caracteres."
+    })
     return
   }
 
   if (!passwordsMatch.value) {
-    mensajeError.value = "Las contraseñas no coinciden"
+    Swal.fire({
+      icon: "warning",
+      title: "Contraseñas diferentes",
+      text: "Asegúrate de que ambas contraseñas coincidan."
+    })
     return
   }
 
   if (!token.value) {
     tokenValido.value = false
-    mensajeError.value = "Token inválido o expirado"
+    Swal.fire({
+      icon: "error",
+      title: "Token inválido",
+      text: "El token de recuperación no es válido o ha expirado."
+    })
     return
   }
 
   cargando.value = true
-  mensajeError.value = ""
-  mensajeExito.value = ""
 
   try {
     const resultado = await authService.resetPassword(
@@ -329,11 +320,20 @@ async function handleResetPassword() {
     )
 
     if (resultado.success) {
-      mensajeExito.value = resultado.message || "Contraseña restablecida exitosamente."
+      await Swal.fire({
+        icon: "success",
+        title: "Contraseña actualizada",
+        text: resultado.message || "Tu contraseña se restableció correctamente.",
+        confirmButtonText: "Ir al login"
+      })
       exito.value = true
       startCountdown()
     } else {
-      mensajeError.value = resultado.error || "Error al restablecer la contraseña"
+      Swal.fire({
+        icon: "error",
+        title: "No se pudo restablecer",
+        text: resultado.error || "Intenta nuevamente más tarde."
+      })
       
       // Si el error es de token inválido o expirado
       if (resultado.error && (
@@ -345,7 +345,11 @@ async function handleResetPassword() {
       }
     }
   } catch (error) {
-    mensajeError.value = error.message || "Error de conexión"
+    Swal.fire({
+      icon: "error",
+      title: "Error de conexión",
+      text: error.message || "No logramos comunicarnos con el servidor."
+    })
     
     // Verificar si es un error de token
     if (error.message && (

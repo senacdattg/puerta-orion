@@ -1,5 +1,10 @@
 <script setup>
-import Login from '../components/ui/login.vue';
+import { defineOptions } from 'vue'
+import Login from '../components/ui/login.vue'
+
+defineOptions({
+  name: 'LoginView'
+})
 </script>
 
 <template>

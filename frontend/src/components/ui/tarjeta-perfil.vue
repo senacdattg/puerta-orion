@@ -7,9 +7,9 @@
       <h2>{{ rol }}</h2>
 
       <!-- Botón dinámico (solo aparece si mostrarBoton es true) -->
-      <button 
-        v-if="mostrarBoton" 
-        class="boton-perfil" 
+      <button
+        v-if="mostrarBoton"
+        class="boton-perfil"
         @click="accionBoton"
       >
         {{ textoBoton }}
@@ -24,7 +24,7 @@ import { useRouter } from "vue-router";
 const router = useRouter()
 
 // Props para reutilizar el componente
-const props = defineProps({
+defineProps({
   rol: {
     type: String,
     required: true
@@ -37,7 +37,7 @@ const props = defineProps({
     type: Boolean,
     default: true   // Por defecto sí se muestra
   }
-});
+})
 
 function accionBoton() {
   router.push("/ver-roles");

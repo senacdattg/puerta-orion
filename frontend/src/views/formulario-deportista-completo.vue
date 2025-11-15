@@ -6,6 +6,7 @@ import FormularioDeportista from '../components/formularios/formulario-deportist
 import Pie from '../components/layout/pie.vue';
 import { useRouter } from 'vue-router';
 import authService from '@/services/authService';
+import Swal from 'sweetalert2';
 
 const router = useRouter();
 const datosUsuario = ref({});
@@ -34,7 +35,11 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error('Error al cargar datos del usuario:', error);
-    alert('Error al cargar los datos del usuario');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No pudimos cargar tus datos. Intenta nuevamente.'
+    });
   } finally {
     cargando.value = false;
   }
@@ -49,20 +54,41 @@ async function manejarRegistroCompleto(datos) {
     const resultado = await authService.completarPerfilDeportista(datos);
 
     if (resultado.success) {
-      alert(resultado.message || "¡Perfil de deportista completado exitosamente!");
+      await Swal.fire({
+        icon: 'success',
+        title: 'Perfil completado',
+        text: resultado.message || '¡Perfil de deportista completado exitosamente!',
+        confirmButtonText: 'Continuar'
+      });
       router.push('/home');
     } else {
-      alert(`Error: ${resultado.error}`);
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo completar',
+        text: resultado.error || 'Ocurrió un error al completar el perfil.'
+      });
     }
   } catch (error) {
     console.error("Error al completar perfil de deportista:", error);
-    alert("Error al completar el perfil. Por favor intenta nuevamente.");
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No pudimos completar el perfil. Intenta nuevamente.'
+    });
   }
 }
 
 // Función para manejar la cancelación
-function manejarCancelacion() {
-  if (confirm("¿Está seguro de que desea cancelar el registro? Se perderá toda la información ingresada.")) {
+async function manejarCancelacion() {
+  const resultado = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar registro?',
+    text: 'Se perderá la información ingresada.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Continuar'
+  });
+  if (resultado.isConfirmed) {
     router.push('/completar-perfil');
   }
 }

@@ -1,9 +1,11 @@
 // Configuración del entorno de la aplicación
 // Siguiendo el principio SRP - este archivo solo maneja configuración del entorno
 
-  const ENV_CONFIG = {
+const LOCAL_API_FALLBACK = 'http://localhost:5000';
+
+const ENV_CONFIG = {
   development: {
-    apiUrl: 'http://localhost:5000',
+    apiUrl: LOCAL_API_FALLBACK,
     debug: true,
     logLevel: 'debug'
   },
@@ -13,37 +15,88 @@
     logLevel: 'error'
   },
   test: {
-    apiUrl: 'http://localhost:5000',
+    apiUrl: LOCAL_API_FALLBACK,
     debug: true,
     logLevel: 'debug'
   }
-}
+};
 
-const CURRENT_ENV = import.meta.env.MODE || 'development'
-const FALLBACK_CONFIG = ENV_CONFIG[CURRENT_ENV] || ENV_CONFIG.development
+const CURRENT_ENV = import.meta.env.MODE || 'development';
+const FALLBACK_CONFIG = ENV_CONFIG[CURRENT_ENV] || ENV_CONFIG.development;
 
-const runtimeConfig = typeof window !== 'undefined' && window.RUNTIME_CONFIG ? window.RUNTIME_CONFIG : {}
+const sanitizeValue = (value) => {
+  if (!value) return '';
+  const trimmed = String(value).trim();
+  if (trimmed === '' || trimmed === 'auto' || trimmed === 'undefined' || trimmed === 'null') {
+    return '';
+  }
+  return trimmed;
+};
 
-const runtimeApiUrl = runtimeConfig.VITE_API_URL || import.meta.env.VITE_API_URL || FALLBACK_CONFIG.apiUrl
+const readRuntimeConfig = () => (typeof window !== 'undefined' && window.RUNTIME_CONFIG ? window.RUNTIME_CONFIG : {});
+
+const computeDefaultApiUrl = () => {
+  if (typeof window === 'undefined') {
+    return LOCAL_API_FALLBACK;
+  }
+
+  const hostname = window.location.hostname || '';
+  const protocol = window.location.protocol || 'http:';
+  const isLocalhost =
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]' ||
+    hostname === '::1';
+
+  if (isLocalhost) {
+    return LOCAL_API_FALLBACK;
+  }
+
+  if (hostname) {
+    return `${protocol}//${hostname}`;
+  }
+
+  return LOCAL_API_FALLBACK;
+};
+
+const resolveApiUrl = () => {
+  const runtimeUrl = sanitizeValue(readRuntimeConfig().VITE_API_URL);
+  if (runtimeUrl) return runtimeUrl;
+
+  const envUrl = sanitizeValue(import.meta.env.VITE_API_URL);
+  if (envUrl) return envUrl;
+
+  const fallbackUrl = sanitizeValue(FALLBACK_CONFIG.apiUrl);
+  if (fallbackUrl) return fallbackUrl;
+
+  return computeDefaultApiUrl();
+};
 
 export const CURRENT_CONFIG = {
-  ...FALLBACK_CONFIG,
-  apiUrl: runtimeApiUrl
-}
+  ...FALLBACK_CONFIG
+};
+
+Object.defineProperty(CURRENT_CONFIG, 'apiUrl', {
+  enumerable: true,
+  configurable: true,
+  get: resolveApiUrl
+});
 
 export const API_CONFIG = {
-  baseURL: CURRENT_CONFIG.apiUrl,
+  get baseURL() {
+    return resolveApiUrl();
+  },
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
-}
+};
 
 export const LOG_CONFIG = {
   level: CURRENT_CONFIG.logLevel,
   enabled: CURRENT_CONFIG.debug
-}
+};
 
 export const APP_ENV_CONFIG = {
   isDevelopment: CURRENT_ENV === 'development',
@@ -51,22 +104,24 @@ export const APP_ENV_CONFIG = {
   isTest: CURRENT_ENV === 'test',
   version: import.meta.env.VITE_APP_VERSION || '1.0.0',
   buildTime: import.meta.env.VITE_APP_BUILD_TIME || new Date().toISOString()
-}
+};
 
-const stripTrailingSlash = (value = '') => value.replace(/\/$/, '')
+const stripTrailingSlash = (value = '') => value.replace(/\/$/, '');
 
-export const getApiUrl = (path = '') => `${stripTrailingSlash(CURRENT_CONFIG.apiUrl)}${path}`
+export const getApiUrl = (path = '') => `${stripTrailingSlash(resolveApiUrl())}${path}`;
 
-export const getApiBaseUrl = () => getApiUrl('/api')
+export const getApiBaseUrl = () => getApiUrl('/api');
 
 export const getRuntimeValue = (key, fallback = undefined) => {
+  const runtimeConfig = readRuntimeConfig();
+
   if (key in runtimeConfig) {
-    return runtimeConfig[key]
+    return runtimeConfig[key];
   }
 
   if (key in import.meta.env) {
-    return import.meta.env[key]
+    return import.meta.env[key];
   }
 
-  return fallback
-}
+  return fallback;
+};

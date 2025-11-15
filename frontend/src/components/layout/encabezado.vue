@@ -111,6 +111,7 @@
 import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import Swal from 'sweetalert2'
 
 // Definir nombre del componente para evitar error del linter
 defineOptions({
@@ -212,10 +213,24 @@ function handleMenuLinkClick() {
 }
 
 async function handleLogout() {
-  const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
-  if (confirmar) {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cerrar sesión?',
+    text: 'Se finalizará tu sesión actual.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, salir',
+    cancelButtonText: 'Cancelar'
+  })
+
+  if (result.isConfirmed) {
     closeMenu()
     await authStore.logout()
+    await Swal.fire({
+      icon: 'success',
+      title: 'Sesión cerrada',
+      timer: 1200,
+      showConfirmButton: false
+    })
     router.replace('/login')
   }
 }
@@ -343,10 +358,23 @@ function editarPerfil() {
 
 async function cerrarSesion() {
   showProfileMenu.value = false
-  const confirmar = confirm('¿Estás seguro de que deseas cerrar sesión?')
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cerrar sesión?',
+    text: 'Se finalizará tu sesión actual.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, salir',
+    cancelButtonText: 'Cancelar'
+  })
 
-  if (confirmar) {
+  if (result.isConfirmed) {
     await authStore.logout()
+    await Swal.fire({
+      icon: 'success',
+      title: 'Sesión cerrada',
+      timer: 1200,
+      showConfirmButton: false
+    })
     router.replace('/login')
   }
 }
@@ -426,18 +454,18 @@ function applyLayoutOffsets() {
   align-items: center;
   justify-content: space-between;
   gap: var(--espaciado-md);
+  width: 100%;
+  max-width: 100%;
 }
 
 .header-left {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
+  align-items: center;
   gap: 10px; /* 8–10px entre botón y logo */
   white-space: nowrap;
   flex: 0 0 auto;
-  padding-top: var(--espaciado-xs);
-  position: relative;
-  left: calc(-5.5 * (var(--espaciado-xl) + var(--espaciado-md)));
 }
 
 .menu-trigger {
@@ -494,8 +522,6 @@ function applyLayoutOffsets() {
   align-items: center;
   gap: var(--espaciado-md);
   flex: 0 0 auto;
-  position: relative;
-  right: calc(-5.5 * (var(--espaciado-xl) + var(--espaciado-md)));
 }
 
 .profile-menu-container {
@@ -503,8 +529,8 @@ function applyLayoutOffsets() {
 }
 
 .profile-button {
-  background: none;
-  border: none;
+  background: transparent;
+  border: 3px solid #FFD600;
   cursor: pointer;
   padding: 0;
   border-radius: var(--radio-borde-circular);
@@ -514,8 +540,6 @@ function applyLayoutOffsets() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid #FFD600;
-  background: transparent;
   position: relative;
 }
 

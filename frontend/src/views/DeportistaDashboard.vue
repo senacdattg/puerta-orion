@@ -5,24 +5,7 @@
     <TituloClub />
 
     <div class="dashboard-layout">
-      <SidebarDeportista
-        :isOpen="sidebarOpen"
-        @close="sidebarOpen = false"
-      />
-
-      <button
-        class="mobile-sidebar-toggle"
-        @click="sidebarOpen = !sidebarOpen"
-        v-if="isMobile"
-      >
-        <i class="fas fa-bars"></i>
-      </button>
-
-      <div
-        class="dashboard-main"
-        :class="{ 'sidebar-open': sidebarOpen && isMobile }"
-        @click="handleMainClick"
-      >
+      <div class="dashboard-main">
         <div class="main-content">
           <div class="role-dashboard deportista-dashboard">
             <div class="dashboard-header">
@@ -42,7 +25,7 @@
                   <h3>Mi Perfil</h3>
                   <p>Gestiona tu información personal y deportiva</p>
                 </div>
-              </div>
+          </div>
 
               <div class="dashboard-card" @click="navigateTo('/mensualidades')">
                 <div class="card-icon">
@@ -100,10 +83,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Encabezado from '@/components/layout/encabezado.vue'
-import SidebarDeportista from '@/components/deportistas/SidebarDeportista.vue'
 import PerfilModal from '@/components/deportistas/PerfilModal.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
@@ -113,37 +95,16 @@ defineOptions({
 })
 
 const router = useRouter()
-const sidebarOpen = ref(false)
-const isMobile = ref(false)
 const showPerfilModal = ref(false)
 
 const navigateTo = (route) => {
   router.push(route)
 }
 
-const handleMainClick = () => {
-  if (isMobile.value && sidebarOpen.value) {
-    sidebarOpen.value = false
-  }
-}
-
 const handlePerfilUpdate = () => {
   // Recargar datos del usuario si es necesario
   console.log('Perfil actualizado')
 }
-
-const checkMobile = () => {
-  isMobile.value = window.innerWidth < 768
-}
-
-onMounted(() => {
-  checkMobile()
-  window.addEventListener('resize', checkMobile)
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', checkMobile)
-})
 </script>
 
 <style scoped>

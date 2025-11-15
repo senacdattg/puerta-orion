@@ -1,5 +1,6 @@
 <template>
     <table class="tabla-usuarios">
+      <caption class="sr-only">Tabla de usuarios del sistema con información de roles, estado y acciones</caption>
       <thead>
         <tr class="">
           <th class="">Usuario</th>
@@ -273,39 +274,102 @@
         <div class="info-grid-detalle">
           <div class="info-item-detalle">
             <label>Username</label>
-            <input v-model="formularioEdicion.datos_usuario.usuario" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_usuario.usuario"
+              type="text"
+              class="control-input"
+              @input="onUsuarioInput"
+              @blur="onUsuarioInput"
+            />
+            <small v-if="erroresCamposEdicion.username" class="input-error">{{ erroresCamposEdicion.username }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Primer Nombre</label>
-            <input v-model="formularioEdicion.datos_persona.primer_nombre" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.primer_nombre"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('primer_nombre')"
+              @blur="onNombreInput('primer_nombre')"
+            />
+            <small v-if="erroresCamposEdicion.primer_nombre" class="input-error">{{ erroresCamposEdicion.primer_nombre }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Segundo Nombre</label>
-            <input v-model="formularioEdicion.datos_persona.segundo_nombre" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.segundo_nombre"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('segundo_nombre')"
+              @blur="onNombreInput('segundo_nombre')"
+            />
+            <small v-if="erroresCamposEdicion.segundo_nombre" class="input-error">{{ erroresCamposEdicion.segundo_nombre }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Primer Apellido</label>
-            <input v-model="formularioEdicion.datos_persona.primer_apellido" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.primer_apellido"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('primer_apellido')"
+              @blur="onNombreInput('primer_apellido')"
+            />
+            <small v-if="erroresCamposEdicion.primer_apellido" class="input-error">{{ erroresCamposEdicion.primer_apellido }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Segundo Apellido</label>
-            <input v-model="formularioEdicion.datos_persona.segundo_apellido" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.segundo_apellido"
+              type="text"
+              class="control-input"
+              @input="onNombreInput('segundo_apellido')"
+              @blur="onNombreInput('segundo_apellido')"
+            />
+            <small v-if="erroresCamposEdicion.segundo_apellido" class="input-error">{{ erroresCamposEdicion.segundo_apellido }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Documento</label>
-            <input v-model="formularioEdicion.datos_persona.documento" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.documento"
+              type="text"
+              class="control-input"
+              @input="onDocumentoInput"
+              @blur="onDocumentoInput"
+            />
+            <small v-if="erroresCamposEdicion.documento" class="input-error">{{ erroresCamposEdicion.documento }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Correo</label>
-            <input v-model="formularioEdicion.datos_persona.correo_electronico" type="email" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.correo_electronico"
+              type="email"
+              class="control-input"
+              @input="onEmailInput"
+              @blur="onEmailInput"
+            />
+            <small v-if="erroresCamposEdicion.correo_electronico" class="input-error">{{ erroresCamposEdicion.correo_electronico }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Teléfono</label>
-            <input v-model="formularioEdicion.datos_persona.telefono" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.telefono"
+              type="text"
+              class="control-input"
+              @input="onTelefonoInput"
+              @blur="onTelefonoInput"
+            />
+            <small v-if="erroresCamposEdicion.telefono" class="input-error">{{ erroresCamposEdicion.telefono }}</small>
           </div>
           <div class="info-item-detalle">
             <label>Dirección</label>
-            <input v-model="formularioEdicion.datos_persona.direccion" type="text" class="control-input" />
+            <input
+              v-model="formularioEdicion.datos_persona.direccion"
+              type="text"
+              class="control-input"
+              @input="onDireccionInput"
+              @blur="onDireccionInput"
+            />
+            <small v-if="erroresCamposEdicion.direccion" class="input-error">{{ erroresCamposEdicion.direccion }}</small>
           </div>
         </div>
         <div class="botones-acciones-detalle" style="margin-top:20px;">
@@ -412,6 +476,7 @@
 import { ref, watch, onMounted, computed } from 'vue';
 import usuariosService from '@/services/usuariosService';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
 
 const props = defineProps({
   searchTerm: { type: String, default: '' },
@@ -432,7 +497,6 @@ const usuariosVisibles = ref(4); // Mostrar solo 4 usuarios inicialmente en la v
 const offset = ref(0);
 const totalUsuarios = ref(0);
 const hasMore = ref(false);
-const cargandoMas = ref(false);
 
 // Estado del modal de detalle
 const mostrarModalDetalle = ref(false);
@@ -469,6 +533,139 @@ const rolesSeleccionados = ref([]);
 
 // Obtener ID del usuario actual para prevenir auto-desactivación
 const currentUserId = computed(() => authStore.user?.id_usuario);
+
+const DOC_MIN = 6;
+const DOC_MAX = 20;
+const PHONE_MIN = 7;
+const PHONE_MAX = 15;
+// Expresión regular optimizada para evitar ReDoS (Regular Expression Denial of Service)
+// Usa clases de caracteres específicas en lugar de negaciones para mejor rendimiento
+const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const erroresCamposEdicion = ref({
+  username: '',
+  primer_nombre: '',
+  segundo_nombre: '',
+  primer_apellido: '',
+  segundo_apellido: '',
+  documento: '',
+  correo_electronico: '',
+  telefono: '',
+  direccion: ''
+});
+
+function limpiarEspacios(valor = '') {
+  return valor.replace(/\s+/g, ' ').trim();
+}
+
+function normalizarNombre(valor = '') {
+  const limpio = limpiarEspacios(valor)
+    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
+  return limpio.toUpperCase();
+}
+
+function normalizarUsername(valor = '') {
+  return limpiarEspacios(valor).replace(/\s/g, '').toLowerCase();
+}
+
+function normalizarDocumentoValor(valor = '') {
+  return valor.replace(/\D/g, '').slice(0, DOC_MAX);
+}
+
+function normalizarTelefonoValor(valor = '') {
+  return valor.replace(/\D/g, '').slice(0, PHONE_MAX);
+}
+
+function normalizarDireccionValor(valor = '') {
+  const permitido = limpiarEspacios(valor).replace(/[^A-Za-z0-9#.\-\s]/g, '');
+  return permitido.toUpperCase();
+}
+
+function normalizarEmailValor(valor = '') {
+  return limpiarEspacios(valor).toLowerCase();
+}
+
+function obtenerUsername(user) {
+  if (typeof user?.usuario === 'string') {
+    return user.usuario;
+  }
+  if (typeof user?.usuario?.usuario === 'string') {
+    return user.usuario.usuario;
+  }
+  return '';
+}
+
+function obtenerNombreUsuarioLegible(user) {
+  const username = obtenerUsername(user);
+  if (username) return username;
+
+  const personaBase = user?.persona || user?.usuario?.persona || {};
+  const nombreCompleto = [
+    personaBase.primer_nombre || '',
+    personaBase.segundo_nombre || '',
+    personaBase.primer_apellido || '',
+    personaBase.segundo_apellido || ''
+  ].map(parte => (typeof parte === 'string' ? parte.trim() : '')).filter(Boolean).join(' ');
+
+  if (nombreCompleto) return nombreCompleto;
+
+  return 'este usuario';
+}
+
+function onNombreInput(campo) {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona[campo] = normalizarNombre(formularioEdicion.value.datos_persona[campo] || '');
+}
+
+function onUsuarioInput() {
+  if (!formularioEdicion.value?.datos_usuario) return;
+  formularioEdicion.value.datos_usuario.usuario = normalizarUsername(formularioEdicion.value.datos_usuario.usuario || '');
+}
+
+function onDocumentoInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.documento = normalizarDocumentoValor(formularioEdicion.value.datos_persona.documento || '');
+}
+
+function onTelefonoInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.telefono = normalizarTelefonoValor(formularioEdicion.value.datos_persona.telefono || '');
+}
+
+function onDireccionInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.direccion = normalizarDireccionValor(formularioEdicion.value.datos_persona.direccion || '');
+}
+
+function onEmailInput() {
+  if (!formularioEdicion.value?.datos_persona) return;
+  formularioEdicion.value.datos_persona.correo_electronico = normalizarEmailValor(formularioEdicion.value.datos_persona.correo_electronico || '');
+}
+
+function normalizarFormularioEdicion() {
+  onUsuarioInput();
+  onNombreInput('primer_nombre');
+  onNombreInput('segundo_nombre');
+  onNombreInput('primer_apellido');
+  onNombreInput('segundo_apellido');
+  onDocumentoInput();
+  onEmailInput();
+  onTelefonoInput();
+  onDireccionInput();
+}
+
+function resetErroresCampos() {
+  erroresCamposEdicion.value = {
+    username: '',
+    primer_nombre: '',
+    segundo_nombre: '',
+    primer_apellido: '',
+    segundo_apellido: '',
+    documento: '',
+    correo_electronico: '',
+    telefono: '',
+    direccion: ''
+  };
+}
 
 // Cargar datos al montar el componente
 onMounted(async () => {
@@ -514,7 +711,7 @@ async function cargarDatos() {
       if (usuariosResponse.success) {
         todosUsuarios = [...todosUsuarios, ...usuariosResponse.data];
         total = usuariosResponse.total || todosUsuarios.length;
-        
+
         // Si la respuesta tiene menos usuarios que el límite, no hay más
         if (usuariosResponse.data.length < usuariosPorPagina) {
           hayMas = false;
@@ -522,7 +719,7 @@ async function cargarDatos() {
           // Verificar si hay más según el total
           hayMas = todosUsuarios.length < total;
         }
-        
+
         currentOffset += usuariosResponse.data.length;
     } else {
         throw new Error(usuariosResponse.error || 'Error al cargar usuarios');
@@ -533,7 +730,7 @@ async function cargarDatos() {
     users.value = todosUsuarios;
     totalUsuarios.value = total;
     offset.value = currentOffset;
-    
+
     // hasMore se calculará basado en usuariosVisibles vs total
     hasMore.value = usuariosVisibles.value < users.value.length;
 
@@ -551,10 +748,10 @@ async function cargarDatos() {
 // Mostrar más usuarios (solo incrementa la visualización, no hace petición)
 function cargarMasUsuarios() {
   if (!hasMore.value) return;
-  
+
   // Incrementar usuarios visibles en 4
   usuariosVisibles.value += 4;
-  
+
   // hasMore se actualizará automáticamente por el watch
 }
 
@@ -697,7 +894,11 @@ async function updateRoles(user, selectedRoleIds) {
   } catch (err) {
     error.value = err.message;
     console.error('Error al actualizar roles:', err);
-    alert(`❌ Error al actualizar roles: ${err.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar roles',
+      text: err.message || 'No pudimos actualizar los roles. Intenta nuevamente.'
+    });
   } finally {
     loading.value = false;
   }
@@ -740,23 +941,94 @@ function cerrarModalDetalle() {
   errorDetalle.value = null;
 }
 
+function obtenerIdUsuario(user) {
+  return user.id_usuario || user.usuario?.id_usuario || user.usuario?.id_usuario;
+}
+
+function obtenerEstadoActual(user) {
+  if (user.estado !== undefined) {
+    return user.estado;
+  }
+  return user.usuario?.estado !== false;
+}
+
+async function validarCambioEstadoPropio(idUsuario) {
+  if (idUsuario === currentUserId.value) {
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No puedes desactivar tu propio usuario.'
+    });
+    return false;
+  }
+  return true;
+}
+
+async function confirmarCambioEstado(nuevoEstado, nombreUsuario) {
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: nuevoEstado ? '¿Activar usuario?' : '¿Desactivar usuario?',
+    text: nuevoEstado
+      ? `Se activará el usuario "${nombreUsuario}".`
+      : `Se desactivará el usuario "${nombreUsuario}".`,
+    showCancelButton: true,
+    confirmButtonText: nuevoEstado ? 'Sí, activar' : 'Sí, desactivar',
+    cancelButtonText: 'Cancelar'
+  });
+  return confirmacion.isConfirmed;
+}
+
+function actualizarUsuarioEnLista(idUsuario, nuevoEstado) {
+  const userIndex = users.value.findIndex(u => u.id_usuario === idUsuario);
+  if (userIndex !== -1) {
+    users.value[userIndex].estado = nuevoEstado;
+    emit('usuario-actualizado', users.value[userIndex]);
+  }
+}
+
+function actualizarUsuarioEnModal(nuevoEstado) {
+  if (!usuarioDetalle.value) return;
+
+  if (usuarioDetalle.value.usuario) {
+    usuarioDetalle.value.usuario.estado = nuevoEstado;
+  } else {
+    usuarioDetalle.value.estado = nuevoEstado;
+  }
+}
+
+async function mostrarExitoCambioEstado(nuevoEstado, nombreUsuario) {
+  await Swal.fire({
+    icon: 'success',
+    title: nuevoEstado ? 'Usuario activado' : 'Usuario desactivado',
+    text: nuevoEstado
+      ? `El usuario "${nombreUsuario}" se activó correctamente.`
+      : `El usuario "${nombreUsuario}" se desactivó correctamente.`,
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+
+async function cambiarEstadoUsuario(idUsuario, nuevoEstado) {
+  const response = await usuariosService.cambiarEstadoUsuario(idUsuario, nuevoEstado);
+  if (!response.success) {
+    throw new Error(response.error || 'Error al cambiar estado del usuario');
+  }
+  return response;
+}
+
 // Cambiar estado de usuario (activar/desactivar)
 async function toggleEstadoUsuario(user) {
-  const idUsuario = user.id_usuario || user.usuario?.id_usuario || user.usuario?.id_usuario;
+  const idUsuario = obtenerIdUsuario(user);
 
-  if (idUsuario === currentUserId.value) {
-    alert('⚠️ No puedes desactivar tu propio usuario');
+  if (!(await validarCambioEstadoPropio(idUsuario))) {
     return;
   }
 
-  const estadoActual = user.estado !== undefined ? user.estado : (user.usuario?.estado !== false);
+  const estadoActual = obtenerEstadoActual(user);
   const nuevoEstado = !estadoActual;
+  const nombreUsuario = obtenerNombreUsuarioLegible(user);
 
-  const confirmacion = confirm(
-    `¿Estás seguro de que deseas ${nuevoEstado ? 'activar' : 'desactivar'} al usuario "${user.usuario || user.usuario?.usuario || 'este usuario'}"?`
-  );
-
-  if (!confirmacion) {
+  if (!(await confirmarCambioEstado(nuevoEstado, nombreUsuario))) {
     return;
   }
 
@@ -764,33 +1036,19 @@ async function toggleEstadoUsuario(user) {
     loading.value = true;
     error.value = null;
 
-    const response = await usuariosService.cambiarEstadoUsuario(idUsuario, nuevoEstado);
+    await cambiarEstadoUsuario(idUsuario, nuevoEstado);
 
-    if (response.success) {
-      // Actualizar el usuario localmente
-      const userIndex = users.value.findIndex(u => u.id_usuario === idUsuario);
-      if (userIndex !== -1) {
-        users.value[userIndex].estado = nuevoEstado;
-        emit('usuario-actualizado', users.value[userIndex]);
-      }
-
-      // Actualizar en el modal si está abierto
-      if (usuarioDetalle.value) {
-        if (usuarioDetalle.value.usuario) {
-          usuarioDetalle.value.usuario.estado = nuevoEstado;
-        } else {
-          usuarioDetalle.value.estado = nuevoEstado;
-        }
-      }
-
-      alert(`✅ Usuario ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
-    } else {
-      throw new Error(response.error || 'Error al cambiar estado del usuario');
-    }
+    actualizarUsuarioEnLista(idUsuario, nuevoEstado);
+    actualizarUsuarioEnModal(nuevoEstado);
+    await mostrarExitoCambioEstado(nuevoEstado, nombreUsuario);
   } catch (err) {
     error.value = err.message;
     console.error('Error al cambiar estado del usuario:', err);
-    alert(`❌ Error al cambiar estado: ${err.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudo cambiar el estado',
+      text: err.message || 'Intenta nuevamente en unos minutos.'
+    });
   } finally {
     loading.value = false;
   }
@@ -817,31 +1075,159 @@ function abrirModalEdicion(user) {
       direccion: persona.direccion || ''
     }
   };
+  normalizarFormularioEdicion();
+  resetErroresCampos();
+  errorEdicion.value = null;
   mostrarModalEdicion.value = true;
+}
+
+function construirHtmlErrores(errores) {
+  const itemsErrores = errores.map(err => `<li>${err}</li>`).join('');
+  return `<ul style="text-align:left;margin:0;padding-left:18px;">${itemsErrores}</ul>`;
 }
 
 function cerrarModalEdicion() {
   mostrarModalEdicion.value = false;
   errorEdicion.value = null;
+  resetErroresCampos();
+}
+
+function validarUsername(username, nuevosErrores, errores) {
+  if (!username || username.length < 4 || !/^[a-z0-9._-]+$/i.test(username)) {
+    nuevosErrores.username = 'Mínimo 4 caracteres, solo letras, números, punto, guion o guion bajo.';
+    errores.push('El username debe tener al menos 4 caracteres y solo puede incluir letras, números, puntos, guiones o guiones bajos.');
+  }
+}
+
+function validarNombre(nombre, campo, etiqueta, nuevosErrores, errores) {
+  if (!nombre || nombre.length < 2) {
+    nuevosErrores[campo] = 'Debes ingresar al menos 2 letras.';
+    errores.push(`El ${etiqueta} es obligatorio y debe tener al menos 2 caracteres.`);
+  }
+}
+
+function validarDocumento(documento, nuevosErrores, errores) {
+  if (!documento || documento.length < DOC_MIN || documento.length > DOC_MAX) {
+    nuevosErrores.documento = `Debe tener entre ${DOC_MIN} y ${DOC_MAX} dígitos.`;
+    errores.push(`El documento debe tener entre ${DOC_MIN} y ${DOC_MAX} dígitos.`);
+  }
+}
+
+function validarCorreo(correo, nuevosErrores, errores) {
+  if (!correo || !emailRegex.test(correo)) {
+    nuevosErrores.correo_electronico = 'Correo inválido.';
+    errores.push('Debes ingresar un correo electrónico válido.');
+  }
+}
+
+function validarTelefono(telefono, nuevosErrores, errores) {
+  if (telefono && (telefono.length < PHONE_MIN || telefono.length > PHONE_MAX)) {
+    nuevosErrores.telefono = `Debe tener entre ${PHONE_MIN} y ${PHONE_MAX} dígitos.`;
+    errores.push(`El teléfono debe tener entre ${PHONE_MIN} y ${PHONE_MAX} dígitos si lo proporcionas.`);
+  }
+}
+
+function validarDireccion(direccion, nuevosErrores, errores) {
+  if (direccion && direccion.length < 5) {
+    nuevosErrores.direccion = 'Debe tener al menos 5 caracteres.';
+    errores.push('La dirección debe tener al menos 5 caracteres.');
+  }
+}
+
+function validarFormularioEdicion(datos) {
+  const errores = [];
+  const nuevosErrores = {
+    username: '',
+    primer_nombre: '',
+    segundo_nombre: '',
+    primer_apellido: '',
+    segundo_apellido: '',
+    documento: '',
+    correo_electronico: '',
+    telefono: '',
+    direccion: ''
+  };
+
+  validarUsername(datos.username, nuevosErrores, errores);
+  validarNombre(datos.primerNombre, 'primer_nombre', 'primer nombre', nuevosErrores, errores);
+  validarNombre(datos.primerApellido, 'primer_apellido', 'primer apellido', nuevosErrores, errores);
+  validarDocumento(datos.documento, nuevosErrores, errores);
+  validarCorreo(datos.correo, nuevosErrores, errores);
+  validarTelefono(datos.telefono, nuevosErrores, errores);
+  validarDireccion(datos.direccion, nuevosErrores, errores);
+
+  return { errores, nuevosErrores };
+}
+
+async function mostrarErroresValidacion(errores) {
+  await Swal.fire({
+    icon: 'error',
+    title: 'Corrige los campos',
+    html: construirHtmlErrores(errores)
+  });
 }
 
 async function guardarEdicion() {
   if (!usuarioDetalle.value) return;
+  normalizarFormularioEdicion();
+
   const idUsuario = usuarioDetalle.value.usuario?.id_usuario || usuarioDetalle.value.id_usuario;
+  const usuarioForm = formularioEdicion.value.datos_usuario || {};
+  const personaForm = formularioEdicion.value.datos_persona || {};
+
+  const datos = {
+    username: usuarioForm.usuario || '',
+    primerNombre: personaForm.primer_nombre || '',
+    segundoNombre: personaForm.segundo_nombre || '',
+    primerApellido: personaForm.primer_apellido || '',
+    segundoApellido: personaForm.segundo_apellido || '',
+    documento: personaForm.documento || '',
+    correo: personaForm.correo_electronico || '',
+    telefono: personaForm.telefono || '',
+    direccion: personaForm.direccion || ''
+  };
+
+  const { errores, nuevosErrores } = validarFormularioEdicion(datos);
+
+  if (errores.length > 0) {
+    erroresCamposEdicion.value = nuevosErrores;
+    errorEdicion.value = errores[0];
+    await mostrarErroresValidacion(errores);
+    return;
+  }
+
+  erroresCamposEdicion.value = nuevosErrores;
+
+  const payload = {
+    datos_usuario: {
+      usuario: datos.username
+    },
+    datos_persona: {
+      primer_nombre: datos.primerNombre,
+      segundo_nombre: datos.segundoNombre,
+      primer_apellido: datos.primerApellido,
+      segundo_apellido: datos.segundoApellido,
+      documento: datos.documento,
+      correo_electronico: datos.correo,
+      telefono: datos.telefono,
+      direccion: datos.direccion
+    }
+  };
+
   try {
     guardandoEdicion.value = true;
     errorEdicion.value = null;
-    const resp = await usuariosService.actualizarUsuario(idUsuario, formularioEdicion.value);
+    const resp = await usuariosService.actualizarUsuario(idUsuario, payload);
     if (!resp.success) throw new Error(resp.error || 'Error al actualizar');
 
     // Actualizar en tabla
     const idx = users.value.findIndex(u => u.id_usuario === idUsuario);
     if (idx !== -1) {
-      if (formularioEdicion.value.datos_usuario?.usuario) {
-        users.value[idx].usuario = formularioEdicion.value.datos_usuario.usuario;
+      if (payload.datos_usuario?.usuario) {
+        users.value[idx].usuario = payload.datos_usuario.usuario;
       }
       if (users.value[idx].persona) {
-        Object.assign(users.value[idx].persona, formularioEdicion.value.datos_persona || {});
+        Object.assign(users.value[idx].persona, payload.datos_persona || {});
       }
       emit('usuario-actualizado', users.value[idx]);
     }
@@ -852,12 +1238,22 @@ async function guardarEdicion() {
       usuarioDetalle.value = refreshed.data;
     }
 
+    formularioEdicion.value = JSON.parse(JSON.stringify(payload));
     cerrarModalEdicion();
-    alert('✅ Usuario actualizado');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Usuario actualizado',
+      timer: 1500,
+      showConfirmButton: false
+    });
   } catch (e) {
     console.error(e);
     errorEdicion.value = e.message;
-    alert(`❌ ${e.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar',
+      text: e.message || 'No se pudieron guardar los cambios.'
+    });
   } finally {
     guardandoEdicion.value = false;
   }
@@ -958,11 +1354,20 @@ async function guardarRoles() {
     }
 
     cerrarModalRoles();
-    alert('✅ Roles actualizados exitosamente');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Roles actualizados',
+      timer: 1500,
+      showConfirmButton: false
+    });
   } catch (err) {
     console.error('Error al guardar roles:', err);
     errorRoles.value = err.message;
-    alert(`❌ Error al actualizar roles: ${err.message}`);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar roles',
+      text: err.message || 'No pudimos guardar los cambios.'
+    });
   } finally {
     guardandoRoles.value = false;
   }
@@ -1818,6 +2223,13 @@ button.btn-editar,
 
 .control-input:hover {
   border-color: #d1d5db;
+}
+
+.input-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
 }
 
 /* Estilos para modal de gestión de roles */

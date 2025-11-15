@@ -3,10 +3,9 @@ import { useAuthStore } from '@/stores/auth'
 import Inicio from '@/views/Inicio.vue'
 import ActualizarDeportista from '@/views/actualizar-deportista.vue'
 import RegistrarDeportista from '@/views/registrar-deportista.vue'
-import VerDeportista from '@/views/ver-deportista.vue'
 import RegistrarGeneral from '@/views/registrar-general.vue'
 import ActualizarGeneral from '@/views/actualizar-general.vue'
-import VerRoles from '@/views/vista-roles.vue'
+
 import TablaMensualidades from '@/views/mensualidades.vue'
 import TablaDeportistas from '@/views/vista-deportistas.vue'
 import Galeria from '@/views/galeria-vista.vue'
@@ -71,12 +70,6 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/ver-deportista/:id',
-      name: 'ver-deportista',
-      component: VerDeportista,
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/registrar-general',
       name: 'registrar-general',
       component: RegistrarGeneral,
@@ -86,12 +79,6 @@ const router = createRouter({
       path: '/actualizar-general',
       name: 'actualizar-general',
       component: ActualizarGeneral,
-      meta: { requiresAuth: true }
-    },
-    {
-      path: '/ver-roles',
-      name: 'ver-roles',
-      component: VerRoles,
       meta: { requiresAuth: true }
     },
     {
@@ -304,149 +291,228 @@ function hasRequiredRole(userRoles, requiredRoles) {
   return requiredRoles.some(requiredRole => roleNames.includes(requiredRole))
 }
 
+// Función auxiliar para obtener nombres de roles
+function obtenerNombresRoles(roles) {
+  return roles.map(r => typeof r === 'string' ? r : r?.nombre_rol).filter(Boolean)
+}
+
+// Función auxiliar para inicializar el auth store
+async function inicializarAuthStore(authStore) {
+  if (!authStore.user && authStore.token) {
+    await authStore.inicializar()
+  }
+}
+
+// Función auxiliar para obtener roles del selector
+function obtenerSelectorRoles(authStore) {
+  return Object.entries(authStore.rolesSelector || {})
+    .filter(([, visible]) => visible)
+    .map(([role]) => role)
+}
+
+// Función auxiliar para manejar rutas que requieren autenticación
+function manejarRutaRequiereAuth(isAuthenticated, next) {
+  if (!isAuthenticated) {
+    console.log('🔒 Redirigiendo a login: usuario no autenticado')
+    next('/login')
+    return true
+  }
+  return false
+}
+
+// Función auxiliar para manejar rutas de invitados
+function manejarRutaRequiereGuest(isAuthenticated, authStore, selectorRoles, next) {
+  if (!isAuthenticated) return false
+
+  const rawRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
+  const roleNames = obtenerNombresRoles(rawRoles)
+
+  if (roleNames.length > 1 && !authStore.activeRole) {
+    console.log('🔄 Usuario con múltiples roles, redirigiendo a selección de rol')
+    next('/seleccionar-rol')
+    return true
+  }
+
+  const defaultRoute = getDefaultRouteForRole(rawRoles, authStore.activeRole)
+  console.log('🔄 Redirigiendo usuario autenticado:', defaultRoute)
+  next(defaultRoute)
+  return true
+}
+
+// Función auxiliar para verificar rol activo
+function verificarRolActivo(activeRole, requiredRoles) {
+  const roleNames = requiredRoles.map(r => typeof r === 'string' ? r : (r.nombre_rol || String(r)))
+  return roleNames.includes(activeRole)
+}
+
+// Función auxiliar para manejar rutas que requieren roles
+function manejarRutaRequiereRol(authStore, selectorRoles, requiredRoles, to, next) {
+  if (authStore.activeRole) {
+    if (verificarRolActivo(authStore.activeRole, requiredRoles)) {
+      console.log('✅ Acceso autorizado con rol activo:', authStore.activeRole)
+      next()
+      return
+    }
+    console.log('🚫 Acceso denegado: rol activo no coincide. Requerido:', requiredRoles, 'Rol activo:', authStore.activeRole)
+    next('/seleccionar-rol')
+    return
+  }
+
+  const userRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
+  console.log('🔍 Verificando rol para:', to.path)
+  console.log('🔍 Roles requeridos:', requiredRoles)
+  console.log('🔍 Roles del usuario:', userRoles)
+
+  if (!hasRequiredRole(userRoles, requiredRoles)) {
+    console.log('🚫 Acceso denegado: rol insuficiente. Requerido:', requiredRoles, 'Usuario:', userRoles)
+    const roleNames = obtenerNombresRoles(selectorRoles.length ? selectorRoles : (authStore.user?.roles || []))
+    if (roleNames.length > 1) {
+      next('/seleccionar-rol')
+    } else {
+      next('/home')
+    }
+    return
+  }
+
+  console.log('✅ Acceso autorizado para:', to.path)
+  next()
+}
+
+// Función auxiliar para verificar si es SuperAdmin o Administrador
+function esSuperAdminOAdministrador(activeRole) {
+  return ['SuperAdmin', 'Administrador'].includes(activeRole)
+}
+
+// Función auxiliar para manejar rutas que requieren permisos
+async function manejarRutaRequierePermiso(authStore, requiredPermission, next) {
+  if (esSuperAdminOAdministrador(authStore.activeRole)) {
+    next()
+    return true
+  }
+
+  if (!authStore.permissions || authStore.permissions.length === 0) {
+    try {
+      await authStore.loadUserPermissions?.()
+    } catch (err) {
+      console.warn('Error cargando permisos:', err)
+    }
+  }
+
+  const permisos = authStore.permissions || []
+  const has = (Array.isArray(permisos) && permisos.includes(requiredPermission)) ||
+              (authStore.hasPermission && authStore.hasPermission(requiredPermission))
+
+  if (!has) {
+    console.log('🚫 Acceso denegado: permiso insuficiente. Requerido:', requiredPermission)
+    next('/home')
+    return true
+  }
+
+  return false
+}
+
+// Función auxiliar para validar acceso a mensualidades
+function validarAccesoMensualidades(to, authStore, next) {
+  if (to.name !== 'mensualidades') return false
+
+  const active = authStore.activeRole
+  if (!esSuperAdminOAdministrador(active) && ['Entrenador', 'Usuario'].includes(active)) {
+    console.log('🚫 Acceso denegado a mensualidades por rol (Entrenador/Usuario)')
+    next('/home')
+    return true
+  }
+
+  return false
+}
+
+// Función auxiliar para validar selección de rol
+function validarSeleccionRol(requiresAuth, isAuthenticated, to, authStore, next) {
+  if (!requiresAuth || !isAuthenticated || to.path.includes('/seleccionar-rol') || to.path === '/home') {
+    return false
+  }
+
+  const userRoles = authStore.user?.roles || []
+  const roleNames = obtenerNombresRoles(userRoles)
+
+  if (roleNames.length > 1 && !authStore.activeRole) {
+    console.log('🔄 Usuario con múltiples roles sin seleccionar, redirigiendo a selección')
+    next('/seleccionar-rol')
+    return true
+  }
+
+  return false
+}
+
+// Función auxiliar para verificar token
+async function verificarToken(authStore) {
+  if (!authStore.token) {
+    return false
+  }
+  return await authStore.verifyToken()
+}
+
+// Función auxiliar para refrescar opciones de rol si es necesario
+async function refrescarOpcionesRol(authStore, isAuthenticated) {
+  if (isAuthenticated && !Object.keys(authStore.rolesSelector || {}).length) {
+    await authStore.refreshRoleOptions?.()
+  }
+}
+
+// Función auxiliar para verificar autenticación
+async function verificarAutenticacion(authStore) {
+  const isAuthenticated = await verificarToken(authStore)
+  await refrescarOpcionesRol(authStore, isAuthenticated)
+  return isAuthenticated
+}
+
+// Función auxiliar para extraer metadatos de la ruta
+function extraerMetadatosRuta(to) {
+  return {
+    requiresAuth: to.matched.some(record => record.meta.requiresAuth),
+    requiresGuest: to.matched.some(record => record.meta.requiresGuest),
+    requiresRole: to.matched.some(record => record.meta.requiresRole),
+    requiredPermission: to.matched.find(r => r.meta && r.meta.requiresPermission)?.meta?.requiresPermission
+  }
+}
+
 // Guard de navegación global
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Inicializar el store si no está inicializado
-  if (!authStore.user && authStore.token) {
-    await authStore.inicializar()
+  await inicializarAuthStore(authStore)
+  const isAuthenticated = await verificarAutenticacion(authStore)
+  const selectorRoles = obtenerSelectorRoles(authStore)
+  const meta = extraerMetadatosRuta(to)
+
+  if (meta.requiresAuth && manejarRutaRequiereAuth(isAuthenticated, next)) {
+    return
   }
 
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-  const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
-  const requiresRole = to.matched.some(record => record.meta.requiresRole)
-  const requiredPermission = to.matched.find(r => r.meta && r.meta.requiresPermission)?.meta?.requiresPermission
-
-  // Verificar si el token es válido (no solo si existe)
-  let isAuthenticated = false
-  if (authStore.token) {
-    isAuthenticated = await authStore.verifyToken()
+  if (meta.requiresGuest && manejarRutaRequiereGuest(isAuthenticated, authStore, selectorRoles, next)) {
+    return
   }
 
-  if (isAuthenticated && !Object.keys(authStore.rolesSelector || {}).length) {
-    await authStore.refreshRoleOptions?.()
+  if (meta.requiresAuth && isAuthenticated && meta.requiresRole) {
+    const requiredRoles = to.meta.requiresRole
+    manejarRutaRequiereRol(authStore, selectorRoles, requiredRoles, to, next)
+    return
   }
 
-  const selectorRoles = Object.entries(authStore.rolesSelector || {})
-    .filter(([, visible]) => visible)
-    .map(([role]) => role)
-
-  if (requiresAuth && !isAuthenticated) {
-    // Ruta requiere autenticación pero el usuario no está autenticado o token expirado
-    console.log('🔒 Redirigiendo a login: usuario no autenticado')
-    next('/login')
-  } else if (requiresGuest && isAuthenticated) {
-    // Ruta es para invitados pero el usuario ya está autenticado
-    // Si tiene múltiples roles pero no ha seleccionado uno, redirigir a seleccionar rol
-    const rawRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
-    const roleNames = rawRoles.map(r => typeof r === 'string' ? r : r?.nombre_rol).filter(Boolean)
-
-    if (roleNames.length > 1 && !authStore.activeRole) {
-      console.log('🔄 Usuario con múltiples roles, redirigiendo a selección de rol')
-      next('/seleccionar-rol')
+  if (meta.requiresAuth && isAuthenticated && meta.requiredPermission) {
+    if (await manejarRutaRequierePermiso(authStore, meta.requiredPermission, next)) {
       return
     }
-
-    // Redirigir a la ruta por defecto según el rol activo o roles del usuario
-    const defaultRoute = getDefaultRouteForRole(rawRoles, authStore.activeRole)
-    console.log('🔄 Redirigiendo usuario autenticado:', defaultRoute)
-    next(defaultRoute)
-  } else if (requiresAuth && isAuthenticated && requiresRole) {
-    // Verificar si el usuario tiene el rol requerido
-    const requiredRoles = to.meta.requiresRole
-
-    // Si hay un rol activo, verificar que sea uno de los requeridos
-    if (authStore.activeRole) {
-      const roleNames = requiredRoles.map(r => typeof r === 'string' ? r : r)
-      if (roleNames.includes(authStore.activeRole)) {
-        console.log('✅ Acceso autorizado con rol activo:', authStore.activeRole)
-        next()
-        return
-      } else {
-        console.log('🚫 Acceso denegado: rol activo no coincide. Requerido:', requiredRoles, 'Rol activo:', authStore.activeRole)
-        // Si el rol activo no coincide, redirigir a seleccionar rol
-        next('/seleccionar-rol')
-        return
-      }
-    }
-
-    // Si no hay rol activo, usar la lógica original con todos los roles
-    const userRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
-
-    console.log('🔍 Verificando rol para:', to.path)
-    console.log('🔍 Roles requeridos:', requiredRoles)
-    console.log('🔍 Roles del usuario:', userRoles)
-
-    if (!hasRequiredRole(userRoles, requiredRoles)) {
-      console.log('🚫 Acceso denegado: rol insuficiente. Requerido:', requiredRoles, 'Usuario:', userRoles)
-      // Si tiene múltiples roles, redirigir a selección
-      const roleNames = (selectorRoles.length ? selectorRoles : (authStore.user?.roles || []))
-        .map(r => typeof r === 'string' ? r : r?.nombre_rol)
-      if (roleNames.length > 1) {
-        next('/seleccionar-rol')
-      } else {
-        next('/home')
-      }
-    } else {
-      console.log('✅ Acceso autorizado para:', to.path)
-      next()
-    }
-  } else {
-    // Si requiere permiso específico, validar permisos del usuario (con bypass para SuperAdmin/Administrador)
-    if (requiresAuth && isAuthenticated && requiredPermission) {
-      // Bypass SOLO por rol activo seleccionado
-      const isSuperOrAdmin = ['SuperAdmin', 'Administrador'].includes(authStore.activeRole)
-      if (isSuperOrAdmin) {
-        next()
-        return
-      }
-
-      // Asegurar que los permisos estén cargados antes de validar
-      if (!authStore.permissions || authStore.permissions.length === 0) {
-        try {
-          await authStore.loadUserPermissions?.()
-        } catch (err) {
-          console.warn('Error cargando permisos:', err)
-        }
-      }
-      const permisos = authStore.permissions || []
-      const has = (Array.isArray(permisos) && permisos.includes(requiredPermission)) || (authStore.hasPermission && authStore.hasPermission(requiredPermission))
-      if (!has) {
-        console.log('🚫 Acceso denegado: permiso insuficiente. Requerido:', requiredPermission)
-        next('/home')
-        return
-      }
-    }
-
-    // Regla explícita: Entrenador y Usuario no pueden ver mensualidades
-    if (to.name === 'mensualidades') {
-      const active = authStore.activeRole
-      const isSuperOrAdmin = ['SuperAdmin', 'Administrador'].includes(active)
-      if (!isSuperOrAdmin) {
-        if (['Entrenador', 'Usuario'].includes(active)) {
-          console.log('🚫 Acceso denegado a mensualidades por rol (Entrenador/Usuario)')
-          next('/home')
-          return
-        }
-      }
-    }
-
-    // Verificar si el usuario necesita seleccionar un rol antes de acceder a rutas protegidas
-    if (requiresAuth && isAuthenticated && !to.path.includes('/seleccionar-rol') && to.path !== '/home') {
-      const userRoles = authStore.user?.roles || []
-      const roleNames = userRoles.map(r => typeof r === 'string' ? r : r?.nombre_rol)
-
-      // Si tiene múltiples roles pero no ha seleccionado uno, redirigir a seleccionar rol
-      if (roleNames.length > 1 && !authStore.activeRole) {
-        console.log('🔄 Usuario con múltiples roles sin seleccionar, redirigiendo a selección')
-        next('/seleccionar-rol')
-        return
-      }
-    }
-
-    next()
   }
+
+  if (validarAccesoMensualidades(to, authStore, next)) {
+    return
+  }
+
+  if (validarSeleccionRol(meta.requiresAuth, isAuthenticated, to, authStore, next)) {
+    return
+  }
+
+  next()
 })
 
 export default router

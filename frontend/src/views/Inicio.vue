@@ -37,13 +37,13 @@ const ocultarMenu = computed(() => {
   flex-direction: column;
 }
 
-.inicio-page > :deep(.dashboard-home) {
+.inicio-page ::v-deep .dashboard-home {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
-.inicio-page > :deep(.dashboard-home .main-dashboard) {
+.inicio-page ::v-deep .dashboard-home .main-dashboard {
   flex: 1;
 }
 </style>

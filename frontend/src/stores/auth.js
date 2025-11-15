@@ -143,7 +143,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       clearActiveRole() // Limpiar rol activo al hacer logout
-      
+
       // Limpiar permisos
       permissions.value = []
     }
@@ -335,10 +335,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const validarTokenParaCarga = () => {
+    if (!token.value) {
+      console.warn('No hay token para cargar detalle del perfil')
+      return false
+    }
+    return true
+  }
+
   const loadUserProfileDetail = async () => {
     try {
-      if (!token.value) {
-        console.warn('No hay token para cargar detalle del perfil')
+      if (!validarTokenParaCarga()) {
         return false
       }
 
@@ -349,101 +356,145 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('📥 Respuesta del servicio:', response)
 
       if (response && response.success) {
-        // La respuesta puede venir como { success: true, data: {...} } o directamente { success: true, ...data }
-        userDetail.value = response.data || (() => {
-          // Si no hay response.data, tomar todos los campos excepto success
-          const { success, ...rest } = response
-          return rest
-        })()
+        userDetail.value = extraerUserDetail(response)
         console.log('✅ userDetail actualizado:', userDetail.value)
 
-        // Si hay un warning, solo lo logueamos pero no fallamos
         if (response.warning) {
           console.warn('⚠️ Advertencia al cargar detalle:', response.warning)
         }
         return true
-      } else {
-        // Si el token expiró, solo mostrar warning, no error crítico
-        if (response?.expired) {
-          console.warn('⚠️ Token expirado. Por favor, cierra sesión y vuelve a iniciar sesión.')
-        } else {
-          console.warn('❌ Error al cargar detalle del perfil:', response?.error || 'Respuesta sin éxito')
-        }
-        userDetail.value = null
-        return false
-      }
-    } catch (err) {
-      // No loguear errores de token expirado como errores críticos
-      if (!err.message?.includes('expirado') && !err.message?.includes('401')) {
-        console.error('❌ Excepción al cargar detalle del perfil:', err)
-        console.error('📋 Detalles del error:', {
-          message: err.message,
-          stack: err.stack
-        })
       }
 
-      userDetail.value = null
-
-      // Si el error es sobre persona no asociada, permitir continuar con datos parciales
-      if (err.message && err.message.includes('persona asociada')) {
-        console.warn('⚠️ Continuando con datos parciales')
-        return false
-      }
+      manejarErrorRespuestaPerfil(response)
       return false
+    } catch (err) {
+      return manejarErrorCargaPerfil(err)
     } finally {
       isLoading.value = false
       console.log('🏁 Carga de detalle finalizada')
     }
   }
 
+  const extraerUserDetail = (response) => {
+    if (response.data) {
+      return response.data
+    }
+    // Extraer todos los campos excepto success sin usar destructuring con variable
+    const rest = { ...response }
+    delete rest.success
+    return rest
+  }
+
+  const manejarErrorRespuestaPerfil = (response) => {
+    if (response?.expired) {
+      console.warn('⚠️ Token expirado. Por favor, cierra sesión y vuelve a iniciar sesión.')
+    } else {
+      console.warn('❌ Error al cargar detalle del perfil:', response?.error || 'Respuesta sin éxito')
+    }
+    userDetail.value = null
+  }
+
+  const manejarErrorCargaPerfil = (err) => {
+    if (!err.message?.includes('expirado') && !err.message?.includes('401')) {
+      console.error('❌ Excepción al cargar detalle del perfil:', err)
+      console.error('📋 Detalles del error:', {
+        message: err.message,
+        stack: err.stack
+      })
+    }
+
+    userDetail.value = null
+
+    if (err.message && err.message.includes('persona asociada')) {
+      console.warn('⚠️ Continuando con datos parciales')
+    }
+    return false
+  }
+
+  const validarUsuarioGuardado = (savedUser) => {
+    return savedUser && savedUser !== 'null' && savedUser !== 'undefined'
+  }
+
+  const parsearUsuarioGuardado = (savedUser) => {
+    try {
+      return JSON.parse(savedUser)
+    } catch (parseError) {
+      console.warn('Error al parsear usuario guardado:', parseError)
+      localStorage.removeItem('user')
+      return null
+    }
+  }
+
+  const aplicarDatosUsuario = (usuarioParseado) => {
+    if (!usuarioParseado) {
+      return
+    }
+
+    user.value = usuarioParseado
+
+    if (usuarioParseado.roles_selector) {
+      rolesSelector.value = usuarioParseado.roles_selector
+    }
+
+    if (usuarioParseado.paneles) {
+      panels.value = usuarioParseado.paneles
+    }
+
+    if (!activeRole.value && usuarioParseado.rol_activo) {
+      activeRole.value = usuarioParseado.rol_activo
+      localStorage.setItem('activeRole', usuarioParseado.rol_activo)
+    }
+  }
+
+  const cargarUsuarioDesdeLocalStorage = () => {
+    const savedUser = localStorage.getItem('user')
+    if (!validarUsuarioGuardado(savedUser)) {
+      return
+    }
+
+    const usuarioParseado = parsearUsuarioGuardado(savedUser)
+    aplicarDatosUsuario(usuarioParseado)
+  }
+
+  const cargarRolActivoDesdeLocalStorage = async () => {
+    const savedActiveRole = localStorage.getItem('activeRole')
+    if (!savedActiveRole || savedActiveRole === 'null' || savedActiveRole === 'undefined') {
+      return
+    }
+
+    activeRole.value = savedActiveRole
+    await loadPermissionsForRole(savedActiveRole)
+  }
+
+  const verificarTokenSiExiste = async () => {
+    if (!token.value || token.value === 'null' || token.value === 'undefined') {
+      return
+    }
+
+    const isValid = await verifyToken()
+    if (!isValid) {
+      console.log('Token inválido, limpiando sesión')
+    }
+  }
+
+  const limpiarDatosCorruptos = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('activeRole')
+    token.value = null
+    user.value = null
+    activeRole.value = null
+    permissions.value = []
+  }
+
   const inicializar = async () => {
     try {
-      // Cargar datos del localStorage con validación
-      const savedUser = localStorage.getItem('user')
-      if (savedUser && savedUser !== 'null' && savedUser !== 'undefined') {
-        try {
-          user.value = JSON.parse(savedUser)
-          if (user.value?.roles_selector) {
-            rolesSelector.value = user.value.roles_selector
-          }
-          if (user.value?.paneles) {
-            panels.value = user.value.paneles
-          }
-          if (!activeRole.value && user.value?.rol_activo) {
-            activeRole.value = user.value.rol_activo
-            localStorage.setItem('activeRole', user.value.rol_activo)
-          }
-        } catch (parseError) {
-          console.warn('Error al parsear usuario guardado:', parseError)
-          localStorage.removeItem('user')
-        }
-      }
-
-      // Cargar rol activo del localStorage y sus permisos
-      const savedActiveRole = localStorage.getItem('activeRole')
-      if (savedActiveRole && savedActiveRole !== 'null' && savedActiveRole !== 'undefined') {
-        activeRole.value = savedActiveRole
-        // Cargar permisos del rol activo si existe
-        await loadPermissionsForRole(savedActiveRole)
-      }
-
-      // Verificar token si existe
-      if (token.value && token.value !== 'null' && token.value !== 'undefined') {
-        const isValid = await verifyToken()
-        if (!isValid) {
-          console.log('Token inválido, limpiando sesión')
-        }
-      }
+      cargarUsuarioDesdeLocalStorage()
+      await cargarRolActivoDesdeLocalStorage()
+      await verificarTokenSiExiste()
     } catch (err) {
       console.warn('Error al inicializar auth store:', err)
-      // Limpiar datos corruptos
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      localStorage.removeItem('activeRole')
-      token.value = null
-      user.value = null
-      activeRole.value = null
-      permissions.value = [] // Limpiar permisos
+      limpiarDatosCorruptos()
     }
   }
 

@@ -11,10 +11,8 @@ body {
 .seccion-contenido {
   background-color: #0047ab;
   margin: 0 auto;
-  max-width: 1500px;
-  text-align: center;
   margin-bottom: 2rem;
-  padding: 2rem 0;
+  text-align: center;
   border-radius: 1rem;
   padding: 60px 40px;
   max-width: 1700px;
@@ -118,7 +116,6 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px 20px;
-  ;
   margin-bottom: 15px;
 }
 
@@ -410,12 +407,6 @@ body {
 }
 
 /* Evitar que otros .container afecten el footer */
-.footer-enhanced .container {
-  max-width: none !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
 
 .section-title {
   text-align: center;

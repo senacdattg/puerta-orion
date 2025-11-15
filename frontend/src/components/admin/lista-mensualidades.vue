@@ -69,7 +69,7 @@
         <TarjetaMensualidad v-for="mensualidad in mensualidadesFiltradas" :key="mensualidad.id"
           :mensualidad="mensualidad" @ver-detalle-completo="verDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
           @eliminar="eliminarMensualidad" />
-          
+
         <div v-if="esAdmin" class="boton-agregar" @click="abrirFormulario">
           +
         </div>
@@ -95,13 +95,13 @@
       <!-- Modal de Detalles Completos -->
       <ModalDetalles v-if="modalDetalleCompletoVisible" :mensualidad="mensualidadSeleccionada"
         :modo-edicion="modalDetalleEnEdicion"
-        @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion" 
+        @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
         @guardar-cambios="guardarCambiosMensualidad" />
 
 
       <!-- Modal de formulario para nueva mensualidad -->
       <div v-if="mostrarFormulario && esAdmin" class="modal-overlay">
-        <div class="modal-content" @click.stop>
+        <div class="modal-content mensualidades-modal form-modal" @click.stop>
           <div class="modal-header">
             <h3>Agregar Nueva Mensualidad</h3>
             <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
@@ -109,7 +109,7 @@
             </button>
           </div>
 
-          <form @submit.prevent="guardarMensualidad" class="formulario-mensualidad" :key="formKey" autocomplete="off">
+          <form @submit.prevent="guardarMensualidad" class="form-modal-panel" :key="formKey" autocomplete="off">
             <div class="campo-formulario">
               <label for="docPersona">
                 <i class="fas fa-id-card"></i>
@@ -233,8 +233,8 @@
             </div>
 
             <div class="acciones centrado">
-              <button type="submit" class="btn-principal">Guardar</button>
-              <button type="button" class="btn-secundario" @click="cerrarFormulario">Cancelar</button>
+              <button type="submit" class="btn btn-primary btn-lg">Guardar</button>
+              <button type="button" class="btn btn-danger btn-lg" @click="cerrarFormulario">Cancelar</button>
             </div>
           </form>
         </div>
@@ -246,12 +246,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import TarjetaMensualidad from './tarjeta-mensualidad.vue';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
+import Swal from 'sweetalert2';
 
 // Props
 const props = defineProps({
@@ -286,7 +287,6 @@ const esAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNam
 const estados = ['Pagado', 'Pendiente', 'Vencido'];
 
 // Constantes de validación
-const LOCALE_COL = 'es-CO';
 const MIN_DOCUMENTO = 6;
 const MAX_DOCUMENTO = 10;
 
@@ -404,23 +404,46 @@ function abrirModalEnModoEdicion(mensualidad) {
   modalDetalleCompletoVisible.value = true;
 }
 
-function guardarCambiosMensualidad(mensualidadActualizada) {
+async function guardarCambiosMensualidad(mensualidadActualizada) {
   console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
-  
+
   const index = props.mensualidades.findIndex(m => m.id === mensualidadActualizada.id);
   if (index !== -1) {
     Object.assign(props.mensualidades[index], mensualidadActualizada);
   }
   emit('editar', mensualidadActualizada);
-  alert('Cambios guardados exitosamente');
+  const estabaVisible = modalDetalleCompletoVisible.value;
+  if (estabaVisible) {
+    modalDetalleCompletoVisible.value = false;
+    await nextTick();
+  }
+  await Swal.fire({
+    icon: 'success',
+    title: 'Cambios guardados',
+    text: 'La mensualidad se actualizó correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
+  if (estabaVisible) {
+    mensualidadSeleccionada.value = { ...mensualidadActualizada };
+    modalDetalleCompletoVisible.value = true;
+  }
   modalDetalleEnEdicion.value = false;
 }
 
 // función de reporte eliminada
 
-function eliminarMensualidad(mensualidad) {
+async function eliminarMensualidad(mensualidad) {
   if (!mensualidad || !mensualidad.id) return;
-  if (!confirm('¿Deseas eliminar esta mensualidad? Se desactivará en el sistema.')) return;
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Eliminar mensualidad?',
+    text: 'Se desactivará en el sistema.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+  if (!confirmacion.isConfirmed) return;
   emit('eliminar', mensualidad);
 }
 
@@ -428,13 +451,16 @@ function limpiarFiltros() {
   busqueda.value = '';
   filtroMes.value = '';
   filtroEstado.value = '';
-  filtroVencimiento.value = '';
 }
 
 // Funciones del formulario
 async function abrirFormulario() {
   if (!esAdmin.value) {
-    alert('No tienes permiso para crear mensualidades');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No tienes permiso para crear mensualidades.'
+    });
     return;
   }
   limpiarFormulario();
@@ -642,12 +668,15 @@ function validarFormularioMensualidad() {
   };
 }
 
-function guardarMensualidad() {
+async function guardarMensualidad() {
   const { errores, monto, saldo } = validarFormularioMensualidad();
 
   if (errores.length > 0) {
-    const mensaje = errores.join('\n');
-    alert('Corrige los siguientes errores:\n' + mensaje);
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: errores.join('<br>')
+    });
     return;
   }
 

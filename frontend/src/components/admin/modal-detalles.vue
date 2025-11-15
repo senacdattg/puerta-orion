@@ -1,6 +1,6 @@
 <template>
   <div class="modal-overlay" @click="$emit('cerrar')">
-    <div class="modal-contenido" @click.stop>
+    <div class="modal-content mensualidades-modal form-modal" @click.stop>
       <div class="modal-header">
         <h3>{{ editando ? 'Editar Mensualidad' : 'Detalles Completos de Mensualidad' }}</h3>
         <div class="header-actions">
@@ -14,7 +14,7 @@
           <div class="deportista-info">
             <div class="avatar-deportista">
               <img
-                :src="mensualidad.avatar || '/src/assets/imgs/perfil.png'"
+                :src="mensualidad.avatar || defaultAvatar"
                 :alt="`Avatar de ${mensualidad.nombre}`"
               />
             </div>
@@ -85,7 +85,7 @@
               </div>
             </div>
             <div class="linea-abajo" style="margin:12px 0;" v-if="false"></div>
-
+            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='editar'"></div>
             <!-- Sección: Datos de pago -->
             <div class="seccion-form" v-if="activeTab==='editar'">
               <h6>Datos de pago</h6>
@@ -176,7 +176,7 @@
                 </div>
               </div>
             </div>
-            <div class="linea-abajo" style="margin:12px 0;"></div>
+            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='editar'"></div>
 
             <!-- Sección: Fechas y estado -->
             <div class="seccion-form" v-if="activeTab==='editar'">
@@ -293,6 +293,7 @@
               <h6>Fechas de pago y abonos</h6>
               <div v-if="listaPagosYAbonos().length > 0" class="pagos-list">
                 <table class="tabla-historial" style="width:100%; border-collapse:collapse;">
+                  <caption class="sr-only">Historial de fechas de pago y abonos de la mensualidad</caption>
                   <thead>
                     <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
                       <th style="padding:8px;">Fecha</th>
@@ -392,6 +393,8 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
+import defaultAvatar from '@/assets/imgs/perfil.png';
 
 // Props
 const props = defineProps({
@@ -433,7 +436,6 @@ const abonos = ref([]);
 const abonoEditIndex = ref(null);
 const abonoEdit = ref({ fecha: '', monto: undefined, id_metodo_pago: undefined });
 
-const LOCALE_COL = 'es-CO';
 const MIN_DOCUMENTO = 6;
 const MAX_DOCUMENTO = 10;
 
@@ -836,7 +838,11 @@ function actualizarValorConSimbolo() {
 
 function toggleEdicion() {
   if (!editando.value && !puedeEditarMensualidad.value) {
-    alert('No tienes permiso para editar esta mensualidad');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No tienes permiso para editar esta mensualidad.'
+    });
     return;
   }
   editando.value = !editando.value;
@@ -845,11 +851,15 @@ function toggleEdicion() {
   }
 }
 
-function guardarCambios() {
+async function guardarCambios() {
   const { errores, monto, saldo } = validarFormularioEdicion();
 
   if (errores.length > 0) {
-    alert('Corrige los siguientes errores:\n' + errores.join('\n'));
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: errores.join('<br>')
+    });
     return;
   }
 
@@ -904,12 +914,20 @@ function guardarCambios() {
 
 async function registrarAbono() {
   if (!puedeAbonar.value) {
-    alert('No tienes permiso para registrar abonos');
+    await Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No tienes permiso para registrar abonos.'
+    });
     return;
   }
   const { errores, monto } = validarAbonoFormulario();
   if (errores.length > 0) {
-    alert('Corrige los siguientes errores:\n' + errores.join('\n'));
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: errores.join('<br>')
+    });
     return;
   }
   try {
@@ -922,7 +940,13 @@ async function registrarAbono() {
       payloadAbono.id_metodo_pago = metodoPagoAbono;
     }
     await mensualidadesService.abonar(props.mensualidad.id, payloadAbono)
-    alert('Abono registrado correctamente');
+    await Swal.fire({
+      icon: 'success',
+      title: 'Abono registrado',
+      text: 'El abono se registró correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    });
     // Sugerir al padre refrescar datos
     emit('guardar-cambios', { ...props.mensualidad });
     // Recargar abonos en el modal
@@ -933,7 +957,11 @@ async function registrarAbono() {
       // Ignorar error de refresco de abonos en UI
     }
   } catch (e) {
-    alert(e?.message || 'Error registrando abono');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al registrar abono',
+      text: e?.message || 'No pudimos registrar el abono. Intenta nuevamente.'
+    });
   }
   nuevoAbono.value = { fecha: '', monto: '', id_metodo_pago: undefined };
 }
@@ -957,7 +985,11 @@ async function guardarEdicionAbono() {
   const ed = abonoEdit.value;
   if (!ed || !ed.id_abono) return;
   if (!puedeEditarAbono.value) {
-    alert('No tienes permiso para editar abonos');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No tienes permiso para editar abonos.'
+    });
     return;
   }
   try {
@@ -970,7 +1002,11 @@ async function guardarEdicionAbono() {
     abonos.value = (respAb.data || []).map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
     abonoEditIndex.value = null;
   } catch (e) {
-    alert(e?.message || 'Error guardando abono');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al guardar abono',
+      text: e?.message || 'No pudimos guardar los cambios del abono.'
+    });
   }
 }
 
@@ -980,16 +1016,32 @@ async function eliminarAbono(index) {
   const original = (abonos.value || []).find(a => a.id_abono === item.id_abono);
   if (!original || !original.id_abono) return;
   if (!puedeEliminarAbono.value) {
-    alert('No tienes permiso para eliminar abonos');
+    Swal.fire({
+      icon: 'warning',
+      title: 'Acción no permitida',
+      text: 'No tienes permiso para eliminar abonos.'
+    });
     return;
   }
-  if (!confirm('¿Eliminar este abono?')) return;
+  const confirmar = await Swal.fire({
+    icon: 'question',
+    title: '¿Eliminar abono?',
+    text: 'Esta acción no se puede deshacer.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+  if (!confirmar.isConfirmed) return;
   try {
     await mensualidadesService.deleteAbono(props.mensualidad.id, original.id_abono);
     const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
     abonos.value = (respAb.data || []).map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
   } catch (e) {
-    alert(e?.message || 'Error eliminando abono');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al eliminar',
+      text: e?.message || 'No pudimos eliminar el abono.'
+    });
   }
 }
 
@@ -1040,26 +1092,6 @@ const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());
 function obtenerValorNumericoMensualidad() {
   if (!props.mensualidad.valor) return 0;
   return parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
-}
-
-function getEstadoPago() {
-  const sp = props.mensualidad.saldo_pendiente_raw;
-  if (sp !== undefined && sp !== null) return Number(sp) === 0 ? 'Pagado' : 'Pendiente';
-  const totalPagado = calcularTotalPagado();
-  const totalMensualidad = obtenerValorNumericoMensualidad();
-  if (totalPagado === 0) return 'Sin pagos';
-  if (totalPagado === totalMensualidad) return 'Pagado';
-  if (totalPagado < totalMensualidad) return 'Pendiente';
-  return 'Pagado';
-}
-
-function getClaseEstado() {
-  const totalPagado = calcularTotalPagado();
-  const totalMensualidad = obtenerValorNumericoMensualidad();
-  if (totalPagado === 0) return 'sin-pagos';
-  if (totalPagado === totalMensualidad) return 'completo';
-  if (totalPagado < totalMensualidad) return 'parcial';
-  return 'pagado';
 }
 
 function formatearFecha(fecha) {
@@ -1164,7 +1196,11 @@ async function pagarConMercadoPago() {
     try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
     if (!resp.ok || !json.success) {
       const msg = json.error || json.message || text || 'No se pudo crear la preferencia';
-      alert(msg);
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo iniciar el pago',
+        text: msg
+      });
       return;
     }
     const url = json.init_point || json.preference_url || json.initPoint || json.url;
@@ -1173,12 +1209,23 @@ async function pagarConMercadoPago() {
   } catch (e) {
     try {
       if (typeof e === 'object' && e !== null && e.message) {
-        alert(e.message);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error en el pago',
+          text: e.message
+        });
       } else {
-        alert(typeof e === 'string' ? e : JSON.stringify(e));
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error en el pago',
+          text: typeof e === 'string' ? e : JSON.stringify(e)
+        });
       }
     } catch {
-      alert('Error iniciando pago con Mercado Pago');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error iniciando pago con Mercado Pago'
+      });
     }
   }
 }

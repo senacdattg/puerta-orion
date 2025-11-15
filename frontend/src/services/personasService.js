@@ -6,7 +6,7 @@
 import { useAuthStore } from '@/stores/auth'
 import { getApiBaseUrl } from '@/config/environment'
 
-const API_BASE_URL = getApiBaseUrl()
+const buildUrl = (path = '') => `${getApiBaseUrl()}${path}`
 
 class PersonasService {
   /**
@@ -37,7 +37,7 @@ class PersonasService {
       throw new Error('No hay datos para actualizar persona')
     }
 
-    const response = await fetch(`${API_BASE_URL}/personas/${idPersona}`, {
+    const response = await fetch(buildUrl(`/personas/${idPersona}`), {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(datos)

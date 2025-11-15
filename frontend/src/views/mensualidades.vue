@@ -1,11 +1,11 @@
 <script setup>
-import { defineOptions } from 'vue';
+import { defineOptions, ref, onMounted } from 'vue';
 import Encabezado from '../components/layout/encabezado.vue';
 import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
 import Pie from '../components/layout/pie.vue';
-import { ref, onMounted } from 'vue';
 import mensualidadesService from '@/services/mensualidadesService';
 import { getApiUrl } from '@/config/environment';
+import Swal from 'sweetalert2';
 
 defineOptions({ name: 'MensualidadesView' });
 
@@ -73,21 +73,21 @@ function mapMensualidadToCard(m) {
 }
 
 async function cargarMensualidades() {
-  loading.value = true; 
+  loading.value = true;
   errorMsg.value = '';
   try {
     console.log('🔄 [Mensualidades] Iniciando carga de mensualidades...');
     const res = await mensualidadesService.list();
     console.log('📥 [Mensualidades] Respuesta del servicio:', res);
-    
+
     if (!res) {
       throw new Error('No se recibió respuesta del servidor');
     }
-    
+
     if (!res.success && res.error) {
       throw new Error(res.error || 'Error al cargar mensualidades');
     }
-    
+
     const items = res.data || [];
     console.log('📊 [Mensualidades] Items recibidos:', items.length);
     mensualidades.value = items.map(mapMensualidadToCard);
@@ -97,11 +97,23 @@ async function cargarMensualidades() {
     errorMsg.value = e?.message || 'Error cargando mensualidades';
     // Mostrar mensaje de error más descriptivo
     if (e?.message?.includes('403') || e?.message?.includes('Forbidden')) {
-      alert('No tienes permisos para ver mensualidades. Por favor, contacta al administrador.');
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Sin permisos',
+        text: 'No tienes permisos para ver mensualidades. Por favor, contacta al administrador.'
+      });
     } else if (e?.message?.includes('401') || e?.message?.includes('Unauthorized')) {
-      alert('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+      await Swal.fire({
+        icon: 'info',
+        title: 'Sesión expirada',
+        text: 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+      });
     } else {
-      alert(`Error al cargar mensualidades: ${e?.message || 'Error desconocido'}`);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al cargar mensualidades',
+        text: e?.message || 'Error desconocido'
+      });
     }
   } finally {
     loading.value = false;
@@ -123,18 +135,42 @@ async function iniciarPago(m) {
     });
     const text = await resp.text();
     let json; try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
-    if (!resp.ok || !json.success) { alert(json.error || json.message || text || 'Error iniciando pago'); return; }
+    if (!resp.ok || !json.success) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo iniciar el pago',
+        text: json.error || json.message || text || 'Error iniciando pago'
+      });
+      return;
+    }
     const url = json.init_point || json.sandbox_init_point || json.preference_url || json.initPoint;
-    if (url) window.location.href = url; else alert('No se obtuvo link de pago');
+    if (url) window.location.href = url; else {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Sin enlace de pago',
+        text: 'No se obtuvo link de pago.'
+      });
+    }
   } catch (e) {
     try {
       if (typeof e === 'object' && e !== null && e.message) {
-        alert(e.message);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error en el pago',
+          text: e.message
+        });
       } else {
-        alert(typeof e === 'string' ? e : JSON.stringify(e));
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error en el pago',
+          text: typeof e === 'string' ? e : JSON.stringify(e)
+        });
       }
     } catch {
-      alert('Error iniciando pago');
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error iniciando pago'
+      });
     }
   }
 }
@@ -152,7 +188,11 @@ async function editarMensualidad(mActualizada) {
     await cargarMensualidades();
   } catch (e) {
     console.error(e);
-    alert(e?.message || 'Error actualizando mensualidad');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar mensualidad',
+      text: e?.message || 'No se pudo actualizar la mensualidad.'
+    });
   }
 }
 
@@ -165,7 +205,11 @@ async function eliminarMensualidad(m) {
     }
     await cargarMensualidades();
   } catch (e) {
-    alert(e?.message || 'Error eliminando mensualidad');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al cambiar estado',
+      text: e?.message || 'No se pudo cambiar el estado de la mensualidad.'
+    });
   }
 }
 
@@ -182,7 +226,11 @@ async function nuevaMensualidad(payload) {
     });
     await cargarMensualidades();
   } catch (e) {
-    alert(e?.message || 'Error creando mensualidad');
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al crear mensualidad',
+      text: e?.message || 'No se pudo crear la mensualidad.'
+    });
   }
 }
 

@@ -1,6 +1,6 @@
 <template>
-  <div v-if="mostrar" class="modal-overlay" @click="cerrarModal">
-    <div class="modal-content" @click.stop>
+  <div v-if="mostrar" class="modal-overlay modal-registro-overlay" @click="cerrarModal">
+    <div class="modal-content modal-registro" @click.stop>
       <!-- Header del Modal -->
       <div class="modal-header">
         <h2 class="modal-title">
@@ -28,9 +28,10 @@
 
 <script setup>
 import FormularioGeneral from '../formularios/formulario-general.vue';
+import Swal from 'sweetalert2';
 
 // Props
-const props = defineProps({
+defineProps({
   mostrar: {
     type: Boolean,
     default: false
@@ -44,13 +45,21 @@ function cerrarModal() {
   emit('cerrar');
 }
 
-function cancelarRegistro() {
-  if (confirm('¿Estás seguro de que deseas cancelar el registro?')) {
+async function cancelarRegistro() {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar registro?',
+    text: 'Los datos ingresados se perderán.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Seguir registrando'
+  });
+  if (result.isConfirmed) {
     cerrarModal();
   }
 }
 
-function manejarRegistro(datos) {
+async function manejarRegistro(datos) {
   const datosCompletos = {
     ...datos,
     rol: 'usuario',
@@ -60,65 +69,31 @@ function manejarRegistro(datos) {
   // Emitir evento con los datos completos
   emit('usuario-registrado', datosCompletos);
 
-  // Mostrar mensaje de éxito
-  alert('¡Usuario registrado exitosamente!');
+  await Swal.fire({
+    icon: 'success',
+    title: 'Usuario registrado',
+    text: 'El nuevo usuario fue registrado correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
 
   // Cerrar modal y resetear
   cerrarModal();
 }
 </script>
 
-<style scoped>
-/* Modal Overlay */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  padding: 20px;
+<style>
+.modal-registro-overlay {
   backdrop-filter: blur(4px);
 }
 
-/* Modal Content */
-.modal-content {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
+.modal-registro {
   max-width: 800px;
-  max-height: 90vh;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: modalSlideIn 0.3s ease-out;
+  --modal-header-bg: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
+  --modal-header-color: #ffffff;
 }
 
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-50px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Modal Header */
-.modal-header {
-  background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
-  color: white;
-  padding: 25px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-title {
+.modal-registro .modal-title {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
@@ -127,10 +102,9 @@ function manejarRegistro(datos) {
   gap: 12px;
 }
 
-.btn-cerrar {
+.modal-registro .btn-cerrar {
   background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
+  color: #ffffff;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -141,19 +115,17 @@ function manejarRegistro(datos) {
   transition: all 0.3s ease;
 }
 
-.btn-cerrar:hover {
+.modal-registro .btn-cerrar:hover {
   background: rgba(55, 51, 51, 0.3);
   transform: scale(1.1);
 }
 
-/* Modal Body */
-.modal-body {
+.modal-registro .modal-body {
   padding: 30px;
   max-height: 60vh;
   overflow-y: auto;
 }
 
-/* Selección de Rol */
 .seleccion-rol {
   text-align: center;
 }

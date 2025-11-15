@@ -1,6 +1,6 @@
 <template>
-  <div v-if="mostrar" class="modal-overlay" @click="cerrar">
-    <div class="modal-content" @click.stop>
+  <div v-if="mostrar" class="modal-overlay modal-editar-overlay" @click="cerrar">
+    <div class="modal-content modal-editar" @click.stop>
       <div class="modal-header">
         <h2 class="modal-title">
           <i class="fas fa-edit"></i>
@@ -13,8 +13,8 @@
 
       <div class="modal-body">
         <form class="formulario-edicion" @submit.prevent="guardar">
-          <component 
-            :is="componenteFormulario" 
+          <component
+            :is="componenteFormulario"
             v-model="formData"
           />
 
@@ -42,6 +42,7 @@ import Ciudad from '../datos-dinamicos/ciudad.vue'
 import Eps from '../datos-dinamicos/eps.vue'
 import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
 import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false },
@@ -54,7 +55,7 @@ const emit = defineEmits(['cerrar', 'guardado'])
 const guardando = ref(false)
 const formData = ref({})
 
-const REGEX_CODIGO_EPS = /^[A-Z0-9\-]{2,20}$/
+const REGEX_CODIGO_EPS = /^[A-Z0-9-]{2,20}$/
 const NAME_MIN_LENGTH = 2
 
 function validarDatos() {
@@ -138,7 +139,7 @@ watch(() => props.dato, (nuevoDato) => {
   }
 
   const campoNombre = camposNombre[props.tema]
-  
+
   // Construir el objeto formData según el tipo
   formData.value = {
     nombre: nuevoDato[campoNombre] || nuevoDato.nombre || ''
@@ -165,22 +166,29 @@ async function guardar() {
 
   try {
     const id = obtenerId(props.dato)
-    
+
     if (!id) {
-      alert('❌ Error: No se pudo obtener el ID del registro')
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo obtener el ID del registro'
+      })
       guardando.value = false
       return
     }
-    
+
     const errores = validarDatos()
     if (errores.length > 0) {
-      alert('❌ Corrige los siguientes errores:\n' + errores.join('\n'))
+      await Swal.fire({
+        icon: 'error',
+        title: 'Corrige los errores',
+        html: errores.join('<br>')
+      })
       guardando.value = false
       return
     }
 
     const campoNombre = camposNombre[props.tema]
-    
+
     // Preparar datos según el tipo
     const datos = {}
     datos[campoNombre] = formData.value.nombre?.trim()
@@ -220,15 +228,28 @@ async function guardar() {
     const result = await response.json()
 
     if (result.success) {
-      alert('✅ Registro actualizado exitosamente')
+      await Swal.fire({
+        icon: 'success',
+        title: 'Registro actualizado',
+        timer: 1500,
+        showConfirmButton: false
+      })
       emit('guardado', result.data)
       cerrar()
     } else {
-      alert(`❌ Error: ${result.error || 'No se pudo actualizar el registro'}`)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar',
+        text: result.error || 'No se pudo actualizar el registro'
+      })
     }
   } catch (error) {
     console.error('Error al guardar:', error)
-    alert(`❌ Error: ${error.message || 'Error de conexión'}`)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al guardar',
+      text: error.message || 'Error de conexión'
+    })
   } finally {
     guardando.value = false
   }
@@ -236,7 +257,7 @@ async function guardar() {
 
 function obtenerId(dato) {
   if (!dato) return null
-  
+
   // Obtener el ID según el tipo de dato (según los nombres que devuelven los modelos en to_dict)
   if (props.tema === 'tipo-documento') return dato.id_documento || dato.id
   if (props.tema === 'sexo') return dato.id_sexo || dato.id
@@ -244,44 +265,24 @@ function obtenerId(dato) {
   if (props.tema === 'eps') return dato.id_eps || dato.id
   if (props.tema === 'metodo-pago') return dato.id_metodo_pago || dato.id
   if (props.tema === 'tipo-evento') return dato.id_tipo_evento || dato.id
-  
+
   return dato.id
 }
 </script>
 
-<style scoped>
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  padding: 20px;
+<style>
+.modal-editar-overlay {
   backdrop-filter: blur(4px);
 }
 
-.modal-content {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
+.modal-editar {
   max-width: 600px;
-  max-height: 90vh;
-  overflow: hidden;
+  --modal-header-bg: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
+  --modal-header-color: #ffffff;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-.modal-header {
-  background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
-  color: white;
-  padding: 25px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-title {
+.modal-editar .modal-title {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
@@ -290,10 +291,9 @@ function obtenerId(dato) {
   gap: 12px;
 }
 
-.btn-cerrar {
+.modal-editar .btn-cerrar {
   background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
+  color: #ffffff;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -304,11 +304,11 @@ function obtenerId(dato) {
   transition: background 0.3s;
 }
 
-.btn-cerrar:hover {
+.modal-editar .btn-cerrar:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.modal-body {
+.modal-editar .modal-body {
   padding: 30px;
   max-height: calc(90vh - 100px);
   overflow-y: auto;

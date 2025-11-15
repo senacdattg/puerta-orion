@@ -1,4 +1,5 @@
 /* ===== ESTILOS PARA MENSUALIDADES - VERSIÓN MODERNA ===== */
+@import './listados.css';
 
 /* ===== VARIABLES CSS INCLUIDAS DIRECTAMENTE ===== */
 :root {
@@ -42,132 +43,6 @@
 }
 
 /* ===== FILTROS Y BÚSQUEDA ===== */
-.contenedor-filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  align-items: center;
-  justify-content: space-between;
-}
-/* toolbar look */
-.contenedor-filtros {
-  background: #fff;
-  border: 1px solid #eef0f2;
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: var(--sombra-suave);
-}
-
-.buscador {
-  position: relative;
-  flex: 1;
-  min-width: 300px;
-}
-
-.entrada-busqueda {
-  width: 100%;
-  padding: 1rem 3rem 1rem 1.5rem;
-  border: none;
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  background: var(--color-blanco);
-  box-shadow: var(--sombra-suave);
-  transition: var(--transicion);
-}
-
-.entrada-busqueda:focus {
-  outline: none;
-  box-shadow: var(--sombra-media);
-  transform: translateY(-2px);
-}
-
-.icono-busqueda {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.2rem;
-  color: var(--color-gris);
-}
-
-.filtros {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.filtro-select {
-  padding: 0.75rem 1rem;
-  border: 2px solid transparent;
-  border-radius: var(--radio-borde);
-  background: var(--color-blanco);
-  color: var(--color-gris-oscuro);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transicion);
-  box-shadow: var(--sombra-suave);
-}
-
-.filtro-select:focus {
-  outline: none;
-  border-color: var(--color-secundario);
-  box-shadow: var(--sombra-media);
-}
-
-/* ===== ESTADÍSTICAS ===== */
-.estadisticas {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 8px;
-  margin: 4px 0 8px;
-}
-
-.estadisticas.ordenadas {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
-  justify-content: center;
-}
-
-.stat-card {
-  background: var(--color-blanco);
-  padding: 16px 12px;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: var(--sombra-suave);
-  transition: var(--transicion);
-  border: 2px solid transparent;
-  width: 220px;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--sombra-media);
-}
-
-/* Centrar contenido interno de stat cards */
-.estadisticas .stat-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-numero {
-  display: block;
-  font-size: 36px;
-  font-weight: bold;
-  color: var(--color-primario);
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
-}
-
 #statCard { border: none !important; }
 #statCard:hover {
   transform: scale(1.04);
@@ -184,11 +59,9 @@
   justify-content: center;
 }
 
-/* ===== GRID DE MENSUALIDADES ===== */
 .grid-mensualidades {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  --listado-grid-min: 320px;
+  --listado-grid-gap: 16px;
   margin-bottom: 16px;
 }
 
@@ -497,85 +370,30 @@
   margin: 12px 0;
 }
 
-/* ===== MODAL DE DETALLES COMPLETOS ===== */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999; /* por encima del header fijo */
-  padding: 1rem;
+.mensualidades-modal {
+  width: auto;
+  max-width: var(--modal-max-width, 720px);
+  margin: 0 auto;
+  animation: modal-fade-up 0.3s ease-out;
+  --modal-max-width: 780px;
+  --modal-radius: 20px;
 }
 
-.modal-contenido {
-  background: var(--color-blanco);
-  border-radius: 16px;
-  box-shadow: var(--sombra-fuerte);
-  max-width: 700px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalEntrada 0.3s ease-out;
+.mensualidades-modal .btn-cerrar {
+  background: rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-@keyframes modalEntrada {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* ===== HEADER DEL MODAL ===== */
-.modal-header {
-  background: linear-gradient(135deg, var(--color-secundario), #ffb300);
-  color: var(--color-gris-oscuro);
-  padding: 1.5rem;
-  border-radius: var(--radio-borde) var(--radio-borde) 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 3px solid rgba(0, 0, 0, 0.1);
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-shadow: black;
-}
-
-.btn-cerrar {
-  background: rgba(0, 0, 0, 0.2);
-  border: none;
-  color: var(--color-gris-oscuro);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transicion);
-}
-
-.btn-cerrar:hover {
-  background: rgba(0, 0, 0, 0.3);
-  transform: scale(1.1);
+.mensualidades-modal .btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
 /* ===== CUERPO DEL MODAL ===== */
-.modal-body {
-  padding: 1.5rem;
+.mensualidades-modal .modal-body {
+  padding: var(--modal-body-padding, 1.1rem);
+  background: #ffffff;
 }
 
 /* Tabla de historial: visual limpia */
@@ -615,31 +433,11 @@
   gap: 1.5rem;
 }
 
-.avatar-deportista {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 4px solid var(--color-gris-claro);
-  box-shadow: var(--sombra-suave);
-}
-
-.avatar-deportista img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
 .info-basica {
   flex: 1;
 }
 
-.nombre-deportista {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--color-gris-oscuro);
-}
 
 .estado-actual {
   display: inline-block;
@@ -696,30 +494,6 @@
   gap: 1rem;
 }
 
-.detalle-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.detalle-label {
-  font-size: 0.9rem;
-  color: var(--color-gris);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.detalle-valor {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--color-gris-oscuro);
-}
-
-.detalle-valor.precio {
-  color: var(--color-exito);
-  font-size: 1.2rem;
-}
 
 .detalle-valor.vencimiento {
   color: var(--color-advertencia);
@@ -894,44 +668,7 @@
   font-size: 1.1rem;
 }
 
-/* ===== SIN RESULTADOS ===== */
-.sin-resultados {
-  text-align: center;
-  padding: 2rem;
-  background: var(--color-blanco);
-  border-radius: 16px;
-  box-shadow: var(--sombra-suave);
-}
-
-.sin-resultados.mejorado { display: flex; justify-content: center; }
-.sin-resultados.mejorado .empty-card {
-  width: 100%;
-  max-width: 900px;
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.empty-icon { font-size: 36px; opacity: .75; }
-.empty-title { margin: 0; font-size: 20px; color: #0b4fb3; }
-.empty-sub { margin: 0; color: #6b7280; font-size: 14px; }
-.empty-actions { display: flex; gap: 12px; margin-top: 8px; }
-
-.sin-resultados p {
-  font-size: 1.1rem;
-  color: var(--color-gris);
-  margin-bottom: 1.5rem;
-}
-
 /* ===== FORMULARIO MODAL PARA NUEVA MENSUALIDAD ===== */
-.formulario-mensualidad {
-  padding: 1.5rem;
-}
-
 .campo-formulario {
   margin-bottom: 1.5rem;
 }
@@ -1000,69 +737,11 @@
   justify-content: center;
 }
 
-.btn-principal {
-  background: linear-gradient(135deg, var(--color-primario), #0056cc);
-  color: var(--color-blanco);
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transicion);
-  box-shadow: var(--sombra-suave);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  min-width: 120px;
-}
-
-.btn-principal:hover {
-  background: linear-gradient(135deg, #0056cc, #0047ab);
-  transform: translateY(-2px);
-  box-shadow: var(--sombra-media);
-}
-
-.btn-principal:active {
-  transform: translateY(0);
-}
-
-.btn-secundario {
-  background: #dc3545;
-  color: var(--color-gris-oscuro) !important;
-  border: 2px solid var(--color-gris-medio);
-  padding: 1rem 2rem;
-  border-radius: var(--radio-borde);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transicion);
-  min-width: 120px;
-}
-
-.btn-secundario:hover {
-  background: #fc3e51;
-  color: var(--color-blanco) !important;
-  transform: translateY(-2px);
-  box-shadow: var(--sombra-suave);
-}
-
-/* Modal específico para formulario */
-.modal-content {
-  background: var(--color-blanco);
-  border-radius: var(--radio-borde);
-  box-shadow: var(--sombra-fuerte);
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalEntrada 0.3s ease-out;
-}
-
-.modal-header {
-  background: linear-gradient(135deg, var(--color-primario), #FFD700);
-  color: var(--color-blanco);
+.mensualidades-modal .modal-header {
+  background: var(--modal-header-bg);
+  color: var(--modal-header-color);
   padding: 1.5rem;
-  border-radius: var(--radio-borde) var(--radio-borde) 0 0;
+  border-radius: var(--modal-radius, 16px) var(--modal-radius, 16px) 0 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -1122,16 +801,12 @@
     font-size: 1.3rem;
   }
 
-  .formulario-mensualidad {
-    padding: 1rem;
-  }
-
   .acciones {
     flex-direction: column;
   }
 
-  .btn-principal,
-  .btn-secundario {
+  .btn.btn-primary,
+  .btn.btn-danger {
     width: 100%;
     justify-content: center;
   }
@@ -1157,8 +832,9 @@
   }
 
   .grid-mensualidades {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    --listado-grid-min: 320px;
+    --listado-grid-gap: 16px;
+    margin-bottom: 16px;
   }
 
   .estadisticas {
@@ -1185,6 +861,8 @@
   }
 
   .tarjeta-mensualidad {
+    grid-template-columns: 1fr;
+    gap: 1rem;
     padding: 1rem;
   }
 
@@ -1221,8 +899,8 @@
 /* ===== RESPONSIVE EXTRA - TABLET ===== */
 @media (max-width: 1024px) {
   .grid-mensualidades {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
+    --listado-grid-min: 300px;
+    --listado-grid-gap: 1rem;
   }
   .estadisticas {
     grid-template-columns: repeat(2, 1fr);
@@ -1261,7 +939,7 @@
 /* ===== RESPONSIVE EXTRA - MÓVIL PEQUEÑO ===== */
 @media (max-width: 420px) {
   .grid-mensualidades {
-    grid-template-columns: 1fr;
+    --listado-grid-min: 1fr;
   }
   .avatar-deportista {
     width: 50px;
@@ -1341,25 +1019,6 @@
   margin-top: 1rem;
 }
 
-.campo-formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.campo-formulario label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  color: #34495e;
-  font-size: 0.9rem;
-}
-
-.campo-formulario label i {
-  color: #3498db;
-  width: 16px;
-}
 
 .input-edicion, .select-edicion {
   padding: 0.75rem;
@@ -1661,27 +1320,6 @@
   border: 1px solid #e9ecef;
 }
 
-.resumen-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.resumen-label {
-  font-size: 0.8rem;
-  color: #6c757d;
-  font-weight: 500;
-}
-
-.resumen-valor {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #2c3e50;
-}
-
-.resumen-valor.pagado {
-  color: #27ae60;
-}
 
 .resumen-valor.pendiente {
   color: #f39c12;
@@ -1780,22 +1418,6 @@
   box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-.select-mensualidad {
-  padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  transition: border-color 0.3s ease;
-  background: #fff;
-  cursor: pointer;
-  width: 100%;
-}
-
-.select-mensualidad:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
 
 /* Aplicar estilos del input con símbolo también al formulario de nueva mensualidad */
 .modal-content .input-with-symbol .input-mensualidad {

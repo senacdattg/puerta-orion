@@ -66,7 +66,7 @@
 
         <!-- Modal para agregar/editar eventos -->
         <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
-            <div class="modal-content" @click.stop>
+            <div class="modal-content mensualidades-modal calendario-modal form-modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}</h3>
                     <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
@@ -74,14 +74,14 @@
                     </button>
                 </div>
 
-                <form @submit.prevent="guardarEvento" class="formulario-evento">
+                <form @submit.prevent="guardarEvento" class="formulario-evento form-modal-panel">
                     <div class="campo-formulario">
                         <label for="titulo">
                             <i class="fas fa-heading"></i>
                             Título del evento *
                         </label>
                         <input id="titulo" v-model="nuevoEvento.titulo" type="text"
-                            placeholder="Ej: Entrenamiento de fuerza" required class="input-evento"
+                            placeholder="Ej: Entrenamiento de fuerza" required class="input-evento input-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion" @input="manejarTitulo" />
                     </div>
 
@@ -90,7 +90,7 @@
                             <i class="fas fa-tag"></i>
                             Tipo de evento *
                         </label>
-                        <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento"
+                        <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento select-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion">
                             <option value="">Seleccionar tipo</option>
                             <option v-for="tipo in tiposEvento" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">
@@ -104,8 +104,15 @@
                             <i class="fas fa-calendar"></i>
                             Fecha *
                         </label>
-                        <input id="fecha" v-model="nuevoEvento.fecha" type="date" required class="input-evento"
-                            :disabled="true" readonly />
+                        <input
+                            id="fecha"
+                            v-model="nuevoEvento.fecha"
+                            type="date"
+                            required
+                            class="input-evento input-mensualidad"
+                            :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
+                            :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
+                        />
                     </div>
 
                     <div class="fila-dos-columnas">
@@ -114,7 +121,7 @@
                                 <i class="fas fa-clock"></i>
                                 Hora Inicio *
                             </label>
-                            <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento"
+                            <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento input-mensualidad"
                                 :disabled="!puedeCrear && !modoEdicion" />
                         </div>
                         <div class="campo-formulario">
@@ -122,7 +129,7 @@
                                 <i class="fas fa-clock"></i>
                                 Hora Fin *
                             </label>
-                            <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento"
+                            <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento input-mensualidad"
                                 :disabled="!puedeCrear && !modoEdicion" />
                         </div>
                     </div>
@@ -132,7 +139,7 @@
                             <i class="fas fa-layer-group"></i>
                             Categoría *
                         </label>
-                        <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento"
+                        <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento select-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion">
                             <option value="">Seleccionar categoría</option>
                             <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">
@@ -147,7 +154,7 @@
                             Lugar *
                         </label>
                         <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
-                            required class="input-evento" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
+                            required class="input-evento input-mensualidad" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
                     </div>
 
                     <div class="campo-formulario">
@@ -156,33 +163,30 @@
                             Descripción
                         </label>
                         <textarea id="descripcion" v-model="nuevoEvento.descripcion"
-                            placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento"
+                            placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento input-mensualidad"
                             :disabled="!puedeCrear && !modoEdicion" @input="manejarDescripcion"></textarea>
                     </div>
 
-                    <div class="botones-modal">
-                        <button 
-                            type="button" 
-                            @click="cerrarModal" 
-                            class="btn-secundario"
-                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                    <div class="acciones">
+                        <button
+                            type="button"
+                            @click="cerrarModal"
+                            class="btn btn-secondary"
                         >
                             Cerrar
                         </button>
-                        <button 
-                            v-if="puedeEliminar && modoEdicion" 
-                            type="button" 
-                            @click="eliminarEvento" 
-                            class="btn-eliminar"
-                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        <button
+                            v-if="puedeEliminar && modoEdicion"
+                            type="button"
+                            @click="eliminarEvento"
+                            class="btn btn-danger"
                         >
                             Eliminar
                         </button>
-                        <button 
-                            v-if="puedeCrear || (puedeEditar && modoEdicion)" 
-                            type="submit" 
-                            class="btn-principal"
-                            style="flex: 0 0 150px !important; width: 150px !important; min-width: 150px !important; max-width: 150px !important; height: 48px !important; min-height: 48px !important; max-height: 48px !important; padding: 12px 24px !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: center !important;"
+                        <button
+                            v-if="puedeCrear || (puedeEditar && modoEdicion)"
+                            type="submit"
+                            class="btn btn-success"
                         >
                             {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
                         </button>
@@ -193,7 +197,7 @@
 
         <!-- Modal para seleccionar evento a editar -->
         <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
-            <div class="modal-content selector-eventos" @click.stop>
+            <div class="modal-content mensualidades-modal selector-eventos calendario-modal form-modal" @click.stop>
                 <div class="modal-header">
                     <h3>{{ puedeEditar ? 'Eventos del Día' : 'Eventos del Día' }}</h3>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
@@ -201,57 +205,61 @@
                     </button>
                 </div>
 
-                <div class="lista-eventos">
-                    <div v-for="evento in eventosDelDia" :key="evento.id"
-                        @click="puedeEditar ? editarEvento(evento) : verEvento(evento)" class="evento-item"
-                        :class="{ 'evento-item-usuario': !puedeEditar }">
-                        <div class="evento-info">
-                            <div class="evento-titulo">{{ evento.titulo }}</div>
-                            <div class="evento-detalles">
-                                <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
-                                    {{ evento.tipo }}
-                                </span>
-                                <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
-                                    <i class="fas fa-tag"></i>
-                                    {{ evento.categoria.nombre_categoria }}
-                                </span>
-                                <span class="evento-hora">
-                                    <i class="fas fa-clock"></i>
-                                    {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}
-                                </span>
-                                <span class="evento-lugar">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    {{ evento.lugar }}
-                                </span>
-                            </div>
-                            <div v-if="!puedeEditar" class="evento-descripcion">
-                                <i class="fas fa-align-left"></i>
-                                {{ evento.descripcion || 'Sin descripción' }}
+                <div class="modal-body">
+                    <div class="panel-selector-eventos">
+                        <div class="lista-eventos">
+                            <div v-for="evento in eventosDelDia" :key="evento.id"
+                                @click="puedeEditar ? editarEvento(evento) : verEvento(evento)" class="evento-item"
+                                :class="{ 'evento-item-usuario': !puedeEditar }">
+                                <div class="evento-info">
+                                    <div class="evento-titulo">{{ evento.titulo }}</div>
+                                    <div class="evento-detalles">
+                                        <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
+                                            {{ evento.tipo }}
+                                        </span>
+                                        <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
+                                            <i class="fas fa-tag"></i>
+                                            {{ evento.categoria.nombre_categoria }}
+                                        </span>
+                                        <span class="evento-hora">
+                                            <i class="fas fa-clock"></i>
+                                            {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}
+                                        </span>
+                                        <span class="evento-lugar">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            {{ evento.lugar }}
+                                        </span>
+                                    </div>
+                                    <div v-if="!puedeEditar" class="evento-descripcion">
+                                        <i class="fas fa-align-left"></i>
+                                        {{ evento.descripcion || 'Sin descripción' }}
+                                    </div>
+                                </div>
+                                <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
+                                    :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
                             </div>
                         </div>
-                        <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
-                            :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
+
+                        <!-- Botón para agregar nuevo evento (solo si tiene permisos de creación) -->
+                        <div v-if="puedeCrear" class="botones-selector">
+                            <button @click="abrirModalDesdeSelector" class="btn-agregar-evento">
+                                <i class="fas fa-plus"></i>
+                                Agregar Otro Evento
+                            </button>
+                        </div>
+
+                        <!-- Mensaje informativo -->
+                        <div v-if="puedeCrear && eventosDelDia.length > 0" class="info-multiple-eventos">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Puedes agregar varios eventos en este día. Solo verifica que los horarios no se solapen.</span>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Botón para agregar nuevo evento (solo si tiene permisos de creación) -->
-                <div v-if="puedeCrear" class="botones-selector">
-                    <button @click="abrirModalDesdeSelector" class="btn-agregar-evento">
-                        <i class="fas fa-plus"></i>
-                        Agregar Otro Evento
-                    </button>
-                </div>
-
-                <!-- Mensaje informativo -->
-                <div v-if="puedeCrear && eventosDelDia.length > 0" class="info-multiple-eventos">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Puedes agregar varios eventos en este día. Solo verifica que los horarios no se solapen.</span>
                 </div>
             </div>
         </div>
 
         <!-- Botón flotante para agregar evento (solo para roles con permisos de creación) -->
-        <button v-if="puedeCrear" @click="abrirModal" class="btn-flotante" title="Agregar evento">
+        <button v-if="puedeCrear" @click="abrirModal()" class="btn-flotante" title="Agregar evento">
             <i class="fas fa-plus"></i>
         </button>
     </div>
@@ -260,6 +268,7 @@
 <script>
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
+import Swal from 'sweetalert2';
 
 const LOCALE_COL = 'es-CO';
 const MAX_TITULO = 120;
@@ -300,6 +309,7 @@ export default {
                 descripcion: '',
                 fecha: null
             },
+            fechaBloqueada: false,
             cargando: false,
             error: null,
             tiposEvento: [],
@@ -358,21 +368,21 @@ export default {
         normalizarTitulo(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ.\-\s]/g, '');
             return this.normalizarEspacios(limpio).slice(0, MAX_TITULO);
         },
 
         normalizarLugar(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '');
             return this.normalizarEspacios(limpio).slice(0, MAX_LUGAR);
         },
 
         normalizarDescripcion(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.,;:¿?¡!()\s]/g, '');
             return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION);
         },
 
@@ -552,9 +562,7 @@ export default {
                 this.eventosDelDia = dia.eventos;
                 this.mostrarSelectorEventos(dia.fecha);
             } else if (this.puedeCrear) {
-                // Solo roles con permisos de creación pueden crear eventos en días vacíos
-                this.nuevoEvento.fecha = dia.fecha;
-                this.abrirModal();
+                this.abrirModal({ fecha: dia.fecha, bloquear: true });
             }
             // Si no tiene permisos de creación y no hay eventos, no hace nada
         },
@@ -565,25 +573,26 @@ export default {
                 event.stopPropagation();
             }
             if (!dia.esMesActual || !this.puedeCrear) return;
-            this.nuevoEvento.fecha = dia.fecha;
-            this.abrirModal();
+            this.abrirModal({ fecha: dia.fecha, bloquear: true });
         },
 
-        abrirModal() {
+        abrirModal(opciones = {}) {
+            const { fecha = null, bloquear = false } = opciones;
             if (!this.puedeCrear) return; // Solo roles con permisos de creación pueden abrir modal
 
+            this.fechaBloqueada = bloquear;
             this.modalVisible = true;
             this.modoEdicion = false;
-            this.limpiarFormulario();
-            this.normalizarCamposEvento();
+            this.limpiarFormulario(fecha);
 
-            if (!this.nuevoEvento.fecha) {
+            if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
             }
         },
 
         cerrarModal() {
             this.modalVisible = false;
+            this.fechaBloqueada = false;
             this.limpiarFormulario();
         },
 
@@ -593,17 +602,19 @@ export default {
             if (fecha) {
                 this.nuevoEvento.fecha = fecha;
             }
+            this.fechaBloqueada = true;
         },
 
         cerrarSelectorEventos() {
             this.selectorEventosVisible = false;
             this.eventosDelDia = [];
+            this.fechaBloqueada = false;
         },
 
         abrirModalDesdeSelector() {
             // Cerrar el selector y abrir el modal de creación
             this.selectorEventosVisible = false;
-            this.abrirModal();
+            this.abrirModal({ fecha: this.nuevoEvento.fecha, bloquear: true });
             // La fecha ya está guardada en nuevoEvento.fecha desde mostrarSelectorEventos
         },
 
@@ -617,6 +628,7 @@ export default {
             this.normalizarCamposEvento();
             this.modoEdicion = true;
             this.selectorEventosVisible = false;
+            this.fechaBloqueada = true;
             this.modalVisible = true;
         },
 
@@ -626,6 +638,7 @@ export default {
             this.normalizarCamposEvento();
             this.modoEdicion = false;
             this.selectorEventosVisible = false;
+            this.fechaBloqueada = true;
             this.modalVisible = true;
 
             // Para usuarios no-admin, mostrar solo información de lectura
@@ -635,24 +648,153 @@ export default {
             }
         },
 
+        validarTitulo() {
+            return !this.nuevoEvento.titulo ? 'El título debe tener al menos 3 caracteres' : null;
+        },
+
+        validarTipoEvento() {
+            return !this.nuevoEvento.idTipoEvento ? 'Debe seleccionar un tipo de evento' : null;
+        },
+
+        validarFecha() {
+            return !this.nuevoEvento.fecha ? 'Debe especificar una fecha' : null;
+        },
+
+        validarHoraInicio() {
+            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) {
+                return 'Debe especificar una hora de inicio';
+            }
+            return null;
+        },
+
+        validarHoras() {
+            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) {
+                return 'Debe especificar hora de inicio y fin';
+            }
+            return null;
+        },
+
+        validarCategoria() {
+            return !this.nuevoEvento.idCategoria ? 'Debe seleccionar una categoría' : null;
+        },
+
+        validarLugar() {
+            return !this.nuevoEvento.lugar ? 'El lugar debe tener al menos 3 caracteres' : null;
+        },
+
+        validarRangoHoras() {
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
+                return 'La hora de fin debe ser posterior a la hora de inicio';
+            }
+            return null;
+        },
+
+        validarEvento() {
+            const validaciones = [
+                this.validarTitulo(),
+                this.validarTipoEvento(),
+                this.validarFecha(),
+                this.validarHoraInicio(),
+                this.validarHoras(),
+                this.validarCategoria(),
+                this.validarLugar(),
+                this.validarRangoHoras()
+            ];
+            return validaciones.filter(error => error !== null);
+        },
+
+        async mostrarErroresValidacion(errores) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Corrige los errores',
+                html: errores.join('<br>')
+            });
+        },
+
+        async validarPermisosEdicion() {
+            if (!this.puedeEditar) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin permisos',
+                    text: 'No tienes permisos para editar eventos.'
+                });
+                return false;
+            }
+            return true;
+        },
+
+        async validarPermisosCreacion() {
+            if (!this.puedeCrear) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Sin permisos',
+                    text: 'No tienes permisos para crear eventos.'
+                });
+                return false;
+            }
+            return true;
+        },
+
+        async actualizarEventoExistente() {
+            if (!(await this.validarPermisosEdicion())) {
+                return;
+            }
+            await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+            this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
+            this.actualizarCalendario();
+            this.cerrarModal();
+        },
+
+        async preguntarAgregarOtroEvento(fechaActual) {
+            const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
+            if (!eventosDelDia || eventosDelDia.length <= 1) {
+                return false;
+            }
+
+            const confirmacion = await Swal.fire({
+                icon: 'question',
+                title: '¿Agregar otro evento?',
+                text: 'Ya existen eventos en este día. ¿Quieres crear otro de inmediato?',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, agregar',
+                cancelButtonText: 'No'
+            });
+
+            if (confirmacion.isConfirmed) {
+                this.limpiarFormulario();
+                this.nuevoEvento.fecha = fechaActual;
+                return true;
+            }
+            return false;
+        },
+
+        async crearNuevoEvento() {
+            if (!(await this.validarPermisosCreacion())) {
+                return;
+            }
+
+            await calendarioService.crearEvento(this.nuevoEvento);
+            this.mostrarNotificacion('Evento creado exitosamente', 'success');
+
+            await calendarioService.cargarEventos();
+            this.actualizarCalendario();
+
+            const fechaActual = this.nuevoEvento.fecha;
+            const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+
+            if (!quiereAgregarOtro) {
+                this.cerrarModal();
+            }
+        },
+
         async guardarEvento() {
-            if (!this.puedeCrear && !this.puedeEditar) return; // Verificar permisos
+            if (!this.puedeCrear && !this.puedeEditar) return;
 
             this.normalizarCamposEvento();
-            // Validar datos del evento
-            const errores = [];
-            if (!this.nuevoEvento.titulo) errores.push('El título debe tener al menos 3 caracteres');
-            if (!this.nuevoEvento.idTipoEvento) errores.push('Debe seleccionar un tipo de evento');
-            if (!this.nuevoEvento.fecha) errores.push('Debe especificar una fecha');
-            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) errores.push('Debe especificar una hora de inicio');
-            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) errores.push('Debe especificar hora de inicio y fin');
-            if (!this.nuevoEvento.idCategoria) errores.push('Debe seleccionar una categoría');
-            if (!this.nuevoEvento.lugar) errores.push('El lugar debe tener al menos 3 caracteres');
-            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
-                errores.push('La hora de fin debe ser posterior a la hora de inicio');
-            }
+            const errores = this.validarEvento();
+
             if (errores.length > 0) {
-                alert('Errores de validación:\n' + errores.join('\n'));
+                await this.mostrarErroresValidacion(errores);
                 return;
             }
 
@@ -660,49 +802,10 @@ export default {
                 this.cargando = true;
 
                 if (this.modoEdicion) {
-                    if (!this.puedeEditar) {
-                        alert('No tienes permisos para editar eventos');
-                        return;
-                    }
-                    await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
-                    this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
+                    await this.actualizarEventoExistente();
                 } else {
-                    if (!this.puedeCrear) {
-                        alert('No tienes permisos para crear eventos');
-                        return;
-                    }
-                    await calendarioService.crearEvento(this.nuevoEvento);
-                    this.mostrarNotificacion('Evento creado exitosamente', 'success');
-
-                    // Recargar eventos del calendario
-                    await calendarioService.cargarEventos();
-                    this.actualizarCalendario();
-
-                    // Verificar si hay eventos en esa fecha antes de preguntar
-                    const fechaActual = this.nuevoEvento.fecha;
-                    const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
-
-                    // Solo preguntar si ya hay eventos en ese día (más de 1 porque acabamos de crear uno)
-                    if (eventosDelDia && eventosDelDia.length > 1) {
-                        const quiereAgregarOtro = confirm('¿Deseas agregar otro evento en este mismo día?');
-
-                        if (quiereAgregarOtro) {
-                            // Limpiar formulario pero mantener la fecha y el modal abierto
-                            this.limpiarFormulario();
-                            this.nuevoEvento.fecha = fechaActual;
-                            // El modal permanece abierto para agregar otro evento
-                            return;
-                        }
-                    }
-
-                    // Cerrar el modal si no quiere agregar otro o si no hay eventos previos
-                    this.cerrarModal();
-                    return;
+                    await this.crearNuevoEvento();
                 }
-
-                // Esto solo se ejecuta si es edición
-                this.actualizarCalendario();
-                this.cerrarModal();
             } catch (error) {
                 console.error('Error al guardar evento:', error);
                 this.mostrarNotificacion(error.message || 'Error al guardar el evento', 'error');
@@ -714,7 +817,16 @@ export default {
         async eliminarEvento() {
             if (!this.puedeEliminar) return; // Solo roles con permisos de eliminación pueden eliminar
 
-            if (confirm('¿Estás seguro de que quieres eliminar este evento?')) {
+            const confirmacion = await Swal.fire({
+                icon: 'question',
+                title: '¿Eliminar evento?',
+                text: 'Esta acción no se puede deshacer.',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (confirmacion.isConfirmed) {
                 try {
                     this.cargando = true;
                     await calendarioService.eliminarEvento(this.eventoSeleccionado.id);
@@ -730,7 +842,8 @@ export default {
             }
         },
 
-        limpiarFormulario() {
+        limpiarFormulario(fechaPrefijada = null) {
+            const fechaBase = fechaPrefijada ?? (this.fechaBloqueada ? this.nuevoEvento.fecha : null);
             this.nuevoEvento = {
                 titulo: '',
                 idTipoEvento: '',
@@ -739,8 +852,14 @@ export default {
                 horaInicio: '',
                 horaFin: '',
                 descripcion: '',
-                fecha: this.nuevoEvento.fecha || this.obtenerFechaActual()
+                fecha: fechaBase || null
             };
+            if (this.fechaBloqueada && !this.nuevoEvento.fecha) {
+                this.nuevoEvento.fecha = this.obtenerFechaActual();
+            }
+            if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
+                this.nuevoEvento.fecha = this.obtenerFechaActual();
+            }
             this.normalizarCamposEvento();
             this.eventoSeleccionado = null;
             this.modoEdicion = false;

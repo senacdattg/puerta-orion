@@ -134,12 +134,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
-
-const router = useRouter()
+import Swal from 'sweetalert2'
 const searchTerm = ref('')
 const asignando = ref(false)
 const mostrarBusqueda = ref(false)
@@ -223,11 +221,21 @@ const seleccionarAcudiente = async (acudiente) => {
     mostrarBusqueda.value = false
     searchTerm.value = ''
 
-    alert('Acudiente asignado correctamente')
+    await Swal.fire({
+      icon: 'success',
+      title: 'Acudiente asignado',
+      text: 'El acudiente se asignó correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    })
 
   } catch (error) {
     console.error('Error asignando acudiente:', error)
-    alert('Error al asignar el acudiente')
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al asignar',
+      text: 'No pudimos asignar el acudiente.'
+    })
   } finally {
     asignando.value = false
   }

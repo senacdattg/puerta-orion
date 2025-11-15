@@ -1,6 +1,6 @@
 <template>
-  <div v-if="mostrar" class="modal-overlay" @click="cerrar">
-    <div class="modal-content" @click.stop>
+  <div v-if="mostrar" class="modal-overlay modal-anadir-overlay" @click="cerrar">
+    <div class="modal-content modal-anadir" @click.stop>
       <div class="modal-header">
         <h2 class="modal-title">
           <i class="fas fa-database"></i>
@@ -50,8 +50,8 @@
           <section class="seccion-formulario">
             <h3>Crear {{ seleccionado?.nombre }}</h3>
 
-            <component 
-              :is="componenteFormulario" 
+            <component
+              :is="componenteFormulario"
               v-model="form"
             />
 
@@ -80,6 +80,7 @@ import Ciudad from '../datos-dinamicos/ciudad.vue'
 import Eps from '../datos-dinamicos/eps.vue'
 import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
 import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false },
@@ -99,8 +100,8 @@ const items = ref([
 
 const paso = ref(1)
 const seleccionado = ref(null)
-const form = ref({ 
-  nombre: '', 
+const form = ref({
+  nombre: '',
   codigo: '',
   descripcion: '',
   estado: true
@@ -122,7 +123,7 @@ const componenteFormulario = computed(() => {
   return componentes[seleccionado.value.id] || null
 })
 
-const REGEX_CODIGO_EPS = /^[A-Z0-9\-]{2,20}$/
+const REGEX_CODIGO_EPS = /^[A-Z0-9-]{2,20}$/
 const NAME_MIN_LENGTH = 2
 
 function validarFormulario() {
@@ -164,8 +165,8 @@ function cerrar() {
   // Limpiar selección y resetear al cerrar
   seleccionado.value = null
   paso.value = 1
-  form.value = { 
-    nombre: '', 
+  form.value = {
+    nombre: '',
     codigo: '',
     descripcion: '',
     estado: true
@@ -200,8 +201,8 @@ watch(() => props.mostrar, (nuevoValor) => {
       seleccionado.value = null
       paso.value = 1
     }
-    form.value = { 
-      nombre: '', 
+    form.value = {
+      nombre: '',
       codigo: '',
       descripcion: '',
       estado: true
@@ -222,61 +223,290 @@ function seleccionar(item){
 
 function volverPaso1(){
   paso.value = 1
-  form.value = { 
-    nombre: '', 
+  form.value = {
+    nombre: '',
     codigo: '',
     descripcion: '',
     estado: true
   }
 }
 
-function enviar(){
+async function enviar(){
   const errores = validarFormulario()
   if (errores.length > 0) {
-    alert('Corrige los siguientes errores:\n' + errores.join('\n'))
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: errores.join('<br>')
+    })
     return
   }
 
   emit('guardar-dato', { entidad: seleccionado.value.id, ...form.value })
+  await Swal.fire({
+    icon: 'success',
+    title: 'Dato creado',
+    timer: 1500,
+    showConfirmButton: false
+  })
   volverPaso1()
   cerrar()
 }
 </script>
 
 <style scoped>
-.modal-overlay{position:fixed;inset:0;background-color:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;backdrop-filter:blur(4px)}
-.modal-content{background:#fff;border-radius:16px;width:100%;max-width:800px;max-height:90vh;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.modal-header{background:linear-gradient(135deg,#0047ab 0%,#0d47a1 100%);color:#fff;padding:25px 30px;display:flex;justify-content:space-between;align-items:center}
-.modal-title{font-size:1.5rem;font-weight:600;margin:0;display:flex;align-items:center;gap:12px}
-.btn-cerrar{background:rgba(255,255,255,.2);border:none;color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.modal-body{padding:30px;max-height:60vh;overflow-y:auto}
-.paso-titulo{font-size:1.4rem;font-weight:600;color:#333;margin:0 0 10px 0;text-align:center}
-.paso-descripcion{color:#666;margin-bottom:30px;font-size:1rem;text-align:center}
-/* Los estilos de .formulario-datos vienen de formulario.css (tarjeta amarilla) */
-.btn-volver{background-color:#6c757d;color:white;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;padding:10px 20px;border-radius:6px;transition:background-color .3s ease;margin-bottom:20px}
-.btn-volver:hover{background-color:#5a6268}
-.paso-header{display:flex;flex-direction:column;align-items:center;gap:15px;margin-bottom:25px}
-.roles-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:30px;justify-items:center;max-width:900px;margin-left:auto;margin-right:auto}
-.roles-grid .rol-option{width:100%;max-width:400px}
-.rol-option{background:#fff;border:2px solid #e0e0e0;border-radius:12px;padding:25px;cursor:pointer;transition:all .3s ease;display:flex;align-items:center;gap:20px}
-.rol-option:hover{border-color:#0047ab;transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,71,171,.15)}
-.rol-option.seleccionado{border-color:#0047ab;background:#f8fbff;box-shadow:0 8px 25px rgba(0,71,171,.2)}
-.rol-icono{width:60px;height:60px;background:linear-gradient(135deg,#0047ab 0%,#0d47a1 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;flex-shrink:0}
-.rol-info{flex:1;text-align:left}
-.rol-nombre{font-size:1.2rem;font-weight:600;color:#333;margin:0 0 8px 0}
-.rol-descripcion{color:#666;margin:0;font-size:.9rem;line-height:1.4}
-.rol-check{width:30px;height:30px;background:#28a745;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:.9rem;flex-shrink:0}
-.modal-footer{background:#f8f9fa;padding:20px 30px;border-top:1px solid #e0e0e0}
-.modal-footer .footer-acciones{display:flex;justify-content:flex-end;gap:15px}
-/* Los estilos de .fila-texto, .botones-formulario, .boton-formulario y .boton-secundario vienen de los CSS globales */
-.form-divider{border:none;height:1px;background:linear-gradient(to right,transparent,#333,transparent);margin:25px 0}
-.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s ease;text-decoration:none}
-.btn--primary{background-color:#0047ab;color:white}
-.btn--primary:hover:not(:disabled){background-color:#0047ab !important;transform:none;box-shadow:none}
-.btn--primary:disabled{background-color:#ccc;cursor:not-allowed;transform:none;box-shadow:none}
-.btn--outline{background-color:transparent;color:#7d6c6c;border:2px solid #6c757d}
-.btn--outline:hover{background-color:#e30f0f;color:white}
-@media (max-width:768px){.modal-content{margin:10px;max-height:95vh}.modal-body{padding:20px}.roles-grid{grid-template-columns:1fr}.rol-option{flex-direction:column;text-align:center;padding:20px}.footer-acciones{flex-direction:column}.btn{width:100%;justify-content:center}}
+.modal-anadir-overlay {
+  backdrop-filter: blur(4px);
+}
+
+.modal-anadir {
+  max-width: 800px;
+  --modal-header-bg: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
+  --modal-header-color: #ffffff;
+  --modal-footer-bg: #f8f9fa;
+}
+
+.modal-anadir .modal-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-anadir .btn-cerrar {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.modal-anadir .btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-anadir .modal-body {
+  padding: 30px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.paso-titulo {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
+  text-align: center;
+}
+
+.paso-descripcion {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.btn-volver {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+  margin-bottom: 20px;
+}
+
+.btn-volver:hover {
+  background-color: #5a6268;
+}
+
+.paso-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 30px;
+  justify-items: center;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.roles-grid .rol-option {
+  width: 100%;
+  max-width: 400px;
+}
+
+.rol-option {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.rol-option:hover {
+  border-color: #0047ab;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 71, 171, 0.15);
+}
+
+.rol-option.seleccionado {
+  border-color: #0047ab;
+  background: #f8fbff;
+  box-shadow: 0 8px 25px rgba(0, 71, 171, 0.2);
+}
+
+.rol-icono {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.rol-info {
+  flex: 1;
+  text-align: left;
+}
+
+.rol-nombre {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 8px 0;
+}
+
+.rol-descripcion {
+  color: #666;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.rol-check {
+  width: 30px;
+  height: 30px;
+  background: #28a745;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.modal-anadir .modal-footer {
+  padding: 20px 30px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.modal-anadir .footer-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.form-divider {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #333, transparent);
+  margin: 25px 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn--primary {
+  background-color: #0047ab;
+  color: white;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: #0047ab !important;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn--primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn--outline {
+  background-color: transparent;
+  color: #7d6c6c;
+  border: 2px solid #6c757d;
+}
+
+.btn--outline:hover {
+  background-color: #e30f0f;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .modal-anadir {
+    margin: 10px;
+    max-height: 95vh;
+  }
+
+  .modal-anadir .modal-body {
+    padding: 20px;
+  }
+
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rol-option {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .footer-acciones {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 </style>
 
 

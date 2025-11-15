@@ -127,12 +127,32 @@ export const truncate = (str, length = 50, suffix = '...') => {
 export const generateSlug = (str) => {
   if (!str || typeof str !== 'string') return ''
 
-  return str
+  let slug = str
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, '')
     .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+
+  // Remove leading and trailing hyphens without regex quantifiers to avoid ReDoS
+  // Find first non-hyphen character from start
+  let start = 0
+  for (let i = 0; i < slug.length; i++) {
+    if (slug[i] !== '-') {
+      start = i
+      break
+    }
+  }
+
+  // Find last non-hyphen character from end
+  let end = slug.length
+  for (let i = slug.length - 1; i >= 0; i--) {
+    if (slug[i] !== '-') {
+      end = i + 1
+      break
+    }
+  }
+
+  return slug.substring(start, end)
 }
 
 // ===== UTILIDADES DE VALIDACIÓN =====
@@ -145,7 +165,9 @@ export const generateSlug = (str) => {
 export const isValidEmail = (email) => {
   if (!email || typeof email !== 'string') return false
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  // Use a safe regex pattern that avoids ReDoS vulnerability
+  // This pattern uses specific character classes instead of negative character classes with quantifiers
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailRegex.test(email)
 }
 
@@ -157,7 +179,7 @@ export const isValidEmail = (email) => {
 export const isValidPhone = (phone) => {
   if (!phone || typeof phone !== 'string') return false
 
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
+  const phoneRegex = /^\+?[1-9]\d{0,15}$/
   return phoneRegex.test(phone.replace(/\s/g, ''))
 }
 
@@ -379,7 +401,7 @@ export const deepClone = (obj) => {
   if (typeof obj === 'object') {
     const clonedObj = {}
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         clonedObj[key] = deepClone(obj[key])
       }
     }

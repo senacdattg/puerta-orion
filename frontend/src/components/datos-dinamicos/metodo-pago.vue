@@ -1,11 +1,11 @@
 <template>
   <div>
     <div class="fila-texto">
-      <input 
-        v-model.trim="localForm.nombre" 
-        type="text" 
-        placeholder="Nombre" 
-        required 
+      <input
+        v-model.trim="localForm.nombre"
+        type="text"
+        placeholder="Nombre"
+        required
       />
       <select v-model="localForm.estado" required>
         <option value="" disabled>Estado *</option>
@@ -21,9 +21,9 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps({
-  modelValue: { 
-    type: Object, 
-    default: () => ({ nombre: '', estado: true }) 
+  modelValue: {
+    type: Object,
+    default: () => ({ nombre: '', estado: true })
   }
 })
 
@@ -45,7 +45,7 @@ const localForm = ref({
 watch(() => props.modelValue, (newVal) => {
   const nuevoNombre = normalizarNombre(newVal?.nombre || '')
   const nuevoEstado = newVal?.estado ?? true
-  
+
   if (localForm.value.nombre !== nuevoNombre || localForm.value.estado !== nuevoEstado) {
     localForm.value = {
       nombre: nuevoNombre,
@@ -55,7 +55,7 @@ watch(() => props.modelValue, (newVal) => {
 }, { deep: true })
 
 // Normalizar y emitir cambios
-watch([() => localForm.value.nombre, () => localForm.value.estado], 
+watch([() => localForm.value.nombre, () => localForm.value.estado],
   ([nombre, estado]) => {
     const nombreNormalizado = normalizarNombre(nombre)
     if (nombreNormalizado !== nombre) {
@@ -74,6 +74,4 @@ watch([() => localForm.value.nombre, () => localForm.value.estado],
 )
 </script>
 
-<style scoped>
-</style>
 

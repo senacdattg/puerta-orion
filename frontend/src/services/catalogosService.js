@@ -7,7 +7,13 @@ import { API_CONFIG } from '@/config/environment'
 
 class CatalogosService {
   constructor() {
-    this.baseURL = API_CONFIG.baseURL
+    Object.defineProperty(this, 'baseURL', {
+      enumerable: true,
+      configurable: false,
+      get() {
+        return API_CONFIG.baseURL
+      }
+    })
   }
 
   /**

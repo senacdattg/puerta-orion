@@ -121,6 +121,7 @@ import Encabezado from '@/components/layout/encabezado.vue'
 import TituloClub from '@/components/ui/titulo-club.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import { useAuthStore } from '@/stores/auth'
+import Swal from 'sweetalert2'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -198,34 +199,63 @@ const asignarDeportista = async (deportista) => {
     // Actualizar estado local
     deportista.asignado = true
 
-    alert('Deportista asignado correctamente')
+    await Swal.fire({
+      icon: 'success',
+      title: 'Asignación exitosa',
+      text: 'El deportista fue asignado correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    })
 
   } catch (error) {
     console.error('Error asignando deportista:', error)
-    alert('Error al asignar el deportista')
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al asignar',
+      text: 'No pudimos asignar el deportista. Intenta de nuevo.'
+    })
   } finally {
     asignando.value = false
   }
 }
 
 const desasignarDeportista = async (deportista) => {
-  if (confirm('¿Estás seguro de que quieres desasignar este deportista?')) {
-    try {
-      // Aquí se implementaría la llamada al backend
-      console.log('Desasignando deportista:', deportista.id)
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Desasignar deportista?',
+    text: 'El deportista dejará de estar asociado a este acudiente.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, desasignar',
+    cancelButtonText: 'Cancelar'
+  })
 
-      // Simular llamada API
-      await new Promise(resolve => setTimeout(resolve, 500))
+  if (!result.isConfirmed) return
 
-      // Actualizar estado local
-      deportista.asignado = false
+  try {
+    // Aquí se implementaría la llamada al backend
+    console.log('Desasignando deportista:', deportista.id)
 
-      alert('Deportista desasignado correctamente')
+    // Simular llamada API
+    await new Promise(resolve => setTimeout(resolve, 500))
 
-    } catch (error) {
-      console.error('Error desasignando deportista:', error)
-      alert('Error al desasignar el deportista')
-    }
+    // Actualizar estado local
+    deportista.asignado = false
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Desasignación exitosa',
+      text: 'El deportista fue desasignado correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    })
+
+  } catch (error) {
+    console.error('Error desasignando deportista:', error)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al desasignar',
+      text: 'No pudimos completar la desasignación. Intenta nuevamente.'
+    })
   }
 }
 

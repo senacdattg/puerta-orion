@@ -109,6 +109,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import Swal from 'sweetalert2'
 
 defineOptions({
   name: 'PerfilModal'
@@ -178,13 +179,22 @@ const guardarCambios = async () => {
       }
     })
 
-    // Emitir evento de actualización
     emit('update', formData.value)
-
     editando.value = false
+    await Swal.fire({
+      icon: 'success',
+      title: 'Información actualizada',
+      text: 'Perfil guardado correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    })
   } catch (error) {
     console.error('Error al guardar cambios:', error)
-    alert('Error al guardar los cambios. Por favor, inténtalo de nuevo.')
+    await Swal.fire({
+      icon: 'error',
+      title: 'No se pudo guardar',
+      text: 'Inténtalo de nuevo.'
+    })
   } finally {
     guardando.value = false
   }

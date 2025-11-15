@@ -4,6 +4,7 @@ import Pie from '../components/layout/pie.vue';
 import FormularioGeneral from '../components/formularios/formulario-general.vue';
 import TarjetaPerfil from '../components/ui/tarjeta-perfil.vue';
 import tarjetaAcudientesAcudidos from '../components/deportistas/tarjeta-acudientes-acudidos.vue';
+import Swal from 'sweetalert2';
 
 
 const datosUsuario = {
@@ -22,16 +23,29 @@ const datosUsuario = {
 };
 
 // Función para manejar la actualización
-function manejarActualizacion(datos) {
+async function manejarActualizacion(datos) {
   console.log("Datos a actualizar:", datos);
   // Aquí iría la lógica para enviar a la API
-  alert("Datos actualizados exitosamente!");
+  await Swal.fire({
+    icon: 'success',
+    title: 'Datos actualizados',
+    text: 'El perfil se actualizó correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
 }
 
 // Función para manejar la cancelación
-function manejarCancelacion() {
-  if (confirm("¿Está seguro de que desea cancelar la actualización?")) {
-    // Aquí podrías redirigir o limpiar el formulario
+async function manejarCancelacion() {
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Cancelar la actualización?',
+    text: 'Los cambios sin guardar se perderán.',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, cancelar',
+    cancelButtonText: 'Seguir editando'
+  });
+  if (result.isConfirmed) {
     console.log("Actualización cancelada");
   }
 }
@@ -48,6 +62,8 @@ function manejarCancelacion() {
       <FormularioGeneral
         :modo="'actualizar'"
         :datos="datosUsuario"
+        @submit="manejarActualizacion"
+        @cancel="manejarCancelacion"
       />
     </div>
     <Pie />

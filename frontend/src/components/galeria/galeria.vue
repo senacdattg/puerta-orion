@@ -48,7 +48,7 @@
       </div>
 
       <!-- Mensaje cuando no hay resultados -->
-      <div v-if="!cargando && eventosFiltrados.length === 0" class="sin-resultados mejorado">
+      <div v-if="!cargando && eventosFiltrados.length === 0" class="sin-resultados mejorado sin-resultados--con-boton">
         <div class="empty-card">
           <div class="empty-icon">🗂️</div>
           <h4 class="empty-title">No se encontraron fotos</h4>
@@ -64,21 +64,22 @@
 
     <!-- Modal de formulario -->
     <div v-if="mostrarFormulario" class="modal-overlay">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
-          <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
+      <div class="modal-content mensualidades-modal galeria-modal form-modal" @click.stop>
+         <div class="modal-header">
+           <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
+           <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
+             <i class="fas fa-times"></i>
+           </button>
+         </div>
 
-        <form @submit.prevent="guardarEvento" class="formulario-evento">
+        <div class="modal-body">
+        <form @submit.prevent="guardarEvento" class="formulario-evento form-modal-panel">
           <div class="campo-formulario">
             <label for="titulo">
               <i class="fas fa-heading"></i>
               Título del evento *
             </label>
-            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
+            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento input-mensualidad" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
           </div>
           <div class="campo-formulario">
             <label for="archivo_imagen">
@@ -103,7 +104,7 @@
                 type="file"
                 accept="image/*"
                 @change="manejarSeleccionArchivo"
-                class="input-evento"
+                class="input-evento input-mensualidad"
                 :required="imagenRequerida"
               />
               <div v-if="archivoSeleccionado" class="archivo-info">
@@ -120,7 +121,7 @@
               <i class="fas fa-tag"></i>
               Tipo de evento *
             </label>
-            <select v-model="form.id_tipo_evento" class="select-evento" :disabled="!puedeEditarFoto" required>
+            <select v-model="form.id_tipo_evento" class="select-evento select-mensualidad" :disabled="!puedeEditarFoto" required>
               <option value="">Selecciona tipo de evento</option>
               <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">{{ tipo.nombre }}</option>
             </select>
@@ -130,7 +131,7 @@
               <i class="fas fa-list"></i>
               Categoría
             </label>
-            <select v-model="form.id_categoria" class="select-evento" :disabled="!puedeEditarFoto">
+            <select v-model="form.id_categoria" class="select-evento select-mensualidad" :disabled="!puedeEditarFoto">
               <option value="">Selecciona categoría</option>
               <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">{{ categoria.nombre_categoria }}</option>
             </select>
@@ -141,15 +142,16 @@
               Descripción *
             </label>
             <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
-              class="input-evento" :readonly="!puedeEditarFoto" @input="manejarDescripcion" required></textarea>
+              class="input-evento input-mensualidad" :readonly="!puedeEditarFoto" @input="manejarDescripcion"></textarea>
           </div>
 
           <div class="acciones centrado">
-            <button type="submit" class="btn-principal" v-if="puedeEditarFoto">{{ editando !== null ? 'Actualizar' : 'Crear' }}</button>
-            <button type="button" class="btn-principal" v-if="!puedeEditarFoto" @click="cerrarFormulario">Cerrar</button>
-            <button type="button" class="btn-secundario" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
+            <button type="submit" class="btn btn-success" v-if="puedeEditarFoto">{{ editando !== null ? 'Actualizar' : 'Crear' }}</button>
+            <button type="button" class="btn btn-secondary" v-if="!puedeEditarFoto" @click="cerrarFormulario">Cerrar</button>
+            <button type="button" class="btn btn-danger" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
           </div>
         </form>
+        </div>
 
       </div>
 
@@ -164,8 +166,8 @@
 <script>
 import { useAuthStore } from '@/stores/auth'
 import galeriaService from '@/services/galeriaService'
+import Swal from 'sweetalert2'
 
-const LOCALE_COL = 'es-CO'
 const MAX_TITULO = 120
 const MAX_DESCRIPCION = 500
 
@@ -247,16 +249,18 @@ export default {
       return valor ? valor.replace(/\s+/g, " ").trim() : ""
     },
     normalizarTitulo(valor = "") {
-      if (!valor) return ""
-      const mayus = valor.toLocaleUpperCase(LOCALE_COL)
-      const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ\.\-\s]/g, "")
-      return this.normalizarEspacios(limpio).slice(0, MAX_TITULO)
+      if (valor === null || valor === undefined) return ""
+      const texto = valor.toString()
+      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\-\s]/g, "")
+      const colapsado = permitido.replace(/\s{2,}/g, " ")
+      return colapsado.slice(0, MAX_TITULO)
     },
     normalizarDescripcion(valor = "") {
-      if (!valor) return ""
-      const mayus = valor.toLocaleUpperCase(LOCALE_COL)
-      const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-\.\,;:¿?¡!\(\)\s]/g, "")
-      return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION)
+      if (valor === null || valor === undefined) return ""
+      const texto = valor.toString()
+      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9#\-.,;:¿?¡!()\s]/g, "")
+      const colapsado = permitido.replace(/\s{2,}/g, " ")
+      return colapsado.slice(0, MAX_DESCRIPCION)
     },
     manejarTitulo(event) {
       const valor = event?.target?.value ?? this.form.titulo
@@ -392,19 +396,27 @@ export default {
       this.cambiandoImagen = false;
       this.mostrarFormulario = true;
     },
-    manejarSeleccionArchivo(event) {
+    async manejarSeleccionArchivo(event) {
       const file = event.target.files[0];
       if (file) {
         // Validar tipo de archivo
         if (!file.type.startsWith('image/')) {
-          alert('Por favor selecciona un archivo de imagen válido');
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Archivo inválido',
+            text: 'Selecciona una imagen en formato válido.'
+          });
           event.target.value = '';
           return;
         }
 
         // Validar tamaño (16MB máximo)
         if (file.size > 16 * 1024 * 1024) {
-          alert('El archivo es demasiado grande. Tamaño máximo: 16MB');
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Archivo demasiado grande',
+            text: 'El tamaño máximo permitido es 16MB.'
+          });
           event.target.value = '';
           return;
         }
@@ -423,78 +435,91 @@ export default {
         this.$refs.fileInput.value = '';
       }
     },
+    validarFormulario() {
+      const errores = []
+      if (!this.form.titulo) {
+        errores.push('El título es obligatorio')
+      }
+      if (!this.form.id_tipo_evento) {
+        errores.push('Debes seleccionar un tipo de evento')
+      }
+      if (this.imagenRequerida && !this.archivoSeleccionado) {
+        errores.push('Debes seleccionar una imagen')
+      }
+      return errores
+    },
+    async mostrarErroresValidacion(errores) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Corrige los errores',
+        html: errores.join('<br>')
+      })
+    },
+    construirFormData() {
+      const formData = new FormData()
+      formData.append('file', this.archivoSeleccionado)
+      formData.append('titulo', this.form.titulo)
+      formData.append('descripcion', this.form.descripcion || '')
+      if (this.form.id_tipo_evento) {
+        formData.append('id_tipo_evento', this.form.id_tipo_evento)
+      }
+      if (this.form.id_categoria) {
+        formData.append('id_categoria', this.form.id_categoria)
+      }
+      return formData
+    },
+    async actualizarEventoConImagen() {
+      const formData = this.construirFormData()
+      await galeriaService.eliminarImagen(this.eventos[this.editando].id)
+      await galeriaService.crearImagenConArchivo(formData)
+    },
+    async actualizarEventoSinImagen() {
+      const datosImagen = {
+        titulo: this.form.titulo,
+        descripcion: this.form.descripcion,
+        id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
+        id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
+      }
+      await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen)
+    },
+    async crearNuevoEvento() {
+      const formData = this.construirFormData()
+      await galeriaService.crearImagenConArchivo(formData)
+    },
+    async manejarErrorGuardado(error) {
+      console.error('Error guardando evento:', error)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al guardar',
+        text: error.message || 'No se pudo guardar el evento.'
+      })
+    },
+    async finalizarGuardado() {
+      await this.cargarEventos()
+      this.mostrarFormulario = false
+    },
     async guardarEvento() {
       try {
-        this.normalizarFormulario();
-        // Validar campos requeridos
-        const errores = []
-        if (!this.form.titulo) {
-          errores.push('El título es obligatorio')
-        }
-        if (!this.form.id_tipo_evento) {
-          errores.push('Debes seleccionar un tipo de evento')
-        }
-        if (!this.form.descripcion) {
-          errores.push('La descripción es obligatoria')
-        }
-        if (this.imagenRequerida && !this.archivoSeleccionado) {
-          errores.push('Debes seleccionar una imagen')
-        }
+        this.normalizarFormulario()
+        const errores = this.validarFormulario()
         if (errores.length > 0) {
-          alert('Corrige los siguientes errores:\n' + errores.join('\n'))
+          await this.mostrarErroresValidacion(errores)
           return
         }
 
         if (this.editando !== null) {
-          // Actualizar evento existente
           if (this.archivoSeleccionado) {
-            // Si se seleccionó una nueva imagen, usar el endpoint de archivos
-            const formData = new FormData();
-            formData.append('file', this.archivoSeleccionado);
-            formData.append('titulo', this.form.titulo);
-            formData.append('descripcion', this.form.descripcion || '');
-            if (this.form.id_tipo_evento) {
-              formData.append('id_tipo_evento', this.form.id_tipo_evento);
-            }
-            if (this.form.id_categoria) {
-              formData.append('id_categoria', this.form.id_categoria);
-            }
-
-            // Primero eliminar la imagen actual
-            await galeriaService.eliminarImagen(this.eventos[this.editando].id);
-            // Luego crear la nueva
-            await galeriaService.crearImagenConArchivo(formData);
+            await this.actualizarEventoConImagen()
           } else {
-            // Solo actualizar datos sin cambiar imagen
-            const datosImagen = {
-              titulo: this.form.titulo,
-              descripcion: this.form.descripcion,
-              id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
-              id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
-            }
-            await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen);
+            await this.actualizarEventoSinImagen()
           }
         } else {
-          // Crear nuevo evento con archivo
-          const formData = new FormData();
-          formData.append('file', this.archivoSeleccionado);
-          formData.append('titulo', this.form.titulo);
-          formData.append('descripcion', this.form.descripcion || '');
-          if (this.form.id_tipo_evento) {
-            formData.append('id_tipo_evento', this.form.id_tipo_evento);
-          }
-          if (this.form.id_categoria) {
-            formData.append('id_categoria', this.form.id_categoria);
-          }
-
-          await galeriaService.crearImagenConArchivo(formData);
+          await this.crearNuevoEvento()
         }
 
-        await this.cargarEventos(); // Recargar la lista
-        this.mostrarFormulario = false;
+        await this.finalizarGuardado()
       } catch (error) {
-        console.error('Error guardando evento:', error);
-        alert('Error al guardar el evento: ' + error.message);
+        await this.manejarErrorGuardado(error)
       }
     },
 
@@ -522,7 +547,11 @@ export default {
         this.limpiarFormulario();
       } catch (error) {
         console.error('Error eliminando evento:', error);
-        alert('Error al eliminar el evento: ' + error.message);
+        await Swal.fire({
+          icon: 'error',
+          title: 'Error al eliminar',
+          text: error.message || 'No se pudo eliminar el evento.'
+        });
       }
     },
 
@@ -714,6 +743,7 @@ export default {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 3;
 }
 
 .tipo {
@@ -810,61 +840,59 @@ export default {
 }
 
 .imagen-actual {
-  margin-top: 8px;
+  margin-top: 0.5rem;
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background: #f8fafc;
 }
 
-.imagen-actual img {
-  width: 100%;
-  max-height: 400px;
-  min-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #dee2e6;
-  object-fit: contain;
-  display: block;
-  background: #f8f9fa;
-}
-
+.imagen-actual img,
 .imagen-preview {
   width: 100%;
-  max-height: 400px;
-  min-height: 200px;
-  border-radius: 8px;
-  border: 2px solid #dee2e6;
-  object-fit: contain;
-  display: block;
-  background: #f8f9fa;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
 }
 
 .texto-imagen-actual {
-  margin-top: 8px;
-  font-size: 0.9rem;
-  color: #6c757d;
+  font-size: 0.85rem;
+  color: #475569;
   font-style: italic;
   text-align: center;
 }
 
 .btn-cambiar-imagen {
-  margin-top: 8px;
-  padding: 6px 12px;
-  background: #007bff;
-  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
   border: none;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background 0.2s ease;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-cambiar-imagen:hover {
-  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
 }
 
 .btn-cambiar-imagen i {
-  margin-right: 4px;
+  margin-right: 0;
 }
 
 /* Mejorar estilos del formulario */
@@ -886,100 +914,46 @@ export default {
   width: 16px;
 }
 
-.input-evento, .select-evento {
-  width: 100%;
-  padding: 12px;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-}
-
-.input-evento:focus, .select-evento:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
 .input-evento::placeholder {
   color: #6c757d;
 }
 
-/* Estilos para el modal */
-.modal-content {
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
+.galeria-modal {
+  --modal-max-width: 780px;
+  --modal-radius: 20px;
+  border-radius: var(--modal-radius, 20px);
 }
 
-.modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 20px;
-  border-radius: 8px 8px 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.modal-content.galeria-modal {
+  border-radius: var(--modal-radius, 20px);
+  overflow: hidden;
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
+.galeria-modal .modal-header h3 {
+  font-size: 1.65rem;
 }
 
-.btn-cerrar {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
+.galeria-modal .form-modal-panel {
+  background: #ffffff;
+  padding: 1.35rem 1.5rem 1.6rem;
+  gap: 1.15rem;
+  border-radius: 16px;
 }
 
-.btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.3);
+.galeria-modal .btn-cerrar {
+  background: rgba(255, 255, 255, 0.18);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-.formulario-evento {
-  padding: 20px;
+.galeria-modal .btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
-.btn-principal {
-  background: #28a745;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s ease;
-}
-
-.btn-principal:hover {
-  background: #218838;
-}
-
-.btn-secundario {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: background 0.2s ease;
-}
-
-.btn-secundario:hover {
-  background: #c82333;
+.textarea-evento {
+  resize: vertical;
+  min-height: 140px;
 }
 
 .btn-limpiar-filtros {
