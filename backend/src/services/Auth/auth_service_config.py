@@ -41,6 +41,7 @@ class AuthServiceConfig:
     INCLUDE_SESSION_DATA = True
     
     # Mensajes de error personalizables
+    # NOTA: 'password_required' es solo una clave de diccionario para mensajes de error, NO es una credencial hardcodeada
     ERROR_MESSAGES = {
         'username_required': "El nombre de usuario es requerido",
         'password_required': "La contraseña es requerida",

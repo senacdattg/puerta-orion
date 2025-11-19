@@ -4,8 +4,16 @@ Seeder para crear múltiples super usuarios del sistema.
 Permite crear varios usuarios SuperAdmin con todos los permisos del sistema.
 Cada usuario tendrá acceso total al sistema.
 
+Las passwords se obtienen de variables de entorno:
+- SEEDER_SUPERADMIN_PASSWORD: Password para superadmin (default: 'SuperAdmin2024!')
+- SEEDER_ADMIN2_PASSWORD: Password para admin2 (default: 'Admin2024!')
+- SEEDER_ADMIN3_PASSWORD: Password para admin3 (default: 'Admin2024!')
+
 Uso:
     python -m backend.src.seeders.seed_multiple_superadmin
+    
+    O con variables de entorno:
+    SEEDER_SUPERADMIN_PASSWORD=MiPassword1 SEEDER_ADMIN2_PASSWORD=MiPassword2 python -m backend.src.seeders.seed_multiple_superadmin
 """
 
 from werkzeug.security import generate_password_hash
@@ -16,17 +24,27 @@ from src.models.roles_y_permisos.rol import Rol
 from src.models.roles_y_permisos.usuario_rol import UsuarioRol
 from src.models.catalogos.tipo_documento import TipoDocumento
 from src.models.categorias.sexo import Sexo
+from src.config.seeder_config import (
+    get_superadmin_password,
+    get_admin2_password,
+    get_admin3_password
+)
 
 
 def run():
     """Ejecuta el seeder de múltiples super administradores."""
     print("  👑 Creando Múltiples Super Administradores...")
     
+    # Obtener passwords desde configuración
+    superadmin_password = get_superadmin_password()
+    admin2_password = get_admin2_password()
+    admin3_password = get_admin3_password()
+    
     # Lista de super usuarios a crear
     super_usuarios = [
         {
             'usuario': 'superadmin',
-            'password': 'SuperAdmin2024!',
+            'password': superadmin_password,
             'primer_nombre': 'Super',
             'primer_apellido': 'Administrador',
             'documento': '0000000001',
@@ -35,7 +53,7 @@ def run():
         },
         {
             'usuario': 'admin2',
-            'password': 'Admin2024!',
+            'password': admin2_password,
             'primer_nombre': 'Admin',
             'primer_apellido': 'Secundario',
             'documento': '0000000002',
@@ -44,7 +62,7 @@ def run():
         },
         {
             'usuario': 'admin3',
-            'password': 'Admin2024!',
+            'password': admin3_password,
             'primer_nombre': 'Admin',
             'primer_apellido': 'Terciario',
             'documento': '0000000003',

@@ -65,6 +65,7 @@ class UsuarioServiceConfig:
         'id_sexo'
     ]
     
+    # NOTA: 'password' aquí es solo el nombre de un campo requerido, NO es una credencial hardcodeada
     CAMPOS_USUARIO_REQUERIDOS = [
         'usuario',
         'password'

@@ -88,9 +88,11 @@ class TestLogin:
     def test_login_success(self, client):
         """Test: Login exitoso."""
         # Arrange
+        from tests.test_config import TEST_USERNAME, TEST_PASSWORD
+        
         datos_login = {
-            'username': 'testuser',
-            'password': 'Test123456!'
+            'username': TEST_USERNAME,
+            'password': TEST_PASSWORD
         }
         mock_result = {
             'token': 'test_token_12345',
@@ -116,9 +118,11 @@ class TestLogin:
     def test_login_credenciales_invalidas(self, client):
         """Test: Error con credenciales inválidas."""
         # Arrange
+        from tests.test_config import TEST_USERNAME, TEST_PASSWORD_INCORRECTA
+        
         datos_login = {
-            'username': 'testuser',
-            'password': 'password_incorrecta'
+            'username': TEST_USERNAME,
+            'password': TEST_PASSWORD_INCORRECTA
         }
         
         # Act

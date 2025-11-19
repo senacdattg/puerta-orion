@@ -231,19 +231,21 @@ def sample_evento_data() -> Dict[str, Any]:
 @pytest.fixture
 def sample_usuario_data() -> Dict[str, Any]:
     """Datos de ejemplo para crear un usuario."""
+    from tests.test_config import TEST_PASSWORD, TEST_USERNAME, TEST_EMAIL
+    
     return {
         'persona': {
             'primer_nombre': 'Test',
             'primer_apellido': 'User',
             'documento': 99999999,
-            'correo_electronico': 'test@example.com',
+            'correo_electronico': TEST_EMAIL,
             'telefono': '3009999999',
             'id_tipo_documento': 1,
             'id_sexo': 1
         },
         'usuario': {
-            'usuario': 'testuser',
-            'password': 'Test123456!'
+            'usuario': TEST_USERNAME,
+            'password': TEST_PASSWORD
         }
     }
 
@@ -344,10 +346,11 @@ def usuario(db_session, persona):
     try:
         from src.models.usuarios.usuario import Usuario
         from passlib.hash import bcrypt
+        from tests.test_config import TEST_USERNAME, TEST_PASSWORD
         
         usuario_obj = Usuario(
-            usuario='testuser',
-            password=bcrypt.hash('Test123456!'),
+            usuario=TEST_USERNAME,
+            password=bcrypt.hash(TEST_PASSWORD),
             id_persona=getattr(persona, 'id_persona', 1),
             estado=True
         )
@@ -355,7 +358,8 @@ def usuario(db_session, persona):
         db_session.commit()
         return usuario_obj
     except Exception:
-        return MagicMock(id_usuario=1, usuario='testuser')
+        from tests.test_config import TEST_USERNAME
+        return MagicMock(id_usuario=1, usuario=TEST_USERNAME)
 
 
 @pytest.fixture
