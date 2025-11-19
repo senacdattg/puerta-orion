@@ -2,713 +2,747 @@
 Rutas de catálogos para el sistema Puerta Orion.
 
 Responsabilidad:
-- Exponer endpoints para obtener datos de catálogos
-- Proporcionar acceso a tipos de documento, sexos, etc.
+- Exponer endpoints para obtener datos de catálogos.
+- Proporcionar acceso a tipos de documento, sexos, catálogos agregados y diferentes
+  entidades auxiliares requeridas por el frontend.
 
-Este módulo sigue los principios SRP, KISS, DRY y SOLID.
+El módulo respeta los principios SRP, KISS, DRY y SOLID.
 """
 
-from flask import Blueprint, jsonify, current_app, request
+import os
+import traceback
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+from flask import Blueprint, Flask, Response, jsonify, request
 from flask_cors import cross_origin
-from ..models.catalogos.tipo_documento import TipoDocumento
-from ..models.categorias.sexo import Sexo
-from ..models.categorias.categoria import Categoria
-from ..models.pagos.metodo_pago import MetodoPago
-from ..models.acudientes.parentesco import Parentesco
+from sqlalchemy import text
+
+from ..models.base import db
+
 from ..models.acudientes.acudiente import Acudiente
+from ..models.acudientes.parentesco import Parentesco
+from ..models.catalogos.tipo_documento import TipoDocumento
+from ..models.categorias.categoria import Categoria
+from ..models.categorias.sexo import Sexo
+from ..models.pagos.metodo_pago import MetodoPago
 from ..services.catalogos_service import catalogos_service
 from ..utils.logger import obtener_registrador
+
+JsonResponse = Tuple[Response, int]
 
 # Crear Blueprint de catálogos
 catalogos_bp = Blueprint('catalogos', __name__, url_prefix='/api/catalogos')
 logger = obtener_registrador('aplicacion')
 
+SUCCESS_STATUS = 200
+ERROR_STATUS = 500
+NOT_FOUND_STATUS = 404
 
-@catalogos_bp.route('/tipos-documento', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_tipos_documento():
-    """
-    Endpoint para obtener todos los tipos de documento.
+ERROR_INTERNO = 'Error interno del servidor'
+ERROR_SOLICITUD = 'Solicitud incorrecta'
+ERROR_DEBUG = 'Error en debug: {detalle}'
+ERROR_POBLANDO_CATEGORIAS = 'Error poblando categorías: {detalle}'
+ERROR_CORRIGIENDO_ESTRUCTURA = 'Error corrigiendo estructura: {detalle}'
+MENSAJE_TIPOS_DOCUMENTO = 'Tipos de documento obtenidos exitosamente'
+MENSAJE_SEXOS = 'Sexos obtenidos exitosamente'
+MENSAJE_METODOS_PAGO = 'Métodos de pago obtenidos exitosamente'
+MENSAJE_CATALOGOS = 'Catálogos obtenidos exitosamente'
+MENSAJE_TIPOS_ENFERMEDAD = 'Tipos de enfermedad obtenidos exitosamente'
+MENSAJE_DIAGNOSTICOS = 'Diagnósticos obtenidos exitosamente'
+MENSAJE_CATEGORIAS = 'Categorías obtenidas exitosamente'
+MENSAJE_PARENTESCOS = 'Parentescos obtenidos exitosamente'
+MENSAJE_PARENTESCOS_VACIO = 'No hay parentescos registrados'
+MENSAJE_ACUDIENTES = 'Acudientes obtenidos exitosamente'
+MENSAJE_ACUDIENTE_ENCONTRADO = 'Acudiente encontrado exitosamente'
+MENSAJE_DEPOR = 'Deportistas obtenidos exitosamente'
+MENSAJE_DEPOR_ENCONTRADO = 'Deportista encontrado exitosamente'
+MENSAJE_FIX_STRUCTURE = 'Estructura de catálogos corregida exitosamente'
+MENSAJE_POBLAR_CATEGORIAS = 'Categorías pobladas exitosamente: {cantidad}'
 
-    Returns:
-        JSON: Lista de tipos de documento disponibles
-    """
-    try:
-        # Obtener todos los tipos de documento
-        tipos_documento = TipoDocumento.query.all()
-
-        # Mapeo manual de nombres a códigos
-        mapeo_codigos = {
+MAPEO_TIPOS_DOCUMENTO = {
             'Cédula de Ciudadanía': 'cc',
             'Cédula de Extranjería': 'ce',
             'Tarjeta de Identidad': 'ti',
-            'Pasaporte': 'pasaporte'
-        }
+    'Pasaporte': 'pasaporte',
+}
 
-        # Serializar datos
-        datos_tipos = []
-        for tipo in tipos_documento:
-            codigo = mapeo_codigos.get(tipo.nombre_documento, tipo.nombre_documento.lower().replace(' ', '_'))
-            datos_tipos.append({
+MAPEO_SEXOS = {
+    'Masculino': 'masculino',
+    'Femenino': 'femenino',
+    'Otro': 'otro',
+}
+
+# Configuración de CORS: En desarrollo local se permite HTTP (localhost)
+# En producción, la variable de entorno CORS_ALLOWED_ORIGINS debe contener solo URLs HTTPS
+# SonarQube Security Hotspot: HTTP es intencional solo para desarrollo local
+# En producción, configure CORS_ALLOWED_ORIGINS con URLs HTTPS en variables de entorno
+CORS_ALLOWED_ORIGINS = tuple(  # NOSONAR: python:S5332 - HTTP solo para desarrollo local
+    origen.strip()
+    for origen in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:8080').split(',')
+    if origen.strip()
+)
+
+CATEGORIAS_INICIALES = [
+    {
+        'nombre_categoria': 'Fútbol',
+        'codigo_categoria': 101,
+        'edad_minima': 6,
+        'edad_maxima': 18,
+    },
+    {
+        'nombre_categoria': 'Básquetbol',
+        'codigo_categoria': 102,
+        'edad_minima': 8,
+        'edad_maxima': 18,
+    },
+    {
+        'nombre_categoria': 'Voleibol',
+        'codigo_categoria': 103,
+        'edad_minima': 10,
+        'edad_maxima': 18,
+    },
+    {
+        'nombre_categoria': 'Tenis',
+        'codigo_categoria': 104,
+        'edad_minima': 6,
+        'edad_maxima': 18,
+    },
+    {
+        'nombre_categoria': 'Natación',
+        'codigo_categoria': 105,
+        'edad_minima': 4,
+        'edad_maxima': 18,
+    },
+]
+
+
+def _build_response(success: bool, status_code: int = SUCCESS_STATUS, **payload: Any) -> JsonResponse:
+    """Construye una respuesta JSON estándar."""
+    body = {'success': success, **payload}
+    body.setdefault('status_code', status_code)
+    return jsonify(body), status_code
+
+
+def _serialize_model_list(registros: Iterable[Any], serializer) -> List[Dict[str, Any]]:
+    """Serializa una lista de modelos con la función indicada."""
+    return [serializer(registro) for registro in registros]
+
+
+def _serialize_tipo_documento(tipo: TipoDocumento) -> Dict[str, Any]:
+    """Serializa un tipo de documento respetando el mapeo de códigos."""
+    codigo = MAPEO_TIPOS_DOCUMENTO.get(
+        tipo.nombre_documento,
+        tipo.nombre_documento.lower().replace(' ', '_'),
+    )
+    return {
                 'id': tipo.id_documento,
                 'codigo': codigo,
-                'nombre': tipo.nombre_documento
-            })
-
-        # Respuesta exitosa
-        return jsonify({
-            'success': True,
-            'message': 'Tipos de documento obtenidos exitosamente',
-            'data': datos_tipos,
-            'status_code': 200
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener tipos de documento: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+        'nombre': tipo.nombre_documento,
+    }
 
 
-@catalogos_bp.route('/sexos', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_sexos():
-    """
-    Endpoint para obtener todos los sexos.
+def _serialize_sexo(sexo: Sexo) -> Dict[str, Any]:
+    """Serializa un sexo aplicando sus valores normalizados."""
+    valor = MAPEO_SEXOS.get(sexo.nombre, sexo.nombre.lower())
+    return {
+        'id': sexo.id_sexo,
+        'valor': valor,
+        'nombre': sexo.nombre,
+    }
 
-    Returns:
-        JSON: Lista de sexos disponibles
-    """
-    try:
-        # Obtener todos los sexos
-        sexos = Sexo.query.all()
 
-        # Mapeo manual de nombres a valores
-        mapeo_valores = {
-            'Masculino': 'masculino',
-            'Femenino': 'femenino',
-            'Otro': 'otro'
+def _serialize_metodo_pago(metodo: MetodoPago) -> Dict[str, Any]:
+    """Serializa un método de pago activo."""
+    return {
+        'id_metodo_pago': metodo.id_metodo_pago,
+        'nombre': metodo.nombre_metodo,
+        'estado': metodo.estado,
+    }
+
+
+def _serialize_categoria(categoria: Categoria) -> Dict[str, Any]:
+    """Serializa una categoría activa."""
+    return {
+        'id_categoria': categoria.id_categoria,
+        'nombre_categoria': categoria.nombre_categoria,
+        'codigo_categoria': categoria.codigo_categoria,
+        'edad_minima': categoria.edad_minima,
+        'edad_maxima': categoria.edad_maxima,
+    }
+
+
+def _serialize_parentesco(parentesco: Parentesco) -> Dict[str, Any]:
+    """Serializa un parentesco a dict."""
+    return parentesco.to_dict()
+
+
+def _serialize_acudiente(acudiente: Acudiente) -> Dict[str, Any]:
+    """Serializa un acudiente con datos de persona si están disponibles."""
+    acudiente_dict: Dict[str, Any] = {
+        'id_acudiente': acudiente.id_acudiente,
+        'id_persona': acudiente.id_persona,
+        'estado': acudiente.estado,
+    }
+    persona = getattr(acudiente, 'persona', None)
+    if persona:
+        acudiente_dict['persona'] = {
+            'id_persona': persona.id_persona,
+            'nombre_completo': persona.nombre_completo,
+            'documento': persona.documento,
+            'correo_electronico': persona.correo_electronico,
         }
-
-        # Serializar datos
-        datos_sexos = []
-        for sexo in sexos:
-            valor = mapeo_valores.get(sexo.nombre, sexo.nombre.lower())
-            datos_sexos.append({
-                'id': sexo.id_sexo,
-                'valor': valor,
-                'nombre': sexo.nombre
-            })
-
-        # Respuesta exitosa
-        return jsonify({
-            'success': True,
-            'message': 'Sexos obtenidos exitosamente',
-            'data': datos_sexos,
-            'status_code': 200
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener sexos: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+    return acudiente_dict
 
 
-@catalogos_bp.route('/metodos-pago', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_metodos_pago():
-    """
-    Endpoint para obtener los métodos de pago activos.
-    """
-    try:
-        metodos = MetodoPago.query.filter_by(estado=True).all()
-        datos = [
-            {
-                'id_metodo_pago': m.id_metodo_pago,
-                'nombre': m.nombre_metodo,
-                'estado': m.estado
-            }
-            for m in metodos
-        ]
-        return jsonify({
-            'success': True,
-            'message': 'Métodos de pago obtenidos exitosamente',
-            'data': datos,
-            'status_code': 200
-        }), 200
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener métodos de pago: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+def _serialize_deportista(deportista: Any) -> Dict[str, Any]:
+    """Serializa un deportista con datos de persona si están disponibles."""
+    deportista_dict: Dict[str, Any] = {
+        'id_deportista': deportista.id_deportista,
+        'id_persona': deportista.id_persona,
+    }
+    persona = getattr(deportista, 'persona', None)
+    if persona:
+        deportista_dict['persona'] = {
+            'id_persona': persona.id_persona,
+            'nombre_completo': persona.nombre_completo,
+            'primer_nombre': persona.primer_nombre,
+            'primer_apellido': persona.primer_apellido,
+            'segundo_nombre': persona.segundo_nombre,
+            'segundo_apellido': persona.segundo_apellido,
+            'documento': persona.documento,
+            'correo_electronico': persona.correo_electronico,
+            'telefono': persona.telefono,
+        }
+    return deportista_dict
 
 
-@catalogos_bp.route('/catalogos-completos', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_catalogos_completos():
-    """
-    Endpoint para obtener todos los catálogos necesarios.
-
-    Returns:
-        JSON: Objeto con todos los catálogos
-    """
-    try:
-        # Obtener catálogos desde la base de datos
-        catalogos = catalogos_service.obtener_catalogos_completos()
-
-        # Respuesta exitosa
-        return jsonify({
-            'success': True,
-            'message': 'Catálogos obtenidos exitosamente',
-            'data': catalogos,
-            'status_code': 200
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener catálogos: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+def _handle_unexpected_error(context: str, error: Exception, *, message: Optional[str] = None) -> JsonResponse:
+    """Registra un error y retorna la respuesta HTTP correspondiente."""
+    logger.error("%s: %s", context, str(error))
+    response_message = message or ERROR_INTERNO
+    return _build_response(False, status_code=ERROR_STATUS, error=response_message)
 
 
-@catalogos_bp.route('/fix-structure', methods=['POST', 'OPTIONS'])
-@cross_origin()
-def fix_catalogos_structure():
-    """
-    Endpoint para corregir la estructura de las tablas de catálogos.
-    """
-    try:
-        from ..models.base import db
-        from sqlalchemy import text
+def _fetch_persona_por_cedula(cedula: str) -> Optional[Any]:
+    """Obtiene una persona por documento si existe."""
+    from ..models.personas.persona import Persona  # Importación diferida
 
-        # Verificar estructura actual de tabla sexos
-        result = db.session.execute(text("PRAGMA table_info(puerta_orion_sexo)"))
-        columnas = [row[1] for row in result.fetchall()]
+    return Persona.query.filter_by(documento=cedula).first()
 
-        cambios_realizados = []
 
-        # Agregar columna nombre si no existe
-        if 'nombre' not in columnas:
+def _fetch_acudiente_por_persona(persona_id: int) -> Optional[Acudiente]:
+    """Obtiene un acudiente activo por ID de persona."""
+    return Acudiente.query.filter_by(id_persona=persona_id, estado=True).first()
+
+
+def _fetch_deportista_por_persona(persona_id: int) -> Optional[Any]:
+    """Obtiene un deportista asociado a la persona proporcionada."""
+    from ..models.deportistas.deportista import Deportista  # Importación diferida
+
+    return Deportista.query.filter_by(id_persona=persona_id).first()
+
+
+def _parametro_es_true(valor: Optional[str], default: bool = False) -> bool:
+    """Convierte un parámetro textual en booleano."""
+    if valor is None:
+        return default
+    return valor.strip().lower() == 'true'
+
+
+def _serialize_tipo_documento_debug(tipo: TipoDocumento) -> Dict[str, Any]:
+    """Serializa un tipo de documento para el endpoint de debug."""
+    return {'id': tipo.id_documento, 'nombre': tipo.nombre_documento}
+
+
+def _serialize_sexo_debug(sexo: Sexo) -> Dict[str, Any]:
+    """Serializa un sexo para el endpoint de debug."""
+    return {'id': sexo.id_sexo, 'nombre': sexo.nombre}
+
+
+def _serialize_categoria_debug(categoria: Categoria) -> Dict[str, Any]:
+    """Serializa una categoría para el endpoint de debug."""
+    return {
+        'id': categoria.id_categoria,
+        'nombre': categoria.nombre_categoria,
+        'estado': categoria.estado,
+    }
+
+
+def _obtener_debug_info(modelo: Any, serializer) -> Dict[str, Any]:
+    """Obtiene información de depuración para un modelo."""
+    registros = modelo.query.all()
+    return {
+        'count': len(registros),
+        'tablename': getattr(modelo, '__tablename__', ''),
+        'data': [serializer(registro) for registro in registros],
+    }
+
+
+def _consultar_pragma_table(nombre_tabla: str) -> List[Tuple[Any, ...]]:
+    """Consulta la metadata de una tabla utilizando PRAGMA."""
+    resultado = db.session.execute(text(f'PRAGMA table_info({nombre_tabla})'))
+    return resultado.fetchall()
+
+
+def _obtener_nombres_columnas(nombre_tabla: str) -> List[str]:
+    """Obtiene la lista de nombres de columnas de una tabla."""
+    return [columna[1] for columna in _consultar_pragma_table(nombre_tabla)]
+
+
+def _contar_registros(nombre_tabla: str) -> int:
+    """Cuenta los registros existentes en una tabla."""
+    resultado = db.session.execute(text(f'SELECT COUNT(*) FROM {nombre_tabla}'))
+    fila = resultado.fetchone()
+    return int(fila[0]) if fila else 0
+
+
+def _agregar_columna_nombre_sexo(cambios_realizados: List[str]) -> None:
+    """Agrega la columna nombre a la tabla de sexos si no existe."""
+    columnas_sexo = _obtener_nombres_columnas('puerta_orion_sexo')
+    if 'nombre' not in columnas_sexo:
             db.session.execute(text("ALTER TABLE puerta_orion_sexo ADD COLUMN nombre VARCHAR(150)"))
             cambios_realizados.append("Agregada columna 'nombre' a tabla sexos")
 
-        # Verificar datos existentes
-        result = db.session.execute(text("SELECT COUNT(*) FROM puerta_orion_tipo_documento"))
-        tipos_count = result.fetchone()[0]
 
-        result = db.session.execute(text("SELECT COUNT(*) FROM puerta_orion_sexo"))
-        sexos_count = result.fetchone()[0]
-
-        # Poblar tipos de documento si están vacíos
-        if tipos_count == 0:
-            tipos_sql = text("""
-            INSERT INTO puerta_orion_tipo_documento (id_documento, nombre_documento, created_at, updated_at) VALUES
+def _poblar_tipos_documento_si_vacio(cambios_realizados: List[str]) -> None:
+    """Puebla la tabla de tipos de documento si no hay registros."""
+    if _contar_registros('puerta_orion_tipo_documento') == 0:
+        db.session.execute(
+            text(
+                """
+                INSERT INTO puerta_orion_tipo_documento (
+                    id_documento,
+                    nombre_documento,
+                    created_at,
+                    updated_at
+                ) VALUES
             (1, 'Cédula de Ciudadanía', datetime('now'), datetime('now')),
             (2, 'Tarjeta de Identidad', datetime('now'), datetime('now')),
             (3, 'Cédula de Extranjería', datetime('now'), datetime('now')),
             (4, 'Pasaporte', datetime('now'), datetime('now')),
             (5, 'Registro Civil', datetime('now'), datetime('now'))
-            """)
-            db.session.execute(tipos_sql)
-            cambios_realizados.append("Poblados tipos de documento")
+                """
+            )
+        )
+        cambios_realizados.append('Poblados tipos de documento')
 
-        # Poblar sexos si están vacíos
-        if sexos_count == 0:
-            # Verificar estructura completa de la tabla
-            result = db.session.execute(text("PRAGMA table_info(puerta_orion_sexo)"))
-            columnas_info = result.fetchall()
-            nombres_columnas = [col[1] for col in columnas_info]
 
-            # Construir SQL dinámicamente basado en las columnas existentes
-            if 'sexo' in nombres_columnas and 'nombre' in nombres_columnas:
-                sexos_sql = text("""
-                INSERT INTO puerta_orion_sexo (id_sexo, sexo, nombre, created_at, updated_at) VALUES
-                (1, 'M', 'Masculino', datetime('now'), datetime('now')),
-                (2, 'F', 'Femenino', datetime('now'), datetime('now')),
-                (3, 'O', 'Otro', datetime('now'), datetime('now'))
-                """)
-            elif 'nombre' in nombres_columnas:
-                sexos_sql = text("""
-                INSERT INTO puerta_orion_sexo (id_sexo, nombre, created_at, updated_at) VALUES
-                (1, 'Masculino', datetime('now'), datetime('now')),
-                (2, 'Femenino', datetime('now'), datetime('now')),
-                (3, 'Otro', datetime('now'), datetime('now'))
-                """)
-            else:
-                # Solo usar columnas básicas
-                sexos_sql = text("""
-                INSERT INTO puerta_orion_sexo (id_sexo, created_at, updated_at) VALUES
-                (1, datetime('now'), datetime('now')),
-                (2, datetime('now'), datetime('now')),
-                (3, datetime('now'), datetime('now'))
-                """)
+def _poblar_sexos_si_vacio(cambios_realizados: List[str]) -> None:
+    """Puebla la tabla de sexos si se encuentra vacía."""
+    if _contar_registros('puerta_orion_sexo') != 0:
+        return
 
-            db.session.execute(sexos_sql)
-            cambios_realizados.append("Poblados sexos")
+    columnas_info = _consultar_pragma_table('puerta_orion_sexo')
+    columnas = [columna[1] for columna in columnas_info]
 
+    if {'sexo', 'nombre'}.issubset(columnas):
+        sexos_sql = (
+            "INSERT INTO puerta_orion_sexo (id_sexo, sexo, nombre, created_at, updated_at) VALUES "
+            "(1, 'M', 'Masculino', datetime('now'), datetime('now')), "
+            "(2, 'F', 'Femenino', datetime('now'), datetime('now')), "
+            "(3, 'O', 'Otro', datetime('now'), datetime('now'))"
+        )
+    elif 'nombre' in columnas:
+        sexos_sql = (
+            "INSERT INTO puerta_orion_sexo (id_sexo, nombre, created_at, updated_at) VALUES "
+            "(1, 'Masculino', datetime('now'), datetime('now')), "
+            "(2, 'Femenino', datetime('now'), datetime('now')), "
+            "(3, 'Otro', datetime('now'), datetime('now'))"
+        )
+    else:
+        sexos_sql = (
+            "INSERT INTO puerta_orion_sexo (id_sexo, created_at, updated_at) VALUES "
+            "(1, datetime('now'), datetime('now')), "
+            "(2, datetime('now'), datetime('now')), "
+            "(3, datetime('now'), datetime('now'))"
+        )
+
+    db.session.execute(text(sexos_sql))
+    cambios_realizados.append('Poblados sexos')
+
+
+def _insertar_categorias_iniciales() -> List[str]:
+    """Inserta las categorías iniciales y retorna sus nombres."""
+    categorias_insertadas: List[str] = []
+    insert_sql = text(
+        """
+        INSERT INTO puerta_orion_categoria (
+            nombre_categoria,
+            codigo_categoria,
+            edad_minima,
+            edad_maxima,
+            estado,
+            created_at,
+            updated_at
+        ) VALUES (
+            :nombre_categoria,
+            :codigo_categoria,
+            :edad_minima,
+            :edad_maxima,
+            1,
+            datetime('now'),
+            datetime('now')
+        )
+        """
+    )
+    for categoria in CATEGORIAS_INICIALES:
+        db.session.execute(insert_sql, categoria)
+        categorias_insertadas.append(categoria['nombre_categoria'])
+    return categorias_insertadas
+
+
+@catalogos_bp.route('/tipos-documento', methods=['GET', 'OPTIONS'])
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_tipos_documento() -> JsonResponse:
+    """Obtiene todos los tipos de documento disponibles."""
+    try:
+        tipos_documento = TipoDocumento.query.all()
+        datos_tipos = _serialize_model_list(tipos_documento, _serialize_tipo_documento)
+        return _build_response(
+            True,
+            message=MENSAJE_TIPOS_DOCUMENTO,
+            data=datos_tipos,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener tipos de documento', error)
+
+
+@catalogos_bp.route('/sexos', methods=['GET', 'OPTIONS'])
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_sexos() -> JsonResponse:
+    """Obtiene todos los sexos disponibles."""
+    try:
+        sexos = Sexo.query.all()
+        datos_sexos = _serialize_model_list(sexos, _serialize_sexo)
+        return _build_response(
+            True,
+            message=MENSAJE_SEXOS,
+            data=datos_sexos,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener sexos', error)
+
+
+@catalogos_bp.route('/metodos-pago', methods=['GET', 'OPTIONS'])
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_metodos_pago() -> JsonResponse:
+    """Obtiene los métodos de pago activos."""
+    try:
+        metodos = MetodoPago.query.filter_by(estado=True).all()
+        datos = _serialize_model_list(metodos, _serialize_metodo_pago)
+        return _build_response(
+            True,
+            message=MENSAJE_METODOS_PAGO,
+            data=datos,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener métodos de pago', error)
+
+
+@catalogos_bp.route('/catalogos-completos', methods=['GET', 'OPTIONS'])
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_catalogos_completos() -> JsonResponse:
+    """Obtiene todos los catálogos necesarios para inicializar la aplicación."""
+    try:
+        catalogos = catalogos_service.obtener_catalogos_completos()
+        return _build_response(
+            True,
+            message=MENSAJE_CATALOGOS,
+            data=catalogos,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener catálogos', error)
+
+
+@catalogos_bp.route('/fix-structure', methods=['POST'])
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('POST',))
+def fix_catalogos_structure() -> JsonResponse:
+    """
+    Corrige la estructura de catálogos asegurando columnas y datos mínimos.
+    Este endpoint acepta solo el método POST para mayor seguridad.
+    """
+    cambios_realizados: List[str] = []
+    try:
+        _agregar_columna_nombre_sexo(cambios_realizados)
+        _poblar_tipos_documento_si_vacio(cambios_realizados)
+        _poblar_sexos_si_vacio(cambios_realizados)
         db.session.commit()
-
-        return jsonify({
-            'success': True,
-            'message': 'Estructura de catálogos corregida exitosamente',
-            'cambios': cambios_realizados,
-            'status_code': 200
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error corrigiendo estructura de catálogos: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': f'Error corrigiendo estructura: {str(e)}',
-            'status_code': 500
-        }), 500
+        return _build_response(
+            True,
+            message=MENSAJE_FIX_STRUCTURE,
+            cambios=cambios_realizados,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        db.session.rollback()
+        logger.error('Error corrigiendo estructura de catálogos: %s', str(error))
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=ERROR_CORRIGIENDO_ESTRUCTURA.format(detalle=str(error)),
+        )
 
 
 @catalogos_bp.route('/tipos-enfermedad', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_tipos_enfermedad():
-    """
-    Endpoint para obtener todos los tipos de enfermedad disponibles.
-    
-    Query params:
-        incluir_diagnosticos (bool, opcional): Si es 'true', incluye los diagnósticos relacionados.
-    
-    Returns:
-        JSON: Lista de tipos de enfermedad con opción de incluir sus diagnósticos
-    """
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_tipos_enfermedad() -> JsonResponse:
+    """Lista los tipos de enfermedad disponibles con la opción de incluir diagnósticos."""
     try:
-        # Obtener parámetro opcional para incluir diagnósticos
-        incluir_diagnosticos = request.args.get('incluir_diagnosticos', 'false').lower() == 'true'
-        
-        # Obtener tipos de enfermedad
-        result = catalogos_service.obtener_tipos_enfermedad(incluir_diagnosticos=incluir_diagnosticos)
-        
-        # Respuesta exitosa
-        return jsonify({
-            'success': True,
-            'message': 'Tipos de enfermedad obtenidos exitosamente',
-            'data': result.get('data', []),
-            'status_code': 200
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener tipos de enfermedad: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+        incluir_diagnosticos = _parametro_es_true(request.args.get('incluir_diagnosticos'), default=False)
+        resultado = catalogos_service.obtener_tipos_enfermedad(incluir_diagnosticos=incluir_diagnosticos)
+        return _build_response(
+            True,
+            message=MENSAJE_TIPOS_ENFERMEDAD,
+            data=resultado.get('data', []),
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener tipos de enfermedad', error)
 
 
 @catalogos_bp.route('/diagnosticos', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_diagnosticos():
-    """
-    Endpoint para obtener todos los diagnósticos disponibles o filtrados por tipo de enfermedad.
-    
-    Query params:
-        id_tipo_enfermedad (int, opcional): Filtra diagnósticos por tipo de enfermedad.
-    
-    Returns:
-        JSON: Lista de diagnósticos (filtrados o no)
-    """
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_diagnosticos() -> JsonResponse:
+    """Obtiene diagnósticos opcionalmente filtrados por tipo de enfermedad."""
     try:
-        # Obtener parámetro opcional de filtro
         id_tipo_enfermedad = request.args.get('id_tipo_enfermedad', type=int)
-        
-        # Obtener diagnósticos
-        result = catalogos_service.obtener_diagnosticos(id_tipo_enfermedad=id_tipo_enfermedad)
-        
-        # Respuesta exitosa
-        return jsonify({
-            'success': True,
-            'message': 'Diagnósticos obtenidos exitosamente',
-            'data': result.get('data', []),
-            'status_code': 200
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener diagnósticos: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor',
-            'status_code': 500
-        }), 500
+        resultado = catalogos_service.obtener_diagnosticos(id_tipo_enfermedad=id_tipo_enfermedad)
+        return _build_response(
+            True,
+            message=MENSAJE_DIAGNOSTICOS,
+            data=resultado.get('data', []),
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener diagnósticos', error)
 
 
 @catalogos_bp.route('/debug', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def debug_catalogos():
-    """
-    Endpoint de depuración para verificar las consultas de catálogos.
-    """
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def debug_catalogos() -> JsonResponse:
+    """Endpoint de depuración para verificar las consultas de catálogos."""
+    debug_info: Dict[str, Any] = {}
+    entradas_debug = [
+        ('tipos_documento', TipoDocumento, _serialize_tipo_documento_debug),
+        ('sexos', Sexo, _serialize_sexo_debug),
+        ('categorias', Categoria, _serialize_categoria_debug),
+    ]
+
     try:
-        from ..models.catalogos.tipo_documento import TipoDocumento
-        from ..models.categorias.sexo import Sexo
-        from ..models.categorias.categoria import Categoria
+        for clave, modelo, serializador in entradas_debug:
+            try:
+                debug_info[clave] = _obtener_debug_info(modelo, serializador)
+            except Exception as error:  # pylint: disable=broad-except
+                debug_info[clave] = {'error': str(error)}
 
-        debug_info = {}
-
-        # Verificar tipos de documento
-        try:
-            tipos_count = TipoDocumento.query.count()
-            tipos = TipoDocumento.query.all()
-            debug_info['tipos_documento'] = {
-                'count': tipos_count,
-                'tablename': TipoDocumento.__tablename__,
-                'data': [{'id': t.id_documento, 'nombre': t.nombre_documento} for t in tipos]
-            }
-        except Exception as e:
-            debug_info['tipos_documento'] = {'error': str(e)}
-
-        # Verificar sexos
-        try:
-            sexos_count = Sexo.query.count()
-            sexos = Sexo.query.all()
-            debug_info['sexos'] = {
-                'count': sexos_count,
-                'tablename': Sexo.__tablename__,
-                'data': [{'id': s.id_sexo, 'nombre': s.nombre} for s in sexos]
-            }
-        except Exception as e:
-            debug_info['sexos'] = {'error': str(e)}
-
-        # Verificar categorías
-        try:
-            categorias_count = Categoria.query.count()
-            categorias = Categoria.query.all()
-            debug_info['categorias'] = {
-                'count': categorias_count,
-                'tablename': Categoria.__tablename__,
-                'data': [{'id': c.id_categoria, 'nombre': c.nombre_categoria, 'estado': c.estado} for c in categorias]
-            }
-        except Exception as e:
-            debug_info['categorias'] = {'error': str(e)}
-
-        return jsonify({
-            'success': True,
-            'debug_info': debug_info,
-            'status_code': 200
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error en debug de catálogos: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': f'Error en debug: {str(e)}',
-            'status_code': 500
-        }), 500
+        return _build_response(True, debug_info=debug_info, status_code=SUCCESS_STATUS)
+    except Exception as error:  # pylint: disable=broad-except
+        logger.error('Error en debug de catálogos: %s', str(error))
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=ERROR_DEBUG.format(detalle=str(error)),
+        )
 
 
 @catalogos_bp.route('/poblar-categorias', methods=['POST'])
-def poblar_categorias():
-    """
-    Endpoint para poblar la tabla de categorías con datos iniciales.
-    """
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('POST', 'OPTIONS'))
+def poblar_categorias() -> JsonResponse:
+    """Puebla la tabla de categorías con datos iniciales si está vacía."""
     try:
-        from ..models.base import db
-        from sqlalchemy import text
-
-        # Verificar si ya hay categorías
-        categorias_existentes = db.session.execute(
-            text("SELECT COUNT(*) FROM puerta_orion_categoria")
-        ).scalar()
-
+        categorias_existentes = _contar_registros('puerta_orion_categoria')
         if categorias_existentes > 0:
-            return jsonify({
-                'success': True,
-                'message': f'Ya existen {categorias_existentes} categorías en la base de datos',
-                'status_code': 200
-            }), 200
+            return _build_response(
+                True,
+                message=f'Ya existen {categorias_existentes} categorías en la base de datos',
+                status_code=SUCCESS_STATUS,
+            )
 
-        # Datos iniciales de categorías
-        categorias_data = [
-            {
-                'nombre_categoria': 'Fútbol',
-                'codigo_categoria': 101,
-                'edad_minima': 6,
-                'edad_maxima': 18
-            },
-            {
-                'nombre_categoria': 'Básquetbol',
-                'codigo_categoria': 102,
-                'edad_minima': 8,
-                'edad_maxima': 18
-            },
-            {
-                'nombre_categoria': 'Voleibol',
-                'codigo_categoria': 103,
-                'edad_minima': 10,
-                'edad_maxima': 18
-            },
-            {
-                'nombre_categoria': 'Tenis',
-                'codigo_categoria': 104,
-                'edad_minima': 6,
-                'edad_maxima': 18
-            },
-            {
-                'nombre_categoria': 'Natación',
-                'codigo_categoria': 105,
-                'edad_minima': 4,
-                'edad_maxima': 18
-            }
-        ]
-
-        # Insertar categorías
-        categorias_insertadas = []
-        for cat_data in categorias_data:
-            insert_sql = text("""
-                INSERT INTO puerta_orion_categoria
-                (nombre_categoria, codigo_categoria, edad_minima, edad_maxima, estado, created_at, updated_at)
-                VALUES (:nombre_categoria, :codigo_categoria, :edad_minima, :edad_maxima, 1, datetime('now'), datetime('now'))
-            """)
-
-            db.session.execute(insert_sql, cat_data)
-            categorias_insertadas.append(cat_data['nombre_categoria'])
-
+        categorias_insertadas = _insertar_categorias_iniciales()
         db.session.commit()
 
-        return jsonify({
-            'success': True,
-            'message': f'Categorías pobladas exitosamente: {len(categorias_insertadas)}',
-            'categorias_insertadas': categorias_insertadas,
-            'status_code': 200
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error poblando categorías: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': f'Error poblando categorías: {str(e)}',
-            'status_code': 500
-        }), 500
+        return _build_response(
+            True,
+            message=MENSAJE_POBLAR_CATEGORIAS.format(cantidad=len(categorias_insertadas)),
+            categorias_insertadas=categorias_insertadas,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        db.session.rollback()
+        logger.error('Error poblando categorías: %s', str(error))
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=ERROR_POBLANDO_CATEGORIAS.format(detalle=str(error)),
+        )
 
 
 @catalogos_bp.route('/categorias', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_categorias():
-    """Obtener todas las categorías disponibles"""
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_categorias() -> JsonResponse:
+    """Obtiene todas las categorías activas."""
     try:
         categorias = Categoria.query.filter_by(estado=True).all()
-
-        categorias_data = []
-        for categoria in categorias:
-            categorias_data.append({
-                'id_categoria': categoria.id_categoria,
-                'nombre_categoria': categoria.nombre_categoria,
-                'codigo_categoria': categoria.codigo_categoria,
-                'edad_minima': categoria.edad_minima,
-                'edad_maxima': categoria.edad_maxima
-            })
-
-        return jsonify({
-            'success': True,
-            'data': categorias_data,
-            'message': 'Categorías obtenidas exitosamente'
-        }), 200
-
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener categorías: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener categorías: {str(e)}'
-        }), 500
+        categorias_data = _serialize_model_list(categorias, _serialize_categoria)
+        return _build_response(
+            True,
+            data=categorias_data,
+            message=MENSAJE_CATEGORIAS,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        logger.error('Error inesperado al obtener categorías: %s', str(error))
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=f'Error al obtener categorías: {str(error)}',
+        )
 
 
 @catalogos_bp.route('/parentescos', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_parentescos():
-    """Obtener todos los parentescos disponibles"""
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_parentescos() -> JsonResponse:
+    """Obtiene todos los parentescos disponibles."""
     try:
-        logger.info("Solicitando lista de parentescos...")
-        
-        # Verificar si la tabla existe
-        from ..models.base import db
+        logger.info('Solicitando lista de parentescos...')
         try:
             parentescos = Parentesco.query.all()
-            logger.info(f"Parentescos encontrados: {len(parentescos)}")
-            
-            for p in parentescos:
-                logger.info(f"  - ID: {p.id_parentesco}, Nombre: {p.nombre}")
+        except Exception as db_error:  # pylint: disable=broad-except
+            logger.error('Error al consultar parentescos: %s', str(db_error))
+            return _build_response(
+                False,
+                status_code=ERROR_STATUS,
+                data=[],
+                error=f'Error al consultar parentescos: {str(db_error)}',
+            )
 
-            parentescos_data = [p.to_dict() for p in parentescos]
-            
-            # Si no hay parentescos, retornar lista vacía
-            if not parentescos_data:
-                logger.warning("No hay parentescos en la base de datos")
-                return jsonify({
-                    'success': True,
-                    'data': [],
-                    'message': 'No hay parentescos registrados'
-                }), 200
+        logger.info('Parentescos encontrados: %s', len(parentescos))
+        parentescos_data = _serialize_model_list(parentescos, _serialize_parentesco)
+        if not parentescos_data:
+            logger.warning('No hay parentescos en la base de datos')
+            return _build_response(
+                True,
+                data=[],
+                message=MENSAJE_PARENTESCOS_VACIO,
+                status_code=SUCCESS_STATUS,
+            )
 
-            return jsonify({
-                'success': True,
-                'data': parentescos_data,
-                'message': 'Parentescos obtenidos exitosamente'
-            }), 200
-        except Exception as db_error:
-            logger.error(f"Error al consultar parentescos: {str(db_error)}")
-            return jsonify({
-                'success': False,
-                'data': [],
-                'error': f'Error al consultar parentescos: {str(db_error)}'
-            }), 500
-
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener parentescos: {str(e)}")
-        import traceback
+        return _build_response(
+            True,
+            data=parentescos_data,
+            message=MENSAJE_PARENTESCOS,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        logger.error('Error inesperado al obtener parentescos: %s', str(error))
         logger.error(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener parentescos: {str(e)}'
-        }), 500
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=f'Error al obtener parentescos: {str(error)}',
+        )
 
 
 @catalogos_bp.route('/acudientes', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_acudientes():
-    """Obtener todos los acudientes disponibles o buscar por cédula"""
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_acudientes() -> JsonResponse:
+    """Obtiene acudientes activos o permite buscarlos por cédula."""
     try:
-        # Obtener parámetro de búsqueda por cédula
         cedula = request.args.get('cedula', '').strip()
         
         if cedula:
-            # Buscar acudiente por cédula de la persona asociada
-            from ..models.personas.persona import Persona
-            
-            persona = Persona.query.filter_by(documento=cedula).first()
-            
+            persona = _fetch_persona_por_cedula(cedula)
             if not persona:
-                return jsonify({
-                    'success': False,
-                    'data': None,
-                    'message': 'No se encontró ninguna persona con ese documento',
-                    'sugerencia': 'El acudiente debe registrarse primero en el sistema'
-                }), 404
-            
-            # Buscar si esta persona es acudiente
-            acudiente = Acudiente.query.filter_by(id_persona=persona.id_persona, estado=True).first()
-            
+                return _build_response(
+                    False,
+                    status_code=NOT_FOUND_STATUS,
+                    data=None,
+                    message='No se encontró ninguna persona con ese documento',
+                    sugerencia='El acudiente debe registrarse primero en el sistema',
+                )
+
+            acudiente = _fetch_acudiente_por_persona(persona.id_persona)
             if not acudiente:
-                return jsonify({
-                    'success': False,
-                    'data': None,
-                    'message': 'La persona encontrada no está registrada como acudiente',
-                    'sugerencia': 'El acudiente debe completar su registro en el sistema'
-                }), 404
-            
-            # Retornar acudiente encontrado
-            acudiente_dict = {
-                'id_acudiente': acudiente.id_acudiente,
-                'id_persona': acudiente.id_persona,
-                'estado': acudiente.estado
+                return _build_response(
+                    False,
+                    status_code=NOT_FOUND_STATUS,
+                    data=None,
+                    message='La persona encontrada no está registrada como acudiente',
+                    sugerencia='El acudiente debe completar su registro en el sistema',
+                )
+
+            acudiente_dict = _serialize_acudiente(acudiente)
+            acudiente_dict['persona'] = {
+                'id_persona': persona.id_persona,
+                'nombre_completo': persona.nombre_completo,
+                'documento': persona.documento,
+                'correo_electronico': persona.correo_electronico,
             }
-            
-            if persona:
-                acudiente_dict['persona'] = {
-                    'id_persona': persona.id_persona,
-                    'nombre_completo': persona.nombre_completo,
-                    'documento': persona.documento,
-                    'correo_electronico': persona.correo_electronico
-                }
-            
-            return jsonify({
-                'success': True,
-                'data': acudiente_dict,
-                'message': 'Acudiente encontrado exitosamente'
-            }), 200
-        else:
-            # Retornar todos los acudientes
-            logger.info("Solicitando lista de acudientes...")
-            acudientes = Acudiente.query.filter_by(estado=True).all()
-            logger.info(f"Acudientes encontrados: {len(acudientes)}")
 
-            acudientes_data = []
-            for acudiente in acudientes:
-                acudiente_dict = {
-                    'id_acudiente': acudiente.id_acudiente,
-                    'id_persona': acudiente.id_persona,
-                    'estado': acudiente.estado
-                }
-                # Agregar datos de la persona si existe la relación
-                if hasattr(acudiente, 'persona') and acudiente.persona:
-                    acudiente_dict['persona'] = {
-                        'id_persona': acudiente.persona.id_persona,
-                        'nombre_completo': acudiente.persona.nombre_completo,
-                        'documento': acudiente.persona.documento,
-                        'correo_electronico': acudiente.persona.correo_electronico
-                    }
-                acudientes_data.append(acudiente_dict)
+            return _build_response(
+                True,
+                data=acudiente_dict,
+                message=MENSAJE_ACUDIENTE_ENCONTRADO,
+                status_code=SUCCESS_STATUS,
+            )
 
-            return jsonify({
-                'success': True,
-                'data': acudientes_data,
-                'message': 'Acudientes obtenidos exitosamente'
-            }), 200
+        logger.info('Solicitando lista de acudientes...')
+        acudientes = Acudiente.query.filter_by(estado=True).all()
+        logger.info('Acudientes encontrados: %s', len(acudientes))
+        acudientes_data = _serialize_model_list(acudientes, _serialize_acudiente)
 
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener acudientes: {str(e)}")
-        import traceback
+        return _build_response(
+            True,
+            data=acudientes_data,
+            message=MENSAJE_ACUDIENTES,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        logger.error('Error inesperado al obtener acudientes: %s', str(error))
         logger.error(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener acudientes: {str(e)}'
-        }), 500
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=f'Error al obtener acudientes: {str(error)}',
+        )
 
 
 @catalogos_bp.route('/deportistas', methods=['GET', 'OPTIONS'])
-@cross_origin()
-def obtener_deportistas():
-    """Obtener todos los deportistas disponibles o buscar por cédula/documento"""
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+def obtener_deportistas() -> JsonResponse:
+    """Obtiene deportistas o los busca por documento."""
     try:
-        from ..models.deportistas.deportista import Deportista
-        from ..models.personas.persona import Persona
-        
-        # Obtener parámetro de búsqueda por cédula
         cedula = request.args.get('cedula', '').strip()
         
         if cedula:
-            # Buscar deportista por cédula de la persona asociada
-            persona = Persona.query.filter_by(documento=cedula).first()
-            
+            persona = _fetch_persona_por_cedula(cedula)
             if not persona:
-                return jsonify({
-                    'success': False,
-                    'data': None,
-                    'message': 'No se encontró ninguna persona con ese documento',
-                    'sugerencia': 'El deportista debe registrarse primero en el sistema'
-                }), 404
-            
-            # Buscar si esta persona es deportista
-            deportista = Deportista.query.filter_by(id_persona=persona.id_persona).first()
-            
+                return _build_response(
+                    False,
+                    status_code=NOT_FOUND_STATUS,
+                    data=None,
+                    message='No se encontró ninguna persona con ese documento',
+                    sugerencia='El deportista debe registrarse primero en el sistema',
+                )
+
+            deportista = _fetch_deportista_por_persona(persona.id_persona)
             if not deportista:
-                return jsonify({
-                    'success': False,
-                    'data': None,
-                    'message': 'La persona encontrada no está registrada como deportista',
-                    'sugerencia': 'El deportista debe completar su registro en el sistema'
-                }), 404
-            
-            # Retornar deportista encontrado
-            deportista_dict = {
-                'id_deportista': deportista.id_deportista,
-                'id_persona': deportista.id_persona
-            }
-            
-            if persona:
-                deportista_dict['persona'] = {
+                return _build_response(
+                    False,
+                    status_code=NOT_FOUND_STATUS,
+                    data=None,
+                    message='La persona encontrada no está registrada como deportista',
+                    sugerencia='El deportista debe completar su registro en el sistema',
+                )
+
+            deportista_dict = _serialize_deportista(deportista)
+            deportista_dict.setdefault('persona', {})
+            deportista_dict['persona'].update(
+                {
                     'id_persona': persona.id_persona,
                     'nombre_completo': persona.nombre_completo,
                     'primer_nombre': persona.primer_nombre,
@@ -717,87 +751,69 @@ def obtener_deportistas():
                     'segundo_apellido': persona.segundo_apellido,
                     'documento': persona.documento,
                     'correo_electronico': persona.correo_electronico,
-                    'telefono': persona.telefono
+                    'telefono': persona.telefono,
                 }
-            
-            return jsonify({
-                'success': True,
-                'data': deportista_dict,
-                'message': 'Deportista encontrado exitosamente'
-            }), 200
-        else:
-            # Retornar todos los deportistas (limitado a los activos)
-            logger.info("Solicitando lista de deportistas...")
-            deportistas = Deportista.query.all()
-            logger.info(f"Deportistas encontrados: {len(deportistas)}")
+            )
 
-            deportistas_data = []
-            for deportista in deportistas:
-                deportista_dict = {
-                    'id_deportista': deportista.id_deportista,
-                    'id_persona': deportista.id_persona
-                }
-                # Agregar datos de la persona si existe la relación
-                if hasattr(deportista, 'persona') and deportista.persona:
-                    deportista_dict['persona'] = {
-                        'id_persona': deportista.persona.id_persona,
-                        'nombre_completo': deportista.persona.nombre_completo,
-                        'primer_nombre': deportista.persona.primer_nombre,
-                        'primer_apellido': deportista.persona.primer_apellido,
-                        'segundo_nombre': deportista.persona.segundo_nombre,
-                        'segundo_apellido': deportista.persona.segundo_apellido,
-                        'documento': deportista.persona.documento,
-                        'correo_electronico': deportista.persona.correo_electronico,
-                        'telefono': deportista.persona.telefono
-                    }
-                deportistas_data.append(deportista_dict)
+            return _build_response(
+                True,
+                data=deportista_dict,
+                message=MENSAJE_DEPOR_ENCONTRADO,
+                status_code=SUCCESS_STATUS,
+            )
 
-            return jsonify({
-                'success': True,
-                'data': deportistas_data,
-                'message': 'Deportistas obtenidos exitosamente'
-            }), 200
+        logger.info('Solicitando lista de deportistas...')
+        from ..models.deportistas.deportista import Deportista  # Importación diferida
 
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener deportistas: {str(e)}")
-        import traceback
+        deportistas = Deportista.query.all()
+        logger.info('Deportistas encontrados: %s', len(deportistas))
+        deportistas_data = _serialize_model_list(deportistas, _serialize_deportista)
+
+        return _build_response(
+            True,
+            data=deportistas_data,
+            message=MENSAJE_DEPOR,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        logger.error('Error inesperado al obtener deportistas: %s', str(error))
         logger.error(traceback.format_exc())
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener deportistas: {str(e)}'
-        }), 500
+        return _build_response(
+            False,
+            status_code=ERROR_STATUS,
+            error=f'Error al obtener deportistas: {str(error)}',
+        )
 
 
 # Manejadores de errores específicos del Blueprint
 @catalogos_bp.errorhandler(400)
-def bad_request(error):
-    """Manejador de errores 400 (Bad Request)."""
-    return jsonify({
-        'success': False,
-        'error': 'Solicitud incorrecta',
-        'message': 'Verifique los datos enviados',
-        'status_code': 400
-    }), 400
+def bad_request(error: Exception) -> JsonResponse:
+    """Manejador para errores 400 (Bad Request)."""
+    return _build_response(
+        False,
+        status_code=400,
+        error=ERROR_SOLICITUD,
+        message='Verifique los datos enviados',
+    )
 
 
 @catalogos_bp.errorhandler(500)
-def internal_error(error):
-    """Manejador de errores 500 (Internal Server Error)."""
-    return jsonify({
-        'success': False,
-        'error': 'Error interno del servidor',
-        'message': 'Contacte al administrador',
-        'status_code': 500
-    }), 500
+def internal_error(error: Exception) -> JsonResponse:
+    """Manejador para errores 500 (Error interno del servidor)."""
+    return _build_response(
+        False,
+        status_code=ERROR_STATUS,
+        error=ERROR_INTERNO,
+        message='Contacte al administrador',
+    )
 
 
 # Función para registrar el Blueprint en la aplicación
-def registrar_catalogos_routes(app):
-    """
-    Registra las rutas de catálogos en la aplicación Flask.
+def registrar_catalogos_routes(app: Flask) -> None:
+    """Registra las rutas de catálogos en la aplicación Flask.
 
     Args:
-        app: Instancia de la aplicación Flask
+        app (Flask): Instancia de la aplicación Flask donde se registrarán las rutas.
     """
     app.register_blueprint(catalogos_bp)
-    logger.info("Rutas de catálogos registradas exitosamente")
+    logger.info('Rutas de catálogos registradas exitosamente')

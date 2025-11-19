@@ -150,7 +150,9 @@ class CatalogosService {
       const data = await response.json();
       console.log('📦 CatalogosService: Datos catálogos completos recibidos:', data);
 
-      return data.data || {}
+      // El backend devuelve { success: true, data: { tipos_documento: [...], sexos: [...] } }
+      // Retornamos el objeto completo para que cargarCatalogosFormulario pueda acceder correctamente
+      return data
     } catch (error) {
       console.error('❌ CatalogosService: Error al obtener catálogos completos:', error)
       throw error
@@ -197,15 +199,25 @@ class CatalogosService {
     try {
       console.log('🔄 CatalogosService: Cargando catálogos completos...');
 
-      const catalogos = await this.getCatalogosCompletos()
-      console.log('📦 CatalogosService: Catálogos recibidos:', catalogos);
+      const response = await this.getCatalogosCompletos()
+      console.log('📦 CatalogosService: Respuesta completa recibida:', response);
+
+      // El backend devuelve { success: true, data: { tipos_documento: [...], sexos: [...] } }
+      // Necesitamos acceder a response.data, no directamente a response
+      const catalogos = response && typeof response === 'object' && 'data' in response
+        ? response.data
+        : response;
+
+      console.log('📦 CatalogosService: Catálogos extraídos:', catalogos);
 
       const resultado = {
-        tiposDocumento: catalogos.tipos_documento || [],
-        sexos: catalogos.sexos || []
+        tiposDocumento: (catalogos && catalogos.tipos_documento) ? catalogos.tipos_documento : [],
+        sexos: (catalogos && catalogos.sexos) ? catalogos.sexos : []
       };
 
       console.log('✅ CatalogosService: Resultado procesado:', resultado);
+      console.log('✅ CatalogosService: Tipos documento:', resultado.tiposDocumento.length);
+      console.log('✅ CatalogosService: Sexos:', resultado.sexos.length);
       return resultado;
     } catch (error) {
       console.error('❌ CatalogosService: Error al cargar catálogos:', error)

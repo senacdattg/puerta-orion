@@ -1,199 +1,519 @@
+
 """
-Rutas para la gestión de eventos deportivos.
+Rutas de gestión de eventos, sesiones y tipos de evento para el sistema Puerta Orion.
+
+Responsabilidad:
+- Administrar el ciclo de vida de eventos deportivos.
+- Gestionar catálogos asociados (sesiones y tipos de evento).
+- Restringir accesos según roles e impedir inconsistencias de horario.
+
+El módulo aplica principios SRP, DRY, KISS, POO y Clean Code.
 """
 
-from flask import Blueprint, request, jsonify, g
-from flask_cors import cross_origin
-from src.models.base import db
-from src.models import Evento, Sesion, TipoEvento, Categoria
-from src.models.deportistas.deportista import Deportista
-from src.models.acudientes.acudiente import Acudiente
-from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
-from src.middleware.auth_decorator import get_current_user, token_required
-from datetime import datetime, date, time
-from sqlalchemy import or_
-import re
+from datetime import date, datetime, time
 import traceback
-from src.utils.validations import sanitize_free_text, sanitize_address, ValidationError
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-eventos_bp = Blueprint('eventos', __name__)
+from flask import Blueprint, Flask, Response, request
+from sqlalchemy import or_
+
+from ..middleware.auth_decorator import get_current_user, token_required
+from ..models.acudientes.acudiente import Acudiente
+from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
+from ..models.base import db
+from ..models.categorias.categoria import Categoria
+from ..models.deportistas.deportista import Deportista
+from ..models.eventos.evento import Evento
+from ..models.eventos.sesion import Sesion
+from ..models.eventos.tipo_evento import TipoEvento
+from ..utils.logger import obtener_registrador
+from ..utils.request_validators import RequestValidationError, obtener_json_requerido
+from ..utils.validations import ValidationError, sanitize_address, sanitize_free_text
+from ..utils.http_responses import HttpResponseBuilder, handle_exception, JsonResponse
+from ..utils.error_messages import (
+    ERROR_NO_SE_ENVIARON_DATOS,
+    ERROR_NO_SE_PROPORCIONARON_DATOS,
+    ERROR_NOMBRE_MINIMO_CARACTERES,
+    ERROR_LUGAR_MINIMO_CARACTERES,
+    ERROR_INTERNO_SERVIDOR,
+)
+
+ROLES_GENERALES = (
+    'SuperAdmin',
+    'Administrador',
+    'Entrenador',
+    'Deportista',
+    'Acudiente',
+    'usuario',
+)
+ROLES_ADMIN = ('SuperAdmin', 'Administrador', 'Entrenador')
+ROLES_CATALOGOS = ('SuperAdmin', 'Administrador', 'Entrenador', 'Deportista', 'Acudiente')
+
+ERROR_EVENTO_NO_ENCONTRADO = 'Evento con ID {id} no encontrado'
+ERROR_CATEGORIA_NO_ENCONTRADA = 'Categoría con ID {id} no encontrada'
+ERROR_TIPO_EVENTO_NO_ENCONTRADO = 'Tipo de evento con ID {id} no encontrado'
+ERROR_SESION_NO_ENCONTRADA = 'Sesión con ID {id} no encontrada'
+
+logger = obtener_registrador('aplicacion')
+eventos_bp = Blueprint('eventos', __name__, url_prefix='/api/eventos')
 
 
 # ============================================================================
-# FUNCIONES HELPER
+# UTILIDADES COMUNES
 # ============================================================================
 
-def obtener_categorias_permitidas_usuario():
-    """
-    Obtiene las categorías permitidas para el usuario autenticado según su rol.
+# Función de compatibilidad temporal (se reemplazará gradualmente)
+def _build_response(success: bool, status_code: int = 200, **payload: Any) -> JsonResponse:
+    """Construye una respuesta JSON con formato consistente (legacy)."""
+    if success:
+        return HttpResponseBuilder.success(status_code=status_code, **payload)
+    else:
+        error = payload.pop('error', 'Error desconocido')
+        message = payload.pop('message', None)
+        return HttpResponseBuilder.error(
+            error=error,
+            message=message,
+            status_code=status_code,
+            **payload
+        )
+
+
+def _parse_date(value: str) -> Optional[date]:
+    """Convierte una cadena en fecha si cumple el formato esperado."""
+    try:
+        return datetime.strptime(value, '%Y-%m-%d').date()
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_time(value: str) -> Optional[time]:
+    """Convierte una cadena en hora admitiendo los formatos HH:MM y HH:MM:SS."""
+    try:
+        parts = value.split(':')
+        if len(parts) == 2:
+            return datetime.strptime(value, '%H:%M').time()
+        if len(parts) == 3:
+            return datetime.strptime(value, '%H:%M:%S').time()
+        return None
+    except (AttributeError, ValueError):
+        return None
+
+
+def _validar_lugar(value: str) -> bool:
+    """Valida que el lugar tenga longitud suficiente."""
+    return bool(value and len(value.strip()) >= 3)
+
+
+def _obtener_categoria_todos() -> Optional[int]:
+    """Recupera el identificador de la categoría global 'Todos', si existe."""
+    categoria = Categoria.query.filter_by(nombre_categoria='Todos').first()
+    return categoria.id_categoria if categoria else None
+
+
+def _validar_solapamiento_horario(
+    fecha_evento: date,
+    hora_inicio: time,
+    hora_fin: time,
+    *,
+    id_evento_excluir: Optional[int] = None,
+    id_categoria: Optional[int] = None,
+) -> Tuple[bool, Optional[str]]:
+    """Garantiza que no existan colisiones horarias en la misma categoría."""
+    try:
+        query = Evento.query.filter_by(fecha_evento=fecha_evento)
+        if id_categoria is not None:
+            query = query.filter_by(id_categoria=id_categoria)
+
+        eventos = query.all()
+        if id_evento_excluir is not None:
+            eventos = [ev for ev in eventos if ev.id_evento != id_evento_excluir]
+
+        inicio_nuevo = datetime.combine(fecha_evento, hora_inicio)
+        fin_nuevo = datetime.combine(fecha_evento, hora_fin)
+
+        for evento_existente in eventos:
+            inicio_existente = datetime.combine(fecha_evento, evento_existente.hora_inicio)
+            fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
+                mensaje = _construir_mensaje_solapamiento(
+                    evento_existente=evento_existente,
+                    hora_inicio_nueva=hora_inicio,
+                    hora_fin_nueva=hora_fin,
+                )
+                return False, mensaje
+        return True, None
+    except Exception as exc:  # pragma: no cover
+        logger.error('Error al validar solapamiento de horario: %s', str(exc))
+        return True, None
+
+
+def _construir_mensaje_solapamiento(
+    *,
+    evento_existente: Evento,
+    hora_inicio_nueva: time,
+    hora_fin_nueva: time,
+) -> str:
+    """Genera el mensaje de error cuando existe solapamiento horario."""
+    inicio_existente = evento_existente.hora_inicio.strftime('%H:%M')
+    fin_existente = evento_existente.hora_fin.strftime('%H:%M')
+    inicio_nuevo = hora_inicio_nueva.strftime('%H:%M')
+    fin_nuevo = hora_fin_nueva.strftime('%H:%M')
+
+    if hora_inicio_nueva < evento_existente.hora_inicio:
+        return (
+            f"El horario de fin del nuevo evento ({fin_nuevo}) se solapa con el inicio del evento "
+            f"'{evento_existente.nombre}' que inicia a las {inicio_existente}."
+        )
+    if hora_inicio_nueva >= evento_existente.hora_inicio and hora_fin_nueva <= evento_existente.hora_fin:
+        return (
+            f"El horario del nuevo evento ({inicio_nuevo} - {fin_nuevo}) está completamente dentro del evento "
+            f"'{evento_existente.nombre}' ({inicio_existente} - {fin_existente})."
+        )
+    return (
+        f"El horario de inicio del nuevo evento ({inicio_nuevo}) se solapa con el evento "
+        f"'{evento_existente.nombre}' que está en curso de {inicio_existente} a {fin_existente}."
+    )
+
+
+# ============================================================================
+# ACCESO SEGÚN ROLES
+# ============================================================================
+
+def _es_usuario_admin(roles: List[str]) -> bool:
+    """Verifica si el usuario tiene rol de administrador."""
+    return any(rol in ROLES_ADMIN for rol in roles) or 'SuperAdmin' in roles
+
+
+def _obtener_categorias_deportista(id_persona: int) -> set:
+    """Obtiene las categorías asociadas a un deportista."""
+    categorias = set()
+    deportista = Deportista.query.filter_by(id_persona=id_persona).first()
+    if deportista and deportista.id_categoria:
+        categorias.add(deportista.id_categoria)
+    return categorias
+
+
+def _obtener_categorias_acudiente(id_persona: int) -> set:
+    """Obtiene las categorías asociadas a un acudiente a través de sus deportistas."""
+    categorias = set()
+    acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
+    if not acudiente:
+        return categorias
     
-    Returns:
-        list: Lista de IDs de categorías permitidas. Si es None, se muestran todos los eventos.
-    
-    Lógica:
-        - Deportista: Solo eventos de su categoría
-        - Acudiente: Eventos de las categorías de los deportistas que acude
-        - Entrenador/Administrador: Todos los eventos (None = sin filtro)
-    """
+    relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=acudiente.id_acudiente).all()
+    for relacion in relaciones:
+        deportista = Deportista.query.get(relacion.id_deportista)
+        if deportista and deportista.id_categoria:
+            categorias.add(deportista.id_categoria)
+    return categorias
+
+
+def obtener_categorias_permitidas_usuario() -> Optional[List[int]]:
+    """Obtiene las categorías visibles para el usuario autenticado."""
     try:
         usuario_data = get_current_user()
         if not usuario_data:
-            # Si no hay usuario autenticado, no devolver eventos
             return []
-        
-        # Obtener roles del usuario
-        roles_usuario = [rol.get('nombre_rol', '') for rol in usuario_data.get('roles', [])]
+
+        roles = [rol.get('nombre_rol', '') for rol in usuario_data.get('roles', [])]
         id_persona = usuario_data.get('persona', {}).get('id_persona')
-        
         if not id_persona:
             return []
-        
-        # Si es Administrador o Entrenador, mostrar todos los eventos (retornar None)
-        if any(rol in ['Administrador', 'SuperAdmin', 'Entrenador'] for rol in roles_usuario):
-            return None  # None significa "sin filtro"
-        
-        categorias_permitidas = []
-        
-        # Si es Deportista, obtener su categoría
-        if 'Deportista' in roles_usuario:
-            deportista = Deportista.query.filter_by(id_persona=id_persona).first()
-            if deportista and deportista.id_categoria:
-                categorias_permitidas.append(deportista.id_categoria)
-        
-        # Si es Acudiente, obtener categorías de los deportistas que acude
-        if 'Acudiente' in roles_usuario:
-            acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
-            if acudiente:
-                # Obtener todas las relaciones con deportistas
-                relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=acudiente.id_acudiente).all()
-                for relacion in relaciones:
-                    deportista = Deportista.query.get(relacion.id_deportista)
-                    if deportista and deportista.id_categoria:
-                        if deportista.id_categoria not in categorias_permitidas:
-                            categorias_permitidas.append(deportista.id_categoria)
-        
-        # Si no se encontraron categorías permitidas, retornar lista vacía (no eventos)
-        return categorias_permitidas if categorias_permitidas else []
-        
-    except Exception as e:
-        from src.utils.logger import obtener_registrador
-        logger = obtener_registrador('aplicacion')
-        logger.error(f'Error al obtener categorías permitidas: {str(e)}')
-        # En caso de error, retornar lista vacía por seguridad
+
+        if _es_usuario_admin(roles):
+            return None
+
+        categorias = set()
+
+        if 'Deportista' in roles:
+            categorias.update(_obtener_categorias_deportista(id_persona))
+
+        if 'Acudiente' in roles:
+            categorias.update(_obtener_categorias_acudiente(id_persona))
+
+        return list(categorias) if categorias else []
+    except Exception as exc:  # pragma: no cover
+        logger.error('Error al obtener categorías permitidas: %s', str(exc))
         return []
 
 
 # ============================================================================
-# VALIDACIONES
+# VALIDADORES DE CAMPOS
 # ============================================================================
 
-def validar_fecha(fecha_str):
-    """Valida y convierte string a date"""
+def validar_fecha(fecha_str: str) -> Optional[date]:
+    """Valida y convierte una cadena a fecha."""
+    return _parse_date(fecha_str)
+
+
+def validar_hora(hora_str: str) -> Optional[time]:
+    """Valida y convierte una cadena a hora."""
+    return _parse_time(hora_str)
+
+
+def validar_lugar(lugar_str: str) -> bool:
+    """Valida que un lugar sea suficientemente descriptivo."""
+    return _validar_lugar(lugar_str)
+
+
+def validar_solapamiento_horario(
+    fecha_evento: date,
+    hora_inicio: time,
+    hora_fin: time,
+    id_evento_excluir: Optional[int] = None,
+    id_categoria: Optional[int] = None,
+) -> Tuple[bool, Optional[str]]:
+    """Proxy para mantener compatibilidad con código existente."""
+    return _validar_solapamiento_horario(
+        fecha_evento,
+        hora_inicio,
+        hora_fin,
+        id_evento_excluir=id_evento_excluir,
+        id_categoria=id_categoria,
+    )
+
+
+# ============================================================================
+# SERIALIZADORES
+# ============================================================================
+
+def _serializar_evento(evento: Evento) -> Dict[str, Any]:
+    """Serializa un evento incluyendo relaciones asociadas."""
+    evento_dict = evento.to_dict()
+    if evento.categoria:
+        evento_dict['categoria'] = evento.categoria.to_dict()
+    if evento.sesion:
+        evento_dict['sesion'] = evento.sesion.to_dict()
+    tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
+    if tipo_evento:
+        evento_dict['tipo_evento'] = tipo_evento.to_dict()
+    return evento_dict
+
+
+# ============================================================================
+# VALIDADORES GENERALES DE NOMBRES
+# ============================================================================
+
+def _obtener_nombre_requerido(data: Dict[str, Any]) -> str:
+    """Obtiene y valida el nombre dentro de un payload."""
+    if 'nombre' not in data or not str(data['nombre']).strip():
+        raise RequestValidationError('El campo nombre es requerido', status_code=400)
+    nombre = str(data['nombre']).strip()
+    if len(nombre) < 3:
+        raise RequestValidationError(ERROR_NOMBRE_MINIMO_CARACTERES, status_code=400)
+    return nombre
+
+
+# ============================================================================
+# FUNCIONES AUXILIARES PARA ACTUALIZACIÓN DE EVENTOS
+# ============================================================================
+
+def _actualizar_nombre_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza el nombre del evento si está presente en los datos."""
+    if 'nombre' not in data:
+        return None
     try:
-        return datetime.strptime(fecha_str, '%Y-%m-%d').date()
-    except ValueError:
-        return None
+        nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
+    except ValidationError as exc:
+        return HttpResponseBuilder.bad_request(error=str(exc))
+    if len(nombre) < 3:
+        return HttpResponseBuilder.bad_request(error=ERROR_NOMBRE_MINIMO_CARACTERES)
+    evento.nombre = nombre
+    return None
 
-def validar_hora(hora_str):
-    """Valida y convierte string a time (formato HH:MM:SS o HH:MM)"""
+
+def _actualizar_fecha_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza la fecha del evento si está presente en los datos."""
+    if 'fecha_evento' not in data:
+        return None
+    fecha_evento = _parse_date(data['fecha_evento'])
+    if not fecha_evento:
+        return HttpResponseBuilder.bad_request(error='Formato de fecha inválido. Use YYYY-MM-DD')
+    evento.fecha_evento = fecha_evento
+    return None
+
+
+def _actualizar_horas_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza las horas de inicio y fin del evento si están presentes."""
+    if 'hora_inicio' in data:
+        hora_inicio = _parse_time(data['hora_inicio'])
+        if not hora_inicio:
+            return HttpResponseBuilder.bad_request(
+                error='Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS'
+            )
+        evento.hora_inicio = hora_inicio
+
+    if 'hora_fin' in data:
+        hora_fin = _parse_time(data['hora_fin'])
+        if not hora_fin:
+            return HttpResponseBuilder.bad_request(
+                error='Formato de hora de fin inválido. Use HH:MM o HH:MM:SS'
+            )
+        evento.hora_fin = hora_fin
+
+    if evento.hora_fin <= evento.hora_inicio:
+        return HttpResponseBuilder.bad_request(
+            error='La hora de fin debe ser posterior a la hora de inicio'
+        )
+    return None
+
+
+def _actualizar_lugar_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza el lugar del evento si está presente en los datos."""
+    if 'lugar' not in data:
+        return None
     try:
-        # Intentar con formato HH:MM:SS
-        if len(hora_str.split(':')) == 3:
-            return datetime.strptime(hora_str, '%H:%M:%S').time()
-        # Intentar con formato HH:MM
-        elif len(hora_str.split(':')) == 2:
-            return datetime.strptime(hora_str, '%H:%M').time()
+        lugar = sanitize_address('lugar', data['lugar'], max_length=120)
+    except ValidationError as exc:
+        return HttpResponseBuilder.bad_request(error=str(exc))
+    if not _validar_lugar(lugar):
+        return HttpResponseBuilder.bad_request(error=ERROR_LUGAR_MINIMO_CARACTERES)
+    evento.lugar = lugar
+    return None
+
+
+def _actualizar_descripcion_evento(evento: Evento, data: Dict[str, Any]) -> None:
+    """Actualiza la descripción del evento si está presente en los datos."""
+    if 'descripcion' in data:
+        evento.descripcion = (
+            sanitize_free_text('descripcion', data['descripcion'], max_length=500)
+            if data['descripcion']
+            else None
+        )
+
+
+def _actualizar_categoria_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza la categoría del evento si está presente en los datos."""
+    if 'id_categoria' not in data:
         return None
-    except ValueError:
+    categoria = Categoria.query.get(data['id_categoria'])
+    if not categoria:
+        return HttpResponseBuilder.not_found(
+            error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=data['id_categoria'])
+        )
+    evento.id_categoria = data['id_categoria']
+    return None
+
+
+def _actualizar_tipo_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza el tipo de evento si está presente en los datos."""
+    if 'id_tipo_evento' not in data:
+        return None
+    tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
+    if not tipo_evento:
+        return HttpResponseBuilder.not_found(
+            error=ERROR_TIPO_EVENTO_NO_ENCONTRADO.format(id=data['id_tipo_evento'])
+        )
+    evento.id_tipo_evento = data['id_tipo_evento']
+    return None
+
+
+def _actualizar_sesion_evento(evento: Evento, data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Actualiza la sesión del evento si está presente en los datos."""
+    if 'id_sesion' not in data:
+        return None
+    sesion = Sesion.query.get(data['id_sesion'])
+    if not sesion:
+        return HttpResponseBuilder.not_found(
+            error=ERROR_SESION_NO_ENCONTRADA.format(id=data['id_sesion'])
+        )
+    evento.id_sesion = data['id_sesion']
+    return None
+
+
+def _validar_solapamiento_evento_actualizado(
+    evento: Evento,
+    evento_id: int,
+    data: Dict[str, Any]
+) -> Optional[JsonResponse]:
+    """Valida solapamiento de horario si se actualizaron campos relevantes."""
+    campos_relevantes = ('fecha_evento', 'hora_inicio', 'hora_fin', 'id_categoria')
+    if not any(key in data for key in campos_relevantes):
         return None
 
-def validar_lugar(lugar_str):
-    """Valida que el lugar tenga al menos 3 caracteres"""
-    if not lugar_str or len(lugar_str.strip()) < 3:
-        return False
-    return True
+    valido, mensaje_error = validar_solapamiento_horario(
+        evento.fecha_evento,
+        evento.hora_inicio,
+        evento.hora_fin,
+        id_evento_excluir=evento_id,
+        id_categoria=evento.id_categoria,
+    )
+    if not valido:
+        return HttpResponseBuilder.bad_request(error=mensaje_error)
+    return None
 
-def validar_solapamiento_horario(fecha_evento, hora_inicio, hora_fin, id_evento_excluir=None, id_categoria=None):
-    """
-    Valida que no haya solapamiento de horarios con otros eventos del mismo día y misma categoría.
+
+# ============================================================================
+# FUNCIONES AUXILIARES PARA FILTRADO DE EVENTOS
+# ============================================================================
+
+def _aplicar_filtro_categorias(
+    query: Any,
+    categorias_permitidas: Optional[List[int]],
+    id_categoria_todos: Optional[int]
+) -> Any:
+    """Aplica filtro de categorías a la consulta de eventos."""
+    if categorias_permitidas is None:
+        return query
     
-    Args:
-        fecha_evento (date): Fecha del evento
-        hora_inicio (time): Hora de inicio
-        hora_fin (time): Hora de fin
-        id_evento_excluir (int, optional): ID del evento a excluir de la validación (para actualizaciones)
-        id_categoria (int, optional): ID de la categoría del evento. Si se proporciona, solo se validan eventos de la misma categoría.
+    if id_categoria_todos:
+        return query.filter(
+            or_(
+                Evento.id_categoria.in_(categorias_permitidas),
+                Evento.id_categoria == id_categoria_todos,
+            )
+        )
+    return query.filter(Evento.id_categoria.in_(categorias_permitidas))
+
+
+def _aplicar_filtro_categoria_especifica(
+    query: Any,
+    categoria_id: int,
+    categorias_permitidas: Optional[List[int]],
+    id_categoria_todos: Optional[int]
+) -> Tuple[Any, Optional[JsonResponse]]:
+    """Aplica filtro de categoría específica y valida permisos."""
+    categoria_permitida = (
+        categorias_permitidas is None
+        or categoria_id in categorias_permitidas
+        or categoria_id == id_categoria_todos
+    )
     
-    Returns:
-        tuple: (bool, str) - (True si no hay solapamiento, mensaje de error si hay solapamiento)
-    """
-    try:
-        # Buscar eventos del mismo día
-        query = Evento.query.filter_by(fecha_evento=fecha_evento)
-        
-        # Si se especifica categoría, solo validar contra eventos de la misma categoría
-        # Esto permite que eventos de diferentes categorías coexistan en el mismo horario
-        if id_categoria is not None:
-            query = query.filter_by(id_categoria=id_categoria)
-        
-        eventos_mismo_dia = query.all()
-        
-        # Excluir el evento actual si se está actualizando
-        if id_evento_excluir:
-            eventos_mismo_dia = [e for e in eventos_mismo_dia if e.id_evento != id_evento_excluir]
-        
-        # Validar solapamiento con cada evento existente
-        for evento_existente in eventos_mismo_dia:
-            # Convertir a datetime para comparar fácilmente
-            inicio_existente = datetime.combine(fecha_evento, evento_existente.hora_inicio)
-            fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
-            inicio_nuevo = datetime.combine(fecha_evento, hora_inicio)
-            fin_nuevo = datetime.combine(fecha_evento, hora_fin)
-            
-            # Verificar solapamiento:
-            # Dos eventos se solapan si:
-            # (inicio_nuevo < fin_existente) AND (fin_nuevo > inicio_existente)
-            if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
-                # Formatear horarios para el mensaje de error
-                hora_inicio_str = evento_existente.hora_inicio.strftime('%H:%M')
-                hora_fin_str = evento_existente.hora_fin.strftime('%H:%M')
-                hora_nuevo_inicio_str = hora_inicio.strftime('%H:%M')
-                hora_nuevo_fin_str = hora_fin.strftime('%H:%M')
-                
-                # Determinar qué parte se solapa para un mensaje más específico
-                if inicio_nuevo < inicio_existente:
-                    # El nuevo evento empieza antes del existente
-                    if fin_nuevo <= inicio_existente:
-                        # No debería llegar aquí porque ya validamos el solapamiento
-                        mensaje = f"El horario del nuevo evento se solapa con el evento '{evento_existente.nombre}'."
-                    else:
-                        # El nuevo evento empieza antes y se solapa
-                        mensaje = f"El horario de fin del nuevo evento ({hora_nuevo_fin_str}) se solapa con el inicio del evento '{evento_existente.nombre}' que inicia a las {hora_inicio_str}."
-                elif inicio_nuevo >= inicio_existente and fin_nuevo <= fin_existente:
-                    # El nuevo evento está completamente dentro del evento existente
-                    mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) está completamente dentro del evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
-                elif inicio_nuevo >= inicio_existente and inicio_nuevo < fin_existente:
-                    # El nuevo evento empieza durante el evento existente
-                    if fin_nuevo <= fin_existente:
-                        # Está completamente dentro (ya cubierto arriba)
-                        mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) está completamente dentro del evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
-                    else:
-                        # Empieza durante y termina después
-                        mensaje = f"El horario de inicio del nuevo evento ({hora_nuevo_inicio_str}) se solapa con el evento '{evento_existente.nombre}' que está en curso de {hora_inicio_str} a {hora_fin_str}."
-                else:
-                    # Caso general (nuevo evento empieza después del fin del existente pero se solapa - no debería pasar)
-                    mensaje = f"El horario del nuevo evento ({hora_nuevo_inicio_str} - {hora_nuevo_fin_str}) se solapa con el evento '{evento_existente.nombre}' ({hora_inicio_str} - {hora_fin_str})."
-                
-                return (False, mensaje)
-        
-        return (True, None)
-        
-    except Exception as e:
-        from src.utils.logger import obtener_registrador
-        logger = obtener_registrador('aplicacion')
-        logger.error(f'Error al validar solapamiento de horario: {str(e)}')
-        # En caso de error, permitir el evento (mejor permitir de más que bloquear)
-        return (True, None)
+    if not categoria_permitida:
+        return query, HttpResponseBuilder.success(
+            message='No tienes acceso a eventos de esta categoría',
+            data=[],
+            pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
+        )
+    
+    return query.filter_by(id_categoria=categoria_id), None
+
+
+def _aplicar_filtros_basicos(
+    query: Any,
+    search: Optional[str],
+    tipo_evento_id: Optional[int],
+    fecha_desde: Optional[str],
+    fecha_hasta: Optional[str]
+) -> Any:
+    """Aplica filtros básicos a la consulta de eventos."""
+    if search:
+        query = query.filter(Evento.nombre.ilike(f"%{search}%"))
+
+    if tipo_evento_id:
+        query = query.filter_by(id_tipo_evento=tipo_evento_id)
+
+    if fecha_desde:
+        fecha_desde_obj = _parse_date(fecha_desde)
+        if fecha_desde_obj:
+            query = query.filter(Evento.fecha_evento >= fecha_desde_obj)
+
+    if fecha_hasta:
+        fecha_hasta_obj = _parse_date(fecha_hasta)
+        if fecha_hasta_obj:
+            query = query.filter(Evento.fecha_evento <= fecha_hasta_obj)
+    
+    return query
 
 
 # ============================================================================
@@ -201,623 +521,363 @@ def validar_solapamiento_horario(fecha_evento, hora_inicio, hora_fin, id_evento_
 # ============================================================================
 
 @eventos_bp.route('/calendario', methods=['GET'])
-@token_required(
-    required_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ],
-    required_active_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ]
-)
-def listar_eventos():
+@token_required(required_roles=ROLES_GENERALES, required_active_roles=ROLES_GENERALES)
+def listar_eventos() -> JsonResponse:
     """
-    Listar eventos con filtros opcionales, filtrando por categoría según el rol del usuario.
+    Lista eventos aplicando filtros y restricciones por rol.
     
-    Filtrado automático por rol:
-        - Deportista: Solo eventos de su categoría
-        - Acudiente: Eventos de las categorías de los deportistas que acude
-        - Entrenador/Administrador: Todos los eventos
+    GET /api/eventos/calendario?page=1&per_page=10&search=texto&categoria_id=1&tipo_evento_id=1&fecha_desde=2024-01-01&fecha_hasta=2024-12-31
     
     Query params:
-        - page: número de página (default: 1)
-        - per_page: registros por página (default: 10)
-        - search: búsqueda por nombre
-        - categoria_id: filtrar por categoría (se combina con el filtro automático por rol)
-        - tipo_evento_id: filtrar por tipo de evento
-        - fecha_desde: filtrar desde fecha (YYYY-MM-DD)
-        - fecha_hasta: filtrar hasta fecha (YYYY-MM-DD)
+        page (int, opcional): Número de página
+        per_page (int, opcional): Elementos por página
+        search (str, opcional): Búsqueda por nombre
+        categoria_id (int, opcional): Filtrar por categoría
+        tipo_evento_id (int, opcional): Filtrar por tipo de evento
+        fecha_desde (str, opcional): Fecha desde (YYYY-MM-DD)
+        fecha_hasta (str, opcional): Fecha hasta (YYYY-MM-DD)
+    
+    Returns:
+        Lista paginada de eventos o error.
     """
     try:
-        # Obtener categorías permitidas según el rol del usuario
         categorias_permitidas = obtener_categorias_permitidas_usuario()
-        
-        # Si categorias_permitidas es None, significa que el usuario puede ver todos los eventos
-        # Si es una lista vacía, no puede ver ningún evento
         if categorias_permitidas == []:
-            return jsonify({
-                'success': True,
-                'data': [],
-                'pagination': {
-                    'page': 1,
-                    'per_page': 10,
-                    'total': 0,
-                    'pages': 0
-                },
-                'message': 'No tienes eventos asignados a tus categorías'
-            }), 200
-        
-        # Parámetros de consulta
+            return HttpResponseBuilder.success(
+                message='No tienes eventos asignados a tus categorías',
+                data=[],
+                pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
+            )
+
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
-        search = request.args.get('search', '').strip()
+        search = (request.args.get('search') or '').strip()
         categoria_id = request.args.get('categoria_id', type=int)
         tipo_evento_id = request.args.get('tipo_evento_id', type=int)
         fecha_desde = request.args.get('fecha_desde')
         fecha_hasta = request.args.get('fecha_hasta')
-        
-        # Construir consulta base
+
         query = Evento.query
-        
-        # Obtener el ID de la categoría "Todos" para incluir eventos globales
-        categoria_todos = Categoria.query.filter_by(nombre_categoria='Todos').first()
-        id_categoria_todos = categoria_todos.id_categoria if categoria_todos else None
-        
-        # Filtro automático por categorías permitidas (si aplica)
-        # Incluir eventos de categoría "Todos" además de las categorías permitidas
-        if categorias_permitidas is not None:
-            # Si hay categoría "Todos", incluirla en el filtro
-            if id_categoria_todos:
-                # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
-                query = query.filter(
-                    or_(
-                        Evento.id_categoria.in_(categorias_permitidas),
-                        Evento.id_categoria == id_categoria_todos
-                    )
-                )
-            else:
-                query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
-        
-        # Filtros adicionales del usuario
-        if search:
-            search_filter = f"%{search}%"
-            query = query.filter(Evento.nombre.ilike(search_filter))
-        
-        # Si el usuario especifica categoria_id, combinarlo con el filtro automático
+        id_categoria_todos = _obtener_categoria_todos()
+
+        query = _aplicar_filtro_categorias(query, categorias_permitidas, id_categoria_todos)
+
         if categoria_id:
-            # Permitir también la categoría "Todos" siempre
-            categoria_permitida = (
-                categorias_permitidas is None or 
-                categoria_id in categorias_permitidas or 
-                categoria_id == id_categoria_todos
+            query, error_response = _aplicar_filtro_categoria_especifica(
+                query, categoria_id, categorias_permitidas, id_categoria_todos
             )
-            if categoria_permitida:
-                query = query.filter_by(id_categoria=categoria_id)
-            else:
-                # Si el usuario intenta filtrar por una categoría no permitida, no devolver resultados
-                return jsonify({
-                    'success': True,
-                    'data': [],
-                    'pagination': {
-                        'page': 1,
-                        'per_page': 10,
-                        'total': 0,
-                        'pages': 0
-                    },
-                    'message': 'No tienes acceso a eventos de esta categoría'
-                }), 200
-        
-        if tipo_evento_id:
-            query = query.filter_by(id_tipo_evento=tipo_evento_id)
-        
-        if fecha_desde:
-            fecha_desde_obj = validar_fecha(fecha_desde)
-            if fecha_desde_obj:
-                query = query.filter(Evento.fecha_evento >= fecha_desde_obj)
-        
-        if fecha_hasta:
-            fecha_hasta_obj = validar_fecha(fecha_hasta)
-            if fecha_hasta_obj:
-                query = query.filter(Evento.fecha_evento <= fecha_hasta_obj)
-        
-        # Ordenar por fecha (más recientes primero)
-        query = query.order_by(Evento.fecha_evento.desc())
-        
-        # Paginación
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        
-        # Construir respuesta con información detallada
-        eventos_data = []
-        for evento in pagination.items:
-            evento_dict = evento.to_dict()
-            
-            # Agregar información de relaciones
-            if evento.categoria:
-                evento_dict['categoria'] = {
-                    'id_categoria': evento.categoria.id_categoria,
-                    'nombre_categoria': evento.categoria.nombre_categoria
-                }
-            
-            # Obtener tipo de evento
-            tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-            if tipo_evento:
-                evento_dict['tipo_evento'] = {
-                    'id_tipo_evento': tipo_evento.id_tipo_evento,
-                    'nombre': tipo_evento.nombre
-                }
-            
-            eventos_data.append(evento_dict)
-        
-        return jsonify({
-            'success': True,
-            'data': eventos_data,
-            'pagination': {
+            if error_response:
+                return error_response
+
+        query = _aplicar_filtros_basicos(query, search, tipo_evento_id, fecha_desde, fecha_hasta)
+
+        pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False,
+        )
+
+        eventos_data = [_serializar_evento(evento) for evento in pagination.items]
+
+        return HttpResponseBuilder.success(
+            data=eventos_data,
+            pagination={
                 'page': pagination.page,
                 'per_page': pagination.per_page,
                 'total': pagination.total,
-                'pages': pagination.pages
+                'pages': pagination.pages,
             }
-        }), 200
-        
-    except Exception as e:
-        # Log del error para debugging
-        from src.utils.logger import obtener_registrador
-        logger = obtener_registrador('aplicacion')
-        logger.error(f'Error al listar eventos: {str(e)}')
-        
-        return jsonify({
-            'success': False,
-            'error': 'Error interno del servidor al cargar eventos',
-            'message': 'Por favor intenta nuevamente más tarde'
-        }), 500
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        return handle_exception(exc, logger, "listar eventos")
 
 
-@eventos_bp.route('/calendario/<int:id>', methods=['GET'])
-@token_required(
-    required_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ],
-    required_active_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ]
-)
-def obtener_evento(id):
-    """Obtener un evento específico por ID"""
+@eventos_bp.route('/calendario/<int:evento_id>', methods=['GET'])
+@token_required(required_roles=ROLES_GENERALES, required_active_roles=ROLES_GENERALES)
+def obtener_evento(evento_id: int) -> JsonResponse:
+    """
+    Obtiene un evento específico por identificador.
+    
+    GET /api/eventos/calendario/<evento_id>
+    
+    Returns:
+        Datos del evento o error.
+    """
     try:
-        evento = Evento.query.get(id)
-        
+        evento = Evento.query.get(evento_id)
         if not evento:
-            return jsonify({
-                'success': False,
-                'error': f'Evento con ID {id} no encontrado'
-            }), 404
-        
+            return _build_response(
+                False,
+                error=ERROR_EVENTO_NO_ENCONTRADO.format(id=evento_id),
+                status_code=404,
+            )
+
         evento_dict = evento.to_dict()
-        
-        # Agregar información detallada de relaciones
         if evento.categoria:
             evento_dict['categoria'] = evento.categoria.to_dict()
-        
         if evento.sesion:
             evento_dict['sesion'] = evento.sesion.to_dict()
-        
         tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
         if tipo_evento:
             evento_dict['tipo_evento'] = tipo_evento.to_dict()
-        
-        return jsonify({
-            'success': True,
-            'data': evento_dict
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener evento: {str(e)}'
-        }), 500
+
+        return _build_response(True, data=evento_dict)
+    except Exception as exc:  # pylint: disable=broad-except
+        return handle_exception(exc, logger, "obtener evento")
 
 
 @eventos_bp.route('/calendario', methods=['POST'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def crear_evento():
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def crear_evento() -> JsonResponse:
     """
-    Crear un nuevo evento.
+    Crea un nuevo evento con validaciones de negocio.
     
-    Body JSON:
-        - nombre: nombre del evento (requerido)
-        - fecha_evento: fecha del evento YYYY-MM-DD (requerido)
-        - hora_inicio: hora de inicio HH:MM o HH:MM:SS (requerido)
-        - hora_fin: hora de fin HH:MM o HH:MM:SS (requerido)
-        - lugar: ubicación del evento (requerido)
-        - descripcion: descripción del evento (opcional)
-        - id_categoria: ID de la categoría (requerido)
-        - id_tipo_evento: ID del tipo de evento (requerido)
+    POST /api/eventos/calendario
+    
+    Body JSON requerido:
+    {
+        "nombre": "Nombre del evento",
+        "fecha_evento": "2024-12-31",
+        "hora_inicio": "10:00",
+        "hora_fin": "12:00",
+        "lugar": "Lugar del evento",
+        "id_categoria": 1,
+        "id_tipo_evento": 1,
+        "descripcion": "Descripción opcional"
+    }
+    
+    Returns:
+        Evento creado o error.
     """
     try:
-        data = request.get_json()
-        
-        # Validar que se envió data
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No se enviaron datos',
-                'message': 'El cuerpo de la petición debe contener datos JSON'
-            }), 400
-        
-        # Validaciones de campos requeridos
-        campos_requeridos = ['nombre', 'fecha_evento', 'hora_inicio', 'hora_fin', 'lugar', 'id_categoria', 'id_tipo_evento']
-        campos_faltantes = []
-        
-        for campo in campos_requeridos:
-            if campo not in data or not data[campo]:
-                campos_faltantes.append(campo)
-        
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_NO_SE_ENVIARON_DATOS,
+            mensaje_vacio='El cuerpo de la petición debe contener datos JSON',
+        )
+
+        campos_requeridos = [
+            'nombre',
+            'fecha_evento',
+            'hora_inicio',
+            'hora_fin',
+            'lugar',
+            'id_categoria',
+            'id_tipo_evento',
+        ]
+        campos_faltantes = [campo for campo in campos_requeridos if not data.get(campo)]
         if campos_faltantes:
-            return jsonify({
-                'success': False,
-                'error': 'Campos requeridos faltantes',
-                'message': f'Los siguientes campos son obligatorios: {", ".join(campos_faltantes)}',
-                'campos_faltantes': campos_faltantes
-            }), 400
-        
-        # Validar nombre
+            return _build_response(
+                False,
+                error='Campos requeridos faltantes',
+                message=f'Los siguientes campos son obligatorios: {", ".join(campos_faltantes)}',
+                campos_faltantes=campos_faltantes,
+                status_code=400,
+            )
+
         try:
             nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
-        except ValidationError as e:
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 400
+        except ValidationError as exc:
+            return _build_response(False, error=str(exc), status_code=400)
         if len(nombre) < 3:
-            return jsonify({
-                'success': False,
-                'error': 'El nombre debe tener al menos 3 caracteres'
-            }), 400
-        
-        # Validar fecha
-        fecha_evento = validar_fecha(data['fecha_evento'])
-        if not fecha_evento:
-            return jsonify({
-                'success': False,
-                'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
-            }), 400
-        
-        # Validar hora de inicio
-        hora_inicio = validar_hora(data['hora_inicio'])
-        if not hora_inicio:
-            return jsonify({
-                'success': False,
-                'error': 'Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS'
-            }), 400
-        
-        # Validar hora de fin
-        hora_fin = validar_hora(data['hora_fin'])
-        if not hora_fin:
-            return jsonify({
-                'success': False,
-                'error': 'Formato de hora de fin inválido. Use HH:MM o HH:MM:SS'
-            }), 400
-        
-        # Validar que hora_fin sea mayor que hora_inicio
-        if hora_fin <= hora_inicio:
-            return jsonify({
-                'success': False,
-                'error': 'La hora de fin debe ser posterior a la hora de inicio'
-            }), 400
-        
-        # Validar lugar
-        try:
-            lugar_sanitizado = sanitize_address('lugar', data['lugar'], max_length=120)
-        except ValidationError as e:
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 400
+            return HttpResponseBuilder.bad_request(error=ERROR_NOMBRE_MINIMO_CARACTERES)
 
-        # Validar que no haya solapamiento con otros eventos del mismo día Y misma categoría
+        fecha_evento = _parse_date(data['fecha_evento'])
+        if not fecha_evento:
+            return _build_response(False, error='Formato de fecha inválido. Use YYYY-MM-DD', status_code=400)
+
+        hora_inicio = _parse_time(data['hora_inicio'])
+        if not hora_inicio:
+            return _build_response(
+                False,
+                error='Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS',
+                status_code=400,
+            )
+
+        hora_fin = _parse_time(data['hora_fin'])
+        if not hora_fin:
+            return _build_response(
+                False,
+                error='Formato de hora de fin inválido. Use HH:MM o HH:MM:SS',
+                status_code=400,
+            )
+        if hora_fin <= hora_inicio:
+            return _build_response(False, error='La hora de fin debe ser posterior a la hora de inicio', status_code=400)
+
+        try:
+            lugar = sanitize_address('lugar', data['lugar'], max_length=120)
+        except ValidationError as exc:
+            return _build_response(False, error=str(exc), status_code=400)
+
         validacion_horario, mensaje_error = validar_solapamiento_horario(
-            fecha_evento, hora_inicio, hora_fin, id_categoria=data.get('id_categoria')
+            fecha_evento,
+            hora_inicio,
+            hora_fin,
+            id_categoria=data.get('id_categoria'),
         )
         if not validacion_horario:
-            return jsonify({
-                'success': False,
-                'error': mensaje_error
-            }), 400
-        
-        # Validar que existan las relaciones
+            return _build_response(False, error=mensaje_error, status_code=400)
+
         categoria = Categoria.query.get(data['id_categoria'])
         if not categoria:
-            return jsonify({
-                'success': False,
-                'error': f'Categoría con ID {data["id_categoria"]} no encontrada'
-            }), 404
-        
+            return _build_response(
+                False,
+                error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=data['id_categoria']),
+                status_code=404,
+            )
+
         tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
         if not tipo_evento:
-            return jsonify({
-                'success': False,
-                'error': f'Tipo de evento con ID {data["id_tipo_evento"]} no encontrado'
-            }), 404
-        
-        # Crear nuevo evento
+            return _build_response(
+                False,
+                error=ERROR_TIPO_EVENTO_NO_ENCONTRADO.format(id=data['id_tipo_evento']),
+                status_code=404,
+            )
+
+        descripcion = (
+            sanitize_free_text('descripcion', data.get('descripcion'), max_length=500)
+            if data.get('descripcion')
+            else None
+        )
+
         nuevo_evento = Evento(
             nombre=nombre,
             fecha_evento=fecha_evento,
             hora_inicio=hora_inicio,
             hora_fin=hora_fin,
-            lugar=lugar_sanitizado,
-            descripcion=sanitize_free_text('descripcion', data.get('descripcion'), max_length=500) if data.get('descripcion') else None,
+            lugar=lugar,
+            descripcion=descripcion,
             id_categoria=data['id_categoria'],
-            id_tipo_evento=data['id_tipo_evento']
+            id_tipo_evento=data['id_tipo_evento'],
         )
-        
+
         db.session.add(nuevo_evento)
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Evento creado exitosamente',
-            'data': nuevo_evento.to_dict()
-        }), 201
-        
-    except Exception as e:
+
+        return _build_response(
+            True,
+            message='Evento creado exitosamente',
+            data=nuevo_evento.to_dict(),
+            status_code=201,
+        )
+    except RequestValidationError as exc:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al crear evento: {str(e)}'
-        }), 500
+        return HttpResponseBuilder.bad_request(error=str(exc))
+    except Exception as exc:  # pylint: disable=broad-except
+        db.session.rollback()
+        return handle_exception(exc, logger, "crear evento")
 
 
-@eventos_bp.route('/calendario/<int:id>', methods=['PUT'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def actualizar_evento(id):
+@eventos_bp.route('/calendario/<int:evento_id>', methods=['PUT'])
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def actualizar_evento(evento_id: int) -> JsonResponse:
     """
-    Actualizar un evento existente.
+    Actualiza los datos de un evento existente.
     
-    Body JSON (todos opcionales):
-        - nombre: nuevo nombre del evento
-        - fecha_evento: nueva fecha YYYY-MM-DD
-        - hora_inicio: nueva hora de inicio HH:MM o HH:MM:SS
-        - hora_fin: nueva hora de fin HH:MM o HH:MM:SS
-        - lugar: nueva ubicación del evento
-        - descripcion: nueva descripción del evento
-        - id_categoria: nuevo ID de categoría
-        - id_tipo_evento: nuevo ID de tipo de evento
-        - id_sesion: nuevo ID de sesión
+    PUT /api/eventos/calendario/<evento_id>
+    
+    Body JSON (todos los campos son opcionales):
+    {
+        "nombre": "Nuevo nombre",
+        "fecha_evento": "2024-12-31",
+        "hora_inicio": "10:00",
+        "hora_fin": "12:00",
+        "lugar": "Nuevo lugar",
+        "descripcion": "Nueva descripción",
+        "id_categoria": 1,
+        "id_tipo_evento": 1,
+        "id_sesion": 1
+    }
+    
+    Returns:
+        Evento actualizado o error.
     """
     try:
-        evento = Evento.query.get(id)
-        
+        evento = Evento.query.get(evento_id)
         if not evento:
-            return jsonify({
-                'success': False,
-                'error': f'Evento con ID {id} no encontrado'
-            }), 404
-        
-        data = request.get_json()
-        
-        # Actualizar nombre
-        if 'nombre' in data:
-            try:
-                nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
-            except ValidationError as e:
-                return jsonify({
-                    'success': False,
-                    'error': str(e)
-                }), 400
-            if len(nombre) < 3:
-                return jsonify({
-                    'success': False,
-                    'error': 'El nombre debe tener al menos 3 caracteres'
-                }), 400
-            evento.nombre = nombre
-        
-        # Actualizar fecha
-        if 'fecha_evento' in data:
-            fecha_evento = validar_fecha(data['fecha_evento'])
-            if not fecha_evento:
-                return jsonify({
-                    'success': False,
-                    'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
-                }), 400
-            evento.fecha_evento = fecha_evento
-        
-        # Actualizar hora de inicio
-        if 'hora_inicio' in data:
-            hora_inicio = validar_hora(data['hora_inicio'])
-            if not hora_inicio:
-                return jsonify({
-                    'success': False,
-                    'error': 'Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS'
-                }), 400
-            evento.hora_inicio = hora_inicio
-        
-        # Actualizar hora de fin
-        if 'hora_fin' in data:
-            hora_fin = validar_hora(data['hora_fin'])
-            if not hora_fin:
-                return jsonify({
-                    'success': False,
-                    'error': 'Formato de hora de fin inválido. Use HH:MM o HH:MM:SS'
-                }), 400
-            evento.hora_fin = hora_fin
-        
-        # Validar que hora_fin sea mayor que hora_inicio (si ambos están presentes)
-        if evento.hora_fin <= evento.hora_inicio:
-            return jsonify({
-                'success': False,
-                'error': 'La hora de fin debe ser posterior a la hora de inicio'
-            }), 400
-        
-        # Actualizar lugar
-        if 'lugar' in data:
-            try:
-                lugar_sanitizado = sanitize_address('lugar', data['lugar'], max_length=120)
-            except ValidationError as e:
-                return jsonify({
-                    'success': False,
-                    'error': str(e)
-                }), 400
-            if not validar_lugar(lugar_sanitizado):
-                return jsonify({
-                    'success': False,
-                    'error': 'El lugar debe tener al menos 3 caracteres'
-                }), 400
-            evento.lugar = lugar_sanitizado
-        
-        # Validar solapamiento de horarios si se modificó la fecha o las horas
-        fecha_para_validar = evento.fecha_evento
-        hora_inicio_para_validar = evento.hora_inicio
-        hora_fin_para_validar = evento.hora_fin
-        
-        if 'fecha_evento' in data:
-            fecha_para_validar = validar_fecha(data['fecha_evento'])
-            if not fecha_para_validar:
-                return jsonify({
-                    'success': False,
-                    'error': 'Formato de fecha inválido. Use YYYY-MM-DD'
-                }), 400
-        
-        if 'hora_inicio' in data:
-            hora_inicio_para_validar = validar_hora(data['hora_inicio'])
-            if not hora_inicio_para_validar:
-                return jsonify({
-                    'success': False,
-                    'error': 'Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS'
-                }), 400
-        
-        if 'hora_fin' in data:
-            hora_fin_para_validar = validar_hora(data['hora_fin'])
-            if not hora_fin_para_validar:
-                return jsonify({
-                    'success': False,
-                    'error': 'Formato de hora de fin inválido. Use HH:MM o HH:MM:SS'
-                }), 400
-        
-        # Validar solapamiento solo si se modificó algo relacionado con el horario
-        # Usar la categoría actual del evento o la nueva si se está modificando
-        categoria_para_validar = evento.id_categoria
-        if 'id_categoria' in data:
-            categoria_para_validar = data['id_categoria']
-        
-        if 'fecha_evento' in data or 'hora_inicio' in data or 'hora_fin' in data or 'id_categoria' in data:
-            validacion_horario, mensaje_error = validar_solapamiento_horario(
-                fecha_para_validar, hora_inicio_para_validar, hora_fin_para_validar, 
-                id_evento_excluir=id, id_categoria=categoria_para_validar
+            return HttpResponseBuilder.not_found(
+                error=ERROR_EVENTO_NO_ENCONTRADO.format(id=evento_id)
             )
-            if not validacion_horario:
-                return jsonify({
-                    'success': False,
-                    'error': mensaje_error
-                }), 400
-        
-        # Actualizar descripcion
-        if 'descripcion' in data:
-            evento.descripcion = sanitize_free_text('descripcion', data['descripcion'], max_length=500) if data['descripcion'] else None
-        
-        # Actualizar categoría
-        if 'id_categoria' in data:
-            categoria = Categoria.query.get(data['id_categoria'])
-            if not categoria:
-                return jsonify({
-                    'success': False,
-                    'error': f'Categoría con ID {data["id_categoria"]} no encontrada'
-                }), 404
-            evento.id_categoria = data['id_categoria']
-        
-        # Actualizar tipo de evento
-        if 'id_tipo_evento' in data:
-            tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
-            if not tipo_evento:
-                return jsonify({
-                    'success': False,
-                    'error': f'Tipo de evento con ID {data["id_tipo_evento"]} no encontrado'
-                }), 404
-            evento.id_tipo_evento = data['id_tipo_evento']
-        
-        # Actualizar sesión
-        if 'id_sesion' in data:
-            sesion = Sesion.query.get(data['id_sesion'])
-            if not sesion:
-                return jsonify({
-                    'success': False,
-                    'error': f'Sesión con ID {data["id_sesion"]} no encontrada'
-                }), 404
-            evento.id_sesion = data['id_sesion']
-        
+
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_NO_SE_ENVIARON_DATOS,
+            mensaje_vacio=ERROR_NO_SE_PROPORCIONARON_DATOS,
+        )
+
+        # Actualizar cada campo usando funciones auxiliares (reduce complejidad cognitiva)
+        error_response = _actualizar_nombre_evento(evento, data)
+        if error_response:
+            return error_response
+
+        error_response = _actualizar_fecha_evento(evento, data)
+        if error_response:
+            return error_response
+
+        error_response = _actualizar_horas_evento(evento, data)
+        if error_response:
+            return error_response
+
+        error_response = _actualizar_lugar_evento(evento, data)
+        if error_response:
+            return error_response
+
+        _actualizar_descripcion_evento(evento, data)
+
+        error_response = _actualizar_categoria_evento(evento, data)
+        if error_response:
+            return error_response
+
+        error_response = _actualizar_tipo_evento(evento, data)
+        if error_response:
+            return error_response
+
+        error_response = _actualizar_sesion_evento(evento, data)
+        if error_response:
+            return error_response
+
+        error_response = _validar_solapamiento_evento_actualizado(evento, evento_id, data)
+        if error_response:
+            return error_response
+
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Evento actualizado exitosamente',
-            'data': evento.to_dict()
-        }), 200
-        
-    except Exception as e:
+        return HttpResponseBuilder.success(
+            message='Evento actualizado exitosamente',
+            data=evento.to_dict()
+        )
+    except RequestValidationError as exc:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al actualizar evento: {str(e)}'
-        }), 500
+        return HttpResponseBuilder.bad_request(error=str(exc))
+    except Exception as exc:  # pylint: disable=broad-except
+        db.session.rollback()
+        return handle_exception(exc, logger, "actualizar evento")
 
 
-@eventos_bp.route('/calendario/<int:id>', methods=['DELETE'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def eliminar_evento(id):
-    """Eliminar un evento"""
+@eventos_bp.route('/calendario/<int:evento_id>', methods=['DELETE'])
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def eliminar_evento(evento_id: int) -> JsonResponse:
+    """Elimina un evento existente."""
     try:
-        evento = Evento.query.get(id)
-        
+        evento = Evento.query.get(evento_id)
         if not evento:
-            return jsonify({
-                'success': False,
-                'error': f'Evento con ID {id} no encontrado'
-            }), 404
-        
+            return _build_response(
+                False,
+                error=ERROR_EVENTO_NO_ENCONTRADO.format(id=evento_id),
+                status_code=404,
+            )
+
         nombre_evento = evento.nombre
-        
+
         db.session.delete(evento)
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Evento "{nombre_evento}" eliminado exitosamente'
-        }), 200
-        
-    except Exception as e:
+
+        return _build_response(
+            True,
+            message=f'Evento "{nombre_evento}" eliminado exitosamente',
+        )
+    except Exception as exc:  # pylint: disable=broad-except
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al eliminar evento: {str(e)}'
-        }), 500
+        return _build_response(False, error=f'Error al eliminar evento: {str(exc)}', status_code=500)
 
 
 # ============================================================================
@@ -825,681 +885,291 @@ def eliminar_evento(id):
 # ============================================================================
 
 @eventos_bp.route('/sesiones', methods=['GET'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def listar_sesiones():
-    """Listar todas las sesiones"""
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def listar_sesiones() -> JsonResponse:
+    """Lista las sesiones disponibles con paginación opcional."""
     try:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
-        search = request.args.get('search', '').strip()
-        
+        search = (request.args.get('search') or '').strip()
+
         query = Sesion.query
-        
         if search:
-            search_filter = f"%{search}%"
-            query = query.filter(Sesion.nombre.ilike(search_filter))
-        
-        query = query.order_by(Sesion.nombre.asc())
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        
-        return jsonify({
-            'success': True,
-            'data': [sesion.to_dict() for sesion in pagination.items],
-            'pagination': {
+            query = query.filter(Sesion.nombre.ilike(f"%{search}%"))
+
+        pagination = query.order_by(Sesion.nombre.asc()).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False,
+        )
+
+        return _build_response(
+            True,
+            data=[sesion.to_dict() for sesion in pagination.items],
+            pagination={
                 'page': pagination.page,
                 'per_page': pagination.per_page,
                 'total': pagination.total,
-                'pages': pagination.pages
-            }
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al listar sesiones: {str(e)}'
-        }), 500
+                'pages': pagination.pages,
+            },
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        return _build_response(False, error=f'Error al listar sesiones: {str(exc)}', status_code=500)
 
 
-@eventos_bp.route('/sesiones/<int:id>', methods=['GET'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def obtener_sesion(id):
-    """Obtener una sesión específica por ID"""
+@eventos_bp.route('/sesiones/<int:sesion_id>', methods=['GET'])
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def obtener_sesion(sesion_id: int) -> JsonResponse:
+    """Obtiene una sesión específica por identificador."""
     try:
-        sesion = Sesion.query.get(id)
-        
+        sesion = Sesion.query.get(sesion_id)
         if not sesion:
-            return jsonify({
-                'success': False,
-                'error': f'Sesión con ID {id} no encontrada'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'data': sesion.to_dict()
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener sesión: {str(e)}'
-        }), 500
+            return _build_response(
+                False,
+                error=ERROR_SESION_NO_ENCONTRADA.format(id=sesion_id),
+                status_code=404,
+            )
+
+        return _build_response(True, data=sesion.to_dict())
+    except Exception as exc:  # pylint: disable=broad-except
+        return _build_response(False, error=f'Error al obtener sesión: {str(exc)}', status_code=500)
 
 
 @eventos_bp.route('/sesiones', methods=['POST'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def crear_sesion():
-    """
-    Crear una nueva sesión.
-    
-    Body JSON:
-        - nombre: nombre de la sesión (requerido)
-        - descripcion: descripción de la sesión (opcional)
-    """
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def crear_sesion() -> JsonResponse:
+    """Crea una nueva sesión."""
     try:
-        data = request.get_json()
-        
-        if 'nombre' not in data or not data['nombre'].strip():
-            return jsonify({
-                'success': False,
-                'error': 'El campo nombre es requerido'
-            }), 400
-        
-        nombre = data['nombre'].strip()
-        if len(nombre) < 3:
-            return jsonify({
-                'success': False,
-                'error': 'El nombre debe tener al menos 3 caracteres'
-            }), 400
-        
-        # Verificar que no exista una sesión con el mismo nombre
-        sesion_existente = Sesion.query.filter_by(nombre=nombre).first()
-        if sesion_existente:
-            return jsonify({
-                'success': False,
-                'error': f'Ya existe una sesión con el nombre "{nombre}"'
-            }), 400
-        
-        nueva_sesion = Sesion(
-            nombre=nombre,
-            descripcion=data.get('descripcion', '').strip()
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_NO_SE_ENVIARON_DATOS,
+            mensaje_vacio=ERROR_NO_SE_PROPORCIONARON_DATOS,
         )
-        
+        try:
+            nombre = _obtener_nombre_requerido(data)
+        except RequestValidationError as exc:
+            return _build_response(False, error=str(exc), status_code=exc.status_code)
+
+        if Sesion.query.filter_by(nombre=nombre).first():
+            return _build_response(
+                False,
+                error=f'Ya existe una sesión con el nombre "{nombre}"',
+                status_code=400,
+            )
+
+        descripcion = (data.get('descripcion') or '').strip()
+        nueva_sesion = Sesion(nombre=nombre, descripcion=descripcion)
+
         db.session.add(nueva_sesion)
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Sesión creada exitosamente',
-            'data': nueva_sesion.to_dict()
-        }), 201
-        
-    except Exception as e:
+
+        return _build_response(
+            True,
+            message='Sesión creada exitosamente',
+            data=nueva_sesion.to_dict(),
+            status_code=201,
+        )
+    except RequestValidationError as exc:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al crear sesión: {str(e)}'
-        }), 500
+        return _build_response(False, error=str(exc), status_code=exc.status_code)
+    except Exception as exc:  # pylint: disable=broad-except
+        db.session.rollback()
+        return _build_response(False, error=f'Error al crear sesión: {str(exc)}', status_code=500)
 
 
-@eventos_bp.route('/sesiones/<int:id>', methods=['PUT'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def actualizar_sesion(id):
-    """
-    Actualizar una sesión existente.
-    
-    Body JSON:
-        - nombre: nuevo nombre (opcional)
-        - descripcion: nueva descripción (opcional)
-    """
+
+
+@eventos_bp.route('/sesiones/<int:sesion_id>', methods=['PUT'])
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def actualizar_sesion(sesion_id: int) -> JsonResponse:
+    """Actualiza una sesión existente."""
     try:
-        sesion = Sesion.query.get(id)
-        
+        sesion = Sesion.query.get(sesion_id)
         if not sesion:
-            return jsonify({
-                'success': False,
-                'error': f'Sesión con ID {id} no encontrada'
-            }), 404
-        
-        data = request.get_json()
-        
+            return _build_response(
+                False,
+                error=ERROR_SESION_NO_ENCONTRADA.format(id=sesion_id),
+                status_code=404,
+            )
+
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_NO_SE_ENVIARON_DATOS,
+            mensaje_vacio=ERROR_NO_SE_PROPORCIONARON_DATOS,
+        )
+
         if 'nombre' in data:
-            nombre = data['nombre'].strip()
+            nombre = str(data['nombre']).strip()
             if len(nombre) < 3:
-                return jsonify({
-                    'success': False,
-                    'error': 'El nombre debe tener al menos 3 caracteres'
-                }), 400
-            
-            # Verificar que no exista otra sesión con el mismo nombre
-            sesion_existente = Sesion.query.filter(
-                Sesion.nombre == nombre,
-                Sesion.id_sesion != id
-            ).first()
-            
-            if sesion_existente:
-                return jsonify({
-                    'success': False,
-                    'error': f'Ya existe otra sesión con el nombre "{nombre}"'
-                }), 400
-            
+                return _build_response(False, error='El nombre debe tener al menos 3 caracteres', status_code=400)
+            existe = (
+                Sesion.query.filter(Sesion.nombre == nombre, Sesion.id_sesion != sesion_id).first()
+            )
+            if existe:
+                return _build_response(
+                    False,
+                    error=f'Ya existe otra sesión con el nombre "{nombre}"',
+                    status_code=400,
+                )
             sesion.nombre = nombre
-        
+
         if 'descripcion' in data:
-            sesion.descripcion = data['descripcion'].strip()
-        
+            sesion.descripcion = (data['descripcion'] or '').strip()
+
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Sesión actualizada exitosamente',
-            'data': sesion.to_dict()
-        }), 200
-        
-    except Exception as e:
+
+        return _build_response(
+            True,
+            message='Sesión actualizada exitosamente',
+            data=sesion.to_dict(),
+        )
+    except RequestValidationError as exc:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al actualizar sesión: {str(e)}'
-        }), 500
+        return _build_response(False, error=str(exc), status_code=exc.status_code)
+    except Exception as exc:  # pylint: disable=broad-except
+        db.session.rollback()
+        return _build_response(False, error=f'Error al actualizar sesión: {str(exc)}', status_code=500)
 
 
-@eventos_bp.route('/sesiones/<int:id>', methods=['DELETE'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def eliminar_sesion(id):
-    """Eliminar una sesión"""
+@eventos_bp.route('/sesiones/<int:sesion_id>', methods=['DELETE'])
+@token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
+def eliminar_sesion(sesion_id: int) -> JsonResponse:
+    """Elimina una sesión si no tiene eventos asociados."""
     try:
-        sesion = Sesion.query.get(id)
-        
+        sesion = Sesion.query.get(sesion_id)
         if not sesion:
-            return jsonify({
-                'success': False,
-                'error': f'Sesión con ID {id} no encontrada'
-            }), 404
-        
-        # Verificar si hay eventos asociados
-        eventos_count = Evento.query.filter_by(id_sesion=id).count()
+            return _build_response(
+                False,
+                error=ERROR_SESION_NO_ENCONTRADA.format(id=sesion_id),
+                status_code=404,
+            )
+
+        eventos_count = Evento.query.filter_by(id_sesion=sesion_id).count()
         if eventos_count > 0:
-            return jsonify({
-                'success': False,
-                'error': f'No se puede eliminar la sesión porque tiene {eventos_count} evento(s) asociado(s)'
-            }), 400
-        
+            return _build_response(
+                False,
+                error=f'No se puede eliminar la sesión porque tiene {eventos_count} evento(s) asociado(s)',
+                status_code=400,
+            )
+
         nombre_sesion = sesion.nombre
-        
+
         db.session.delete(sesion)
         db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Sesión "{nombre_sesion}" eliminada exitosamente'
-        }), 200
-        
-    except Exception as e:
+
+        return _build_response(
+            True,
+            message=f'Sesión "{nombre_sesion}" eliminada exitosamente',
+        )
+    except Exception as exc:  # pylint: disable=broad-except
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al eliminar sesión: {str(e)}'
-        }), 500
+        return _build_response(False, error=f'Error al eliminar sesión: {str(exc)}', status_code=500)
 
 
 # ============================================================================
 # CRUD DE TIPOS DE EVENTO
 # ============================================================================
 
-@eventos_bp.route('/tipos-evento', methods=['GET'])
-@token_required(
-    required_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente'
-    ],
-    required_active_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente'
-    ]
-)
-def listar_tipos_evento():
-    """Listar todos los tipos de evento"""
-    try:
-        page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 10, type=int)
-        search = request.args.get('search', '').strip()
-        
-        query = TipoEvento.query
-        
-        if search:
-            search_filter = f"%{search}%"
-            query = query.filter(TipoEvento.nombre.ilike(search_filter))
-        
-        query = query.order_by(TipoEvento.nombre.asc())
-        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
-        
-        return jsonify({
-            'success': True,
-            'data': [tipo.to_dict() for tipo in pagination.items],
-            'pagination': {
-                'page': pagination.page,
-                'per_page': pagination.per_page,
-                'total': pagination.total,
-                'pages': pagination.pages
-            }
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al listar tipos de evento: {str(e)}'
-        }), 500
-
-
-@eventos_bp.route('/tipos-evento/<int:id>', methods=['GET'])
-@token_required(
-    required_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente'
-    ],
-    required_active_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente'
-    ]
-)
-def obtener_tipo_evento(id):
-    """Obtener un tipo de evento específico por ID"""
-    try:
-        tipo_evento = TipoEvento.query.get(id)
-        
-        if not tipo_evento:
-            return jsonify({
-                'success': False,
-                'error': f'Tipo de evento con ID {id} no encontrado'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'data': tipo_evento.to_dict()
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener tipo de evento: {str(e)}'
-        }), 500
-
-
-@eventos_bp.route('/tipos-evento', methods=['POST'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def crear_tipo_evento():
-    """
-    Crear un nuevo tipo de evento.
-    
-    Body JSON:
-        - nombre: nombre del tipo de evento (requerido)
-        - descripcion: descripción del tipo (opcional)
-    """
-    try:
-        data = request.get_json()
-        
-        if 'nombre' not in data or not data['nombre'].strip():
-            return jsonify({
-                'success': False,
-                'error': 'El campo nombre es requerido'
-            }), 400
-        
-        nombre = data['nombre'].strip()
-        if len(nombre) < 3:
-            return jsonify({
-                'success': False,
-                'error': 'El nombre debe tener al menos 3 caracteres'
-            }), 400
-        
-        # Verificar que no exista un tipo con el mismo nombre
-        tipo_existente = TipoEvento.query.filter_by(nombre=nombre).first()
-        if tipo_existente:
-            return jsonify({
-                'success': False,
-                'error': f'Ya existe un tipo de evento con el nombre "{nombre}"'
-            }), 400
-        
-        nuevo_tipo = TipoEvento(
-            nombre=nombre,
-            descripcion=data.get('descripcion', '').strip()
-        )
-        
-        db.session.add(nuevo_tipo)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Tipo de evento creado exitosamente',
-            'data': nuevo_tipo.to_dict()
-        }), 201
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al crear tipo de evento: {str(e)}'
-        }), 500
-
-
-@eventos_bp.route('/tipos-evento/<int:id>', methods=['PUT'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def actualizar_tipo_evento(id):
-    """
-    Actualizar un tipo de evento existente.
-    
-    Body JSON:
-        - nombre: nuevo nombre (opcional)
-        - descripcion: nueva descripción (opcional)
-    """
-    try:
-        tipo_evento = TipoEvento.query.get(id)
-        
-        if not tipo_evento:
-            return jsonify({
-                'success': False,
-                'error': f'Tipo de evento con ID {id} no encontrado'
-            }), 404
-        
-        data = request.get_json()
-        
-        if 'nombre' in data:
-            nombre = data['nombre'].strip()
-            if len(nombre) < 3:
-                return jsonify({
-                    'success': False,
-                    'error': 'El nombre debe tener al menos 3 caracteres'
-                }), 400
-            
-            # Verificar que no exista otro tipo con el mismo nombre
-            tipo_existente = TipoEvento.query.filter(
-                TipoEvento.nombre == nombre,
-                TipoEvento.id_tipo_evento != id
-            ).first()
-            
-            if tipo_existente:
-                return jsonify({
-                    'success': False,
-                    'error': f'Ya existe otro tipo de evento con el nombre "{nombre}"'
-                }), 400
-            
-            tipo_evento.nombre = nombre
-        
-        if 'descripcion' in data:
-            tipo_evento.descripcion = data['descripcion'].strip()
-        
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Tipo de evento actualizado exitosamente',
-            'data': tipo_evento.to_dict()
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al actualizar tipo de evento: {str(e)}'
-        }), 500
-
-
-@eventos_bp.route('/tipos-evento/<int:id>', methods=['DELETE'])
-@token_required(
-    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
-    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador']
-)
-def eliminar_tipo_evento(id):
-    """Eliminar un tipo de evento"""
-    try:
-        tipo_evento = TipoEvento.query.get(id)
-        
-        if not tipo_evento:
-            return jsonify({
-                'success': False,
-                'error': f'Tipo de evento con ID {id} no encontrado'
-            }), 404
-        
-        # Verificar si hay eventos asociados
-        eventos_count = Evento.query.filter_by(id_tipo_evento=id).count()
-        if eventos_count > 0:
-            return jsonify({
-                'success': False,
-                'error': f'No se puede eliminar el tipo de evento porque tiene {eventos_count} evento(s) asociado(s)'
-            }), 400
-        
-        nombre_tipo = tipo_evento.nombre
-        
-        db.session.delete(tipo_evento)
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Tipo de evento "{nombre_tipo}" eliminado exitosamente'
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'success': False,
-            'error': f'Error al eliminar tipo de evento: {str(e)}'
-        }), 500
 
 
 # ============================================================================
 # ENDPOINTS ADICIONALES
 # ============================================================================
 
-@eventos_bp.route('/eventos/proximos', methods=['GET'])
-@token_required(
-    required_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ],
-    required_active_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ]
-)
-def eventos_proximos():
+@eventos_bp.route('/proximos', methods=['GET'])
+@token_required(required_roles=ROLES_GENERALES, required_active_roles=ROLES_GENERALES)
+def eventos_proximos() -> JsonResponse:
     """
-    Listar eventos próximos (desde hoy en adelante), filtrando por categoría según el rol del usuario.
+    Lista eventos futuros aplicando restricciones de rol.
     
-    Filtrado automático por rol:
-        - Deportista: Solo eventos de su categoría
-        - Acudiente: Eventos de las categorías de los deportistas que acude
-        - Entrenador/Administrador: Todos los eventos
+    GET /api/eventos/proximos?limit=10&categoria_id=1
+    
+    Query params:
+        limit (int, opcional): Número máximo de eventos a retornar (default: 10)
+        categoria_id (int, opcional): Filtrar por categoría
+    
+    Returns:
+        Lista de eventos próximos o error.
     """
     try:
-        # Obtener categorías permitidas según el rol del usuario
         categorias_permitidas = obtener_categorias_permitidas_usuario()
-        
-        # Si categorias_permitidas es una lista vacía, no puede ver ningún evento
         if categorias_permitidas == []:
-            return jsonify({
-                'success': True,
-                'data': [],
-                'total': 0,
-                'message': 'No tienes eventos próximos asignados a tus categorías'
-            }), 200
-        
+            return HttpResponseBuilder.success(
+                data=[],
+                total=0,
+                message='No tienes eventos próximos asignados a tus categorías'
+            )
+
         limit = request.args.get('limit', 10, type=int)
         categoria_id = request.args.get('categoria_id', type=int)
-        
+
         query = Evento.query.filter(Evento.fecha_evento >= date.today())
-        
-        # Obtener el ID de la categoría "Todos" para incluir eventos globales
-        categoria_todos = Categoria.query.filter_by(nombre_categoria='Todos').first()
-        id_categoria_todos = categoria_todos.id_categoria if categoria_todos else None
-        
-        # Filtro automático por categorías permitidas (si aplica)
-        # Incluir eventos de categoría "Todos" además de las categorías permitidas
-        if categorias_permitidas is not None:
-            # Si hay categoría "Todos", incluirla en el filtro
-            if id_categoria_todos:
-                # Incluir eventos de categorías permitidas O eventos de categoría "Todos"
-                query = query.filter(
-                    or_(
-                        Evento.id_categoria.in_(categorias_permitidas),
-                        Evento.id_categoria == id_categoria_todos
-                    )
-                )
-            else:
-                query = query.filter(Evento.id_categoria.in_(categorias_permitidas))
-        
+        id_categoria_todos = _obtener_categoria_todos()
+
+        query = _aplicar_filtro_categorias(query, categorias_permitidas, id_categoria_todos)
+
         if categoria_id:
-            # Verificar que la categoría esté permitida
-            # Permitir también la categoría "Todos" siempre
-            categoria_permitida = (
-                categorias_permitidas is None or 
-                categoria_id in categorias_permitidas or 
-                categoria_id == id_categoria_todos
+            query, error_response = _aplicar_filtro_categoria_especifica(
+                query, categoria_id, categorias_permitidas, id_categoria_todos
             )
-            if categoria_permitida:
-                query = query.filter_by(id_categoria=categoria_id)
-            else:
-                return jsonify({
-                    'success': True,
-                    'data': [],
-                    'total': 0,
-                    'message': 'No tienes acceso a eventos de esta categoría'
-                }), 200
-        
-        query = query.order_by(Evento.fecha_evento.asc()).limit(limit)
-        eventos = query.all()
-        
+            if error_response:
+                # Ajustar respuesta para eventos próximos (sin pagination)
+                return HttpResponseBuilder.success(
+                    data=[],
+                    total=0,
+                    message='No tienes acceso a eventos de esta categoría'
+                )
+
+        eventos = query.order_by(Evento.fecha_evento.asc()).limit(limit).all()
         eventos_data = []
         for evento in eventos:
             try:
-                evento_dict = evento.to_dict()
-                
-                # Agregar información de categoría si existe
-                if evento.categoria:
-                    evento_dict['categoria'] = evento.categoria.to_dict()
-                
-                # Agregar información de tipo de evento si existe
-                tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-                if tipo_evento:
-                    evento_dict['tipo_evento'] = tipo_evento.to_dict()
-                
-                eventos_data.append(evento_dict)
-            except Exception as e:
-                print(f"⚠️ Error procesando evento {evento.id_evento}: {str(e)}")
-                import traceback
-                print(traceback.format_exc())
-                # Continuar con el siguiente evento en lugar de fallar completamente
+                eventos_data.append(_serializar_evento(evento))
+            except Exception as exc:  # pragma: no cover
+                logger.warning('Error procesando evento %s: %s', evento.id_evento, str(exc))
                 continue
-        
-        return jsonify({
-            'success': True,
-            'data': eventos_data,
-            'total': len(eventos_data)
-        }), 200
-        
-    except Exception as e:
-        import traceback
-        error_trace = traceback.format_exc()
-        print(f"❌ Error en eventos_proximos: {str(e)}")
-        print(f"📋 Traceback completo:\n{error_trace}")
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener eventos próximos: {str(e)}',
-            'traceback': error_trace if __debug__ else None
-        }), 500
+
+        return HttpResponseBuilder.success(data=eventos_data, total=len(eventos_data))
+    except Exception as exc:  # pylint: disable=broad-except
+        return handle_exception(exc, logger, "obtener eventos próximos")
 
 
-@eventos_bp.route('/eventos/categoria/<int:categoria_id>', methods=['GET'])
-@token_required(
-    required_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ],
-    required_active_roles=[
-        'SuperAdmin',
-        'Administrador',
-        'Entrenador',
-        'Deportista',
-        'Acudiente',
-        'usuario'
-    ]
-)
-def eventos_por_categoria(categoria_id):
-    """Listar todos los eventos de una categoría específica"""
+@eventos_bp.route('/categoria/<int:categoria_id>', methods=['GET'])
+@token_required(required_roles=ROLES_GENERALES, required_active_roles=ROLES_GENERALES)
+def eventos_por_categoria(categoria_id: int) -> JsonResponse:
+    """
+    Lista los eventos de una categoría específica.
+    
+    GET /api/eventos/categoria/<categoria_id>
+    
+    Args:
+        categoria_id: ID de la categoría
+    
+    Returns:
+        Lista de eventos de la categoría o error.
+    """
     try:
-        # Verificar que la categoría exista
         categoria = Categoria.query.get(categoria_id)
         if not categoria:
-            return jsonify({
-                'success': False,
-                'error': f'Categoría con ID {categoria_id} no encontrada'
-            }), 404
-        
+            return _build_response(
+                False,
+                error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=categoria_id),
+                status_code=404,
+            )
+
         eventos = Evento.query.filter_by(id_categoria=categoria_id).order_by(Evento.fecha_evento.desc()).all()
-        
-        eventos_data = []
-        for evento in eventos:
-            evento_dict = evento.to_dict()
-            if evento.sesion:
-                evento_dict['sesion'] = evento.sesion.to_dict()
-            tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-            if tipo_evento:
-                evento_dict['tipo_evento'] = tipo_evento.to_dict()
-            eventos_data.append(evento_dict)
-        
-        return jsonify({
-            'success': True,
-            'data': eventos_data,
-            'categoria': categoria.to_dict(),
-            'total': len(eventos_data)
-        }), 200
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al obtener eventos por categoría: {str(e)}'
-        }), 500
+        eventos_data = [_serializar_evento(evento) for evento in eventos]
+
+        return _build_response(
+            True,
+            data=eventos_data,
+            categoria=categoria.to_dict(),
+            total=len(eventos_data),
+        )
+    except Exception as exc:  # pylint: disable=broad-except
+        return _build_response(
+            False,
+            error=f'Error al obtener eventos por categoría: {str(exc)}',
+            status_code=500,
+        )
 

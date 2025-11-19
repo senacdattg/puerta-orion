@@ -9,9 +9,9 @@ Responsabilidad:
 Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
-from flask import Blueprint, request, jsonify, make_response
+from typing import Any, Dict, Iterable, List, Optional, Tuple, TYPE_CHECKING
+from flask import Blueprint, Flask, Response, jsonify, request
 from flask_cors import cross_origin
-
 from ..models.base import db
 from ..models.usuarios.usuario import Usuario
 from ..models.roles_y_permisos.rol import Rol
@@ -20,9 +20,162 @@ from ..middleware.auth_decorator import token_required
 from ..utils.logger import obtener_registrador
 from ..services.Auth.usuario_service import usuario_service, UsuarioServiceError
 
+from ..utils.request_validators import (
+    RequestValidationError,
+    obtener_json_requerido,
+    validar_campo_booleano,
+)
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..models.personas.persona import Persona
+
 # Crear Blueprint de usuarios
 usuarios_bp = Blueprint('usuarios', __name__, url_prefix='/api/usuarios')
 logger = obtener_registrador('aplicacion')
+
+DEFAULT_LIMIT = 3
+DEFAULT_OFFSET = 0
+MAX_LIMIT = 100
+ROLES_PERMITIDOS = ('entrenador', 'administrador')
+ROLES_EXCLUIDOS = ('superadmin', 'super_admin', 'usuario', 'deportista', 'acudiente')
+ROLES_AUTOMATICOS = ('usuario', 'deportista', 'acudiente')
+
+ERROR_INTERNO_SERVIDOR = 'Error interno del servidor'
+ERROR_CONTENT_TYPE_JSON = 'Content-Type debe ser application/json'
+ERROR_DATOS_REQUERIDOS = 'Datos requeridos'
+ERROR_ESTADO_REQUERIDO = 'Se requiere el campo "estado" (true/false)'
+ERROR_ESTADO_BOOLEANO = 'El campo "estado" debe ser true o false'
+
+JsonResponse = Tuple[Response, int]
+
+
+def _ajustar_paginacion(limit: int, offset: int) -> Tuple[int, int]:
+    """Normaliza los parámetros de paginación."""
+    limit = max(1, min(limit, MAX_LIMIT))
+    offset = max(0, offset)
+    return limit, offset
+
+
+def _aplicar_filtro_estado(estado: str):
+    """Construye la consulta según el estado solicitado."""
+    filtros = {
+        'activo': Usuario.query.filter_by(estado=True),
+        'inactivo': Usuario.query.filter_by(estado=False),
+    }
+    return filtros.get(estado.lower(), Usuario.query)
+
+
+def _serializar_roles(roles: Iterable[Rol]) -> List[Dict[str, Any]]:
+    """Serializa la información de los roles asociados a un usuario."""
+    return [
+        {
+            'id_rol': rol.id_rol,
+            'nombre_rol': rol.nombre_rol,
+            'descripcion': rol.descripcion,
+        }
+        for rol in roles
+    ]
+
+
+def _serializar_persona(persona: 'Persona') -> Dict[str, Any]:
+    """Serializa la información personal asociada al usuario."""
+    return {
+        'id_persona': persona.id_persona,
+        'nombre_completo': persona.nombre_completo,
+        'primer_nombre': persona.primer_nombre,
+        'primer_apellido': persona.primer_apellido,
+        'correo_electronico': persona.correo_electronico,
+        'documento': persona.documento,
+        'telefono': persona.telefono,
+    }
+
+
+def _serializar_usuario(usuario: Usuario) -> Dict[str, Any]:
+    """Serializa la información del usuario incluyendo roles y persona."""
+    return {
+        'id_usuario': usuario.id_usuario,
+        'usuario': usuario.usuario,
+        'estado': usuario.estado,
+        'roles': _serializar_roles(usuario.roles),
+        'persona': _serializar_persona(usuario.persona),
+    }
+
+
+def _normalizar_roles_solicitados(data: Dict[str, Any]) -> List[Any]:
+    """Obtiene la lista de roles solicitados desde el cuerpo JSON."""
+    id_rol = data.get('id_rol')
+    id_roles = data.get('id_roles', [])
+
+    if id_rol is not None and not id_roles:
+        id_roles = [id_rol]
+    elif id_rol is None and id_roles is None:
+        raise RequestValidationError(
+            'Debe proporcionar id_rol o id_roles (array). Puede enviar un array vacío [] para remover todos los roles gestionables.',
+            status_code=400,
+        )
+
+    if isinstance(id_roles, list):
+        return id_roles
+    if id_roles is None:
+        return []
+    return [id_roles]
+
+
+def _filtrar_roles_gestionables(
+    identificadores: Iterable[Any],
+    *,
+    id_usuario: int,
+) -> List[Rol]:
+    """Obtiene los roles gestionables permitidos a partir de los identificadores."""
+    roles_validos: List[Rol] = []
+    for identificador in identificadores:
+        try:
+            identificador_int = int(identificador)
+        except (TypeError, ValueError):
+            continue
+
+        rol = Rol.query.filter_by(id_rol=identificador_int).first()
+        if not rol:
+            continue
+
+        nombre_lower = rol.nombre_rol.lower()
+        if nombre_lower in ROLES_PERMITIDOS:
+            roles_validos.append(rol)
+        elif nombre_lower in ROLES_EXCLUIDOS:
+            logger.warning(
+                "Intento de asignar rol %s a usuario %s, ignorado (rol automático o no permitido)",
+                rol.nombre_rol,
+                id_usuario,
+            )
+
+    return roles_validos
+
+
+def _actualizar_roles_gestionables(id_usuario: int, roles_validos: Iterable[Rol]) -> None:
+    """Reemplaza los roles gestionables actuales por los solicitados."""
+    roles_actuales_usuario = UsuarioRol.query.filter_by(id_usuario=id_usuario).all()
+
+    for usuario_rol in roles_actuales_usuario:
+        rol_obj = Rol.query.get(usuario_rol.id_rol)
+        if not rol_obj:
+            continue
+
+        nombre_lower = rol_obj.nombre_rol.lower()
+        if nombre_lower in ROLES_PERMITIDOS or nombre_lower in {'superadmin', 'super_admin'}:
+            db.session.delete(usuario_rol)
+
+    for rol in roles_validos:
+        db.session.add(UsuarioRol(id_usuario=id_usuario, id_rol=rol.id_rol))
+
+    db.session.commit()
+
+
+def _obtener_usuario(id_usuario: int, *, solo_activos: bool = False) -> Optional[Usuario]:
+    """Recupera un usuario por su identificador con opción a filtrar por estado."""
+    filtro = {'id_usuario': id_usuario}
+    if solo_activos:
+        filtro['estado'] = True
+    return Usuario.query.filter_by(**filtro).first()
 
 
 @usuarios_bp.route('/', methods=['GET', 'OPTIONS'])
@@ -31,81 +184,27 @@ logger = obtener_registrador('aplicacion')
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']
 )  # Habilitar autenticación
-def listar_usuarios():
-    """
-    Endpoint para listar todos los usuarios con sus roles.
-    
-    Headers requeridos:
-    Authorization: Bearer <token>
-    
-    Query params opcionales:
-    - estado: 'activo', 'inactivo' o 'todos' (default: 'todos')
-    - limit: Número de usuarios a retornar (default: 4)
-    - offset: Número de usuarios a saltar (default: 0)
-    
+def listar_usuarios() -> JsonResponse:
+    """Lista usuarios con información de roles y persona asociada.
+
     Returns:
-        JSON: Lista de usuarios con sus roles y información de paginación
+        Response: Respuesta JSON con usuarios paginados y metadatos.
     """
     try:
-        # Obtener parámetros de paginación
-        limit = request.args.get('limit', 3, type=int)
-        offset = request.args.get('offset', 0, type=int)
-        
-        # Validar parámetros
-        if limit < 1:
-            limit = 3
-        if limit > 100:  # Límite máximo
-            limit = 100
-        if offset < 0:
-            offset = 0
-        
-        # Obtener parámetro de estado (opcional)
+        limit_param = request.args.get('limit', DEFAULT_LIMIT, type=int)
+        offset_param = request.args.get('offset', DEFAULT_OFFSET, type=int)
+        limit = limit_param if isinstance(limit_param, int) else DEFAULT_LIMIT
+        offset = offset_param if isinstance(offset_param, int) else DEFAULT_OFFSET
+        limit, offset = _ajustar_paginacion(limit, offset)
+
         estado_filter = request.args.get('estado', 'todos')
-        
-        # Construir query base según el filtro de estado
-        if estado_filter == 'activo':
-            query = Usuario.query.filter_by(estado=True)
-        elif estado_filter == 'inactivo':
-            query = Usuario.query.filter_by(estado=False)
-        else:  # 'todos' por defecto
-            query = Usuario.query
-        
-        # Obtener total de usuarios (antes de paginación)
+        query = _aplicar_filtro_estado(estado_filter or 'todos')
+
         total_usuarios = query.count()
-        
-        # Aplicar paginación
         usuarios = query.offset(offset).limit(limit).all()
-        
-        usuarios_data = []
-        for usuario in usuarios:
-            # Obtener roles del usuario a través de la relación directa
-            roles_usuario = []
-            for rol in usuario.roles:
-                roles_usuario.append({
-                    'id_rol': rol.id_rol,
-                    'nombre_rol': rol.nombre_rol,
-                    'descripcion': rol.descripcion
-                })
-            
-            usuarios_data.append({
-                'id_usuario': usuario.id_usuario,
-                'usuario': usuario.usuario,
-                'estado': usuario.estado,
-                'roles': roles_usuario,
-                'persona': {
-                    'id_persona': usuario.persona.id_persona,
-                    'nombre_completo': usuario.persona.nombre_completo,
-                    'primer_nombre': usuario.persona.primer_nombre,
-                    'primer_apellido': usuario.persona.primer_apellido,
-                    'correo_electronico': usuario.persona.correo_electronico,
-                    'documento': usuario.persona.documento,
-                    'telefono': usuario.persona.telefono
-                }
-            })
-        
-        # Calcular si hay más usuarios
+        usuarios_data = [_serializar_usuario(usuario) for usuario in usuarios]
         has_more = (offset + limit) < total_usuarios
-        
+
         return jsonify({
             'success': True,
             'message': 'Usuarios obtenidos exitosamente',
@@ -116,12 +215,12 @@ def listar_usuarios():
             'has_more': has_more,
             'status_code': 200
         }), 200
-        
-    except Exception as e:
-        logger.error(f"Error inesperado al listar usuarios: {str(e)}")
+
+    except Exception as exc:
+        logger.error("Error inesperado al listar usuarios: %s", str(exc))
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -131,20 +230,14 @@ def listar_usuarios():
     required_roles=['Administrador', 'SuperAdmin', 'Entrenador'],
     required_active_roles=['Administrador', 'SuperAdmin', 'Entrenador']
 )  # Protegido con autenticación
-def obtener_detalle_usuario(id_usuario):
-    """
-    Endpoint para obtener la información completa de un usuario específico.
+def obtener_detalle_usuario(id_usuario: int) -> JsonResponse:
+    """Obtiene la información detallada de un usuario específico.
 
-    Incluye:
-    - Datos de usuario y persona
-    - Roles asignados
-    - Información específica por rol (deportista, acudiente)
-
-    Headers requeridos:
-    Authorization: Bearer <token>
+    Args:
+        id_usuario: Identificador del usuario a consultar.
 
     Returns:
-        JSON: Estructura con la información completa o error
+        Response: Respuesta JSON con el detalle del usuario o el error.
     """
     try:
         detalle = usuario_service.obtener_detalle_completo_usuario(id_usuario)
@@ -161,12 +254,11 @@ def obtener_detalle_usuario(id_usuario):
             'data': detalle,
             'status_code': 200
         }), 200
-
-    except Exception as e:
-        logger.error(f"Error inesperado al obtener detalle de usuario: {str(e)}")
+    except Exception as exc:
+        logger.error("Error inesperado al obtener detalle de usuario: %s", str(exc))
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -176,155 +268,81 @@ def obtener_detalle_usuario(id_usuario):
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']
 )  # Habilitar autenticación
-def actualizar_usuario(id_usuario):
-    """
-    Endpoint para actualizar los datos de un usuario.
-    
-    Permite actualizar tanto datos de la persona como datos del usuario.
-    Puede actualizar SOLO datos_usuario, SOLO datos_persona, o AMBOS.
-    La contraseña y el estado NO se pueden actualizar desde este endpoint.
-    
-    Los datos se envían en el body JSON con dos secciones opcionales (al menos una es requerida):
-    - datos_persona: campos de la persona (nombres, apellidos, documento, etc.) - OPCIONAL
-    - datos_usuario: campos del usuario (solo usuario, NO contraseña ni estado) - OPCIONAL
-    
-    Headers requeridos:
-    Authorization: Bearer <token>
-    
-    Ejemplos de Body JSON:
-    
-    Ejemplo 1: Actualizar solo el nombre de usuario
-    {
-        "datos_usuario": {
-            "usuario": "nuevo_usuario"
-        }
-    }
-    
-    Ejemplo 2: Actualizar solo datos de persona
-    {
-        "datos_persona": {
-            "primer_nombre": "Juan",
-            "correo_electronico": "juan@example.com"
-        }
-    }
-    
-    Ejemplo 3: Actualizar ambos (persona y usuario)
-    {
-        "datos_persona": {
-            "primer_nombre": "Juan",
-            "segundo_nombre": "Carlos",
-            "primer_apellido": "Pérez",
-            "segundo_apellido": "González",
-            "documento": "12345678",
-            "correo_electronico": "juan@example.com",
-            "telefono": "1234567890",
-            "direccion": "Calle 123",
-            "id_tipo_documento": 1,
-            "id_sexo": 1
-        },
-        "datos_usuario": {
-            "usuario": "nuevo_usuario"
-        }
-    }
-    
-    Campos disponibles en datos_persona:
-    - primer_nombre (string): Primer nombre
-    - segundo_nombre (string, opcional): Segundo nombre
-    - primer_apellido (string): Primer apellido
-    - segundo_apellido (string, opcional): Segundo apellido
-    - documento (string): Número de documento
-    - correo_electronico (string): Correo electrónico
-    - telefono (string): Número de teléfono
-    - direccion (string): Dirección de residencia
-    - id_tipo_documento (int): ID del tipo de documento
-    - id_sexo (int): ID del sexo/género
-    
-    Campos disponibles en datos_usuario:
-    - usuario (string): Nombre de usuario
-    
-    NOTA: La contraseña y el estado NO se pueden actualizar desde este endpoint
-    
+def actualizar_usuario(id_usuario: int) -> JsonResponse:
+    """Actualiza los datos de usuario y persona asociados.
+
+    Args:
+        id_usuario: Identificador del usuario a actualizar.
+
     Returns:
-        JSON: Usuario actualizado o error
+        Response: Respuesta JSON con el resultado de la operación.
     """
     try:
-        # Validar que la petición sea JSON
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'Content-Type debe ser application/json',
-                'status_code': 400
-            }), 400
-        
-        # Obtener datos del JSON
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'Datos requeridos',
-                'status_code': 400
-            }), 400
-        
-        # Separar datos de persona y usuario (opcionales)
-        # Nota: datos_persona primero, datos_usuario segundo (orden lógico)
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio=ERROR_DATOS_REQUERIDOS,
+        )
+
         datos_persona = data.get('datos_persona')
         datos_usuario = data.get('datos_usuario')
-        
-        # Validar que al menos se proporcione un tipo de datos
+
         if not datos_persona and not datos_usuario:
             return jsonify({
                 'success': False,
                 'error': 'Debe proporcionar al menos datos_persona o datos_usuario',
                 'status_code': 400
             }), 400
-        
-        # Validar que no se intente actualizar la contraseña
+
         if datos_usuario and 'password' in datos_usuario:
             return jsonify({
                 'success': False,
                 'error': 'La contraseña no se puede actualizar desde este endpoint. Use el endpoint dedicado para cambio de contraseña',
                 'status_code': 400
             }), 400
-        
-        # Validar que no se intente actualizar el estado
         if datos_usuario and 'estado' in datos_usuario:
             return jsonify({
                 'success': False,
                 'error': 'El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar usuarios',
                 'status_code': 400
             }), 400
-        
         if datos_persona and 'estado' in datos_persona:
             return jsonify({
                 'success': False,
                 'error': 'El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar personas',
                 'status_code': 400
             }), 400
-        
-        # Llamar al servicio para actualizar
-        # Nota: El orden es datos_persona primero, luego datos_usuario
+
         resultado = usuario_service.actualizar_usuario(
             id_usuario=id_usuario,
             datos_persona=datos_persona,
             datos_usuario=datos_usuario
         )
-        
         return jsonify(resultado), resultado.get('status_code', 200)
-        
-    except UsuarioServiceError as e:
-        logger.error(f"Error de servicio al actualizar usuario: {str(e)}")
+
+    except RequestValidationError as exc:
+        logger.warning(
+            "Validación de solicitud al actualizar usuario %s: %s",
+            id_usuario,
+            str(exc),
+        )
         return jsonify({
             'success': False,
-            'error': str(e),
+            'error': str(exc),
+            'status_code': exc.status_code
+        }), exc.status_code
+    except UsuarioServiceError as exc:
+        logger.error("Error de servicio al actualizar usuario: %s", str(exc))
+        return jsonify({
+            'success': False,
+            'error': str(exc),
             'status_code': 400
         }), 400
-        
-    except Exception as e:
-        logger.error(f"Error inesperado al actualizar usuario: {str(e)}")
+    except Exception as exc:
+        logger.error("Error inesperado al actualizar usuario: %s", str(exc))
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -335,130 +353,40 @@ def actualizar_usuario(id_usuario):
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']
 )  # Habilitar autenticación
-def cambiar_rol_usuario(id_usuario):
-    """
-    Endpoint para cambiar el rol de un usuario.
-    
-    Headers requeridos:
-    Authorization: Bearer <token>
-    
-    Body JSON esperado:
-    {
-        "id_rol": 2
-    }
-    
+def cambiar_rol_usuario(id_usuario: int) -> JsonResponse:
+    """Actualiza los roles gestionables asignados a un usuario.
+
+    Args:
+        id_usuario: Identificador del usuario a modificar.
+
     Returns:
-        JSON: Usuario actualizado o error
+        Response: Respuesta JSON con los roles actualizados o el error.
     """
     try:
-        # Validar que la petición sea JSON
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'Content-Type debe ser application/json',
-                'status_code': 400
-            }), 400
-        
-        # Obtener datos del JSON
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'Datos requeridos',
-                'status_code': 400
-            }), 400
-        
-        # Validar que se proporcione id_rol o id_roles (array)
-        id_rol = data.get('id_rol')
-        id_roles = data.get('id_roles', [])
-        
-        # Normalizar a lista: si viene id_rol único, convertirlo a lista
-        if id_rol is not None and not id_roles:
-            id_roles = [id_rol]
-        elif not id_rol and id_roles is None:
-            return jsonify({
-                'success': False,
-                'error': 'Debe proporcionar id_rol o id_roles (array). Puede enviar un array vacío [] para remover todos los roles gestionables.',
-                'status_code': 400
-            }), 400
-        
-        # Asegurar que id_roles sea una lista (puede ser vacía para remover todos los roles gestionables)
-        if not isinstance(id_roles, list):
-            id_roles = [id_roles] if id_roles is not None else []
-        
-        # Verificar que el usuario existe
-        usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio=ERROR_DATOS_REQUERIDOS,
+        )
+        roles_solicitados = _normalizar_roles_solicitados(data)
+
+        usuario = _obtener_usuario(id_usuario, solo_activos=True)
         if not usuario:
             return jsonify({
                 'success': False,
                 'error': f'Usuario con ID {id_usuario} no encontrado',
                 'status_code': 404
             }), 404
-        
-        # Validar y obtener roles (solo permitir Entrenador y Administrador)
-        # NOTA: Si id_roles está vacío [], se permitirá para remover todos los roles gestionables
-        roles_permitidos = ['entrenador', 'administrador']
-        roles_excluidos = ['superadmin', 'super_admin', 'usuario', 'deportista', 'acudiente']
-        roles_validos = []
-        for rid in id_roles:
-            if not isinstance(rid, int):
-                try:
-                    rid = int(rid)
-                except (ValueError, TypeError):
-                    continue
-            rol = Rol.query.filter_by(id_rol=rid).first()
-            if rol:
-                nombre_lower = rol.nombre_rol.lower()
-                # Solo permitir Entrenador y Administrador
-                if nombre_lower in roles_permitidos:
-                    roles_validos.append(rol)
-                elif nombre_lower in roles_excluidos:
-                    logger.warning(f"Intento de asignar rol {rol.nombre_rol} a usuario {id_usuario}, ignorado (rol automático o no permitido)")
-        
-        # PERMITIR array vacío: si id_roles está vacío o roles_validos está vacío,
-        # simplemente se eliminarán todos los roles gestionables y el usuario quedará
-        # solo con los roles automáticos (usuario, deportista, acudiente) que se preservan
-        
-        # Obtener roles actuales del usuario
-        roles_actuales_usuario = UsuarioRol.query.filter_by(id_usuario=id_usuario).all()
-        
-        # Identificar roles automáticos (Usuario, Deportista, Acudiente) que NO se deben eliminar
-        roles_automaticos = ['usuario', 'deportista', 'acudiente']
-        
-        # Eliminar solo los roles gestionables manualmente (Entrenador, Administrador)
-        # y SuperAdmin si existe, preservando los roles automáticos
-        roles_gestionables_eliminados = []
-        for ur in roles_actuales_usuario:
-            rol_obj = Rol.query.get(ur.id_rol)
-            if rol_obj:
-                nombre_lower = rol_obj.nombre_rol.lower()
-                # Eliminar solo Entrenador, Administrador y SuperAdmin (no los automáticos)
-                if nombre_lower in ('entrenador', 'administrador', 'superadmin', 'super_admin'):
-                    db.session.delete(ur)
-                    roles_gestionables_eliminados.append(ur.id_rol)
-        
-        # Agregar TODOS los roles válidos que vienen en la petición
-        # (ya los eliminamos arriba, así que simplemente agregamos todos los nuevos)
-        for rol in roles_validos:
-            nuevo_usuario_rol = UsuarioRol(
-                id_usuario=id_usuario,
-                id_rol=rol.id_rol
-            )
-            db.session.add(nuevo_usuario_rol)
-        
-        db.session.commit()
-        
-        # Obtener datos actualizados del usuario
-        usuario_actualizado = Usuario.query.filter_by(id_usuario=id_usuario).first()
-        roles_actualizados = []
-        for rol in usuario_actualizado.roles:
-            roles_actualizados.append({
-                'id_rol': rol.id_rol,
-                'nombre_rol': rol.nombre_rol,
-                'descripcion': rol.descripcion
-            })
-        
+
+        roles_validos = _filtrar_roles_gestionables(
+            roles_solicitados,
+            id_usuario=id_usuario,
+        )
+        _actualizar_roles_gestionables(id_usuario, roles_validos)
+
+        usuario_actualizado = _obtener_usuario(id_usuario)
+        roles_actualizados = _serializar_roles(usuario_actualizado.roles if usuario_actualizado else [])
+
         return jsonify({
             'success': True,
             'message': 'Rol de usuario actualizado exitosamente',
@@ -469,13 +397,24 @@ def cambiar_rol_usuario(id_usuario):
             },
             'status_code': 200
         }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error inesperado al cambiar rol de usuario: {str(e)}")
+
+    except RequestValidationError as exc:
+        logger.warning(
+            "Validación de solicitud al cambiar roles del usuario %s: %s",
+            id_usuario,
+            str(exc),
+        )
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': str(exc),
+            'status_code': exc.status_code
+        }), exc.status_code
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("Error inesperado al cambiar rol de usuario: %s", str(exc))
+        return jsonify({
+            'success': False,
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
@@ -486,60 +425,36 @@ def cambiar_rol_usuario(id_usuario):
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']
 )
-def cambiar_estado_usuario(id_usuario):
-    """
-    Endpoint para activar o desactivar un usuario.
-    
-    Headers requeridos:
-    Authorization: Bearer <token>
-    
-    Body JSON esperado:
-    {
-        "estado": true  // true para activar, false para desactivar
-    }
-    
+def cambiar_estado_usuario(id_usuario: int) -> JsonResponse:
+    """Activa o desactiva un usuario existente.
+
+    Args:
+        id_usuario: Identificador del usuario objetivo.
+
     Returns:
-        JSON: Usuario actualizado o error
+        Response: Respuesta JSON con el estado actualizado o el error.
     """
     try:
-        # Validar que la petición sea JSON
-        if not request.is_json:
-            return jsonify({
-                'success': False,
-                'error': 'Content-Type debe ser application/json',
-                'status_code': 400
-            }), 400
-        
-        # Obtener datos del JSON
-        data = request.get_json()
-        
-        if not data or 'estado' not in data:
-            return jsonify({
-                'success': False,
-                'error': 'Se requiere el campo "estado" (true/false)',
-                'status_code': 400
-            }), 400
-        
-        nuevo_estado = data.get('estado')
-        
-        # Validar que estado sea booleano
-        if not isinstance(nuevo_estado, bool):
-            return jsonify({
-                'success': False,
-                'error': 'El campo "estado" debe ser true o false',
-                'status_code': 400
-            }), 400
-        
-        # Verificar que el usuario existe
-        usuario = Usuario.query.filter_by(id_usuario=id_usuario).first()
+        data = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio=ERROR_DATOS_REQUERIDOS,
+        )
+        nuevo_estado = validar_campo_booleano(
+            data,
+            'estado',
+            mensaje_faltante=ERROR_ESTADO_REQUERIDO,
+            mensaje_tipo=ERROR_ESTADO_BOOLEANO,
+        )
+
+        usuario = _obtener_usuario(id_usuario)
         if not usuario:
             return jsonify({
                 'success': False,
                 'error': f'Usuario con ID {id_usuario} no encontrado',
                 'status_code': 404
             }), 404
-        
-        # Verificar que no se está desactivando a sí mismo
+
         from ..middleware.auth_decorator import get_current_user
         usuario_actual = get_current_user()
         if usuario_actual and usuario_actual.get('id_usuario') == id_usuario and not nuevo_estado:
@@ -548,20 +463,12 @@ def cambiar_estado_usuario(id_usuario):
                 'error': 'No puedes desactivar tu propio usuario',
                 'status_code': 400
             }), 400
-        
-        # Actualizar estado del usuario
+
         usuario.estado = nuevo_estado
         db.session.commit()
-        
-        # Obtener roles actualizados del usuario
-        roles_usuario = []
-        for rol in usuario.roles:
-            roles_usuario.append({
-                'id_rol': rol.id_rol,
-                'nombre_rol': rol.nombre_rol,
-                'descripcion': rol.descripcion
-            })
-        
+
+        roles_usuario = _serializar_roles(usuario.roles)
+
         return jsonify({
             'success': True,
             'message': f'Usuario {"activado" if nuevo_estado else "desactivado"} exitosamente',
@@ -573,21 +480,32 @@ def cambiar_estado_usuario(id_usuario):
             },
             'status_code': 200
         }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Error al cambiar estado de usuario: {str(e)}")
+
+    except RequestValidationError as exc:
+        logger.warning(
+            "Validación de solicitud al cambiar estado de usuario %s: %s",
+            id_usuario,
+            str(exc),
+        )
         return jsonify({
             'success': False,
-            'error': 'Error interno del servidor',
+            'error': str(exc),
+            'status_code': exc.status_code
+        }), exc.status_code
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("Error al cambiar estado de usuario: %s", str(exc))
+        return jsonify({
+            'success': False,
+            'error': ERROR_INTERNO_SERVIDOR,
             'status_code': 500
         }), 500
 
 
 # Manejadores de errores específicos del Blueprint
 @usuarios_bp.errorhandler(400)
-def bad_request(error):
-    """Manejador de errores 400 (Bad Request)."""
+def bad_request(error: Exception) -> JsonResponse:
+    """Devuelve respuesta JSON para errores 400 (Bad Request)."""
     return jsonify({
         'success': False,
         'error': 'Solicitud incorrecta',
@@ -597,8 +515,8 @@ def bad_request(error):
 
 
 @usuarios_bp.errorhandler(404)
-def not_found(error):
-    """Manejador de errores 404 (Not Found)."""
+def not_found(error: Exception) -> JsonResponse:
+    """Devuelve respuesta JSON para errores 404 (Not Found)."""
     return jsonify({
         'success': False,
         'error': 'Recurso no encontrado',
@@ -608,8 +526,8 @@ def not_found(error):
 
 
 @usuarios_bp.errorhandler(500)
-def internal_error(error):
-    """Manejador de errores 500 (Internal Server Error)."""
+def internal_error(error: Exception) -> JsonResponse:
+    """Devuelve respuesta JSON para errores 500 (Internal Server Error)."""
     return jsonify({
         'success': False,
         'error': 'Error interno del servidor',
@@ -619,12 +537,11 @@ def internal_error(error):
 
 
 # Función para registrar el Blueprint en la aplicación
-def registrar_usuarios_routes(app):
-    """
-    Registra las rutas de usuarios en la aplicación Flask.
-    
+def registrar_usuarios_routes(app: Flask) -> None:
+    """Registra las rutas de usuarios en la aplicación Flask.
+
     Args:
-        app: Instancia de la aplicación Flask
+        app: Instancia de la aplicación Flask.
     """
     app.register_blueprint(usuarios_bp)
     logger.info("Rutas de usuarios registradas exitosamente")

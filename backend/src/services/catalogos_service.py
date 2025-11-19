@@ -32,6 +32,20 @@ class CatalogosService:
     de datos de catálogos para formularios y consultas.
     """
 
+    # Mapeos de códigos para consistencia con las rutas
+    MAPEO_TIPOS_DOCUMENTO = {
+        'Cédula de Ciudadanía': 'cc',
+        'Cédula de Extranjería': 'ce',
+        'Tarjeta de Identidad': 'ti',
+        'Pasaporte': 'pasaporte',
+    }
+
+    MAPEO_SEXOS = {
+        'Masculino': 'masculino',
+        'Femenino': 'femenino',
+        'Otro': 'otro',
+    }
+
     def __init__(self):
         """Inicializa el servicio con el logger configurado."""
         self.logger = obtener_registrador('aplicacion')
@@ -82,7 +96,10 @@ class CatalogosService:
             return [
                 {
                     'id': tipo.id_documento,
-                    'codigo': tipo.nombre_documento.lower().replace(' ', '_'),
+                    'codigo': self.MAPEO_TIPOS_DOCUMENTO.get(
+                        tipo.nombre_documento,
+                        tipo.nombre_documento.lower().replace(' ', '_')
+                    ),
                     'nombre': tipo.nombre_documento
                 }
                 for tipo in tipos
@@ -107,7 +124,7 @@ class CatalogosService:
             return [
                 {
                     'id': sexo.id_sexo,
-                    'valor': sexo.nombre.lower(),
+                    'valor': self.MAPEO_SEXOS.get(sexo.nombre, sexo.nombre.lower()),
                     'nombre': sexo.nombre
                 }
                 for sexo in sexos

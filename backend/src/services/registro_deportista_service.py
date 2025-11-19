@@ -42,74 +42,6 @@ class RegistroDeportistaService:
         return obtener_registrador('aplicacion')
 
     @staticmethod
-    def _calcular_edad_desde_fecha_nacimiento(fecha_nacimiento) -> Optional[int]:
-        """
-        Calcula la edad exacta en años a partir de una fecha de nacimiento.
-        
-        Esta función calcula la edad considerando el día y mes de nacimiento,
-        no solo el año. Por ejemplo, si hoy es 15 de marzo de 2024 y la fecha
-        de nacimiento es 20 de marzo de 2020, la edad será 3 años (aún no ha
-        cumplido 4 años).
-        
-        Args:
-            fecha_nacimiento: Puede ser:
-                - date: Objeto date de Python
-                - str: Fecha en formato ISO (YYYY-MM-DD)
-                - int: Año de nacimiento (para compatibilidad)
-        
-        Returns:
-            int: Edad en años completos, o None si hay error
-        """
-        logger = RegistroDeportistaService._obtener_logger()
-        
-        try:
-            from datetime import date, datetime
-            
-            # Calcular la fecha actual
-            hoy = date.today()
-            
-            # Convertir fecha_nacimiento a objeto date
-            if isinstance(fecha_nacimiento, date):
-                fecha_nac = fecha_nacimiento
-            elif isinstance(fecha_nacimiento, str):
-                # Intentar parsear fecha ISO (YYYY-MM-DD)
-                try:
-                    fecha_nac = datetime.fromisoformat(fecha_nacimiento).date()
-                except ValueError:
-                    # Si falla, intentar parsear como año solo
-                    try:
-                        año = int(fecha_nacimiento)
-                        fecha_nac = date(año, 1, 1)  # Usar 1 de enero como fecha por defecto
-                    except ValueError:
-                        logger.error(f'Formato de fecha de nacimiento inválido: {fecha_nacimiento}')
-                        return None
-            elif isinstance(fecha_nacimiento, int):
-                # Compatibilidad con años antiguos
-                fecha_nac = date(fecha_nacimiento, 1, 1)
-            else:
-                logger.error(f'Tipo de fecha_nacimiento no reconocido: {type(fecha_nacimiento)}')
-                return None
-            
-            # Validar que la fecha no sea futura
-            if fecha_nac > hoy:
-                logger.warning(f'La fecha de nacimiento es futura: {fecha_nac}')
-                return None
-            
-            # Calcular edad exacta considerando mes y día
-            edad = hoy.year - fecha_nac.year
-            
-            # Ajustar si aún no ha cumplido años este año
-            # Compara (mes, día) de hoy con (mes, día) de nacimiento
-            if (hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day):
-                edad -= 1
-            
-            return edad
-                
-        except Exception as e:
-            logger.error(f'Error al calcular edad desde fecha de nacimiento: {str(e)}')
-            return None
-
-    @staticmethod
     def _calcular_categoria_por_fecha_nacimiento(fecha_nacimiento) -> Optional[int]:
         """
         Calcula la categoría del deportista basándose en su fecha de nacimiento.
@@ -126,12 +58,31 @@ class RegistroDeportistaService:
         logger = RegistroDeportistaService._obtener_logger()
         
         try:
-            # Usar la función centralizada para calcular la edad
-            edad = RegistroDeportistaService._calcular_edad_desde_fecha_nacimiento(fecha_nacimiento)
+            from datetime import date, datetime
             
-            if edad is None:
-                logger.error(f'No se pudo calcular la edad desde la fecha de nacimiento: {fecha_nacimiento}')
+            # Calcular la edad actual
+            hoy = date.today()
+            
+            # Convertir fecha_nacimiento a objeto date
+            if isinstance(fecha_nacimiento, date):
+                fecha_nac = fecha_nacimiento
+            elif isinstance(fecha_nacimiento, str):
+                # Intentar parsear fecha ISO (YYYY-MM-DD)
+                try:
+                    fecha_nac = datetime.fromisoformat(fecha_nacimiento).date()
+                except ValueError:
+                    # Si falla, intentar parsear como año solo
+                    año = int(fecha_nacimiento)
+                    fecha_nac = date(año, 1, 1)  # Usar 1 de enero como fecha por defecto
+            elif isinstance(fecha_nacimiento, int):
+                # Compatibilidad con años antiguos
+                fecha_nac = date(fecha_nacimiento, 1, 1)
+            else:
+                logger.error(f'Tipo de fecha_nacimiento no reconocido: {type(fecha_nacimiento)}')
                 return None
+            
+            # Calcular edad exacta
+            edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
             
             # Buscar la categoría que corresponde a esta edad
             categoria = Categoria.query.filter(
@@ -384,26 +335,7 @@ class RegistroDeportistaService:
                     'status_code': 400
                 }
             
-            # Calcular edad usando la función centralizada
-            edad = RegistroDeportistaService._calcular_edad_desde_fecha_nacimiento(fecha_nacimiento_date)
-            
-            if edad is None:
-                return {
-                    'success': False,
-                    'message': 'Error al calcular la edad desde la fecha de nacimiento. Verifique que la fecha sea válida y no sea futura.',
-                    'status_code': 400
-                }
-            
-            # Validar edad mínima (5 años)
-            # Si la función calcula una edad menor a 5 años, no se permite el registro
-            if edad < 5:
-                return {
-                    'success': False,
-                    'message': f'El deportista debe tener mínimo 5 años de edad para poder registrarse. La edad mínima de la categoría Pre-infantil es 5 años. Edad calculada: {edad} años.',
-                    'status_code': 400
-                }
-            
-            # Calcular categoría automáticamente usando la misma función de edad
+            # Calcular categoría automáticamente
             id_categoria = RegistroDeportistaService._calcular_categoria_por_fecha_nacimiento(fecha_nacimiento_date)
             
             if not id_categoria:
@@ -562,7 +494,7 @@ class RegistroDeportistaService:
             logger.info(f'Deportista registrado exitosamente: ID {deportista.id_deportista}')
             
             return {
-                'status': 'success',
+                'success': True,
                 'message': 'Deportista registrado correctamente',
                 'data': {
                     'id_deportista': deportista.id_deportista,
@@ -576,7 +508,7 @@ class RegistroDeportistaService:
             db.session.rollback()
             logger.error(f'Error de integridad al registrar deportista: {str(e)}')
             return {
-                'status': 'error',
+                'success': False,
                 'message': 'Error de duplicación de datos',
                 'status_code': 409
             }
@@ -584,7 +516,7 @@ class RegistroDeportistaService:
             db.session.rollback()
             logger.error(f'Error inesperado al registrar deportista: {str(e)}')
             return {
-                'status': 'error',
+                'success': False,
                 'message': f'Error al registrar deportista: {str(e)}',
                 'status_code': 500
             }
@@ -784,7 +716,7 @@ class RegistroDeportistaService:
             logger.info(f'Información completa obtenida para deportista ID {id_deportista}')
             
             return {
-                'status': 'success',
+                'success': True,
                 'data': {
                     'id': deportista.id_deportista,
                     'persona': persona_data,
