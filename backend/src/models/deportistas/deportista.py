@@ -3,6 +3,7 @@ Modelo para deportistas del sistema.
 """
 
 from datetime import date
+from typing import Optional
 from ..base import BaseModel
 from sqlalchemy import Column, Integer, Float, Date, ForeignKey, SmallInteger
 from sqlalchemy.orm import relationship
@@ -47,7 +48,6 @@ class Deportista(BaseModel):
     id_categoria = Column(Integer, ForeignKey('puerta_orion_categoria.id_categoria'), nullable=False)
     id_persona = Column(Integer, ForeignKey('puerta_orion_personas.id_persona'), nullable=False, unique=True)
     id_tipo_sanguineo = Column(Integer, ForeignKey('puerta_orion_grupo_sanguineo.id_tipo_sangre'), nullable=True)
-    # id_diagnostico_deportista = Column(Integer, ForeignKey('diagnostico.id_diagnostico'), nullable=True)  # Relación eliminada
     id_ciudad_recidencia = Column(Integer, ForeignKey('puerta_orion_ciudad_residencia.id_ciudad'), nullable=True)
     id_informacion_deportiva = Column(Integer, ForeignKey('informaciondeportiva.id_informacion_deportiva'), nullable=True)
     id_eps = Column(Integer, ForeignKey('puerta_orion_eps.id_eps'), nullable=True)
@@ -56,7 +56,6 @@ class Deportista(BaseModel):
     persona = relationship('Persona', uselist=False)
     categoria = relationship('Categoria', lazy=True)
     tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], lazy=True)
-    # diagnostico = relationship('Diagnostico', foreign_keys=[id_diagnostico_deportista], backref='deportistas_diagnostico', lazy=True)  # Relación eliminada
     ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], lazy=True)
     informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], lazy=True)
     eps = relationship('EPS', foreign_keys=[id_eps], lazy=True)
@@ -75,6 +74,21 @@ class Deportista(BaseModel):
             str: Una cadena que representa la instancia de Deportista.
         """
         return f'<Deportista {self.id_deportista}>'
+    
+    def _format_fecha_nacimiento(self) -> Optional[str]:
+        """
+        Formatea la fecha de nacimiento para serialización.
+        
+        Returns:
+            str: Fecha en formato ISO o None
+        """
+        if not self.fecha_nacimiento:
+            return None
+        
+        if isinstance(self.fecha_nacimiento, date):
+            return self.fecha_nacimiento.isoformat()
+        
+        return self.fecha_nacimiento
     
     @property
     def imc(self):
@@ -106,7 +120,7 @@ class Deportista(BaseModel):
             'peso': self.peso,
             'altura': self.altura,
             'fecha_ingreso': self.fecha_ingreso.isoformat() if self.fecha_ingreso else None,
-            'fecha_nacimiento': self.fecha_nacimiento.isoformat() if (self.fecha_nacimiento and isinstance(self.fecha_nacimiento, date)) else (self.fecha_nacimiento if self.fecha_nacimiento else None),
+            'fecha_nacimiento': self._format_fecha_nacimiento(),
             'imc': self.imc,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

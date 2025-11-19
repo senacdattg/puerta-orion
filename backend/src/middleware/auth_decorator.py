@@ -13,7 +13,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 import jwt
 from datetime import datetime
 from functools import wraps
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Optional, Callable, Tuple
 from flask import request, jsonify, g, current_app, make_response
 
 from ..models.base import db
@@ -35,6 +35,62 @@ class TokenRequiredError(Exception):
     pass
 
 
+def _determinar_roles_a_evaluar(usuario: Usuario, use_active_role: bool) -> list:
+    """
+    Determina qué roles evaluar para verificación de permisos.
+    
+    Args:
+        usuario (Usuario): Usuario a evaluar
+        use_active_role (bool): Si se debe usar solo el rol activo
+        
+    Returns:
+        list: Lista de roles a evaluar
+    """
+    roles_usuario = usuario.roles or []
+    
+    if not use_active_role:
+        return roles_usuario
+    
+    roles_a_evaluar = []
+    if getattr(usuario, 'rol_activo', None):
+        roles_a_evaluar.append(usuario.rol_activo)
+
+    # Mantener acceso base del rol 'usuario'
+    for rol in roles_usuario:
+        if rol.nombre_rol.lower() == 'usuario' and rol not in roles_a_evaluar:
+            roles_a_evaluar.append(rol)
+
+    return roles_a_evaluar if roles_a_evaluar else roles_usuario
+
+
+def _verificar_permiso_en_roles(roles_a_evaluar: list, permiso_obj: Permiso, usuario: Usuario, permiso: str) -> bool:
+    """
+    Verifica si algún rol tiene el permiso específico.
+    
+    Args:
+        roles_a_evaluar (list): Roles a evaluar
+        permiso_obj (Permiso): Objeto del permiso
+        usuario (Usuario): Usuario a verificar
+        permiso (str): Nombre del permiso
+        
+    Returns:
+        bool: True si algún rol tiene el permiso
+    """
+    logger = obtener_registrador('aplicacion')
+    
+    for rol in roles_a_evaluar:
+        rol_permiso = RolPermiso.query.filter_by(
+            id_rol=rol.id_rol,
+            id_permiso=permiso_obj.id_permiso
+        ).first()
+        
+        if rol_permiso:
+            logger.info(f"Usuario {usuario.usuario} tiene permiso '{permiso}' a través del rol '{rol.nombre_rol}'")
+            return True
+    
+    return False
+
+
 def check_permission(usuario: Usuario, permiso: str, use_active_role: bool = False) -> bool:
     """
     Verifica si un usuario tiene un permiso específico.
@@ -42,6 +98,7 @@ def check_permission(usuario: Usuario, permiso: str, use_active_role: bool = Fal
     Args:
         usuario (Usuario): Usuario a verificar
         permiso (str): Nombre del permiso a verificar
+        use_active_role (bool): Si se debe usar solo el rol activo
         
     Returns:
         bool: True si el usuario tiene el permiso, False en caso contrario
@@ -52,50 +109,22 @@ def check_permission(usuario: Usuario, permiso: str, use_active_role: bool = Fal
     logger = obtener_registrador('aplicacion')
     
     try:
-        # Verificar que el usuario existe
         if not usuario:
             logger.warning("Usuario no proporcionado para verificación de permisos")
             return False
         
-        # Determinar roles a considerar
-        roles_usuario = usuario.roles or []
-
-        if use_active_role:
-            roles_a_evaluar = []
-            if getattr(usuario, 'rol_activo', None):
-                roles_a_evaluar.append(usuario.rol_activo)
-
-            # Mantener acceso base del rol 'usuario'
-            for rol in roles_usuario:
-                if rol.nombre_rol.lower() == 'usuario' and rol not in roles_a_evaluar:
-                    roles_a_evaluar.append(rol)
-
-            if not roles_a_evaluar:
-                roles_a_evaluar = roles_usuario
-        else:
-            roles_a_evaluar = roles_usuario
-
+        roles_a_evaluar = _determinar_roles_a_evaluar(usuario, use_active_role)
         if not roles_a_evaluar:
             logger.info(f"Usuario {usuario.usuario} no tiene roles asignados")
             return False
         
-        # Buscar el permiso en la base de datos
         permiso_obj = Permiso.query.filter_by(nombre=permiso).first()
         if not permiso_obj:
             logger.warning(f"Permiso '{permiso}' no existe en el sistema")
             return False
         
-        # Verificar si algún rol del usuario tiene el permiso
-        for rol in roles_a_evaluar:
-            # Verificar si el rol tiene el permiso específico
-            rol_permiso = RolPermiso.query.filter_by(
-                id_rol=rol.id_rol,
-                id_permiso=permiso_obj.id_permiso
-            ).first()
-            
-            if rol_permiso:
-                logger.info(f"Usuario {usuario.usuario} tiene permiso '{permiso}' a través del rol '{rol.nombre_rol}'")
-                return True
+        if _verificar_permiso_en_roles(roles_a_evaluar, permiso_obj, usuario, permiso):
+            return True
         
         logger.info(f"Usuario {usuario.usuario} no tiene permiso '{permiso}'")
         return False
@@ -174,6 +203,118 @@ class TokenRequired:
         self.permissions_active_only = permissions_active_only
         self.logger = obtener_registrador('aplicacion')
     
+    def _handle_options_request(self) -> Any:
+        """Handle CORS preflight OPTIONS requests."""
+        response = make_response()
+        origin = request.headers.get('Origin')
+        if origin:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+        else:
+            response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '3600')
+        response.status_code = 200
+        return response
+    
+    def _validate_authentication(self) -> Tuple[Optional[str], Optional[Dict[str, Any]], Optional[SesionAuth], Optional[Usuario]]:
+        """
+        Valida la autenticación completa del usuario.
+        
+        Returns:
+            tuple: (token, payload, sesion, usuario) o (None, None, None, None) si falla
+        """
+        token = self._extraer_token()
+        if not token:
+            return None, None, None, None
+        
+        payload = self._validar_token_jwt(token)
+        if not payload:
+            return None, None, None, None
+        
+        sesion = self._verificar_sesion_activa(payload)
+        if not sesion:
+            return None, None, None, None
+        
+        usuario = self._obtener_usuario_completo(payload['usuario_id'])
+        if not usuario:
+            return None, None, None, None
+        
+        return token, payload, sesion, usuario
+    
+    def _validate_authorization(self, usuario: Usuario) -> Optional[tuple]:
+        """
+        Valida autorización (roles y permisos) del usuario.
+        
+        Args:
+            usuario (Usuario): Usuario a validar
+            
+        Returns:
+            Optional[tuple]: Tupla de error si falla, None si pasa
+        """
+        if self.required_roles and not self._verificar_roles(usuario, self.required_roles):
+            return self._error_response("Roles insuficientes", 403)
+        
+        if self.required_permissions and not self._verificar_permisos(
+            usuario,
+            self.required_permissions,
+            self.permissions_active_only
+        ):
+            return self._error_response("Permisos insuficientes", 403)
+        
+        if self.required_active_roles and not self._verificar_rol_activo(usuario, self.required_active_roles):
+            return self._error_response("Rol activo no autorizado", 403)
+        
+        return None
+    
+    def __call__(self, f: Callable) -> Callable:
+        """
+        Implementa el decorador.
+        
+        Args:
+            f (Callable): Función a decorar
+            
+        Returns:
+            Callable: Función decorada
+        """
+    def _process_authenticated_request(self, f: Callable, *args, **kwargs) -> Any:
+        """
+        Procesa una petición autenticada.
+        
+        Args:
+            f (Callable): Función original a ejecutar
+            *args: Argumentos posicionales
+            **kwargs: Argumentos nombrados
+            
+        Returns:
+            Any: Respuesta de la función o error
+        """
+        token, payload, sesion, usuario = self._validate_authentication()
+        
+        error_messages = {
+            'token': ("Token de autorización requerido", 401),
+            'payload': ("Token inválido o expirado", 401),
+            'sesion': ("Sesión inactiva o expirada", 401),
+            'usuario': ("Usuario no encontrado", 401)
+        }
+        
+        if not token:
+            return self._error_response(*error_messages['token'])
+        if not payload:
+            return self._error_response(*error_messages['payload'])
+        if not sesion:
+            return self._error_response(*error_messages['sesion'])
+        if not usuario:
+            return self._error_response(*error_messages['usuario'])
+        
+        auth_error = self._validate_authorization(usuario)
+        if auth_error:
+            return auth_error
+        
+        self._inyectar_datos_usuario(usuario, sesion, payload)
+        return f(*args, **kwargs)
+    
     def __call__(self, f: Callable) -> Callable:
         """
         Implementa el decorador.
@@ -186,66 +327,11 @@ class TokenRequired:
         """
         @wraps(f)
         def decorated_function(*args, **kwargs):
-            # Permitir peticiones OPTIONS (preflight CORS) sin autenticación
             if request.method == 'OPTIONS':
-                response = make_response()
-                origin = request.headers.get('Origin')
-                if origin:
-                    response.headers.add('Access-Control-Allow-Origin', origin)
-                else:
-                    response.headers.add('Access-Control-Allow-Origin', '*')
-                response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS')
-                response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
-                response.headers.add('Access-Control-Allow-Credentials', 'true')
-                response.headers.add('Access-Control-Max-Age', '3600')
-                response.status_code = 200
-                return response
+                return self._handle_options_request()
             
             try:
-                # Extraer token del header Authorization
-                token = self._extraer_token()
-                if not token:
-                    return self._error_response("Token de autorización requerido", 401)
-                
-                # Validar token JWT
-                payload = self._validar_token_jwt(token)
-                if not payload:
-                    return self._error_response("Token inválido o expirado", 401)
-                
-                # Verificar sesión activa
-                sesion = self._verificar_sesion_activa(token, payload)
-                if not sesion:
-                    return self._error_response("Sesión inactiva o expirada", 401)
-                
-                # Obtener usuario completo
-                usuario = self._obtener_usuario_completo(payload['usuario_id'])
-                if not usuario:
-                    return self._error_response("Usuario no encontrado", 401)
-                
-                # Verificar roles si se especificaron
-                if self.required_roles:
-                    if not self._verificar_roles(usuario, self.required_roles):
-                        return self._error_response("Roles insuficientes", 403)
-                
-                # Verificar permisos si se especificaron
-                if self.required_permissions:
-                    if not self._verificar_permisos(
-                        usuario,
-                        self.required_permissions,
-                        self.permissions_active_only
-                    ):
-                        return self._error_response("Permisos insuficientes", 403)
-                
-                if self.required_active_roles:
-                    if not self._verificar_rol_activo(usuario, self.required_active_roles):
-                        return self._error_response("Rol activo no autorizado", 403)
-                
-                # Inyectar datos en el contexto global
-                self._inyectar_datos_usuario(usuario, sesion, payload)
-                
-                # Ejecutar función original
-                return f(*args, **kwargs)
-                
+                return self._process_authenticated_request(f, *args, **kwargs)
             except TokenRequiredError as e:
                 self.logger.warning(f"Error de autenticación: {str(e)}")
                 return self._error_response(str(e), 401)
@@ -296,20 +382,17 @@ class TokenRequired:
             self.logger.error(f"Error al validar token JWT: {str(e)}")
             return None
     
-    def _verificar_sesion_activa(self, token: str, payload: Dict[str, Any]) -> Optional[SesionAuth]:
+    def _verificar_sesion_activa(self, payload: Dict[str, Any]) -> Optional[SesionAuth]:
         """
         Verifica que la sesión esté activa en la base de datos.
         
         Args:
-            token (str): Token JWT
             payload (Dict): Payload del token
             
         Returns:
             SesionAuth: Sesión activa o None
         """
         try:
-            # Buscar sesión por token (asumiendo que el token de sesión está en el JWT)
-            # En una implementación real, podrías tener un campo session_id en el JWT
             sesion = SesionAuth.query.filter_by(
                 id_usuario=payload['usuario_id'],
                 estado=True
@@ -317,11 +400,6 @@ class TokenRequired:
                 SesionAuth.fecha_expiracion > datetime.utcnow()
             ).first()
             
-            if not sesion:
-                return None
-            
-            # Verificar que el token de sesión coincida (si está disponible)
-            # Esto depende de cómo implementes la relación entre JWT y sesión
             return sesion
             
         except Exception as e:
@@ -450,16 +528,19 @@ class TokenRequired:
             # Inyectar en el contexto global de Flask
             persona = usuario.persona if getattr(usuario, 'persona', None) else None
 
+            # Determine active role name
+            rol_activo_nombre = None
+            if rol_activo_ajustado:
+                rol_activo_nombre = rol_activo_ajustado.nombre_rol
+            elif usuario.rol_activo:
+                rol_activo_nombre = usuario.rol_activo.nombre_rol
+            
             g.current_user = {
                 'id_usuario': usuario.id_usuario,
                 'username': usuario.usuario,
                 'estado': usuario.estado,
                 'roles': roles_usuario,
-                'rol_activo': (
-                    rol_activo_ajustado.nombre_rol
-                    if rol_activo_ajustado
-                    else (usuario.rol_activo.nombre_rol if usuario.rol_activo else None)
-                ),
+                'rol_activo': rol_activo_nombre,
                 'permisos': permisos_usuario,
                 'roles_selector': obtener_roles_para_selector(usuario),
                 'paneles': [
