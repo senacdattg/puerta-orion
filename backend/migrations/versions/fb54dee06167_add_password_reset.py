@@ -26,64 +26,35 @@ def upgrade():
     inspector = inspect(bind)
     
     # Intentar eliminar índices solo si no están vinculados a claves foráneas
-    try:
-        # Verificar si el índice existe y si está vinculado a FK antes de eliminarlo
-        fks = inspector.get_foreign_keys('informaciondeportiva')
-        fk_columns = [col for fk in fks for col in fk.get('constrained_columns', [])]
-        
-        # Solo eliminar si id_institucion_registro no está en claves foráneas
-        if 'id_institucion_registro' not in fk_columns:
-            with op.batch_alter_table('informaciondeportiva', schema=None) as batch_op:
-                try:
-                    batch_op.drop_index('ix_informacion_deportiva_institucion')
-                except Exception:
-                    pass  # El índice puede no existir o estar vinculado a FK
-    except Exception:
-        pass  # Si hay error, continuar
+    fks = inspector.get_foreign_keys('informaciondeportiva')
+    fk_columns = [col for fk in fks for col in fk.get('constrained_columns', [])]
     
-    try:
-        # Verificar para abonos_mensualidad
-        fks = inspector.get_foreign_keys('puerta_orion_abonos_mensualidad')
-        fk_columns = [col for fk in fks for col in fk.get('constrained_columns', [])]
-        
-        if 'id_mensualidad' not in fk_columns:
-            with op.batch_alter_table('puerta_orion_abonos_mensualidad', schema=None) as batch_op:
-                try:
-                    batch_op.drop_index('ix_abono_mensualidad_mensualidad')
-                except Exception:
-                    pass
-    except Exception:
-        pass
+    # Solo eliminar si id_institucion_registro no está en claves foráneas
+    if 'id_institucion_registro' not in fk_columns:
+        with op.batch_alter_table('informaciondeportiva', schema=None) as batch_op:
+            batch_op.drop_index('ix_informacion_deportiva_institucion')
     
-    # NO cambiar fecha_nacimiento aquí - eso se hace en merge_heads_and_fecha_nacimiento.py
-    # Esta migración NO debe intentar cambiar fecha_nacimiento porque ya se cambió en la migración anterior
-    print("Nota: El cambio de fecha_nacimiento se maneja en la migración merge_heads_and_fecha_nacimiento")
+    # Verificar para abonos_mensualidad
+    fks = inspector.get_foreign_keys('puerta_orion_abonos_mensualidad')
+    fk_columns = [col for fk in fks for col in fk.get('constrained_columns', [])]
+    
+    if 'id_mensualidad' not in fk_columns:
+        with op.batch_alter_table('puerta_orion_abonos_mensualidad', schema=None) as batch_op:
+            batch_op.drop_index('ix_abono_mensualidad_mensualidad')
     
     # Eliminar índices de deportista solo si no están vinculados a FK
-    try:
-        fks = inspector.get_foreign_keys('puerta_orion_deportista')
-        fk_columns = [col for fk in fks for col in fk.get('constrained_columns', [])]
+    fks = inspector.get_foreign_keys('puerta_orion_deportista')
+    fk_columns = [col for fk in fks for col in fk.get('constrained_columns', [])]
+    
+    with op.batch_alter_table('puerta_orion_deportista', schema=None) as batch_op:
+        if 'id_ciudad_recidencia' not in fk_columns:
+            batch_op.drop_index('ix_deportista_ciudad')
         
-        with op.batch_alter_table('puerta_orion_deportista', schema=None) as batch_op:
-            if 'id_ciudad_recidencia' not in fk_columns:
-                try:
-                    batch_op.drop_index('ix_deportista_ciudad')
-                except Exception:
-                    pass
-            
-            if 'id_eps' not in fk_columns:
-                try:
-                    batch_op.drop_index('ix_deportista_eps')
-                except Exception:
-                    pass
-            
-            if 'id_tipo_sanguineo' not in fk_columns:
-                try:
-                    batch_op.drop_index('ix_deportista_tipo_sanguineo')
-                except Exception:
-                    pass
-    except Exception:
-        pass
+        if 'id_eps' not in fk_columns:
+            batch_op.drop_index('ix_deportista_eps')
+        
+        if 'id_tipo_sanguineo' not in fk_columns:
+            batch_op.drop_index('ix_deportista_tipo_sanguineo')
 
     # ### end Alembic commands ###
 

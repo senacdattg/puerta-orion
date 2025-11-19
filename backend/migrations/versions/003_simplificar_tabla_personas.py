@@ -39,7 +39,6 @@ def upgrade():
     # Intentaremos con diferentes posibles nombres de constraints
     
     from sqlalchemy import inspect
-    from sqlalchemy.engine import reflection
     
     bind = op.get_bind()
     inspector = inspect(bind)
@@ -53,32 +52,20 @@ def upgrade():
     for fk in fks:
         # Si la FK referencia a una de las columnas que queremos eliminar
         if fk['constrained_columns'][0] in columnas_a_eliminar:
-            try:
-                op.drop_constraint(fk['name'], 'puerta_orion_personas', type_='foreignkey')
-            except:
-                pass  # Si falla, continuar
+            op.drop_constraint(fk['name'], 'puerta_orion_personas', type_='foreignkey')
     
     # Ahora eliminar las columnas
     for columna in columnas_a_eliminar:
-        try:
-            op.drop_column('puerta_orion_personas', columna)
-        except:
-            pass  # Si ya fue eliminada, continuar
+        op.drop_column('puerta_orion_personas', columna)
     
     # Eliminar fecha_nacimiento (sin FK)
-    try:
-        op.drop_column('puerta_orion_personas', 'fecha_nacimiento')
-    except:
-        pass
+    op.drop_column('puerta_orion_personas', 'fecha_nacimiento')
     
     # Actualizar longitud del campo direccion
-    try:
-        op.alter_column('puerta_orion_personas', 'direccion',
-            existing_type=sa.String(length=150),
-            type_=sa.String(length=50),
-            existing_nullable=False)
-    except:
-        pass
+    op.alter_column('puerta_orion_personas', 'direccion',
+        existing_type=sa.String(length=150),
+        type_=sa.String(length=50),
+        existing_nullable=False)
 
 
 def downgrade():

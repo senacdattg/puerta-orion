@@ -24,11 +24,7 @@ def upgrade():
     Esta tabla fue creada por error en migraciones anteriores.
     """
     # Verificar si la tabla existe antes de intentar eliminarla
-    try:
-        op.drop_table('diagnostico_persona')
-    except:
-        # Si la tabla no existe, no hacer nada
-        pass
+    op.drop_table('diagnostico_persona')
 
 
 def downgrade():

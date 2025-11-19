@@ -16,6 +16,13 @@ from tests.test_helpers import (
     create_auth_headers
 )
 
+# Constants for test data
+EVENTO_NOMBRE = 'Torneo de Fútbol'
+EVENTO_QUERY_PATH = 'src.routes.eventos_routes.Evento.query'
+ENDPOINT_CALENDARIO = '/api/eventos/calendario'
+ENDPOINT_CALENDARIO_ID_1 = '/api/eventos/calendario/1'
+ENDPOINT_CALENDARIO_ID_999 = '/api/eventos/calendario/999'
+
 
 # ============================================================================
 # TESTS PARA LISTAR EVENTOS
@@ -33,7 +40,7 @@ class TestListarEventos:
         mock_eventos = [
             {
                 'id_evento': 1,
-                'nombre': 'Torneo de Fútbol',
+                'nombre': EVENTO_NOMBRE,
                 'fecha_evento': '2024-12-31'
             }
         ]
@@ -41,7 +48,7 @@ class TestListarEventos:
         # Act
         with patch('src.routes.eventos_routes.obtener_categorias_permitidas_usuario',
                    return_value=mock_categorias):
-            with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+            with patch(EVENTO_QUERY_PATH) as mock_query:
                 mock_pagination = MagicMock()
                 mock_pagination.items = mock_eventos
                 mock_pagination.page = 1
@@ -53,7 +60,7 @@ class TestListarEventos:
                 mock_query.filter_by.return_value = mock_query
                 mock_query.order_by.return_value.paginate.return_value = mock_pagination
                 
-                response = client.get('/api/eventos/calendario')
+                response = client.get(ENDPOINT_CALENDARIO)
         
         # Assert
         data = assert_success_response(response)
@@ -68,7 +75,7 @@ class TestListarEventos:
         # Act
         with patch('src.routes.eventos_routes.obtener_categorias_permitidas_usuario',
                    return_value=mock_categorias):
-            response = client.get('/api/eventos/calendario')
+            response = client.get(ENDPOINT_CALENDARIO)
         
         # Assert
         data = assert_success_response(response)
@@ -91,7 +98,7 @@ class TestCrearEvento:
         mock_evento = MagicMock()
         mock_evento.to_dict.return_value = {
             'id_evento': 1,
-            'nombre': 'Torneo de Fútbol'
+            'nombre': EVENTO_NOMBRE
         }
         mock_evento.id_evento = 1
         
@@ -107,7 +114,7 @@ class TestCrearEvento:
                         mock_evento_class.return_value = mock_evento
                         
                         response = make_json_request(
-                            client, 'POST', '/api/eventos/calendario',
+                            client, 'POST', ENDPOINT_CALENDARIO,
                             data=sample_evento_data
                         )
         
@@ -118,7 +125,7 @@ class TestCrearEvento:
     def test_crear_evento_sin_json(self, client, mock_token_required):
         """Test: Error cuando no se envía JSON."""
         # Act
-        response = client.post('/api/eventos/calendario', data='not json')
+        response = client.post(ENDPOINT_CALENDARIO, data='not json')
         
         # Assert
         assert_error_response(response, expected_status=400)
@@ -133,7 +140,7 @@ class TestCrearEvento:
         
         # Act
         response = make_json_request(
-            client, 'POST', '/api/eventos/calendario',
+            client, 'POST', ENDPOINT_CALENDARIO,
             data=datos_incompletos
         )
         
@@ -156,7 +163,7 @@ class TestObtenerEvento:
         mock_evento = MagicMock()
         mock_evento.to_dict.return_value = {
             'id_evento': 1,
-            'nombre': 'Torneo de Fútbol',
+            'nombre': EVENTO_NOMBRE,
             'fecha_evento': '2024-12-31'
         }
         mock_evento.categoria = None
@@ -164,12 +171,12 @@ class TestObtenerEvento:
         mock_evento.id_tipo_evento = 1
         
         # Act
-        with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+        with patch(EVENTO_QUERY_PATH) as mock_query:
             mock_query.get.return_value = mock_evento
             with patch('src.routes.eventos_routes.TipoEvento.query') as mock_tipo:
                 mock_tipo.get.return_value = None
                 
-                response = client.get('/api/eventos/calendario/1')
+                response = client.get(ENDPOINT_CALENDARIO_ID_1)
         
         # Assert
         assert_success_response(response)
@@ -177,10 +184,10 @@ class TestObtenerEvento:
     def test_obtener_evento_no_encontrado(self, client, mock_token_required):
         """Test: Evento no encontrado."""
         # Act
-        with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+        with patch(EVENTO_QUERY_PATH) as mock_query:
             mock_query.get.return_value = None
             
-            response = client.get('/api/eventos/calendario/999')
+            response = client.get(ENDPOINT_CALENDARIO_ID_999)
         
         # Assert
         assert_error_response(response, expected_status=404)
@@ -210,12 +217,12 @@ class TestActualizarEvento:
         mock_evento.id_categoria = 1
         
         # Act
-        with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+        with patch(EVENTO_QUERY_PATH) as mock_query:
             mock_query.get.return_value = mock_evento
             with patch('src.routes.eventos_routes._validar_solapamiento_evento_actualizado',
                        return_value=None):
                 response = make_json_request(
-                    client, 'PUT', '/api/eventos/calendario/1',
+                    client, 'PUT', ENDPOINT_CALENDARIO_ID_1,
                     data=datos_actualizacion
                 )
         
@@ -229,11 +236,11 @@ class TestActualizarEvento:
         datos_actualizacion = {'nombre': 'Nuevo Nombre'}
         
         # Act
-        with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+        with patch(EVENTO_QUERY_PATH) as mock_query:
             mock_query.get.return_value = None
             
             response = make_json_request(
-                client, 'PUT', '/api/eventos/calendario/999',
+                client, 'PUT', ENDPOINT_CALENDARIO_ID_999,
                 data=datos_actualizacion
             )
         
@@ -254,13 +261,12 @@ class TestEliminarEvento:
         """Test: Eliminar evento exitosamente."""
         # Arrange
         mock_evento = MagicMock()
-        mock_evento.nombre = 'Torneo de Fútbol'
+        mock_evento.nombre = EVENTO_NOMBRE
         
         # Act
-        with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+        with patch(EVENTO_QUERY_PATH) as mock_query:
             mock_query.get.return_value = mock_evento
-            with patch('src.routes.eventos_routes.db.session') as mock_session:
-                response = client.delete('/api/eventos/calendario/1')
+            response = client.delete(ENDPOINT_CALENDARIO_ID_1)
         
         # Assert
         # Nota: Ajustar según implementación real
@@ -269,10 +275,10 @@ class TestEliminarEvento:
     def test_eliminar_evento_no_encontrado(self, client, mock_token_required):
         """Test: Error al eliminar evento inexistente."""
         # Act
-        with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+        with patch(EVENTO_QUERY_PATH) as mock_query:
             mock_query.get.return_value = None
             
-            response = client.delete('/api/eventos/calendario/999')
+            response = client.delete(ENDPOINT_CALENDARIO_ID_999)
         
         # Assert
         assert_error_response(response, expected_status=404)

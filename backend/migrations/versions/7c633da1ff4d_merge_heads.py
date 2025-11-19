@@ -6,7 +6,6 @@ Create Date: 2025-11-03 19:22:00.551859
 
 """
 from alembic import op
-import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
@@ -17,8 +16,12 @@ depends_on = None
 
 
 def upgrade():
+    # Empty migration: This is a merge migration that combines two migration branches.
+    # No actual schema changes are needed, only the revision chain is updated.
     pass
 
 
 def downgrade():
+    # Empty migration: This is a merge migration that combines two migration branches.
+    # No actual schema changes are needed, only the revision chain is updated.
     pass

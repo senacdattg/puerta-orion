@@ -43,18 +43,14 @@ def upgrade():
 
     # 2) Crear FK a puerta_orion_personas.id_persona si no existe
     if not _fk_exists(bind, table_name, constraint_name='fk_mensualidad_persona', column_name='id_persona'):
-        try:
-            op.create_foreign_key(
-                constraint_name='fk_mensualidad_persona',
-                source_table=table_name,
-                referent_table='puerta_orion_personas',
-                local_cols=['id_persona'],
-                remote_cols=['id_persona'],
-                ondelete='RESTRICT'
-            )
-        except Exception:
-            # Si ya existe con otro nombre, continuar
-            pass
+        op.create_foreign_key(
+            constraint_name='fk_mensualidad_persona',
+            source_table=table_name,
+            referent_table='puerta_orion_personas',
+            local_cols=['id_persona'],
+            remote_cols=['id_persona'],
+            ondelete='RESTRICT'
+        )
 
     # 3) Ajustar estado default False (0 en MySQL) y not null; fecha_pago nullable True
     with op.batch_alter_table(table_name) as batch_op:
@@ -73,16 +69,10 @@ def upgrade():
         inspector = Inspector.from_engine(bind)
         for fk in inspector.get_foreign_keys(table_name):
             if 'id_categoria' in fk.get('constrained_columns', []):
-                try:
-                    op.drop_constraint(fk.get('name'), table_name, type_='foreignkey')
-                except Exception:
-                    pass
+                op.drop_constraint(fk.get('name'), table_name, type_='foreignkey')
         # Dropear columna
         with op.batch_alter_table(table_name) as batch_op:
-            try:
-                batch_op.drop_column('id_categoria')
-            except Exception:
-                pass
+            batch_op.drop_column('id_categoria')
 
     # Nota: Mantener id_persona como nullable por ahora. Se puede hacer otra migración para NOT NULL tras backfill.
 
@@ -98,17 +88,14 @@ def downgrade():
 
     # 2) Restaurar FK de categoría si no existe
     if not _fk_exists(bind, table_name, constraint_name='fk_mensualidad_categoria', column_name='id_categoria'):
-        try:
-            op.create_foreign_key(
-                constraint_name='fk_mensualidad_categoria',
-                source_table=table_name,
-                referent_table='puerta_orion_categoria',
-                local_cols=['id_categoria'],
-                remote_cols=['id_categoria'],
-                ondelete='RESTRICT'
-            )
-        except Exception:
-            pass
+        op.create_foreign_key(
+            constraint_name='fk_mensualidad_categoria',
+            source_table=table_name,
+            referent_table='puerta_orion_categoria',
+            local_cols=['id_categoria'],
+            remote_cols=['id_categoria'],
+            ondelete='RESTRICT'
+        )
 
     # 3) Revertir cambios en estado y fecha_pago
     with op.batch_alter_table(table_name) as batch_op:
@@ -121,14 +108,8 @@ def downgrade():
                               nullable=False)
 
     # 4) Eliminar FK y columna id_persona
-    try:
-        op.drop_constraint('fk_mensualidad_persona', table_name, type_='foreignkey')
-    except Exception:
-        pass
+    op.drop_constraint('fk_mensualidad_persona', table_name, type_='foreignkey')
 
     if _column_exists(bind, table_name, 'id_persona'):
         with op.batch_alter_table(table_name) as batch_op:
-            try:
-                batch_op.drop_column('id_persona')
-            except Exception:
-                pass
+            batch_op.drop_column('id_persona')
