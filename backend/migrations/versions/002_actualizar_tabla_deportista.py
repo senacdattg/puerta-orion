@@ -16,6 +16,104 @@ branch_labels = None
 depends_on = None
 
 
+def _add_columns_to_deportista(existing_columns: set) -> None:
+    """Add missing columns to deportista table."""
+    columns_to_add = [
+        ('id_tipo_sanguineo', sa.Integer()),
+        ('id_diagnosco_deportista', sa.Integer()),
+        ('id_ciudad_recidencia', sa.Integer()),
+        ('id_mensualidad', sa.Integer()),
+        ('id_informacion_deportiva', sa.Integer()),
+        ('id_eps', sa.Integer()),
+        ('fecha_nacimiento', sa.Date())
+    ]
+    
+    for col_name, col_type in columns_to_add:
+        if col_name not in existing_columns:
+            op.add_column('puerta_orion_deportista', sa.Column(col_name, col_type, nullable=True))
+            existing_columns.add(col_name)
+
+
+def _create_foreign_keys(inspector, existing_columns: set, tables_map: dict) -> None:
+    """Create foreign keys for deportista table."""
+    existing_fks = {fk['name'] for fk in inspector.get_foreign_keys('puerta_orion_deportista') if fk.get('name')}
+    
+    fk_definitions = [
+        {
+            'name': 'fk_deportista_tipo_sanguineo',
+            'column': 'id_tipo_sanguineo',
+            'ref_table': 'puerta_orion_grupo_sanguineo',
+            'ref_column': 'id_tipo_sangre'
+        },
+        {
+            'name': 'fk_deportista_diagnostico',
+            'column': 'id_diagnosco_deportista',
+            'ref_table': 'diagnostico',
+            'ref_column': 'id_diagnostico'
+        },
+        {
+            'name': 'fk_deportista_ciudad',
+            'column': 'id_ciudad_recidencia',
+            'ref_table': 'puerta_orion_ciudad_residencia',
+            'ref_column': 'id_ciudad'
+        },
+        {
+            'name': 'fk_deportista_mensualidad',
+            'column': 'id_mensualidad',
+            'ref_table': 'puerta_orion_mensualidad',
+            'ref_column': 'id_mensualidad'
+        },
+        {
+            'name': 'fk_deportista_eps',
+            'column': 'id_eps',
+            'ref_table': 'puerta_orion_eps',
+            'ref_column': 'id_eps'
+        }
+    ]
+    
+    for fk_def in fk_definitions:
+        should_create = (
+            fk_def['name'] not in existing_fks and
+            fk_def['column'] in existing_columns and
+            fk_def['ref_table'] in tables_map
+        )
+        if should_create:
+            op.create_foreign_key(
+                fk_def['name'],
+                'puerta_orion_deportista',
+                tables_map[fk_def['ref_table']],
+                [fk_def['column']],
+                [fk_def['ref_column']]
+            )
+    
+    # Special case for informacion_deportiva
+    if ('informaciondeportiva' in tables_map and
+            'fk_deportista_informacion_deportiva' not in existing_fks and
+            'id_informacion_deportiva' in existing_columns):
+        op.create_foreign_key(
+            'fk_deportista_informacion_deportiva',
+            'puerta_orion_deportista',
+            tables_map['informaciondeportiva'],
+            ['id_informacion_deportiva'],
+            ['id_informacion_deportiva']
+        )
+
+
+def _create_indexes(inspector, existing_columns: set) -> None:
+    """Create indexes for deportista table."""
+    existing_indexes = {idx['name'] for idx in inspector.get_indexes('puerta_orion_deportista')}
+    
+    indexes_to_create = [
+        ('ix_deportista_tipo_sanguineo', 'id_tipo_sanguineo'),
+        ('ix_deportista_ciudad', 'id_ciudad_recidencia'),
+        ('ix_deportista_eps', 'id_eps')
+    ]
+    
+    for index_name, column_name in indexes_to_create:
+        if index_name not in existing_indexes and column_name in existing_columns:
+            op.create_index(index_name, 'puerta_orion_deportista', [column_name], unique=False)
+
+
 def upgrade():
     """
     Agregar campos faltantes a la tabla deportista según el MER.
@@ -34,76 +132,13 @@ def upgrade():
     existing_columns = {col['name'] for col in inspector.get_columns('puerta_orion_deportista')}
     tables_map = {t.lower(): t for t in inspector.get_table_names()}
 
-    def add_column_if_missing(column: sa.Column):
-        if column.name not in existing_columns:
-            op.add_column('puerta_orion_deportista', column)
-            existing_columns.add(column.name)
-
-    # Agregar columnas nuevas a la tabla deportista
-    add_column_if_missing(sa.Column('id_tipo_sanguineo', sa.Integer(), nullable=True))
-    add_column_if_missing(sa.Column('id_diagnosco_deportista', sa.Integer(), nullable=True))
-    add_column_if_missing(sa.Column('id_ciudad_recidencia', sa.Integer(), nullable=True))
-    add_column_if_missing(sa.Column('id_mensualidad', sa.Integer(), nullable=True))
-    add_column_if_missing(sa.Column('id_informacion_deportiva', sa.Integer(), nullable=True))
-    add_column_if_missing(sa.Column('id_eps', sa.Integer(), nullable=True))
-    add_column_if_missing(sa.Column('fecha_nacimiento', sa.Date(), nullable=True))
-    
-    # Crear claves foráneas
-    existing_fks = {fk['name'] for fk in inspector.get_foreign_keys('puerta_orion_deportista') if fk.get('name')}
-
-    if 'fk_deportista_tipo_sanguineo' not in existing_fks and 'id_tipo_sanguineo' in existing_columns and 'puerta_orion_grupo_sanguineo' in tables_map:
-        op.create_foreign_key(
-            'fk_deportista_tipo_sanguineo',
-            'puerta_orion_deportista', tables_map['puerta_orion_grupo_sanguineo'],
-            ['id_tipo_sanguineo'], ['id_tipo_sangre']
-        )
-    if 'fk_deportista_diagnostico' not in existing_fks and 'id_diagnosco_deportista' in existing_columns and 'diagnostico' in tables_map:
-        op.create_foreign_key(
-            'fk_deportista_diagnostico',
-            'puerta_orion_deportista', tables_map['diagnostico'],
-            ['id_diagnosco_deportista'], ['id_diagnostico']
-        )
-    if 'fk_deportista_ciudad' not in existing_fks and 'id_ciudad_recidencia' in existing_columns and 'puerta_orion_ciudad_residencia' in tables_map:
-        op.create_foreign_key(
-            'fk_deportista_ciudad',
-            'puerta_orion_deportista', tables_map['puerta_orion_ciudad_residencia'],
-            ['id_ciudad_recidencia'], ['id_ciudad']
-        )
-    if 'fk_deportista_mensualidad' not in existing_fks and 'id_mensualidad' in existing_columns and 'puerta_orion_mensualidad' in tables_map:
-        op.create_foreign_key(
-            'fk_deportista_mensualidad',
-            'puerta_orion_deportista', tables_map['puerta_orion_mensualidad'],
-            ['id_mensualidad'], ['id_mensualidad']
-        )
-    if 'informaciondeportiva' in tables_map and 'fk_deportista_informacion_deportiva' not in existing_fks and 'id_informacion_deportiva' in existing_columns:
-        ref_table = tables_map['informaciondeportiva']
-        op.create_foreign_key(
-            'fk_deportista_informacion_deportiva',
-            'puerta_orion_deportista', ref_table,
-            ['id_informacion_deportiva'], ['id_informacion_deportiva']
-        )
-    if 'fk_deportista_eps' not in existing_fks and 'id_eps' in existing_columns and 'puerta_orion_eps' in tables_map:
-        op.create_foreign_key(
-            'fk_deportista_eps',
-            'puerta_orion_deportista', tables_map['puerta_orion_eps'],
-            ['id_eps'], ['id_eps']
-        )
-    
-    # Crear índices para mejorar el rendimiento
-    existing_indexes = {idx['name'] for idx in inspector.get_indexes('puerta_orion_deportista')}
-    if 'ix_deportista_tipo_sanguineo' not in existing_indexes and 'id_tipo_sanguineo' in existing_columns:
-        op.create_index('ix_deportista_tipo_sanguineo', 'puerta_orion_deportista', ['id_tipo_sanguineo'], unique=False)
-    if 'ix_deportista_ciudad' not in existing_indexes and 'id_ciudad_recidencia' in existing_columns:
-        op.create_index('ix_deportista_ciudad', 'puerta_orion_deportista', ['id_ciudad_recidencia'], unique=False)
-    if 'ix_deportista_eps' not in existing_indexes and 'id_eps' in existing_columns:
-        op.create_index('ix_deportista_eps', 'puerta_orion_deportista', ['id_eps'], unique=False)
+    _add_columns_to_deportista(existing_columns)
+    _create_foreign_keys(inspector, existing_columns, tables_map)
+    _create_indexes(inspector, existing_columns)
     
     # Eliminar campo estado_deportivo si existe (no está en el MER)
     if 'estado_deportivo' in existing_columns:
-        try:
-            op.drop_column('puerta_orion_deportista', 'estado_deportivo')
-        except Exception:
-            pass  # Si no existe, no hace nada
+        op.drop_column('puerta_orion_deportista', 'estado_deportivo')
 
 
 def downgrade():
