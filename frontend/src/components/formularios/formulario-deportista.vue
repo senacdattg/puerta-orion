@@ -733,7 +733,8 @@ async function procesarRegistro(token) {
   const result = await response.json();
   console.log('Respuesta del servidor:', response.status, result);
 
-  if (response.ok && result.status === 'success') {
+  // Verificar si la respuesta es exitosa: el backend devuelve success: true
+  if (response.ok && result.success === true) {
     if (props.modo !== 'registrar') {
       await mostrarModal('Éxito', `Deportista registrado exitosamente.\nCategoría: ${result.data.categoria}\nNombre: ${result.data.nombre_persona}`);
     }
@@ -765,8 +766,8 @@ async function procesarRegistro(token) {
       mensajeError = result.message;
     } else if (result.error) {
       mensajeError = result.error;
-    } else if (result.status === 'error') {
-      mensajeError = result.message || 'Error desconocido del servidor';
+    } else if (result.success === false) {
+      mensajeError = result.message || result.error || 'Error desconocido del servidor';
     }
 
     throw new Error(mensajeError);

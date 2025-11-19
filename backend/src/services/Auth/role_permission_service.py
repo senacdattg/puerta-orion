@@ -256,7 +256,13 @@ def obtener_roles_para_selector(usuario: Usuario) -> Dict[str, bool]:
     visibles = set(filtrar_roles_visibles(usuario))
     resultado: Dict[str, bool] = {}
     for rol in roles_asignados:
-        resultado[rol] = rol in visibles
+        # Permitir siempre el rol 'Usuario' (o 'usuario') si el usuario lo tiene, incluso si está oculto en el selector visual
+        # Comparar case-insensitive para manejar variaciones 'Usuario' vs 'usuario'
+        rol_lower = rol.lower() if rol else ''
+        if rol_lower == 'usuario' and rol in roles_asignados:
+            resultado[rol] = True
+        else:
+            resultado[rol] = rol in visibles
     return resultado
 
 
@@ -274,8 +280,9 @@ def cambiar_rol_activo(usuario: Usuario, rol_objetivo: str, commit: bool = True)
     if not roles_selector[rol_objetivo]:
         raise PermissionError(f"El rol '{rol_objetivo}' no está disponible como rol activo para este usuario")
 
+    # Buscar el rol con comparación case-insensitive para manejar variaciones 'Usuario' vs 'usuario'
     nuevo_rol = next(
-        (rol for rol in usuario.roles if rol.nombre_rol == rol_objetivo),
+        (rol for rol in usuario.roles if normalizar_nombre_rol(rol.nombre_rol).lower() == rol_objetivo.lower()),
         None
     )
     if not nuevo_rol:

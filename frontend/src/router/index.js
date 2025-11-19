@@ -228,16 +228,19 @@ const router = createRouter({
 function getDefaultRouteForRole(userRoles, activeRole = null) {
   // Si hay un rol activo seleccionado, usarlo para la redirección
   if (activeRole) {
-    switch(activeRole) {
+    // Normalizar el nombre del rol para comparación (primera letra mayúscula)
+    const rolNormalizado = activeRole?.charAt(0).toUpperCase() + activeRole?.slice(1).toLowerCase()
+    
+    switch(rolNormalizado) {
       case 'SuperAdmin':
       case 'Administrador':
         return '/admin-manager'
-      case 'Entrenador':
-        return '/home'
       case 'Deportista':
         return '/deportista/dashboard'
       case 'Acudiente':
         return '/acudiente/dashboard'
+      case 'Usuario':
+      case 'Entrenador':
       default:
         return '/home'
     }
@@ -261,16 +264,19 @@ function getDefaultRouteForRole(userRoles, activeRole = null) {
   // Si tiene un solo rol, usar ese para redirección automática
   if (roleNames.length === 1) {
     const singleRole = roleNames[0]
-    switch(singleRole) {
+    // Normalizar el nombre del rol para comparación
+    const rolNormalizado = singleRole?.charAt(0).toUpperCase() + singleRole?.slice(1).toLowerCase()
+    
+    switch(rolNormalizado) {
       case 'SuperAdmin':
       case 'Administrador':
         return '/admin-manager'
-      case 'Entrenador':
-        return '/home'
       case 'Deportista':
         return '/deportista/dashboard'
       case 'Acudiente':
         return '/acudiente/dashboard'
+      case 'Usuario':
+      case 'Entrenador':
       default:
         return '/home'
     }

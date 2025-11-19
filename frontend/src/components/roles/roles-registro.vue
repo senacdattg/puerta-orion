@@ -82,7 +82,10 @@ function obtenerNombreRol(rol) {
 // Obtener roles del usuario
 const rolesUsuario = computed(() => {
   if (esSeleccionRol.value && authStore.user?.roles) {
-    return authStore.user.roles.map(r => obtenerNombreRol(r))
+    // Mapear todos los roles del usuario, incluyendo 'Usuario'
+    const rolesMapeados = authStore.user.roles.map(r => obtenerNombreRol(r))
+    console.log('📋 Roles del usuario disponibles:', rolesMapeados)
+    return rolesMapeados
   }
   return props.usuarioRoles.map(r => obtenerNombreRol(r))
 })
@@ -109,19 +112,34 @@ async function seleccionarRol(rol) {
     rolSeleccionado.value = nombreRol
 
     // Guardar rol activo en el store (esto también cargará los permisos del rol)
-    await authStore.setActiveRole(nombreRol)
+    const result = await authStore.setActiveRole(nombreRol)
+    
+    // Verificar si el cambio de rol fue exitoso
+    if (!result.success) {
+      console.error('Error al cambiar rol activo:', result.error)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al cambiar rol',
+        text: result.error || 'No se pudo cambiar el rol activo. Por favor, intenta de nuevo.'
+      })
+      return
+    }
+
+    // Usar el rol activo actualizado del store después del cambio
+    const rolActivoFinal = authStore.activeRole || nombreRol
+    console.log(`✅ Rol activo establecido: ${rolActivoFinal} (seleccionado: ${nombreRol})`)
 
     await Swal.fire({
       icon: 'success',
       title: 'Rol seleccionado',
-      text: `Ingresarás con el rol ${nombreRol}.`,
+      text: `Ingresarás con el rol ${rolActivoFinal}.`,
       timer: 1200,
       timerProgressBar: true,
       showConfirmButton: false
     })
 
-    // Redirigir según el rol seleccionado
-    redirigirSegunRol(nombreRol)
+    // Redirigir según el rol activo final (no el seleccionado, por si el backend lo cambió)
+    redirigirSegunRol(rolActivoFinal)
   } else {
     // Modo registro - redirigir al formulario correspondiente
     irFormulario(rol.ruta)
@@ -132,7 +150,10 @@ async function seleccionarRol(rol) {
 function redirigirSegunRol(rolNombre) {
   let rutaDestino
 
-  switch(rolNombre) {
+  // Normalizar el nombre del rol para comparación (primera letra mayúscula)
+  const rolNormalizado = rolNombre?.charAt(0).toUpperCase() + rolNombre?.slice(1).toLowerCase()
+
+  switch(rolNormalizado) {
     case 'SuperAdmin':
     case 'Administrador':
       rutaDestino = '/admin-manager'
@@ -143,12 +164,14 @@ function redirigirSegunRol(rolNombre) {
     case 'Acudiente':
       rutaDestino = '/acudiente/dashboard'
       break
+    case 'Usuario':
     case 'Entrenador':
     default:
       rutaDestino = '/home'
       break
   }
 
+  console.log(`🔄 Redirigiendo a ${rutaDestino} para rol: ${rolNormalizado}`)
   router.push(rutaDestino)
 }
 
@@ -164,7 +187,8 @@ async function cargarRoles() {
     return
   }
 
-  // Modo selección - cargar desde backend
+  // Modo selección - cargar todos los roles desde el backend
+  // Esto permite mostrar todos los roles: los que el usuario tiene (amarillos) y los que no (grises)
   loading.value = true
   error.value = ''
 
@@ -173,6 +197,8 @@ async function cargarRoles() {
 
     if (response.success && response.data) {
       todosRoles.value = response.data
+      console.log('✅ Todos los roles cargados:', todosRoles.value)
+      console.log('📋 Roles del usuario:', rolesUsuario.value)
     } else {
       error.value = 'No se pudieron cargar los roles'
       await Swal.fire({
