@@ -1,15 +1,44 @@
+/* ===== ESTILOS PRINCIPALES (MAIN) ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS BASE ===== */
+
+/* --- Body --- */
 body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: 'Segoe UI', Tahoma, sans-serif;
-  background-color: white;
-
+  background-color: var(--color-blanco);
 }
 
+/* ===== ESTILOS DEL COMPONENTE Inicio ===== */
 
+/* --- Página de inicio --- */
+.inicio-page {
+  min-height: 100vh;
+  background-color: var(--color-blanco);
+  display: flex;
+  flex-direction: column;
+}
+
+.inicio-page ::v-deep .dashboard-home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.inicio-page ::v-deep .dashboard-home .main-dashboard {
+  flex: 1;
+}
+
+/* ===== ESTILOS DE SECCIONES Y BLOQUES ===== */
+
+/* --- Sección de contenido --- */
 .seccion-contenido {
-  background-color: #0047ab;
+  background-color: var(--color-primario);
   margin: 0 auto;
   margin-bottom: 2rem;
   text-align: center;
@@ -18,100 +47,115 @@ body {
   max-width: 1700px;
 }
 
+/* --- Bloque de subtítulo --- */
 .bloque-subtitulo {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-
-  border-top: 2px solid #FFD700;
-  /* línea arriba */
-  border-bottom: 2px solid #FFD700;
-  /* línea abajo */
-  padding: 15px 0;
-  /* espacio entre líneas */
-  margin-bottom: 30px;
-}
-
-.linea-arriba {
-  border-top: 2px solid #FFD700;
+  border-top: 2px solid var(--color-secundario-oro);
+  border-bottom: 2px solid var(--color-secundario-oro);
   padding: 15px 0;
   margin-bottom: 30px;
 }
 
-.linea-abajo {
-  border-bottom: 2px solid #FFD700;
-  padding: 1px 0;
-  margin-bottom: 30px;
-}
-
+/* --- Subtítulo del bloque --- */
 .subtitulo-bloque {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FFD700;
+  color: var(--color-secundario-oro);
   font-size: 2.5rem;
   font-weight: bold;
   margin-bottom: 20px;
   text-align: center;
 }
 
-.encabezado {
-  background-color: #0047ab;
-  height: 60px;
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 0 20px;
-  position: relative;
-  z-index: 1000;
+/* --- Línea arriba --- */
+.linea-arriba {
+  border-top: 2px solid var(--color-secundario-oro);
+  padding: 15px 0;
+  margin-bottom: 30px;
 }
 
-.encabezado img {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto;
-  display: block;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+/* --- Línea abajo --- */
+.linea-abajo {
+  border-bottom: 2px solid var(--color-secundario-oro);
+  padding: 1px 0;
+  margin-bottom: 30px;
 }
 
-.footer {
-  font-size: 0.9rem;
-  letter-spacing: 1px;
-  border-top: 2px solid #ffc107;
-  /* Línea dorada arriba */
-}
+/* ===== ESTILOS DEL COMPONENTE encabezado ===== */
+/* NOTA: Los estilos de encabezado se movieron a layout.css */
+/* Los estilos antiguos (.encabezado) ya no se usan y fueron eliminados */
 
-.footer p {
-  margin: 0;
-}
+/* ===== ESTILOS DEL COMPONENTE footer (básico) ===== */
+/* NOTA: Los estilos de footer se movieron a layout.css */
+/* Los estilos antiguos (.footer) ya no se usan y fueron eliminados */
 
+/* ===== ESTILOS DEL MENÚ ===== */
+
+/* --- Toggle del menú --- */
 .menu-toggle {
   font-size: 28px;
   cursor: pointer;
   padding: 10px;
   background: none;
   border: none;
-  color: #f4d800;
+  color: var(--color-secundario);
   user-select: none;
   display: inline-block;
 }
 
+/* --- Menú de categorías --- */
 .menu-categorias {
-  background-color: #f4d800;
-  border: 2px solid #f4d800;
+  background-color: var(--color-secundario);
+  border: 2px solid var(--color-secundario);
   padding: 10px;
   position: absolute;
   top: 60px;
   left: 10px;
   z-index: 1000;
   width: 220px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--sombra-media);
   border-radius: 12px;
 }
 
+/* --- Lista del menú --- */
+.menu-categorias ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* --- Items del menú --- */
+.menu-categorias li {
+  background-color: var(--color-secundario-oro);
+  border: 2px solid var(--color-primario);
+  margin: 10px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  color: var(--color-primario);
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: left;
+}
+
+.menu-categorias a {
+  text-decoration: none;
+  color: var(--color-primario);
+  font-weight: bold;
+}
+
+/* --- Icono del menú --- */
+.icono-menu {
+  margin-right: 8px;
+}
+
+/* ===== ESTILOS DE FORMULARIOS ===== */
+
+/* --- Fila de texto (inputs y selects) --- */
 .fila-texto {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -122,7 +166,7 @@ body {
 .fila-texto input,
 .fila-texto select {
   padding: 12px 14px;
-  border: 2px solid #0047ab;
+  border: 2px solid var(--color-primario);
   font-size: 16px;
   box-sizing: border-box;
   border-radius: 6px;
@@ -132,45 +176,14 @@ body {
 .fila-texto input:focus,
 .fila-texto select:focus {
   outline: none;
-  border: 2px solid #0047ab;
-  box-shadow: 0 0 5px rgba(0, 71, 171, 0.3);
-  transition: all 0.2s ease;
+  border: 2px solid var(--color-primario);
+  box-shadow: 0 0 5px rgba(0, 71, 171, 0.3); /* Sombra específica con color primario - mantener hardcodeado */
+  transition: var(--transicion-rapida);
 }
 
-.menu-categorias ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* ===== ESTILOS DEL COMPONENTE titulo-club ===== */
 
-}
-
-.menu-categorias li {
-  background-color: #f7d600;
-  /* Amarillo */
-  border: 2px solid #0047ab;
-  /* Azul */
-  margin: 10px 0;
-  /* Espacio entre botones */
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-weight: bold;
-  color: #0047ab;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  text-align: left;
-
-}
-
-.menu-categorias a {
-  text-decoration: none;
-  color: #0047ab;
-  font-weight: bold;
-}
-
-.icono-menu {
-  margin-right: 8px;
-}
-
+/* --- Título del club --- */
 .titulo-club {
   display: flex;
   flex-direction: column;
@@ -179,33 +192,38 @@ body {
   position: relative;
 }
 
+/* --- Bloque base --- */
 .bloque {
   padding: 18px 32px;
   font-size: 24px;
   font-weight: bold;
-  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--sombra-fuerte);
   width: fit-content;
   border: none;
 }
 
+/* --- Bloque amarillo --- */
 .bloque-amarillo {
-  background-color: #f7d600;
-  color: #000;
+  background-color: var(--color-secundario-oro);
+  color: var(--color-negro);
   position: relative;
   z-index: 2;
   margin-bottom: -5px;
   transform: translateX(-50px);
 }
 
+/* --- Bloque azul --- */
 .bloque-azul {
-  background-color: #0d47a1;
-  color: #fff;
+  background-color: var(--color-primario-oscuro);
+  color: var(--color-blanco);
   position: relative;
   z-index: 1;
   transform: translateX(40px);
 }
 
-/* ===== FILTROS Y BÚSQUEDA ===== */
+/* ===== ESTILOS DE FILTROS Y BÚSQUEDA ===== */
+
+/* --- Contenedor de filtros --- */
 .contenedor-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -215,18 +233,23 @@ body {
   justify-content: space-between;
 }
 
+/* --- Buscador --- */
 .buscador {
   position: relative;
   flex: 1;
   min-width: 300px;
 }
 
+/* ===== ESTILOS DEL COMPONENTE hero-section ===== */
+
+/* --- Sección hero --- */
 .hero-section {
-  background-color: #f8f9fa;
+  background-color: var(--color-gris-claro);
   padding: 40px 20px;
   min-height: 600px;
 }
 
+/* --- Contenido hero --- */
 .hero-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -236,6 +259,7 @@ body {
   align-items: center;
 }
 
+/* --- Branding hero --- */
 .hero-branding {
   text-align: center;
 }
@@ -250,6 +274,7 @@ body {
   object-fit: contain;
 }
 
+/* --- Texto de marca --- */
 .brand-text {
   margin-bottom: 30px;
 }
@@ -257,11 +282,12 @@ body {
 .brand-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--color-gris-oscuro);
   margin: 0;
   letter-spacing: 1px;
 }
 
+/* --- Botones de marca --- */
 .brand-buttons {
   display: flex;
   flex-direction: column;
@@ -276,26 +302,27 @@ body {
   font-size: 1.1rem;
   letter-spacing: 0.5px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--sombra-suave);
 }
 
 .brand-button--yellow {
-  background-color: #f7d600;
-  color: #0047ab;
+  background-color: var(--color-secundario-oro);
+  color: var(--color-primario);
 }
 
 .brand-button--blue {
-  background-color: #0047ab;
-  color: white;
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
 }
 
 .brand-tagline {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--color-gris);
   margin-bottom: 20px;
   font-weight: 500;
 }
 
+/* --- Elementos decorativos --- */
 .decorative-element {
   display: flex;
   align-items: center;
@@ -309,20 +336,23 @@ body {
 }
 
 .line--yellow {
-  background-color: #f7d600;
+  background-color: var(--color-secundario-oro);
 }
 
 .line--blue {
-  background-color: #0047ab;
+  background-color: var(--color-primario);
 }
 
 .dot {
   width: 8px;
   height: 8px;
-  background-color: #f7d600;
+  background-color: var(--color-secundario-oro);
   border-radius: 50%;
 }
 
+/* ===== ESTILOS DEL COMPONENTE welcome-section ===== */
+
+/* --- Sección de bienvenida --- */
 .welcome-section {
   display: flex;
   flex-direction: column;
@@ -336,46 +366,162 @@ body {
 .welcome-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #0047ab;
+  color: var(--color-primario);
   margin: 0 0 15px 0;
 }
 
 .welcome-description {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--color-gris);
   line-height: 1.6;
   margin: 0;
 }
 
+/* ===== ESTILOS DE ESTADÍSTICAS ===== */
+
+/* --- Contenedor de tarjetas de estadísticas --- */
 .stats-cards {
   display: flex;
   gap: 20px;
 }
 
+/* --- Tarjeta de estadística --- */
 .stat-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-medio);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
   flex: 1;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--sombra-suave);
 }
 
+/* --- Número de estadística --- */
 .stat-number {
   display: block;
   font-size: 2rem;
   font-weight: 700;
-  color: #333;
+  color: var(--color-gris-oscuro);
   margin-bottom: 8px;
 }
 
+/* --- Etiqueta de estadística --- */
 .stat-label {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--color-gris);
   font-weight: 500;
 }
 
+/* ===== ESTILOS DEL COMPONENTE quick-nav-section ===== */
+
+/* --- Sección de navegación rápida --- */
+.quick-nav-section {
+  padding: 60px 20px 0 20px;
+  background-color: var(--color-blanco);
+}
+
+/* --- Contenedor --- */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- Título de sección --- */
+.section-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 40px;
+}
+
+/* --- Grid de navegación --- */
+.nav-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* --- Tarjeta de navegación --- */
+.nav-card {
+  background: var(--color-blanco);
+  border-radius: 12px;
+  padding: 25px 30px;
+  text-decoration: none;
+  color: var(--color-blanco);
+  box-shadow: var(--sombra-tarjeta);
+  transition: var(--transicion);
+  border: none;
+  position: relative;
+  overflow: hidden;
+  min-width: 200px;
+  text-align: center;
+}
+
+.nav-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-tarjeta-hover);
+}
+
+/* --- Variantes de color de tarjeta de navegación --- */
+.nav-card--blue {
+  background-color: var(--color-primario);
+}
+
+.nav-card--gray {
+  background-color: var(--color-gris);
+}
+
+.nav-card--red {
+  background-color: var(--color-peligro);
+}
+
+.nav-card--green {
+  background-color: var(--color-exito);
+}
+
+.nav-card--purple {
+  background-color: #6d05c2; /* Color específico - mantener hardcodeado por ser variante única */
+}
+
+.nav-card--orange {
+  background-color: #fd7e14; /* Color específico - mantener hardcodeado por ser variante única */
+}
+
+.nav-card--teal {
+  background-color: #20c997; /* Color específico - mantener hardcodeado por ser variante única */
+}
+
+/* --- Icono de navegación --- */
+.nav-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* --- Título de navegación --- */
+.nav-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-blanco);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== ESTILOS DEL COMPONENTE footer-enhanced ===== */
+/* NOTA: Los estilos de footer-enhanced se movieron a layout.css */
+
+/* ===== ESTILOS DE MENSAJES DE FEEDBACK ===== */
+/* NOTA: Los estilos de mensajes (.mensaje-error, .mensaje-exito, .mensaje-info) 
+   se movieron a components/alerts.css para evitar duplicación.
+   Las animaciones también están en components/alerts.css.
+*/
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive del hero-section --- */
 @media (max-width: 768px) {
   .hero-content {
     grid-template-columns: 1fr;
@@ -396,96 +542,7 @@ body {
   }
 }
 
-.quick-nav-section {
-  padding: 60px 20px 0 20px;
-  background-color: white;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* Evitar que otros .container afecten el footer */
-
-.section-title {
-  text-align: center;
-  font-size: 2rem;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 40px;
-}
-
-.nav-grid {
-  display: flex;
-  gap: 20px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.nav-card {
-  background: white;
-  border-radius: 12px;
-  padding: 25px 30px;
-  text-decoration: none;
-  color: white;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  border: none;
-  position: relative;
-  overflow: hidden;
-  min-width: 200px;
-  text-align: center;
-}
-
-.nav-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.nav-card--blue {
-  background-color: #0047ab;
-}
-
-.nav-card--gray {
-  background-color: #6c757d;
-}
-
-.nav-card--red {
-  background-color: #dc3545;
-}
-
-.nav-card--green {
-  background-color: #28a745;
-}
-
-.nav-card--purple {
-  background-color: #6d05c2;
-}
-
-.nav-card--orange {
-  background-color: #fd7e14;
-}
-
-.nav-card--teal {
-  background-color: #20c997;
-}
-
-.nav-icon {
-  font-size: 2.5rem;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.nav-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-  color: white;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
+/* --- Responsive del quick-nav-section --- */
 @media (max-width: 768px) {
   .nav-grid {
     flex-direction: column;
@@ -502,194 +559,4 @@ body {
   }
 }
 
-.footer-enhanced {
-  background-color: var(--primary-color);
-  color: white;
-  padding: 40px 1rem 20px;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  margin-top: auto;
-}
-
-.footer-enhanced .container {
-  max-width: 100% !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box;
-}
-
-.footer-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
-  margin-bottom: 30px;
-  width: 100%;
-  max-width: 1200px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 1rem;
-  box-sizing: border-box;
-}
-
-.footer-section {
-  display: flex;
-  flex-direction: column;
-}
-
-.footer-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  margin: 0 0 10px 0;
-  color: var(--secondary-color);
-}
-
-.footer-description {
-  font-size: 0.9rem;
-  line-height: 1.5;
-  margin: 0 0 15px 0;
-  opacity: 0.9;
-}
-
-.social-links {
-  display: flex;
-  gap: 15px;
-}
-
-.social-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background-color: var(--secondary-color);
-  color: var(--primary-color);
-  border-radius: 50%;
-  text-decoration: none;
-  transition: var(--transition);
-  font-size: 1.2rem;
-}
-
-.social-link:hover {
-  background-color: white;
-  transform: translateY(-2px);
-}
-
-.footer-subtitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-  color: var(--secondary-color);
-}
-
-.footer-links {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.footer-links li {
-  margin-bottom: 8px;
-}
-
-.footer-links a {
-  color: white;
-  text-decoration: none;
-  opacity: 0.9;
-  transition: var(--transition);
-}
-
-.footer-links a:hover {
-  opacity: 1;
-  color: var(--secondary-color);
-}
-
-.contact-info p {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 8px 0;
-  opacity: 0.9;
-  font-size: 0.9rem;
-}
-
-.contact-info i {
-  color: var(--secondary-color);
-  width: 20px;
-}
-
-.footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 15px;
-  text-align: center;
-  opacity: 0.8;
-  font-size: 0.85rem;
-}
-
-@media (max-width: 768px) {
-  .footer-content {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .social-links {
-    justify-content: center;
-  }
-
-  .contact-info p {
-    justify-content: center;
-  }
-}
-
-/* Estilos para mensajes de feedback */
-.mensaje-error {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-  border-radius: 0.375rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.mensaje-exito {
-  background-color: #d1edff;
-  color: #0c5460;
-  border: 1px solid #bee5eb;
-  border-radius: 0.375rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.mensaje-info {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  border-radius: 0.375rem;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Animaciones para mensajes */
-.mensaje-error,
-.mensaje-exito,
-.mensaje-info {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* NOTA: Los estilos responsive del footer-enhanced se movieron a layout.css */

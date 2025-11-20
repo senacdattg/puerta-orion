@@ -183,32 +183,3 @@ async function manejarCancelacion() {
   </main>
 </template>
 
-<style scoped>
-.contenido-principal-tarjetas {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.info-banner {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 1rem 1.5rem;
-  border-radius: 10px;
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
-}
-
-.info-banner i {
-  font-size: 1.5rem;
-}
-
-.info-banner p {
-  margin: 0;
-  font-size: 1rem;
-  line-height: 1.5;
-}
-</style>

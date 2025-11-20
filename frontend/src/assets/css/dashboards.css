@@ -1,15 +1,234 @@
-/* ===== ESTILOS PARA DASHBOARDS POR ROL ===== */
+/* ===== ESTILOS PARA DASHBOARDS ===== */
 
+/* ===== IMPORTS Y VARIABLES ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* Nota: Las variables --color-azul-principal, --color-azul-oscuro, --color-amarillo-acento,
+   --color-amarillo-hover ya están definidas como alias en base/variables.css */
+
+/* ===== ESTILOS DEL COMPONENTE DashboardHome ===== */
+
+/* --- Contenedor principal --- */
 .dashboard-home {
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--espaciado-xl) var(--espaciado-md);
 }
 
-/* ===== BANNER DE REGISTRO ===== */
+/* ===== ESTILOS DEL COMPONENTE DeportistaDashboard ===== */
 
+/* --- Animaciones globales para el panel --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- Clases globales para animaciones de entrada --- */
+.fade-enter-active {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-up-enter-active {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* --- Mejoras de accesibilidad y usabilidad (scrollbar) --- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primario-transparente-30) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-primario-transparente-30);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primario-transparente-50);
+}
+
+/* --- Estilos para elementos interactivos --- */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-amarillo-acento);
+  outline-offset: 2px;
+}
+
+/* --- Transiciones suaves globales --- */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Utilidades de color --- */
+.text-azul {
+  color: var(--color-azul-principal);
+}
+
+.text-amarillo {
+  color: var(--color-amarillo-acento);
+}
+
+.bg-azul {
+  background-color: var(--color-azul-principal);
+}
+
+.bg-amarillo {
+  background-color: var(--color-amarillo-acento);
+}
+
+/* --- Efectos hover mejorados --- */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--color-primario-sombra-15);
+}
+
+/* --- Sombras personalizadas con colores del tema --- */
+.shadow-azul {
+  box-shadow: 0 4px 12px var(--color-primario-sombra-15);
+}
+
+.shadow-azul-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-azul-hover:hover {
+  box-shadow: 0 6px 20px var(--color-primario-sombra-25);
+}
+
+/* --- Contenedor principal --- */
+.deportista-dashboard-page {
+  min-height: 100vh;
+  background: var(--color-gris-claro);
+  display: flex;
+  flex-direction: column;
+  padding-top: 70px;
+}
+
+/* --- Layout del dashboard --- */
+.dashboard-layout {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+.dashboard-main {
+  flex: 1;
+  margin-left: 250px;
+  transition: margin-left var(--transicion);
+  min-height: calc(100vh - 70px);
+}
+
+/* --- Contenido principal (compartido con AcudienteDashboard) --- */
+.main-content {
+  padding: var(--espaciado-xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* --- Toggle para móvil --- */
+.mobile-sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: var(--espaciado-md);
+  z-index: calc(var(--z-fixed) + 1);
+  background: var(--color-azul-principal);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  cursor: pointer;
+  box-shadow: var(--sombra-media);
+  transition: var(--transicion);
+}
+
+.mobile-sidebar-toggle:hover {
+  background: var(--color-azul-oscuro);
+  transform: scale(1.05);
+}
+
+/* --- Responsive del componente DeportistaDashboard --- */
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+  }
+
+  .dashboard-main.sidebar-open {
+    margin-left: 0;
+  }
+
+  .mobile-sidebar-toggle {
+    display: block;
+  }
+
+  .main-content {
+    padding: var(--espaciado-md);
+  }
+
+  .welcome-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+
+  .welcome-subtitle {
+    font-size: var(--tamano-fuente-base);
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+}
+
+/* --- Overlay para móvil cuando sidebar está abierto --- */
+@media (max-width: 768px) {
+  .dashboard-main.sidebar-open::before {
+    content: '';
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-overlay-oscuro);
+    z-index: calc(var(--z-fixed) - 1);
+  }
+}
+
+/* ===== ESTILOS DEL COMPONENTE RegistrationBanner ===== */
+
+/* --- Banner principal --- */
 .registration-banner {
-  background: linear-gradient(135deg, var(--color-primario) 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-morado) 100%);
   border-radius: var(--radio-borde);
   padding: var(--espaciado-xl);
   margin-bottom: var(--espaciado-xl);
@@ -52,8 +271,11 @@
   flex-wrap: wrap;
 }
 
-/* ===== DASHBOARDS POR ROL ===== */
+/* ===== ESTILOS DEL COMPONENTE admin-dashboard ===== */
+/* ===== ESTILOS DEL COMPONENTE basic-dashboard ===== */
+/* (Estilos compartidos para dashboards de rol) */
 
+/* --- Contenedor del dashboard de rol --- */
 .role-dashboard {
   background: var(--color-blanco);
   border-radius: var(--radio-borde);
@@ -61,6 +283,7 @@
   box-shadow: var(--sombra-media);
 }
 
+/* --- Header del dashboard --- */
 .dashboard-header {
   text-align: center;
   margin-bottom: var(--espaciado-xl);
@@ -85,12 +308,14 @@
   margin: 0;
 }
 
+/* --- Grid de tarjetas --- */
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--espaciado-lg);
 }
 
+/* --- Tarjetas del dashboard --- */
 .dashboard-card {
   background: var(--color-blanco);
   border: 2px solid var(--color-gris-medio);
@@ -126,6 +351,7 @@
   width: 8px;
 }
 
+/* --- Icono de la tarjeta --- */
 .card-icon {
   width: 3rem;
   height: 3rem;
@@ -139,6 +365,7 @@
   flex-shrink: 0;
 }
 
+/* --- Contenido de la tarjeta --- */
 .card-content {
   flex: 1;
 }
@@ -157,33 +384,56 @@
   line-height: 1.4;
 }
 
-/* ===== COLORES ESPECÍFICOS POR ROL ===== */
+/* ===== ESTILOS DEL COMPONENTE AcudienteDashboard ===== */
 
-/* Acudiente Dashboard */
+/* --- Contenedor principal --- */
+.acudiente-dashboard-page {
+  min-height: 100vh;
+  background: var(--color-gris-claro);
+  display: flex;
+  flex-direction: column;
+  padding-top: 70px;
+}
+
+/* --- Layout del dashboard (compartido con DeportistaDashboard) --- */
+/* .dashboard-layout está definido arriba */
+/* .dashboard-main está definido arriba para DeportistaDashboard */
+/* .main-content está definido arriba y es compartido */
+/* AcudienteDashboard usa el mismo layout sin sidebar */
+
+/* --- Responsive del componente AcudienteDashboard --- */
+@media (max-width: 768px) {
+  /* .main-content responsive está definido arriba en DeportistaDashboard */
+}
+
+/* ===== VARIACIONES DE COLOR POR ROL ===== */
+/* (Estilos específicos para diferenciar dashboards por rol) */
+
+/* --- Acudiente Dashboard --- */
 .acudiente-dashboard .dashboard-title {
-  color: #0047ab;
+  color: var(--color-primario);
 }
 
 .acudiente-dashboard .card-icon {
-  background: #e3f2fd;
-  color: #0047ab;
+  background: var(--color-fondo-azul-claro);
+  color: var(--color-primario);
 }
 
 .acudiente-dashboard .dashboard-card::before {
-  background: #0047ab;
+  background: var(--color-primario);
 }
 
 .acudiente-dashboard .dashboard-card:hover {
-  border-color: #0047ab;
+  border-color: var(--color-primario);
 }
 
-/* Deportista Dashboard */
+/* --- Deportista Dashboard --- */
 .deportista-dashboard .dashboard-title {
   color: var(--color-advertencia);
 }
 
 .deportista-dashboard .card-icon {
-  background: #fff3e0;
+  background: var(--color-fondo-naranja-claro);
   color: var(--color-advertencia);
 }
 
@@ -195,13 +445,13 @@
   border-color: var(--color-advertencia);
 }
 
-/* Admin Dashboard */
+/* --- Admin Dashboard --- */
 .admin-dashboard .dashboard-title {
   color: var(--color-peligro);
 }
 
 .admin-dashboard .card-icon {
-  background: #f8d7da;
+  background: var(--color-fondo-error);
   color: var(--color-peligro);
 }
 
@@ -213,7 +463,7 @@
   border-color: var(--color-peligro);
 }
 
-/* Basic Dashboard */
+/* --- Basic Dashboard --- */
 .basic-dashboard .dashboard-title {
   color: var(--color-gris);
 }
@@ -231,8 +481,9 @@
   border-color: var(--color-gris);
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== RESPONSIVE COMPARTIDO PARA DASHBOARDS ===== */
 
+/* --- Responsive para dashboard-home --- */
 @media (max-width: 768px) {
   .dashboard-home {
     padding: var(--espaciado-md) var(--espaciado-sm);
@@ -262,6 +513,7 @@
   }
 }
 
+/* --- Responsive para tarjetas en móvil pequeño --- */
 @media (max-width: 576px) {
   .dashboard-card {
     flex-direction: column;

@@ -23,10 +23,3 @@ onMounted(() => {
   </main>
 </template>
 
-<style scoped>
-.contenido-principal-tarjetas {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-</style>

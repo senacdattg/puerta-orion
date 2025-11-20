@@ -1,0 +1,310 @@
+/* ===== COMPONENTES REUTILIZABLES: TARJETAS ===== */
+
+@import '../base/variables.css';
+
+/* ===== TARJETA BASE ===== */
+
+/* --- Clase base común para todas las tarjetas --- */
+.card {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-lg);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  overflow: hidden;
+  position: relative;
+}
+
+.card:hover {
+  box-shadow: var(--sombra-media);
+  transform: translateY(-2px);
+}
+
+/* --- Estructura de tarjeta --- */
+.card-header {
+  padding: var(--espaciado-lg);
+  border-bottom: 1px solid var(--color-gris-claro);
+  background: var(--color-gris-claro);
+}
+
+.card-body {
+  padding: var(--espaciado-lg);
+}
+
+.card-footer {
+  padding: var(--espaciado-lg);
+  border-top: 1px solid var(--color-gris-claro);
+  background: var(--color-gris-claro);
+}
+
+/* ===== VARIANTES DE TARJETAS ===== */
+
+/* --- Tarjeta de perfil --- */
+.card--profile,
+.tarjeta-perfil {
+  width: 100%;
+  max-width: 300px;
+  min-width: 300px;
+  border: 3px solid var(--color-primario);
+  background-color: var(--color-secundario);
+  text-align: center;
+  margin-top: 70px;
+  padding-top: 40px;
+  position: relative;
+  z-index: 1;
+  height: fit-content;
+  align-self: flex-start;
+}
+
+/* --- Tarjeta de deportista --- */
+.card--athlete,
+.tarjeta-deportista {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: 1.5rem;
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.card--athlete:hover,
+.tarjeta-deportista:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--sombra-fuerte);
+  border-color: var(--color-secundario);
+}
+
+.card--athlete::before,
+.tarjeta-deportista::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+/* --- Tarjeta de mensualidad --- */
+.card--payment,
+.tarjeta-mensualidad {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde-grande);
+  padding: var(--espaciado-md);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  position: relative;
+  cursor: pointer;
+  border: 1px solid var(--color-gris-100);
+}
+
+.card--payment:hover,
+.tarjeta-mensualidad:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--sombra-media);
+  border-color: var(--color-secundario);
+}
+
+/* --- Estados de tarjeta de mensualidad --- */
+.card--payment.estado-Pagado,
+.tarjeta-mensualidad.estado-Pagado {
+  border-left: 4px solid var(--color-exito);
+}
+
+.card--payment.estado-Pendiente,
+.tarjeta-mensualidad.estado-Pendiente {
+  border-left: 4px solid var(--color-advertencia);
+}
+
+.card--payment.estado-Parcial,
+.tarjeta-mensualidad.estado-Parcial {
+  border-left: 4px solid var(--color-info);
+}
+
+.card--payment.estado-Vencido,
+.tarjeta-mensualidad.estado-Vencido {
+  border-left: 4px solid var(--color-peligro);
+}
+
+/* --- Tarjeta de acudiente --- */
+.card--guardian,
+.tarjeta-acudiente {
+  width: 100%;
+  max-width: 300px;
+  border: 3px solid var(--color-primario);
+  background-color: var(--color-secundario);
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 40px;
+  position: relative;
+  z-index: 1;
+  height: fit-content;
+  align-self: flex-start;
+}
+
+/* --- Tarjeta de estadística (dashboard) --- */
+.card--stat {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-lg);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+}
+
+.card--stat:hover {
+  box-shadow: var(--sombra-media);
+  transform: translateY(-4px);
+}
+
+/* --- Tarjeta de navegación --- */
+.card--nav,
+.nav-card {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-lg);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espaciado-md);
+}
+
+.card--nav:hover,
+.nav-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-media);
+}
+
+/* Variantes de color para tarjetas de navegación */
+.nav-card--blue {
+  border-top: 4px solid var(--color-primario);
+}
+
+.nav-card--gray {
+  border-top: 4px solid var(--color-gris);
+}
+
+.nav-card--red {
+  border-top: 4px solid var(--color-peligro);
+}
+
+.nav-card--green {
+  border-top: 4px solid var(--color-exito);
+}
+
+.nav-card--purple {
+  border-top: 4px solid var(--color-morado);
+}
+
+.nav-card--orange {
+  border-top: 4px solid var(--color-advertencia);
+}
+
+.nav-card--teal {
+  border-top: 4px solid var(--color-info);
+}
+
+/* ===== ELEMENTOS DE TARJETA ===== */
+
+/* --- Imagen de tarjeta --- */
+.card-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radio-borde-pequeno);
+}
+
+.card-image--circle {
+  border-radius: var(--radio-borde-circular);
+}
+
+.card-image--profile {
+  width: 60px;
+  height: 60px;
+  border: 3px solid var(--color-primario);
+}
+
+.card-image--athlete {
+  width: 80px;
+  height: 80px;
+  border: 4px solid var(--color-secundario);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Título de tarjeta --- */
+.card-title {
+  font-size: var(--tamano-fuente-xl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-oscuro);
+  margin: 0 0 var(--espaciado-sm) 0;
+}
+
+/* --- Subtítulo de tarjeta --- */
+.card-subtitle {
+  font-size: var(--tamano-fuente-base);
+  color: var(--color-gris);
+  margin: 0 0 var(--espaciado-md) 0;
+}
+
+/* --- Contenido de tarjeta --- */
+.card-content {
+  flex: 1;
+}
+
+/* --- Acciones de tarjeta --- */
+.card-actions {
+  display: flex;
+  gap: var(--espaciado-sm);
+  margin-top: var(--espaciado-md);
+  justify-content: flex-end;
+}
+
+/* ===== CONTENEDORES DE TARJETAS ===== */
+
+/* --- Grid de tarjetas --- */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--espaciado-lg);
+}
+
+/* --- Contenedor de tarjetas --- */
+.cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaciado-lg);
+  justify-content: center;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .card--profile,
+  .tarjeta-perfil {
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .card--athlete,
+  .tarjeta-deportista {
+    padding: var(--espaciado-md);
+  }
+}
+
+
+

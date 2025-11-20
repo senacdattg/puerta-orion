@@ -189,16 +189,4 @@ const accionesRapidas = computed(() => {
 })
 </script>
 
-<style scoped>
-.footer-links a {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.footer-links a i {
-  width: 1rem;
-  text-align: center;
-}
-</style>
 

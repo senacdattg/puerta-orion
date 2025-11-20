@@ -1,56 +1,36 @@
-/* ===== ESTILOS PARA MENSUALIDADES - VERSIÓN MODERNA ===== */
+/* ===== ESTILOS PARA MENSUALIDADES ===== */
+
+/* ===== IMPORTS ===== */
+
+/* --- Importar variables base y estilos compartidos --- */
+@import './base/variables.css';
 @import './listados.css';
 
-/* ===== VARIABLES CSS INCLUIDAS DIRECTAMENTE ===== */
-:root {
-  /* Colores */
-  --color-primario: #0047ab;
-  --color-secundario: #f4d800;
-  --color-blanco: #ffffff;
-  --color-negro: #000000;
-  /* --color-gris: #6c757d; */
-  --color-gris-claro: #f8f9fa;
-  --color-gris-medio: #e9ecef;
-  --color-gris-oscuro: #343a40;
-  --color-exito: #28a745;
-  --color-advertencia: #ffc107;
-  --color-peligro: #dc3545;
-  --color-info: #0047ab;
+/* ===== ESTILOS DEL COMPONENTE lista-mensualidades ===== */
 
-  /* Sombras */
-  --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.1);
-  --sombra-media: 0 4px 20px rgba(0, 0, 0, 0.15);
-  --sombra-fuerte: 0 8px 30px rgba(0, 0, 0, 0.2);
-
-  /* Bordes */
-  --radio-borde: 12px;
-
-  /* Espaciado */
-  --espaciado-sm: 0.5rem;
-  --espaciado-md: 1rem;
-  --espaciado-lg: 1.5rem;
-  --espaciado-xl: 2rem;
-
-  /* Transiciones */
-  --transicion: all 0.3s ease;
-}
-
-/* ===== COMPONENTE LISTA MENSUALIDADES ===== */
+/* --- Contenedor principal --- */
 .lista-mensualidades {
-  padding: 24px;
-  background: #f6f7fb;
+  padding: var(--espaciado-xl);
+  background: var(--color-fondo-seccion);
   min-height: 100vh;
 }
 
-/* ===== FILTROS Y BÚSQUEDA ===== */
-#statCard { border: none !important; }
-#statCard:hover {
-  transform: scale(1.04);
-  border: 2px solid #FFD700 !important;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+/* ===== ESTILOS DE FILTROS Y BÚSQUEDA ===== */
+
+/* --- Tarjeta de estadística --- */
+#statCard {
+  border: none !important;
 }
 
-/* ===== CONTROLES DE ACCIÓN ===== */
+#statCard:hover {
+  transform: scale(1.04);
+  border: 2px solid var(--color-secundario-oro) !important;
+  box-shadow: var(--sombra-media);
+}
+
+/* ===== ESTILOS DE CONTROLES DE ACCIÓN ===== */
+
+/* --- Controles de acción --- */
 .controles-accion {
   display: flex;
   gap: 1rem;
@@ -59,22 +39,26 @@
   justify-content: center;
 }
 
+/* ===== ESTILOS DE GRILLA DE MENSUALIDADES ===== */
+
+/* --- Grid de mensualidades --- */
 .grid-mensualidades {
   --listado-grid-min: 320px;
   --listado-grid-gap: 16px;
   margin-bottom: 16px;
 }
 
-/* ===== TARJETA DE MENSUALIDAD ===== */
+/* ===== ESTILOS DEL COMPONENTE tarjeta-mensualidad ===== */
+/* --- Tarjeta de mensualidad --- */
 .tarjeta-mensualidad {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(17,24,39,.06);
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde-grande);
+  padding: var(--espaciado-md);
+  box-shadow: var(--sombra-suave);
   transition: var(--transicion);
   position: relative;
   cursor: pointer;
-  border: 1px solid #eef0f2;
+  border: 1px solid var(--color-gris-100);
 }
 
 .tarjeta-mensualidad:hover {
@@ -83,9 +67,7 @@
   border-color: var(--color-secundario);
 }
 
-/* Card moderna eliminada por revertir a diseño anterior */
-
-/* Estados de mensualidad */
+/* --- Estados de mensualidad --- */
 .tarjeta-mensualidad.estado-Pagado {
   border-left: 4px solid var(--color-exito);
 }
@@ -102,7 +84,7 @@
   border-left: 4px solid var(--color-peligro);
 }
 
-/* Header de la tarjeta */
+/* --- Header de la tarjeta --- */
 .header-mensualidad {
   display: flex;
   justify-content: space-between;
@@ -110,12 +92,7 @@
   margin-bottom: 1rem;
 }
 
-/* Refinar título/nombre en tarjeta */
-.contenido-mensualidad .nombre-deportista {
-  font-size: 1.15rem;
-  line-height: 1.3;
-}
-
+/* --- Avatar del deportista --- */
 .avatar-deportista {
   width: 60px;
   height: 60px;
@@ -130,7 +107,27 @@
   object-fit: cover;
 }
 
-/* ===== ESTADO BADGE - SOLO CAMBIO MÍNIMO ===== */
+/* --- Contenido de la tarjeta --- */
+.contenido-mensualidad {
+  margin-bottom: 1.5rem;
+}
+
+.contenido-mensualidad .nombre-deportista {
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+/* --- Nombre del deportista --- */
+.nombre-deportista {
+  margin: 0 0 1rem 0;
+  color: var(--color-gris-oscuro);
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* ===== ESTILOS DE ESTADOS Y BADGES ===== */
+
+/* --- Badge de estado --- */
 .estado-badge {
   display: flex;
   align-items: center;
@@ -144,44 +141,52 @@
   line-height: 1.4;
 }
 
-.estado-badge.Pagado { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.estado-badge.Pagado {
+  background: var(--color-fondo-exito);
+  color: var(--color-texto-exito);
+  border: 1px solid var(--color-borde-exito);
+}
 
-.estado-badge.Pendiente { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+.estado-badge.Pendiente {
+  background: var(--color-fondo-admin);
+  color: var(--color-texto-admin);
+  border: 1px solid var(--color-advertencia);
+}
 
-.estado-badge.Parcial { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.estado-badge.Parcial {
+  background: var(--color-info-badge-bg);
+  color: var(--color-info-badge-text);
+  border: 1px solid var(--color-borde-info);
+}
 
-.estado-badge.Vencido { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.estado-badge.Vencido {
+  background: var(--color-fondo-error);
+  color: var(--color-texto-error);
+  border: 1px solid var(--color-borde-error);
+}
 
+/* --- Icono de estado --- */
 .estado-icono {
   font-size: 1rem;
 }
 
-/* Contenido de la tarjeta */
-.contenido-mensualidad {
-  margin-bottom: 1.5rem;
-}
+/* ===== ESTILOS DE DETALLES DE LA TARJETA ===== */
 
-/* Variante moderna eliminada al revertir */
-
-.nombre-deportista {
-  margin: 0 0 1rem 0;
-  color: var(--color-gris-oscuro);
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
+/* --- Grid de detalles --- */
 .detalles-mensualidad {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 0.75rem;
 }
 
+/* --- Item de detalle --- */
 .detalle-item {
   display: grid;
   flex-direction: row;
   gap: 0.25rem;
 }
 
+/* --- Label de detalle --- */
 .detalle-label {
   font-size: 0.8rem;
   color: var(--color-gris);
@@ -190,6 +195,7 @@
   letter-spacing: 0.5px;
 }
 
+/* --- Valor de detalle --- */
 .detalle-valor {
   font-size: 1rem;
   font-weight: 600;
@@ -221,7 +227,13 @@
   color: var(--color-peligro);
 }
 
-/* ===== ACCIONES DE LA TARJETA ===== */
+.detalle-valor.vencimiento {
+  color: var(--color-advertencia);
+}
+
+/* ===== ESTILOS DE ACCIONES DE LA TARJETA ===== */
+
+/* --- Contenedor de acciones --- */
 .acciones-mensualidad {
   display: flex;
   flex-direction: column;
@@ -231,10 +243,23 @@
   border-top: 1px solid var(--color-gris-claro);
 }
 
-.acciones-principales { display: flex; gap: 12px; justify-content: center; }
+/* --- Acciones principales --- */
+.acciones-principales {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
 
-.acciones-secundarias { display: flex; gap: 8px; justify-content: center; }
+/* --- Acciones secundarias --- */
+.acciones-secundarias {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
 
+/* ===== ESTILOS DE BOTONES DE ACCIÓN ===== */
+
+/* --- Botón base de acción --- */
 .boton-accion {
   border: none;
   border-radius: var(--radio-borde);
@@ -250,7 +275,7 @@
 
 .boton-accion:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.25);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.25); /* Sombra específica con color primario - mantener hardcodeado */
 }
 
 .boton-accion:hover {
@@ -258,7 +283,7 @@
   box-shadow: var(--sombra-media);
 }
 
-/* Botón principal (Ver Detalles) */
+/* --- Botón principal (Ver Detalles) --- */
 .boton-principal {
   background: linear-gradient(135deg, #138496);
   color: var(--color-blanco);
@@ -285,7 +310,7 @@
   font-weight: 600;
 }
 
-/* Botones secundarios */
+/* --- Botones secundarios --- */
 .boton-secundario {
   width: 44px;
   height: 44px;
@@ -306,7 +331,7 @@
 }
 
 .boton-secundario.gestionar:hover {
-  background: #0056cc;
+  background: var(--color-primario-hover);
 }
 
 .boton-secundario.reporte {
@@ -315,14 +340,16 @@
 }
 
 .boton-secundario.reporte:hover {
-  background: #e6c800;
+  background: var(--color-secundario-hover);
 }
 
 .boton-secundario .icono-accion {
   font-size: 1.1rem;
 }
 
-/* ===== INDICADOR DE VENCIMIENTO ===== */
+/* ===== ESTILOS DE INDICADOR DE VENCIMIENTO ===== */
+
+/* --- Indicador de vencimiento --- */
 .indicador-vencimiento {
   position: absolute;
   top: 3.6rem;
@@ -356,12 +383,28 @@
   color: var(--color-blanco);
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+.indicador-vencimiento.sin-pagos {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
 }
 
-/* Separador reutilizable */
+.indicador-vencimiento.sin-fecha {
+  background: var(--color-gris);
+  color: var(--color-blanco);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ===== ESTILOS DE SEPARADORES ===== */
+
+/* --- Línea separadora --- */
 .linea-abajo {
   width: 100%;
   height: 1px;
@@ -370,6 +413,9 @@
   margin: 12px 0;
 }
 
+/* ===== ESTILOS DEL COMPONENTE mensualidades-modal ===== */
+
+/* --- Modal de mensualidades --- */
 .mensualidades-modal {
   width: auto;
   max-width: var(--modal-max-width, 720px);
@@ -380,65 +426,143 @@
 }
 
 .mensualidades-modal .btn-cerrar {
-  background: rgba(255, 255, 255, 0.18);
-  color: #f8fafc;
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.18); /* Fondo semitransparente - mantener hardcodeado */
+  color: var(--color-gris-50);
+  border-color: rgba(255, 255, 255, 0.35); /* Borde semitransparente - mantener hardcodeado */
 }
 
 .mensualidades-modal .btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.28); /* Fondo semitransparente - mantener hardcodeado */
+  color: var(--color-blanco);
 }
 
-/* ===== CUERPO DEL MODAL ===== */
+/* --- Cuerpo del modal --- */
 .mensualidades-modal .modal-body {
   padding: var(--modal-body-padding, 1.1rem);
-  background: #ffffff;
+  background: var(--color-blanco);
 }
 
-/* Tabla de historial: visual limpia */
-.tabla-historial {
+/* ===== ESTILOS DEL MODAL OVERLAY ===== */
+
+/* --- Overlay del modal --- */
+/* NOTA: Los estilos base de modales (.modal-overlay, .modal-content, .modal-header) 
+   se movieron a components/modals.css para evitar duplicación.
+   Solo se mantienen aquí los estilos específicos como .mensualidades-modal .modal-header
+*/
+
+/* --- Botón cerrar del modal --- */
+.btn-cerrar {
+  background: rgba(255, 255, 255, 0.2); /* Fondo semitransparente - mantener hardcodeado */
+  border: none;
+  color: var(--color-blanco);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radio-borde-circular);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3); /* Fondo semitransparente - mantener hardcodeado */
+  transform: scale(1.1);
+}
+
+/* --- Body del modal con formulario --- */
+.modal-body-form {
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 400px;
+}
+
+.modal-body-form ::v-deep .formulario-datos {
+  width: 100% !important;
+  max-width: 700px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.modal-body-form ::v-deep .seccion-formulario {
+  margin: 0 auto;
   width: 100%;
-  border-collapse: collapse;
 }
-.tabla-historial thead th {
-  text-align: left;
-  padding: 10px 8px;
-  font-size: 0.9rem;
-  color: #6b7280;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f3f4f6;
-}
-.tabla-historial tbody td {
-  padding: 10px 8px;
-  border-bottom: 1px solid #f3f4f6;
-}
-.tabla-historial tbody tr:hover {
-  background: #fafafa;
-}
-/* Zebra */
-.tabla-historial tbody tr:nth-child(odd) { background: #f9fafb; }
-.tabla-historial tbody tr:nth-child(even) { background: #ffffff; }
 
-/* ===== SECCIÓN PRINCIPAL ===== */
+.modal-body-form ::v-deep .seccion-formulario h3 {
+  text-align: center;
+}
+
+.modal-body-form ::v-deep .fila-texto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.modal-body-form ::v-deep .fila-texto input,
+.modal-body-form ::v-deep .fila-texto select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Campos de ancho completo --- */
+.modal-body-form ::v-deep .fila-texto input[placeholder*="Número de documento"],
+.modal-body-form ::v-deep .fila-texto input[placeholder*="Dirección"],
+.modal-body-form ::v-deep .fila-texto input[placeholder*="Nombre de usuario"] {
+  grid-column: 1 / -1;
+}
+
+/* --- Botones centrados --- */
+.modal-body-form ::v-deep .botones-formulario {
+  justify-content: center;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+/* --- Ocultar botón secundario --- */
+.modal-body-form ::v-deep .boton-secundario {
+  display: none;
+}
+
+/* --- Input con símbolo en modal --- */
+.modal-content .input-with-symbol .input-mensualidad {
+  padding-left: 30px;
+  width: 100%;
+  flex: 1;
+}
+
+/* ===== ESTILOS DE TABLA DE HISTORIAL ===== */
+
+/* --- Tabla de historial --- */
+/* NOTA: Los estilos de .tabla-historial se movieron a components/tables.css para evitar duplicación.
+   Este archivo ahora solo contiene estilos específicos de mensualidades.
+*/
+
+/* ===== ESTILOS DE SECCIONES DEL MODAL ===== */
+
+/* --- Sección principal --- */
 .seccion-principal {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
   border-bottom: 2px solid var(--color-gris-claro);
 }
 
+/* --- Información del deportista --- */
 .deportista-info {
   display: flex;
   align-items: center;
   gap: 1.5rem;
 }
 
-
 .info-basica {
   flex: 1;
 }
 
-
+/* --- Estado actual --- */
 .estado-actual {
   display: inline-block;
   padding: 0.5rem 1rem;
@@ -469,7 +593,7 @@
   color: var(--color-blanco);
 }
 
-/* ===== SECCIÓN DE DETALLES ===== */
+/* --- Sección de detalles --- */
 .seccion-detalles {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
@@ -488,30 +612,28 @@
   gap: 0.5rem;
 }
 
+/* --- Grid de detalles --- */
 .grid-detalles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
 }
 
-
-.detalle-valor.vencimiento {
-  color: var(--color-advertencia);
-}
-
-/* ===== SECCIÓN FINANCIERA ===== */
+/* --- Sección financiera --- */
 .seccion-financiera {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
   border-bottom: 2px solid var(--color-gris-claro);
 }
 
+/* --- Grid de resumen financiero --- */
 .resumen-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
 }
 
+/* --- Item de resumen --- */
 .resumen-item {
   background: var(--color-gris-claro);
   padding: 1.5rem;
@@ -526,6 +648,7 @@
   transform: translateY(-2px);
 }
 
+/* --- Label de resumen --- */
 .resumen-label {
   display: block;
   font-size: 0.9rem;
@@ -535,6 +658,7 @@
   letter-spacing: 0.5px;
 }
 
+/* --- Valor de resumen --- */
 .resumen-valor {
   display: block;
   font-size: 1.8rem;
@@ -543,6 +667,10 @@
 
 .resumen-valor.pagado {
   color: var(--color-exito);
+}
+
+.resumen-valor.pendiente {
+  color: var(--color-advertencia);
 }
 
 .resumen-valor.saldo {
@@ -565,22 +693,38 @@
   color: var(--color-peligro);
 }
 
-/* ===== SECCIÓN DE HISTORIAL ===== */
+.resumen-valor.estado.sin-pagos {
+  color: var(--color-peligro);
+}
+
+.resumen-valor.estado.parcial {
+  color: var(--color-advertencia);
+}
+
+.resumen-valor.estado.completo,
+.resumen-valor.estado.pagado {
+  color: var(--color-exito);
+}
+
+/* --- Sección de historial --- */
 .seccion-historial {
   margin-bottom: 1.5rem;
 }
 
-/* ===== FOOTER DEL MODAL ===== */
+/* ===== ESTILOS DEL FOOTER DEL MODAL ===== */
+
+/* --- Footer del modal --- */
 .modal-footer {
   background: var(--color-gris-claro);
   padding: 1.5rem;
   border-radius: 0 0 var(--radio-borde) var(--radio-borde);
   border-top: 2px solid var(--color-gris-claro);
-  display: flex;          /* activa flexbox */
-  justify-content: flex-end; /* alinea los botones a la derecha (opcional) */
+  display: flex;
+  justify-content: flex-end;
   gap: 1rem;
 }
 
+/* --- Acciones del footer --- */
 .acciones-footer {
   display: flex;
   gap: 1rem;
@@ -588,7 +732,9 @@
   flex-wrap: wrap;
 }
 
-/* ===== BOTONES DEL MODAL ===== */
+/* ===== ESTILOS DE BOTONES DEL MODAL ===== */
+
+/* --- Botón base --- */
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -603,17 +749,22 @@
   gap: 0.5rem;
 }
 
-.btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: var(--sombra-media); }
+.btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--sombra-media);
+}
 
+/* --- Botón primario --- */
 .btn-primary {
   background: var(--color-primario);
   color: var(--color-blanco);
 }
 
 .btn-primary:hover {
-  background: #0056cc;
+  background: var(--color-primario-hover);
 }
 
+/* --- Botón secundario --- */
 .btn-secondary {
   background: var(--color-peligro);
   color: var(--color-blanco);
@@ -624,16 +775,18 @@
   color: var(--color-gris-oscuro);
 }
 
-/* Botón de peligro consistente (p.ej. eliminar abono) */
+/* --- Botón de peligro --- */
 .btn-danger {
   background: var(--color-peligro);
   color: var(--color-blanco);
   border: none;
 }
+
 .btn-danger:hover {
   filter: brightness(0.95);
 }
 
+/* --- Botón de mensualidad --- */
 .btn-mensualidad {
   background: #f4d800 !important;
 }
@@ -642,7 +795,7 @@
   background: #e6c700d5 !important;
 }
 
-
+/* --- Botón de reporte --- */
 .btn-reporte {
   background: var(--color-advertencia);
   color: var(--color-blanco);
@@ -650,9 +803,10 @@
 
 .btn-reporte:hover {
   background: #e0a800;
-  color: var(--color-gris-);
+  color: var(--color-gris-oscuro);
 }
 
+/* --- Botón de gestionar --- */
 .btn-gestionar {
   background: var(--color-info);
   color: var(--color-blanco);
@@ -663,12 +817,15 @@
   color: var(--color-gris-claro);
 }
 
+/* --- Botón grande --- */
 .btn-lg {
   padding: 1rem 2rem;
   font-size: 1.1rem;
 }
 
-/* ===== FORMULARIO MODAL PARA NUEVA MENSUALIDAD ===== */
+/* ===== ESTILOS DE FORMULARIOS ===== */
+
+/* --- Campo de formulario --- */
 .campo-formulario {
   margin-bottom: 1.5rem;
 }
@@ -690,6 +847,7 @@
   text-align: center;
 }
 
+/* --- Input y select de mensualidad --- */
 .input-mensualidad,
 .select-mensualidad {
   width: 100%;
@@ -724,7 +882,18 @@
   padding-right: 3rem;
 }
 
-/* Botones del formulario */
+/* --- Validación visual --- */
+.input-mensualidad:invalid,
+.select-mensualidad:invalid {
+  border-color: var(--color-peligro);
+}
+
+.input-mensualidad:valid,
+.select-mensualidad:valid {
+  border-color: var(--color-exito);
+}
+
+/* --- Acciones del formulario --- */
 .acciones {
   display: flex;
   gap: 1rem;
@@ -737,53 +906,37 @@
   justify-content: center;
 }
 
-.mensualidades-modal .modal-header {
-  background: var(--modal-header-bg);
-  color: var(--modal-header-color);
-  padding: 1.5rem;
-  border-radius: var(--modal-radius, 16px) var(--modal-radius, 16px) 0 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 3px solid rgba(255, 255, 255, 0.1);
+/* --- Mensaje de documento --- */
+.mensaje-documento {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  line-height: 1.3;
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.504);
+.mensaje-documento.indicacion,
+.mensaje-documento.pendiente {
+  color: #6c757d;
 }
 
-.btn-cerrar {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: var(--color-blanco);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transicion);
+.mensaje-documento.checking {
+  color: #0d6efd;
 }
 
-.btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.1);
+.mensaje-documento.found {
+  color: #198754;
+  font-weight: 600;
 }
 
-/* Validación visual */
-.input-mensualidad:invalid,
-.select-mensualidad:invalid {
-  border-color: var(--color-peligro);
+.mensaje-documento.warning {
+  color: #ffc107;
+  font-weight: 600;
 }
 
-.input-mensualidad:valid,
-.select-mensualidad:valid {
-  border-color: var(--color-exito);
+.mensaje-documento.not-found,
+.mensaje-documento.invalid,
+.mensaje-documento.error {
+  color: #dc3545;
 }
 
 /* Responsive para formulario */
@@ -813,6 +966,8 @@
 }
 
 /* ===== RESPONSIVE ===== */
+
+/* --- Responsive del componente lista-mensualidades --- */
 @media (max-width: 768px) {
   .lista-mensualidades {
     padding: 1rem;
@@ -889,129 +1044,230 @@
     padding: 0.75rem 1.5rem;
   }
 
-  /* Reubicar indicador de vencimiento en pantallas pequeñas */
   .indicador-vencimiento {
     top: 3.6rem;
     right: 0.75rem;
   }
 }
 
-/* ===== RESPONSIVE EXTRA - TABLET ===== */
+/* --- Responsive del modal --- */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 1rem;
+    max-height: 95vh;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.3rem;
+  }
+
+  .acciones {
+    flex-direction: column;
+  }
+
+  .btn.btn-primary,
+  .btn.btn-danger {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .btn-edit {
+    width: 100%;
+    text-align: center;
+  }
+
+  .botones-rapidos {
+    flex-direction: column;
+  }
+
+  .btn-rapido {
+    flex: none;
+    width: 100%;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  .resumen-pagos {
+    grid-template-columns: 1fr;
+  }
+
+  .fecha-pago-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-eliminar-fecha {
+    align-self: flex-end;
+    margin-top: 0.5rem;
+  }
+}
+
+/* --- Responsive tablet --- */
 @media (max-width: 1024px) {
   .grid-mensualidades {
     --listado-grid-min: 300px;
     --listado-grid-gap: 1rem;
   }
+
   .estadisticas {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .layout-mensualidades {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .filtros-lateral {
+    position: static;
+  }
 }
 
-/* ===== RESPONSIVE EXTRA - MÓVIL MEDIANO ===== */
+/* --- Responsive móvil mediano --- */
 @media (max-width: 600px) {
   .estadisticas {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
+
   .tarjeta-mensualidad {
     padding: 1rem;
   }
+
   .contenido-mensualidad {
     margin-bottom: 1rem;
   }
+
   .acciones-mensualidad {
     gap: 8px;
   }
+
   .acciones-principales {
     flex-direction: column;
     align-items: stretch;
   }
+
   .boton-principal {
     min-width: unset;
     width: 100%;
   }
+
   .boton-secundario {
     width: 40px;
     height: 40px;
   }
 }
 
-/* ===== RESPONSIVE EXTRA - MÓVIL PEQUEÑO ===== */
+/* --- Responsive móvil pequeño --- */
 @media (max-width: 420px) {
   .grid-mensualidades {
     --listado-grid-min: 1fr;
   }
+
   .avatar-deportista {
     width: 50px;
     height: 50px;
   }
+
   .nombre-deportista {
     font-size: 1.1rem;
   }
+
   .detalle-label {
     font-size: 0.75rem;
   }
+
   .detalle-valor {
     font-size: 0.95rem;
   }
 }
 
 
-/* Estilos para el Modal de Detalles en modo edición */
+/* ===== ESTILOS DE MODO EDICIÓN ===== */
+
+/* --- Acciones del header (modo edición) --- */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* --- Botón de editar --- */
 .btn-edit {
-  background: #3498db;
-  color: white;
+  background: var(--color-info);
+  color: var(--color-blanco);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-xs);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color var(--transicion);
 }
 
 .btn-edit:hover {
-  background: #2980b9;
+  background: var(--color-info-hover);
 }
 
-/* Toggle Activo reutilizable */
+/* --- Toggle activo --- */
 .btn-toggle-activo {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
-  color: #374151;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-300);
+  background: var(--color-gris-50);
+  color: var(--color-gris-700-alt);
   cursor: pointer;
   transition: all 0.15s ease-in-out;
 }
-.btn-toggle-activo:hover { filter: brightness(0.98); }
-.btn-toggle-activo.on {
-  background: #ecfdf5;
-  border-color: #10b981;
-  color: #059669;
+
+.btn-toggle-activo:hover {
+  filter: brightness(0.98);
 }
 
-/* Tabs en modal edición */
-.tabs-edicion { display: flex; gap: 8px; margin-bottom: 12px; }
+.btn-toggle-activo.on {
+  background: var(--color-fondo-exito);
+  border-color: var(--color-exito);
+  color: var(--color-texto-exito);
+}
+
+/* --- Tabs de edición --- */
+.tabs-edicion {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .tab-btn {
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #374151;
-  border-radius: 8px;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border: 1px solid var(--color-gris-300);
+  background: var(--color-gris-50);
+  color: var(--color-gris-700-alt);
+  border-radius: var(--radio-borde-pequeno);
   cursor: pointer;
 }
+
 .tab-btn.active {
-  background: #eef2ff;
-  border-color: #6366f1;
-  color: #3730a3;
+  background: var(--color-chip-primary-bg);
+  border-color: var(--color-info-alt);
+  color: var(--color-chip-primary-text);
 }
 
+/* --- Formulario de edición --- */
 .formulario-edicion {
   display: flex;
   flex-direction: column;
@@ -1019,26 +1275,29 @@
   margin-top: 1rem;
 }
 
-
-.input-edicion, .select-edicion {
+/* --- Input y select de edición --- */
+.input-edicion,
+.select-edicion {
   padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  transition: border-color 0.3s ease;
-  background: #fff;
+  border: 2px solid var(--color-gris-200);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  transition: border-color var(--transicion);
+  background: var(--color-blanco);
 }
 
-.input-edicion:focus, .select-edicion:focus {
+.input-edicion:focus,
+.select-edicion:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); /* Sombra específica - mantener hardcodeado */
 }
 
 .select-edicion {
   cursor: pointer;
 }
 
+/* --- Input con símbolo --- */
 .input-with-symbol {
   position: relative;
   display: flex;
@@ -1048,10 +1307,10 @@
 
 .dollar-symbol {
   position: absolute;
-  left: 12px;
-  color: #27ae60;
-  font-weight: bold;
-  font-size: 1rem;
+  left: var(--espaciado-md);
+  color: var(--color-exito);
+  font-weight: var(--peso-fuente-bold);
+  font-size: var(--tamano-fuente-base);
   z-index: 1;
 }
 
@@ -1062,28 +1321,31 @@
   flex: 1;
 }
 
+/* --- Texto de ayuda --- */
 .help-text {
-  font-size: 0.75rem;
-  color: #7f8c8d;
+  font-size: var(--tamano-fuente-xs);
+  color: var(--color-gris);
   margin-top: 0.25rem;
   font-style: italic;
 }
 
+/* --- Acciones rápidas --- */
 .acciones-rapidas {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  margin-top: var(--espaciado-lg);
+  padding: var(--espaciado-md);
+  background: var(--color-gris-claro);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-medio);
 }
 
 .acciones-rapidas h6 {
-  margin: 0 0 1rem 0;
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 600;
+  margin: 0 0 var(--espaciado-md) 0;
+  color: var(--color-gris-oscuro);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-semibold);
 }
 
+/* --- Botones rápidos --- */
 .botones-rapidos {
   display: flex;
   flex-wrap: wrap;
@@ -1104,34 +1366,34 @@
 
 .btn-rapido:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .btn-pagado {
-  background: #27ae60;
-  color: white;
+  background: var(--color-exito);
+  color: var(--color-blanco);
 }
 
 .btn-pagado:hover {
-  background: #229954;
+  background: var(--color-exito-hover);
 }
 
 .btn-pendiente {
-  background: #f39c12;
-  color: white;
+  background: var(--color-advertencia);
+  color: var(--color-blanco);
 }
 
 .btn-pendiente:hover {
-  background: #e67e22;
+  background: var(--color-advertencia-hover);
 }
 
 .btn-vencido {
-  background: #e74c3c;
-  color: white;
+  background: var(--color-peligro);
+  color: var(--color-blanco);
 }
 
 .btn-vencido:hover {
-  background: #c0392b;
+  background: var(--color-peligro-hover);
 }
 
 /* Responsive para el modal de detalles en modo edición */
@@ -1165,179 +1427,183 @@
   }
 }
 
-/* Estilos para fechas de pago múltiples */
+/* ===== ESTILOS DE FECHAS DE PAGO MÚLTIPLES ===== */
+
+/* --- Contenedor de fechas de pago --- */
 .fechas-pago-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
+/* --- Item de fecha de pago --- */
 .fecha-pago-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* --- Input de fecha --- */
 .input-fecha {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
+  border: 2px solid var(--color-gris-200);
+  border-radius: var(--radio-borde-pequeno);
 }
 
+.input-fecha:focus {
+  outline: none;
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); /* Sombra específica - mantener hardcodeado */
+}
+
+/* --- Input de monto --- */
 .input-monto {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  background: #fff;
+  border: 2px solid var(--color-gris-200);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  background: var(--color-blanco);
 }
 
-/* Estilos para múltiples meses */
+.input-monto:focus {
+  outline: none;
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); /* Sombra específica - mantener hardcodeado */
+}
+
+/* --- Botón eliminar fecha --- */
+.btn-eliminar-fecha {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-circular);
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  transition: background-color var(--transicion);
+}
+
+.btn-eliminar-fecha:hover {
+  background: var(--color-peligro-hover);
+}
+
+/* --- Botón agregar fecha --- */
+.btn-agregar-fecha {
+  background: var(--color-exito);
+  color: var(--color-blanco);
+  border: none;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-xs);
+  cursor: pointer;
+  transition: background-color var(--transicion);
+  align-self: flex-start;
+}
+
+.btn-agregar-fecha:hover {
+  background: var(--color-exito-hover);
+}
+
+/* ===== ESTILOS DE MESES MÚLTIPLES ===== */
+
+/* --- Contenedor de meses múltiples --- */
 .meses-multiples-container {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
+/* --- Item de mes --- */
 .mes-item {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
+/* --- Select de mes múltiple --- */
 .select-mes-multiple {
   flex: 1;
   padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  background: #fff;
+  border: 2px solid var(--color-gris-200);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  background: var(--color-blanco);
   cursor: pointer;
 }
 
 .select-mes-multiple:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); /* Sombra específica - mantener hardcodeado */
 }
 
+/* --- Botón eliminar mes --- */
 .btn-eliminar-mes {
-  background: #e74c3c;
-  color: white;
+  background: var(--color-peligro);
+  color: var(--color-blanco);
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radio-borde-circular);
   width: 30px;
   height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1.2rem;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  transition: background-color var(--transicion);
 }
 
 .btn-eliminar-mes:hover {
-  background: #c0392b;
+  background: var(--color-peligro-hover);
 }
 
+/* --- Botón agregar mes --- */
 .btn-agregar-mes {
-  background: #27ae60;
-  color: white;
+  background: var(--color-exito);
+  color: var(--color-blanco);
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
+  border-radius: var(--radio-borde-pequeno);
+  padding: 0.75rem var(--espaciado-md);
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.3s ease;
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  transition: background-color var(--transicion);
   align-self: flex-start;
 }
 
 .btn-agregar-mes:hover {
-  background: #229954;
+  background: var(--color-exito-hover);
 }
 
-.input-fecha:focus,
-.input-monto:focus {
-  outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-}
+/* ===== ESTILOS DE HISTORIAL DE PAGOS ===== */
 
-.btn-eliminar-fecha {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 1.2rem;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
-}
-
-.btn-eliminar-fecha:hover {
-  background: #c0392b;
-}
-
-.btn-agregar-fecha {
-  background: #27ae60;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  align-self: flex-start;
-}
-
-.btn-agregar-fecha:hover {
-  background: #229954;
-}
-
-/* Estilos para historial de pagos */
+/* --- Contenedor de historial de pagos --- */
 .historial-pagos-container {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
+/* --- Resumen de pagos --- */
 .resumen-pagos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  gap: var(--espaciado-md);
+  padding: var(--espaciado-md);
+  background: var(--color-gris-claro);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-medio);
 }
 
-
-.resumen-valor.pendiente {
-  color: #f39c12;
-}
-
-.resumen-valor.estado.sin-pagos {
-  color: #e74c3c;
-}
-
-.resumen-valor.estado.parcial {
-  color: #f39c12;
-}
-
-.resumen-valor.estado.completo,
-.resumen-valor.estado.pagado {
-  color: #27ae60;
-}
-
+/* --- Lista de pagos --- */
 .lista-pagos {
   display: flex;
   flex-direction: column;
@@ -1346,9 +1612,9 @@
 
 .lista-pagos h6 {
   margin: 0;
-  color: #495057;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-semibold);
 }
 
 .pagos-list {
@@ -1357,30 +1623,31 @@
   gap: 0.5rem;
 }
 
+/* --- Item de pago --- */
 .pago-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem;
-  background: #fff;
-  border: 1px solid #e9ecef;
-  border-radius: 6px;
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
 }
 
 .fecha-pago {
-  font-size: 0.9rem;
-  color: #495057;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-oscuro);
 }
 
 .monto-pago {
-  font-weight: 600;
-  color: #27ae60;
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-exito);
 }
 
 .sin-pagos {
   text-align: center;
-  padding: 1rem;
-  color: #6c757d;
+  padding: var(--espaciado-md);
+  color: var(--color-gris);
   font-style: italic;
 }
 
@@ -1404,40 +1671,24 @@
 /* Estilos para el formulario de nueva mensualidad */
 .input-mensualidad {
   padding: 0.75rem;
-  border: 2px solid #e1e8ed;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  transition: border-color 0.3s ease;
-  background: #fff;
+  border: 2px solid var(--color-gris-200);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  transition: border-color var(--transicion);
+  background: var(--color-blanco);
   width: 100%;
 }
 
 .input-mensualidad:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: var(--color-info);
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); /* Sombra específica - mantener hardcodeado */
 }
 
 
-/* Aplicar estilos del input con símbolo también al formulario de nueva mensualidad */
-.modal-content .input-with-symbol .input-mensualidad {
-  padding-left: 30px;
-  width: 100%;
-  flex: 1;
-}
+/* ===== ESTILOS DE LAYOUT Y VISTA ===== */
 
-/* Estilos adicionales para indicadores de vencimiento */
-.indicador-vencimiento.sin-pagos {
-  background: var(--color-peligro);
-  color: var(--color-blanco);
-}
-
-.indicador-vencimiento.sin-fecha {
-  background: #95a5a6;
-  color: var(--color-blanco);
-}
-
-/* ===== NUEVA CABECERA Y LAYOUT ===== */
+/* --- Cabecera de vista --- */
 .cabecera-vista {
   display: flex;
   align-items: center;
@@ -1447,33 +1698,74 @@
   max-width: 1200px;
   margin: 0 auto;
 }
-.titulo-vista { margin: 0; font-size: 1.4rem; }
-.chips-filtros { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+
+/* --- Título de vista --- */
+.titulo-vista {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+/* --- Chips de filtros --- */
+.chips-filtros {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
 .chip {
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  color: #374151;
-  padding: 6px 10px;
+  border: 1px solid var(--color-gris-300);
+  background: var(--color-blanco);
+  color: var(--color-gris-700-alt);
+  padding: 6px var(--espaciado-md);
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: var(--tamano-fuente-xs);
 }
-.chip.active { background: #eef2ff; color: #3730a3; border-color: #6366f1; }
 
-.layout-mensualidades { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; max-width: 1200px; margin: 0 auto; }
-.filtros-lateral { position: sticky; top: 64px; }
-.panel-filtros {
-  background: #fff;
-  border: 1px solid #eef0f2;
-  border-radius: 12px;
-  padding: 14px;
+.chip.active {
+  background: var(--color-chip-primary-bg);
+  color: var(--color-chip-primary-text);
+  border-color: var(--color-info-alt);
+}
+
+/* --- Layout de mensualidades --- */
+.layout-mensualidades {
   display: grid;
-  gap: 10px;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-.label-filtro { font-size: 0.85rem; color: #6b7280; }
-.acciones-filtros { display: flex; justify-content: flex-end; margin-top: 4px; }
-.contenido-principal { min-width: 0; }
 
-@media (max-width: 1024px) {
-  .layout-mensualidades { grid-template-columns: 1fr; gap: 16px; }
-  .filtros-lateral { position: static; }
+/* --- Filtros laterales --- */
+.filtros-lateral {
+  position: sticky;
+  top: 64px;
+}
+
+/* --- Panel de filtros --- */
+.panel-filtros {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-100);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-md);
+  display: grid;
+  gap: var(--espaciado-md);
+}
+
+.label-filtro {
+  font-size: var(--tamano-fuente-xs);
+  color: var(--color-gris-600);
+}
+
+.acciones-filtros {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* --- Contenido principal --- */
+.contenido-principal {
+  min-width: 0;
 }

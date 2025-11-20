@@ -1,88 +1,99 @@
+/* ===== ESTILOS PARA FORMULARIOS ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS DEL COMPONENTE formulario-datos ===== */
+/* (Compartido entre formulario-deportista y formulario-general) */
+
+/* --- Contenedor principal del formulario --- */
 .formulario-datos {
-    background-color: #f4d800;
-    border: 3px solid #0047ab;
-    padding: 30px;
+    background-color: var(--color-secundario);
+    border: 3px solid var(--color-primario);
+    padding: var(--espaciado-xl);
     max-width: 700px;
     box-sizing: border-box;
     width: 700px;
 }
 
+/* --- Título del formulario --- */
 .formulario-datos h3 {
-    background-color: #0047ab;
-    color: white !important;
-    padding: 20px;
+    background-color: var(--color-primario);
+    color: var(--color-blanco) !important;
+    padding: var(--espaciado-lg);
     text-align: center;
-    margin: -20px -20px 20px -20px;
+    margin: -20px -20px var(--espaciado-lg) -20px;
 }
 
-.boton-formulario {
-    background-color: #0047ab;
-    color: white;
-    border: none;
-    padding: 10px;
-    width: 100%;
-    border-radius: 3px;
-    cursor: pointer;
+/* --- Campo de nombre centrado --- */
+.campo-nombre-centrado {
+  max-width: 400px;
+  margin: 0 auto;
+  grid-template-columns: 1fr;
 }
 
-.boton-formulario:hover {
-    background-color: #002e6d;
+.campo-nombre-centrado input {
+  text-align: center;
 }
 
-.botones-formulario {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-}
+/* NOTA: Los estilos de .fila-texto y .botones-formulario se movieron a components/forms.css para evitar duplicación.
+   Este archivo ahora solo contiene estilos específicos de formularios.
+*/
 
+/* ===== ESTILOS DEL COMPONENTE campo-condicional ===== */
+
+/* --- Contenedor del campo condicional --- */
 .campo-condicional {
-    margin-top: 15px;
-    background-color: white;
-    /* tono más claro que el fondo base */
-    border: 2px dashed #0047ab;
-    padding: 15px;
-    border-radius: 5px;
+    margin-top: var(--espaciado-md);
+    background-color: var(--color-blanco);
+    border: 2px dashed var(--color-primario);
+    padding: var(--espaciado-md);
+    border-radius: var(--radio-borde-pequeno);
 }
 
-/* Estilo para el input dentro de campos condicionales */
+/* --- Inputs y textareas dentro del campo condicional --- */
 .campo-condicional input,
 .campo-condicional textarea {
     width: 100%;
-    padding: 8px;
-    border: 1px solid #0047ab;
-    border-radius: 3px;
+    padding: var(--espaciado-sm);
+    border: 1px solid var(--color-primario);
+    border-radius: var(--radio-borde-pequeno);
     box-sizing: border-box;
-    font-size: 14px;
+    font-size: var(--tamano-fuente-sm);
 }
 
-/* Opcional: título del campo */
+/* --- Label del campo condicional --- */
 .campo-condicional label {
-    font-weight: bold;
+    font-weight: var(--peso-fuente-bold);
     display: block;
-    margin-bottom: 8px;
-    color: #0047ab;
+    margin-bottom: var(--espaciado-sm);
+    color: var(--color-primario);
 }
 
-/* Estilo para grupo de pregunta + opciones radio */
+/* ===== ESTILOS DEL COMPONENTE bloque-radio ===== */
+
+/* --- Contenedor del bloque de radio --- */
 .bloque-radio {
     display: flex;
-    flex-direction: column; /* ✅ Elementos en columna */
-    gap: 10px; /* ✅ Espaciado entre la pregunta, las opciones y el campo condicional */
-    background-color: white;
-    border: 2px dashed #0047ab;
-    padding: 15px 20px;
-    border-radius: 10px;
-    margin-bottom: 15px;
+    flex-direction: column;
+    gap: var(--espaciado-md);
+    background-color: var(--color-blanco);
+    border: 2px dashed var(--color-primario);
+    padding: var(--espaciado-md) var(--espaciado-lg);
+    border-radius: var(--radio-borde);
+    margin-bottom: var(--espaciado-md);
 }
 
+/* --- Label principal del bloque --- */
 .bloque-radio > label {
-    flex: 1; /* 👉 ocupa todo el espacio disponible a la izquierda */
-    font-weight: bold;
-    color: #0047ab;
-    font-size: 16px;
+    flex: 1;
+    font-weight: var(--peso-fuente-bold);
+    color: var(--color-primario);
+    font-size: var(--tamano-fuente-base);
     margin: 0;
 }
 
+/* --- Contenedor de opciones radio --- */
 .bloque-radio .opciones {
     display: flex;
     gap: 10px;
@@ -92,16 +103,355 @@
     display: none;
 }
 
+/* ===== ESTILOS DEL COMPONENTE multiselect ===== */
+
+/* --- Contenedor del multiselect --- */
+.multiselect-container {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin-top: 10px;
+}
+
+/* --- Item de checkbox --- */
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.checkbox-item input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+/* ===== ESTILOS DEL COMPONENTE modal (compartido) ===== */
+
+/* --- Overlay del modal --- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5); /* Overlay semitransparente - mantener hardcodeado */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal-backdrop);
+}
+
+/* --- Contenido del modal --- */
+.modal-content {
+  background: var(--color-blanco);
+  padding: var(--espaciado-xl);
+  border-radius: var(--radio-borde-pequeno);
+  max-width: 400px;
+  text-align: center;
+}
+
+.modal-content h3 {
+  margin-bottom: var(--espaciado-md);
+  color: var(--color-gris-oscuro);
+  font-size: var(--tamano-fuente-xxl);
+  font-weight: var(--peso-fuente-bold);
+}
+
+.modal-content p {
+  margin-bottom: var(--espaciado-lg);
+  color: var(--color-gris);
+  white-space: pre-line;
+}
+
+.modal-content button {
+  padding: var(--espaciado-sm) var(--espaciado-lg);
+  background: var(--color-info);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background: var(--color-info-hover);
+}
+
+/* --- Variantes del modal (error y éxito) --- */
+.modal-content.error-modal h3 {
+  color: var(--color-peligro);
+}
+
+.modal-content.success-modal h3 {
+  color: var(--color-exito);
+}
+
+/* --- Select dentro del campo condicional --- */
+.campo-condicional select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* --- Textarea dentro del campo condicional --- */
+.campo-condicional textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 10px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* --- Título de sección --- */
+.seccion-titulo {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-oscuro);
+  margin: var(--espaciado-lg) 0 var(--espaciado-md) 0;
+  padding-bottom: var(--espaciado-sm);
+  border-bottom: 2px solid var(--color-info);
+}
+
+/* ===== ESTILOS DEL COMPONENTE panel-enfermedades ===== */
+
+/* --- Contenedor del panel de enfermedades --- */
+.panel-enfermedades {
+  margin: var(--espaciado-lg) 0;
+  padding: 5px;
+  border: 3px dashed var(--color-secundario-oro);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-blanco);
+}
+
+/* --- Contenido del panel --- */
+.panel-enfermedades-contenido {
+  background-color: var(--color-blanco);
+  border-radius: var(--radio-borde-pequeno);
+  padding: var(--espaciado-xl) var(--espaciado-lg);
+  text-align: center;
+}
+
+/* --- Pregunta del panel --- */
+.panel-pregunta {
+  display: block;
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-900-alt);
+  margin-bottom: var(--espaciado-lg);
+}
+
+/* --- Opciones del panel --- */
+.panel-opciones {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* --- Botón sí/no --- */
+.boton-si-no {
+  min-width: 120px;
+  padding: var(--espaciado-md) var(--espaciado-xl);
+  border: 2px solid var(--color-info);
+  border-radius: var(--radio-borde-pequeno);
+  background-color: var(--color-blanco);
+  color: var(--color-info);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.boton-si-no:hover:not(:disabled) {
+  background-color: var(--color-info-badge-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Sombra específica - mantener hardcodeado */
+}
+
+.boton-si-no.activo {
+  background-color: var(--color-info);
+  color: var(--color-blanco);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4); /* Sombra específica - mantener hardcodeado */
+}
+
+.boton-si-no:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===== ESTILOS DEL COMPONENTE panel-recomendacion ===== */
+
+/* --- Contenedor del panel de recomendación --- */
+.panel-recomendacion {
+  margin: var(--espaciado-lg) 0;
+  padding: 5px;
+  border: 3px dashed var(--color-secundario-oro);
+  border-radius: var(--radio-borde);
+  background-color: var(--color-blanco);
+}
+
+/* --- Contenido del panel --- */
+.panel-recomendacion-contenido {
+  background-color: var(--color-blanco);
+  border-radius: var(--radio-borde-pequeno);
+  padding: var(--espaciado-xl) var(--espaciado-lg);
+  text-align: center;
+}
+
+.panel-recomendacion-contenido .campo-condicional {
+  margin-top: var(--espaciado-lg);
+  text-align: left;
+}
+
+.panel-recomendacion-contenido .campo-condicional label {
+  display: block;
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-oscuro);
+  margin-bottom: var(--espaciado-sm);
+}
+
+.panel-recomendacion-contenido .campo-condicional textarea {
+  width: 100%;
+  padding: var(--espaciado-md);
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color var(--transicion);
+}
+
+.panel-recomendacion-contenido .campo-condicional textarea:focus {
+  outline: none;
+  border-color: var(--color-info);
+}
+
+/* ===== ESTILOS DEL COMPONENTE campo-busqueda-acudiente ===== */
+
+/* --- Contenedor del campo de búsqueda --- */
+.campo-busqueda-acudiente {
+  margin: 20px 0;
+}
+
+.campo-busqueda-acudiente label {
+  display: block;
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-oscuro);
+  margin-bottom: var(--espaciado-md);
+}
+
+/* --- Fila de búsqueda --- */
+.busqueda-row {
+  display: flex;
+  gap: var(--espaciado-md);
+  align-items: center;
+}
+
+.busqueda-row input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+}
+
+.busqueda-row input:focus {
+  outline: none;
+  border-color: var(--color-info);
+}
+
+/* --- Botón de búsqueda --- */
+.boton-buscar {
+  padding: 0.75rem var(--espaciado-lg);
+  background: var(--color-info);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  cursor: pointer;
+  font-weight: var(--peso-fuente-semibold);
+  transition: background var(--transicion);
+}
+
+.boton-buscar:hover:not(:disabled) {
+  background: var(--color-info-hover);
+}
+
+.boton-buscar:disabled {
+  background: var(--color-gris-medio);
+  cursor: not-allowed;
+}
+
+/* --- Mensajes de búsqueda --- */
+.mensaje-busqueda {
+  margin-top: var(--espaciado-md);
+  padding: var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  border-left: 4px solid;
+}
+
+.mensaje-busqueda.success {
+  background-color: var(--color-fondo-exito);
+  border-color: var(--color-exito);
+  color: var(--color-texto-exito);
+}
+
+.mensaje-busqueda.warning {
+  background-color: var(--color-fondo-admin);
+  border-color: var(--color-advertencia);
+  color: var(--color-texto-admin);
+}
+
+.mensaje-busqueda.error {
+  background-color: var(--color-fondo-error);
+  border-color: var(--color-peligro);
+  color: var(--color-texto-error);
+}
+
+.mensaje-busqueda p {
+  margin: 5px 0;
+}
+
+.mensaje-busqueda .sugerencia {
+  font-style: italic;
+  margin-top: 10px;
+  font-weight: 500;
+}
+
+/* --- Info de acudiente encontrado --- */
+.info-acudiente-encontrado {
+  margin-top: 20px;
+}
+
+.acudiente-card {
+  background-color: var(--color-gris-claro);
+  border: 2px solid var(--color-exito);
+  border-radius: var(--radio-borde-pequeno);
+  padding: var(--espaciado-md);
+}
+
+.acudiente-card h4 {
+  color: var(--color-exito);
+  margin-bottom: var(--espaciado-md);
+}
+
+.acudiente-card p {
+  margin: 5px 0;
+  color: var(--color-gris-oscuro);
+}
+
+/* --- Labels de opciones radio --- */
 .bloque-radio .opciones label {
-    background-color: #ffffff;
-    border: 2px solid #0047ab;
-    border-radius: 6px;
-    padding: 10px 20px;
-    font-size: 14px;
+    background-color: var(--color-blanco);
+    border: 2px solid var(--color-primario);
+    border-radius: var(--radio-borde-pequeno);
+    padding: var(--espaciado-md) var(--espaciado-lg);
+    font-size: var(--tamano-fuente-sm);
     cursor: pointer;
-    font-weight: bold;
-    color: #0047ab;
-    transition: background-color 0.3s, color 0.3s;
+    font-weight: var(--peso-fuente-bold);
+    color: var(--color-primario);
+    transition: background-color var(--transicion), color var(--transicion);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -110,15 +460,19 @@
 }
 
 .bloque-radio .opciones input[type="radio"]:checked + label {
-    background-color: #0047ab;
-    color: white;
-    border-color: #002e6d;
+    background-color: var(--color-primario);
+    color: var(--color-blanco);
+    border-color: var(--color-primario-oscuro);
 }
 
+/* ===== ESTILOS COMPARTIDOS Y UTILIDADES ===== */
+
+/* --- Placeholder de inputs --- */
 ::placeholder {
-  color: #3c3434; /* Más oscuro que #999 */
+  color: #3c3434;
 }
 
+/* --- Icono del formulario --- */
 .icono-formulario {
   width: 80px;
   height: auto;
@@ -126,7 +480,351 @@
   margin-bottom: 15px;
 }
 
-/* Estilos para inputs de archivos mejorados */
+/* --- Contenedor de carga --- */
+.cargando-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+/* --- Spinner de carga --- */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--color-gris-claro);
+  border-top: 4px solid var(--color-primario);
+  border-radius: var(--radio-borde-circular);
+  animation: spin 1s linear infinite;
+  margin-bottom: var(--espaciado-md);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.cargando-container p {
+  color: var(--color-gris);
+  font-size: var(--tamano-fuente-lg);
+  margin: 0;
+}
+
+/* ===== ESTILOS DEL COMPONENTE card-formulario ===== */
+
+/* --- Card principal del formulario --- */
+.card-formulario {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  box-shadow: var(--sombra-media);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* --- Título del formulario --- */
+.titulo-formulario {
+  font-size: var(--tamano-fuente-xxl);
+  color: var(--color-gris-oscuro);
+  margin-bottom: var(--espaciado-sm);
+  text-align: center;
+}
+
+/* --- Descripción del formulario --- */
+.descripcion-formulario {
+  color: var(--color-gris);
+  text-align: center;
+  margin-bottom: var(--espaciado-xl);
+  line-height: 1.6;
+}
+
+.seccion-busqueda,
+.seccion-relacion {
+  margin-bottom: var(--espaciado-xl);
+  padding: var(--espaciado-lg);
+  background: var(--color-gris-claro);
+  border-radius: var(--radio-borde-pequeno);
+}
+
+.subtitulo-seccion {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris-oscuro);
+  margin-bottom: var(--espaciado-md);
+}
+
+.campo-busqueda {
+  width: 100%;
+}
+
+.input-busqueda {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.input-busqueda input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-200-alt);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+}
+
+.input-busqueda input:focus {
+  outline: none;
+  border-color: var(--color-primario);
+}
+
+.btn-buscar {
+  padding: 0.75rem var(--espaciado-lg);
+  background: var(--color-primario);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  cursor: pointer;
+  font-weight: var(--peso-fuente-semibold);
+  transition: background var(--transicion);
+}
+
+.btn-buscar:hover:not(:disabled) {
+  background: var(--color-primario-oscuro);
+}
+
+.btn-buscar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mensaje-busqueda strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.sugerencia {
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
+.info-deportista-encontrado {
+  margin-top: 1rem;
+}
+
+.card-deportista {
+  background: var(--color-blanco);
+  padding: var(--espaciado-lg);
+  border-radius: var(--radio-borde-pequeno);
+  border-left: 4px solid var(--color-exito);
+}
+
+.card-deportista h4 {
+  color: var(--color-exito);
+  margin-bottom: var(--espaciado-md);
+}
+
+.card-deportista p {
+  margin: var(--espaciado-sm) 0;
+  color: var(--color-gris-oscuro);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--espaciado-sm);
+  color: var(--color-gris-oscuro);
+  font-weight: var(--peso-fuente-semibold);
+}
+
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-200-alt);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-primario);
+}
+
+.form-group-checkbox {
+  margin-bottom: 1.5rem;
+}
+
+.form-group-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.btn-primary {
+  padding: 0.75rem var(--espaciado-xl);
+  background: var(--color-primario);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: background var(--transicion);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primario-oscuro);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 0.75rem var(--espaciado-xl);
+  background: var(--color-gris);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: background var(--transicion);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-gris-oscuro);
+}
+
+.texto-cargando {
+  color: var(--color-primario);
+  font-size: var(--tamano-fuente-sm);
+  margin-top: var(--espaciado-sm);
+  font-style: italic;
+}
+
+.texto-error {
+  color: var(--color-peligro);
+  font-size: var(--tamano-fuente-sm);
+  margin-top: var(--espaciado-sm);
+}
+
+.contenido-principal-tarjetas {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== ESTILOS DEL COMPONENTE mensajes ===== */
+
+/* --- Mensaje de error --- */
+.mensaje-error {
+  background-color: var(--color-mensaje-error-bg);
+  border: 1px solid var(--color-mensaje-error-border);
+  color: var(--color-mensaje-error-text);
+  padding: var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  margin-bottom: var(--espaciado-md);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  font-size: var(--tamano-fuente-sm);
+  animation: slideDown 0.3s ease-out;
+}
+
+/* --- Mensaje de éxito --- */
+.mensaje-exito {
+  background-color: var(--color-mensaje-exito-bg);
+  border: 1px solid var(--color-mensaje-exito-border);
+  color: var(--color-mensaje-exito-text);
+  padding: var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  margin-bottom: var(--espaciado-md);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  font-size: var(--tamano-fuente-sm);
+  animation: slideDown 0.3s ease-out;
+}
+
+/* --- Mensaje informativo --- */
+.mensaje-info {
+  background-color: var(--color-mensaje-info-bg);
+  border: 1px solid var(--color-mensaje-info-border);
+  color: var(--color-mensaje-info-text);
+  padding: var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  margin-bottom: var(--espaciado-md);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  font-size: var(--tamano-fuente-sm);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.boton-formulario:disabled,
+.boton-secundario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+input:disabled,
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.boton-secundario {
+  background-color: var(--color-gris);
+  color: var(--color-blanco);
+  border: none;
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  border-radius: var(--radio-borde-pequeno);
+  cursor: pointer;
+  font-size: var(--tamano-fuente-sm);
+  transition: background-color var(--transicion);
+}
+
+.boton-secundario:hover:not(:disabled) {
+  background-color: var(--color-gris-oscuro);
+}
+
+/* ===== ESTILOS DEL COMPONENTE file-input ===== */
+
+/* --- Wrapper del input de archivo --- */
 .file-wrapper {
   position: relative;
   width: 100%;
@@ -146,21 +844,22 @@
   width: 100%;
 }
 
+/* --- Botón del input de archivo --- */
 .file-button {
   display: block;
-  background: white;
-  border: 2px solid #0047ab;
-  border-radius: 8px;
-  padding: 12px 16px;
-  font-weight: 500;
-  color: #333;
+  background: var(--color-blanco);
+  border: 2px solid var(--color-primario);
+  border-radius: var(--radio-borde-pequeno);
+  padding: var(--espaciado-md);
+  font-weight: var(--peso-fuente-medio);
+  color: var(--color-gris-oscuro);
   text-align: center;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
+  transition: var(--transicion);
+  font-size: var(--tamano-fuente-sm);
 }
 
 .file-button:hover {
-  background: #f8f9fa;
+  background: var(--color-gris-claro);
   border-color: #0d47a1;
   color: #0047ab;
 }
@@ -170,7 +869,9 @@
   cursor: not-allowed;
 }
 
-/* Responsive */
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para file-input --- */
 @media (max-width: 768px) {
   .file-button {
     font-size: 0.9rem;

@@ -113,7 +113,7 @@ async function seleccionarRol(rol) {
 
     // Guardar rol activo en el store (esto también cargará los permisos del rol)
     const result = await authStore.setActiveRole(nombreRol)
-    
+
     // Verificar si el cambio de rol fue exitoso
     if (!result.success) {
       console.error('Error al cambiar rol activo:', result.error)
@@ -248,84 +248,3 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-/* Roles disponibles - color brillante */
-.rol-disponible {
-  opacity: 1 !important;
-  cursor: pointer;
-  background-color: #f4d800 !important;
-  position: relative;
-}
-
-.rol-disponible:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 8px 20px rgba(244, 216, 0, 0.5);
-}
-
-/* Roles no disponibles - color opaco */
-.rol-no-disponible {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-  background-color: #d3d3d3 !important;
-  filter: grayscale(100%);
-  position: relative;
-}
-
-.rol-no-disponible:hover {
-  transform: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.rol-no-disponible .icono-rol,
-.rol-no-disponible .sub-titulo {
-  color: #666 !important;
-}
-
-/* Rol seleccionado */
-.rol-seleccionado {
-  border: 3px solid #10b981 !important;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5) !important;
-  transform: scale(1.05);
-}
-
-/* Badge para roles no disponibles */
-.badge-no-disponible {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(239, 68, 68, 0.95);
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  z-index: 10;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-/* Mensajes de carga y error */
-.loading-message, .error-message {
-  text-align: center;
-  padding: 20px;
-  margin: 20px 0;
-  width: 100%;
-}
-
-.error-message {
-  color: #ef4444;
-  background: #fee2e2;
-  border-radius: 8px;
-  border: 1px solid #fecaca;
-}
-
-.loading-message {
-  color: #0047ab;
-  background: #e0f2fe;
-  border-radius: 8px;
-  border: 1px solid #bae6fd;
-}
-
-.sub-contenedor {
-  position: relative;
-}
-</style>

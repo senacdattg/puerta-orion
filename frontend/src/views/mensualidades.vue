@@ -253,8 +253,3 @@ onMounted(cargarMensualidades);
     <Pie />
   </main>
 </template>
-
-<style>
-/* Importamos el CSS moderno para mensualidades */
-@import '../assets/css/mensualidades.css';
-</style>

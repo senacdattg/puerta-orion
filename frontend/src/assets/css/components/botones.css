@@ -1,5 +1,8 @@
 /* ===== ESTILOS DE BOTONES REUTILIZABLES - APLICANDO DRY ===== */
 
+/* --- Importar variables base para usar variables unificadas --- */
+@import '../base/variables.css';
+
 /* ===== BOTÓN BASE ===== */
 .btn {
   display: inline-flex;

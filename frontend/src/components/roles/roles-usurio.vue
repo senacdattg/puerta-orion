@@ -104,9 +104,3 @@ onMounted(() => {
   }
 })
 </script>
-
-<style scoped>
-.selector-rol { display: flex; align-items: center; gap: .75rem; margin: 0 0 1rem; }
-.label { font-weight: 600; }
-.select-rol { padding: .5rem .75rem; border-radius: .5rem; border: 1px solid #e5e7eb; }
-</style>

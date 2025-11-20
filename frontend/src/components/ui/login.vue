@@ -253,6 +253,4 @@ onBeforeUnmount(() => {
 })
 </script>
 
-<style scoped>
-/* Estilos específicos del componente - complementan login.css */
-</style>
+

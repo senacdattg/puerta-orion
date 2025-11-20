@@ -1,26 +1,27 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import Inicio from '@/views/Inicio.vue'
-import ActualizarDeportista from '@/views/actualizar-deportista.vue'
-import RegistrarDeportista from '@/views/registrar-deportista.vue'
-import RegistrarGeneral from '@/views/registrar-general.vue'
-import ActualizarGeneral from '@/views/actualizar-general.vue'
 
-import TablaMensualidades from '@/views/mensualidades.vue'
-import TablaDeportistas from '@/views/vista-deportistas.vue'
-import Galeria from '@/views/galeria-vista.vue'
-import RolesRegistroVista from '@/views/roles-registro-vista.vue'
-import Calendario from '@/views/calendario.vue'
+// Solo Login se carga inmediatamente (página inicial)
 import Login from '@/views/login.vue'
-import ForgotPassword from '@/views/forgot-password.vue'
-import ResetPassword from '@/views/reset-password.vue'
-import panelAdmin from '@/views/admin-manager.vue'
-import CompletarPerfil from '@/views/completar-perfil.vue'
-import RegistrarAcudiente from '@/views/registrar-acudiente.vue'
-import FormularioAcudienteCompleto from '@/views/formulario-acudiente-completo.vue'
-import RegistrarDeportistaForm from '@/views/registrar-deportista-form.vue'
-import DeportistaDashboard from '@/views/DeportistaDashboard.vue'
-import AcudienteDashboard from '@/views/AcudienteDashboard.vue'
+
+// Todas las demás rutas con lazy loading para code splitting
+const Inicio = () => import('@/views/Inicio.vue')
+const RegistrarDeportista = () => import('@/views/registrar-deportista.vue')
+const RegistrarGeneral = () => import('@/views/registrar-general.vue')
+const TablaMensualidades = () => import('@/views/mensualidades.vue')
+const TablaDeportistas = () => import('@/views/vista-deportistas.vue')
+const Galeria = () => import('@/views/galeria-vista.vue')
+const RolesRegistroVista = () => import('@/views/roles-registro-vista.vue')
+const Calendario = () => import('@/views/calendario.vue')
+const ForgotPassword = () => import('@/views/forgot-password.vue')
+const ResetPassword = () => import('@/views/reset-password.vue')
+const panelAdmin = () => import('@/views/admin-manager.vue')
+const CompletarPerfil = () => import('@/views/completar-perfil.vue')
+const RegistrarAcudiente = () => import('@/views/registrar-acudiente.vue')
+const FormularioAcudienteCompleto = () => import('@/views/formulario-acudiente-completo.vue')
+const RegistrarDeportistaForm = () => import('@/views/registrar-deportista-form.vue')
+const DeportistaDashboard = () => import('@/views/DeportistaDashboard.vue')
+const AcudienteDashboard = () => import('@/views/AcudienteDashboard.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -58,12 +59,6 @@ const router = createRouter({
       redirect: '/home'
     },
     {
-      path: '/actualizar-deportista',
-      name: 'actualizar-deportista',
-      component: ActualizarDeportista,
-      meta: { requiresAuth: true }
-    },
-    {
       path: '/registrar-deportista',
       name: 'registrar-deportista',
       component: RegistrarDeportista,
@@ -75,12 +70,7 @@ const router = createRouter({
       component: RegistrarGeneral,
       meta: { requiresGuest: true }
     },
-    {
-      path: '/actualizar-general',
-      name: 'actualizar-general',
-      component: ActualizarGeneral,
-      meta: { requiresAuth: true }
-    },
+
     {
       path: '/mensualidades',
       name: 'mensualidades',
@@ -230,7 +220,7 @@ function getDefaultRouteForRole(userRoles, activeRole = null) {
   if (activeRole) {
     // Normalizar el nombre del rol para comparación (primera letra mayúscula)
     const rolNormalizado = activeRole?.charAt(0).toUpperCase() + activeRole?.slice(1).toLowerCase()
-    
+
     switch(rolNormalizado) {
       case 'SuperAdmin':
       case 'Administrador':
@@ -266,7 +256,7 @@ function getDefaultRouteForRole(userRoles, activeRole = null) {
     const singleRole = roleNames[0]
     // Normalizar el nombre del rol para comparación
     const rolNormalizado = singleRole?.charAt(0).toUpperCase() + singleRole?.slice(1).toLowerCase()
-    
+
     switch(rolNormalizado) {
       case 'SuperAdmin':
       case 'Administrador':

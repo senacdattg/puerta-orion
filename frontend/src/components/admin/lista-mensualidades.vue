@@ -706,37 +706,3 @@ async function guardarMensualidad() {
   cerrarFormulario();
 }
 </script>
-
-<style scoped>
-.mensaje-documento {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.85rem;
-  line-height: 1.3;
-}
-
-.mensaje-documento.indicacion,
-.mensaje-documento.pendiente {
-  color: #6c757d;
-}
-
-.mensaje-documento.checking {
-  color: #0d6efd;
-}
-
-.mensaje-documento.found {
-  color: #198754;
-  font-weight: 600;
-}
-
-.mensaje-documento.warning {
-  color: #ffc107;
-  font-weight: 600;
-}
-
-.mensaje-documento.not-found,
-.mensaje-documento.invalid,
-.mensaje-documento.error {
-  color: #dc3545;
-}
-</style>

@@ -1,0 +1,162 @@
+/* ===== COMPONENTES REUTILIZABLES: BADGES Y CHIPS ===== */
+
+@import '../base/variables.css';
+
+/* ===== BADGE BASE ===== */
+
+.badge {
+  display: inline-block;
+  padding: var(--espaciado-xs) var(--espaciado-sm);
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-semibold);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--radio-borde-pequeno);
+}
+
+/* ===== VARIANTES DE COLOR ===== */
+
+.badge-primary {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+.badge-secondary {
+  background-color: var(--color-secundario);
+  color: var(--color-gris-oscuro);
+}
+
+.badge-success {
+  background-color: var(--color-exito);
+  color: var(--color-blanco);
+}
+
+.badge-danger {
+  background-color: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.badge-warning {
+  background-color: var(--color-advertencia);
+  color: var(--color-gris-oscuro);
+}
+
+.badge-info {
+  background-color: var(--color-info);
+  color: var(--color-blanco);
+}
+
+/* ===== CHIPS ===== */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaciado-xs);
+  padding: var(--espaciado-xs) var(--espaciado-sm);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid transparent;
+  transition: var(--transicion);
+  cursor: pointer;
+}
+
+.chip.active {
+  border-color: var(--color-primario);
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+/* --- Chips de filtros --- */
+.chips-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaciado-sm);
+  margin-bottom: var(--espaciado-md);
+}
+
+.chips-filtros .chip {
+  background-color: var(--color-gris-claro);
+  color: var(--color-gris-oscuro);
+  border: 1px solid var(--color-gris-medio);
+}
+
+.chips-filtros .chip.active {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  border-color: var(--color-primario);
+}
+
+/* ===== CHIPS POR COLOR ===== */
+
+.chip-primary {
+  background-color: var(--color-chip-primary-bg);
+  border-color: var(--color-chip-primary-border);
+  color: var(--color-chip-primary-text);
+}
+
+.chip-success {
+  background-color: var(--color-chip-success-bg);
+  border-color: var(--color-chip-success-border);
+  color: var(--color-chip-success-text);
+}
+
+.chip-neutral {
+  background-color: var(--color-chip-neutral-bg);
+  border-color: var(--color-chip-neutral-border);
+  color: var(--color-chip-neutral-text);
+}
+
+/* ===== BADGES DE ESTADO ===== */
+
+.badge-no-disponible {
+  background-color: var(--color-gris);
+  color: var(--color-blanco);
+  padding: var(--espaciado-xs) var(--espaciado-sm);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== BADGES DE ROL ===== */
+
+.badge-role {
+  display: inline-block;
+  padding: var(--espaciado-xs) var(--espaciado-sm);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-semibold);
+  text-transform: capitalize;
+}
+
+.badge-role--admin {
+  background-color: var(--color-fondo-admin);
+  color: var(--color-texto-admin);
+}
+
+.badge-role--coach {
+  background-color: var(--color-fondo-coach);
+  color: var(--color-texto-coach);
+}
+
+.badge-role--athlete {
+  background-color: var(--color-fondo-athlete);
+  color: var(--color-texto-athlete);
+}
+
+.badge-role--guardian {
+  background-color: var(--color-fondo-guardian);
+  color: var(--color-texto-guardian);
+}
+
+.badge-role--user {
+  background-color: var(--color-fondo-user);
+  color: var(--color-texto-user);
+}
+
+
+

@@ -29,21 +29,3 @@ const ocultarMenu = computed(() => {
   </main>
 </template>
 
-<style scoped>
-.inicio-page {
-  min-height: 100vh;
-  background-color: var(--color-blanco);
-  display: flex;
-  flex-direction: column;
-}
-
-.inicio-page :deep(.dashboard-home) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.inicio-page :deep(.dashboard-home .main-dashboard) {
-  flex: 1;
-}
-</style>

@@ -98,37 +98,5 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.acudiente-dashboard-page {
-  min-height: 100vh;
-  background: var(--color-gris-claro);
-  display: flex;
-  flex-direction: column;
-  padding-top: 70px;
-}
 
-.dashboard-layout {
-  display: flex;
-  flex: 1;
-  position: relative;
-}
-
-.dashboard-main {
-  flex: 1;
-  min-height: calc(100vh - 70px);
-}
-
-.main-content {
-  padding: var(--espaciado-xl);
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    padding: var(--espaciado-md);
-  }
-}
-</style>
 

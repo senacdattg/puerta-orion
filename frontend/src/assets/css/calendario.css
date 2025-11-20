@@ -1,91 +1,94 @@
-/* Estilos simplificados y esenciales para el calendario */
+/* ===== ESTILOS DEL COMPONENTE calendario ===== */
 
-/* Contenedor principal */
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* --- Contenedor principal --- */
 .calendario-container {
   max-width: 1200px;
   margin: 0 auto;
-  margin-top: 2rem;
-  padding: 2rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-  margin-bottom: 2rem;
+  margin-top: var(--espaciado-xl);
+  padding: var(--espaciado-xl);
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-media);
+  border: 1px solid var(--color-gris-200);
+  margin-bottom: var(--espaciado-xl);
 }
 
-/* Título principal del calendario */
+/* --- Título y subtítulos --- */
 .titulo-principal-calendario {
   text-align: center;
-  margin-bottom: 2rem;
-  padding: 2rem 0;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border-radius: 1rem;
-  border: 1px solid #e2e8f0;
+  margin-bottom: var(--espaciado-xl);
+  padding: var(--espaciado-xl) 0;
+  background: linear-gradient(135deg, var(--color-gris-50) 0%, var(--color-gris-200) 100%);
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-gris-200);
 }
 
 .titulo-principal h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #1a202c;
-  margin: 0 0 1rem 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: var(--tamano-fuente-xxxl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-900-alt);
+  margin: 0 0 var(--espaciado-md) 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1); /* Sombra de texto - mantener hardcodeado */
 }
 
-        .titulo-principal p {
-          font-size: 1.2rem;
-          color: #4a5568;
-          margin: 0;
-          font-weight: 500;
-        }
+.titulo-principal p {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris-700-alt);
+  margin: 0;
+  font-weight: var(--peso-fuente-medio);
+}
 
-        .subtitulo-usuario {
-          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-          color: white;
-          padding: 0.75rem 1.5rem;
-          border-radius: 0.75rem;
-          font-size: 1rem;
-          font-weight: 600;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin-top: 1rem;
-          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        }
+.subtitulo-usuario {
+  background: linear-gradient(135deg, var(--color-info-alt) 0%, #1d4ed8 100%); /* Gradiente específico - mantener hardcodeado */
+  color: var(--color-blanco);
+  padding: 0.75rem var(--espaciado-lg);
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  margin-top: var(--espaciado-md);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3); /* Sombra específica - mantener hardcodeado */
+}
 
-        .subtitulo-usuario i {
-          font-size: 1.1rem;
-        }
+.subtitulo-usuario i {
+  font-size: 1.1rem;
+}
 
-/* Header del calendario */
+/* --- Header del calendario --- */
 .calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem 2rem;
-  background: #FFD700;
-  border-radius: 1rem;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  margin-bottom: var(--espaciado-xl);
+  padding: var(--espaciado-lg) var(--espaciado-xl);
+  background: var(--color-secundario-oro);
+  border-radius: var(--radio-borde);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); /* Sombra específica - mantener hardcodeado */
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--espaciado-sm);
 }
 
 .mes-titulo {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #1a202c;
+  font-size: var(--tamano-fuente-xxxl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-900-alt);
   margin: 0;
 }
 
 .fecha-actual {
-  font-size: 1.1rem;
-  color: #4a5568;
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris-700-alt);
   margin: 0;
-  font-weight: 500;
+  font-weight: var(--peso-fuente-medio);
 }
 
 .header-controls {
@@ -94,7 +97,7 @@
   align-items: center;
 }
 
-/* Botones de navegación */
+/* --- Botones de navegación --- */
 .btn-nav, .btn-hoy {
   padding: 0.75rem 1.5rem;
   border: none;
@@ -106,8 +109,8 @@
 }
 
 .btn-nav {
-  background: rgba(255, 255, 255, 0.9);
-  color: #1a202c;
+  background: rgba(255, 255, 255, 0.9); /* Fondo semitransparente - mantener hardcodeado */
+  color: var(--color-gris-900-alt);
   width: 3rem;
   height: 3rem;
   padding: 0;
@@ -117,21 +120,21 @@
 }
 
 .btn-nav:hover {
-  background: white;
+  background: var(--color-blanco);
   transform: translateY(-2px);
 }
 
 .btn-hoy {
-  background: #1a202c;
-  color: white;
+  background: var(--color-gris-900-alt);
+  color: var(--color-blanco);
 }
 
 .btn-hoy:hover {
-  background: #2d3748;
+  background: var(--color-gris-800-alt);
   transform: translateY(-2px);
 }
 
-/* Días de la semana */
+/* --- Días de la semana --- */
 .dias-semana {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -140,59 +143,59 @@
 }
 
 .dia-semana {
-  padding: 1rem;
+  padding: var(--espaciado-md);
   text-align: center;
-  font-weight: 700;
-  color: #4a5568;
-  font-size: 1.1rem;
-  background: #f7fafc;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-700-alt);
+  font-size: var(--tamano-fuente-lg);
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-gris-200);
 }
 
-/* Grid del calendario */
+/* --- Grid del calendario --- */
 .calendario-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.5rem;
 }
 
-/* Días individuales */
+/* --- Días individuales --- */
 .dia-calendario {
   aspect-ratio: 1;
   padding: 0.75rem;
-  background: white;
-  border-radius: 0.75rem;
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
   border: 2px solid transparent;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transicion);
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--sombra-suave);
 }
 
 .dia-calendario:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border-color: #FFD700;
+  box-shadow: var(--sombra-media);
+  border-color: var(--color-secundario-oro);
 }
 
 .dia-calendario.dia-otro-mes {
-  background: #f7fafc;
-  color: #a0aec0;
+  background: var(--color-gris-50);
+  color: var(--color-gris-400);
 }
 
 .dia-calendario.dia-hoy {
-  background: #FFD700;
-  color: #1a202c;
-  font-weight: 700;
-  border-color: #FFD700;
-  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+  background: var(--color-secundario-oro);
+  color: var(--color-gris-900-alt);
+  font-weight: var(--peso-fuente-bold);
+  border-color: var(--color-secundario-oro);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4); /* Sombra específica - mantener hardcodeado */
 }
 
 .dia-calendario.dia-con-eventos {
-  background: #e6fffa;
-  border-color: #38b2ac;
+  background: #e6fffa; /* Color específico de eventos - mantener hardcodeado */
+  border-color: #38b2ac; /* Color específico de eventos - mantener hardcodeado */
 }
 
 .numero-dia {
@@ -201,7 +204,7 @@
   margin-bottom: 0.5rem;
 }
 
-/* Indicadores de eventos */
+/* --- Indicadores de eventos en el calendario --- */
 .indicador-eventos {
   display: flex;
   flex-direction: column;
@@ -210,12 +213,12 @@
 }
 
 .contador-eventos {
-  background: #3182ce;
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.25rem 0.5rem;
-  border-radius: 1rem;
+  background: var(--color-info);
+  color: var(--color-blanco);
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-bold);
+  padding: 0.25rem var(--espaciado-sm);
+  border-radius: var(--radio-borde);
   min-width: 1.5rem;
   text-align: center;
 }
@@ -228,93 +231,93 @@
 .punto-evento {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 50%;
-  background: #38b2ac;
+  border-radius: var(--radio-borde-circular);
+  background: #38b2ac; /* Color específico de eventos - mantener hardcodeado */
 }
 
 .punto-evento.tipo-entrenamiento {
-  background: #3182ce;
+  background: var(--color-info);
 }
 
 .punto-evento.tipo-evento {
-  background: #d53f8c;
+  background: #d53f8c; /* Color específico de eventos - mantener hardcodeado */
 }
 
 .punto-evento.tipo-competencia {
-  background: #dd6b20;
+  background: #dd6b20; /* Color específico de eventos - mantener hardcodeado */
 }
 
-/* Botón para agregar evento en cada día */
+/* --- Botón para agregar evento en cada día --- */
 .btn-agregar-dia {
   position: absolute;
   bottom: 0.25rem;
   right: 0.25rem;
   width: 1.75rem;
   height: 1.75rem;
-  background: #0047ab;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  color: #ffffff;
-  font-size: 0.75rem;
+  background: var(--color-primario);
+  border: 2px solid var(--color-blanco);
+  border-radius: var(--radio-borde-circular);
+  color: var(--color-blanco);
+  font-size: var(--tamano-fuente-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.4);
+  transition: var(--transicion);
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.4); /* Sombra específica - mantener hardcodeado */
   z-index: 10;
   opacity: 0.9;
-  font-weight: bold;
+  font-weight: var(--peso-fuente-bold);
 }
 
 .btn-agregar-dia:hover {
   opacity: 1;
   transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.6);
-  background: #0056cc;
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.6); /* Sombra específica - mantener hardcodeado */
+  background: var(--color-primario-hover);
 }
 
 /* Cuando está en un día amarillo (hoy), usar color blanco o azul oscuro para contraste */
 .dia-calendario.dia-hoy .btn-agregar-dia {
-  background: #0047ab;
-  border-color: #ffffff;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background: var(--color-primario);
+  border-color: var(--color-blanco);
+  color: var(--color-blanco);
+  box-shadow: var(--sombra-media);
 }
 
 .dia-calendario.dia-hoy .btn-agregar-dia:hover {
-  background: #0056cc;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  background: var(--color-primario-hover);
+  box-shadow: var(--sombra-fuerte);
 }
 
 .dia-calendario:hover .btn-agregar-dia {
   opacity: 1;
 }
 
-/* Botón flotante */
+/* --- Botón flotante para agregar eventos --- */
 .btn-flotante {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: var(--espaciado-xl);
+  right: var(--espaciado-xl);
   width: 4rem;
   height: 4rem;
-  background: #FFD700;
+  background: var(--color-secundario-oro);
   border: none;
-  border-radius: 50%;
-  color: #1a202c;
-  font-size: 1.5rem;
+  border-radius: var(--radio-borde-circular);
+  color: var(--color-gris-900-alt);
+  font-size: var(--tamano-fuente-xxl);
   cursor: pointer;
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
-  transition: all 0.3s ease;
-  z-index: 100;
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4); /* Sombra específica - mantener hardcodeado */
+  transition: var(--transicion);
+  z-index: 100; /* Botón flotante - mantener hardcodeado */
 }
 
 .btn-flotante:hover {
   transform: scale(1.1);
-  box-shadow: 0 12px 35px rgba(255, 215, 0, 0.6);
+  box-shadow: 0 12px 35px rgba(255, 215, 0, 0.6); /* Sombra específica - mantener hardcodeado */
 }
 
-/* Responsive */
+/* Responsive del componente calendario */
 @media (max-width: 768px) {
   .calendario-container {
     padding: 1rem;
@@ -373,4 +376,378 @@
   .numero-dia {
     font-size: 1rem;
   }
+}
+
+/* ===== ESTILOS DEL COMPONENTE eventos ===== */
+
+/* --- Contenedor y layout principal --- */
+.eventos-page {
+  min-height: 100vh;
+  background-color: var(--color-gris-claro);
+  padding: var(--espaciado-xl) var(--espaciado-md);
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.eventos-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+  flex: 1;
+}
+
+/* Hacer que el footer se salga del padding del main y se comporte como footer */
+.eventos-page ::v-deep .footer-enhanced {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
+  margin-top: auto;
+}
+
+.eventos-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.eventos-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.eventos-subtitle {
+  font-size: 1.1rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+/* --- Filtros --- */
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.filter-select {
+  padding: 0.5rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 200px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* --- Grid de eventos --- */
+.eventos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.evento-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.evento-card:hover {
+  transform: translateY(-4px);
+}
+
+.evento-card.evento-activo {
+  border-left: 4px solid #28a745;
+}
+
+.evento-card.evento-proximo {
+  border-left: 4px solid #fd7e14;
+}
+
+.evento-card.evento-finalizado {
+  border-left: 4px solid #6c757d;
+}
+
+/* --- Contenido de la tarjeta de evento --- */
+.card-header {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.evento-fecha {
+  background: #007bff;
+  color: white;
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: center;
+  min-width: 60px;
+}
+
+.fecha-dia {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.fecha-mes {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.evento-info {
+  flex: 1;
+}
+
+.evento-info h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.evento-info p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.evento-estado {
+  display: flex;
+  align-items: center;
+}
+
+.estado-activo {
+  background: #d4edda;
+  color: #155724;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.estado-proximo {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.estado-finalizado {
+  background: #e2e3e5;
+  color: #383d41;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+/* --- Información del evento --- */
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  color: #6c757d;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item i {
+  width: 1rem;
+  color: #007bff;
+}
+
+/* --- Acciones de la tarjeta --- */
+.card-actions {
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- Botones de acciones --- */
+.btn-participate,
+.btn-notify,
+.btn-view {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.btn-participate {
+  background: #28a745;
+  color: white;
+}
+
+.btn-participate:hover:not(:disabled) {
+  background: #218838;
+}
+
+.btn-participate:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.btn-notify {
+  background: #fd7e14;
+  color: white;
+}
+
+.btn-notify:hover {
+  background: #e8650e;
+}
+
+.btn-view {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-view:hover {
+  background: #5a6268;
+}
+
+/* --- Estado vacío (sin eventos) --- */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: #6c757d;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Responsive del componente eventos */
+@media (max-width: 768px) {
+  .eventos-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .eventos-title {
+    font-size: 2rem;
+  }
+
+  .filters-section {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .filter-select {
+    min-width: auto;
+  }
+
+  .eventos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .card-actions {
+    justify-content: center;
+  }
+
+  .eventos-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+}
+
+/* ===== ESTILOS DEL COMPONENTE modal-calendario ===== */
+
+/* --- Modal principal del calendario --- */
+.modal-content.calendario-modal {
+  --modal-max-width: 780px;
+  --modal-radius: 20px;
+  border-radius: var(--modal-radius, 20px);
+  overflow: hidden;
+}
+
+/* --- Panel del formulario dentro del modal --- */
+.calendario-modal .form-modal-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.35rem 1.5rem 1.6rem;
+}
+
+/* --- Selector de eventos dentro del modal --- */
+.calendario-modal.selector-eventos .panel-selector-eventos {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: var(--sombra-suave, 0 24px 45px rgba(15, 23, 42, 0.15));
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* --- Lista de eventos dentro del selector --- */
+.calendario-modal.selector-eventos .lista-eventos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0;
 }

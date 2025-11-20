@@ -1,16 +1,16 @@
 <template>
   <div>
     <div class="fila-texto">
-      <input 
-        v-model.trim="localForm.nombre" 
-        type="text" 
-        placeholder="Nombre" 
-        required 
+      <input
+        v-model.trim="localForm.nombre"
+        type="text"
+        placeholder="Nombre"
+        required
       />
-      <textarea 
-        v-model.trim="localForm.descripcion" 
+      <textarea
+        v-model.trim="localForm.descripcion"
         placeholder="Descripción"
-        rows="3" 
+        rows="3"
         required
       ></textarea>
     </div>
@@ -24,9 +24,9 @@ import { ref, watch } from 'vue'
 defineOptions({ name: 'DatosDinamicosTipoEvento' })
 
 const props = defineProps({
-  modelValue: { 
-    type: Object, 
-    default: () => ({ nombre: '', descripcion: '' }) 
+  modelValue: {
+    type: Object,
+    default: () => ({ nombre: '', descripcion: '' })
   }
 })
 
@@ -55,8 +55,8 @@ const localForm = ref({
 watch(() => props.modelValue, (newVal) => {
   const nuevoNombre = normalizarNombre(newVal?.nombre || '')
   const nuevaDescripcion = normalizarDescripcion(newVal?.descripcion || '')
-  
-  if (localForm.value.nombre !== nuevoNombre || 
+
+  if (localForm.value.nombre !== nuevoNombre ||
       localForm.value.descripcion !== nuevaDescripcion) {
     localForm.value = {
       nombre: nuevoNombre,
@@ -66,7 +66,7 @@ watch(() => props.modelValue, (newVal) => {
 }, { deep: true })
 
 // Normalizar y emitir cuando cambian los campos
-watch([() => localForm.value.nombre, () => localForm.value.descripcion], 
+watch([() => localForm.value.nombre, () => localForm.value.descripcion],
   ([nombre, descripcion]) => {
     const nombreNormalizado = normalizarNombre(nombre)
     const descripcionNormalizada = normalizarDescripcion(descripcion)
@@ -90,25 +90,4 @@ watch([() => localForm.value.nombre, () => localForm.value.descripcion],
   }
 )
 </script>
-
-<style scoped>
-.fila-texto {
-  display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 20px;
-  align-items: start;
-}
-
-.fila-texto input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.fila-texto textarea {
-  width: 100%;
-  min-height: 80px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-</style>
 

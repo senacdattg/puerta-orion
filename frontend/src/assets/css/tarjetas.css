@@ -1,126 +1,147 @@
+/* ===== ESTILOS PARA TARJETAS ===== */
+
+@import url('./base/variables.css');
+
+/* ===== ESTILOS BASE DE LAYOUT ===== */
+
+/* --- Contenido principal de tarjetas --- */
 .contenido-principal-tarjetas {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 25px;
-    justify-content: center;
-    padding: 30px;
-    position: relative;
-    flex-direction: row;
-    align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  justify-content: center;
+  padding: 30px;
+  position: relative;
+  flex-direction: row;
+  align-items: flex-start;
 }
 
+/* --- Contenedor de tarjetas --- */
 .contenedor-tarjetas {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    width: 100%;
-    max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  max-width: 300px;
 }
 
+/* ===== ESTILOS DE TARJETA DE PERFIL ===== */
+
+/* --- Tarjeta de perfil --- */
 .tarjeta-perfil {
-    width: 300px;
-    max-width: 300px;
-    flex-direction: column;
-    border: 3px solid #0047ab;
-    background-color: #f4d800;
-    text-align: center;
-    margin-top: 70px;
-    padding-top: 40px;
-    position: relative;
-    z-index: 1;
-    height: fit-content;
+  width: 300px;
+  max-width: 300px;
+  flex-direction: column;
+  border: 3px solid var(--color-primario);
+  background-color: var(--color-secundario);
+  text-align: center;
+  margin-top: 70px;
+  padding-top: 40px;
+  position: relative;
+  z-index: 1;
+  height: fit-content;
 }
 
+/* --- Imagen de usuario --- */
 .imagen-usuario {
-    position: absolute;
-    top: -30px;
-    right: 37.5%;
+  position: absolute;
+  top: -30px;
+  right: 37.5%;
 }
 
 .imagen-usuario img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid #0047ab;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid var(--color-primario);
 }
 
+/* --- Contenido de perfil --- */
+.contenido-perfil {
+  padding: 20px;
+}
+
+.contenido-perfil h2 {
+  margin: 10px 0;
+}
+
+/* --- Botón de perfil --- */
+.boton-perfil {
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* ===== ESTILOS DE TARJETA DE ACUDIENTE ===== */
+
+/* --- Tarjeta de acudiente --- */
 .tarjeta-acudiente {
-    width: 100%;
-    max-width: 300px;
-    border: 3px solid #0047ab;
-    background-color: #f4d800;
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 40px;
-    position: relative;
-    z-index: 1;
-    height: fit-content;
-    align-self: flex-start;
+  width: 100%;
+  max-width: 300px;
+  border: 3px solid var(--color-primario);
+  background-color: var(--color-secundario);
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 40px;
+  position: relative;
+  z-index: 1;
+  height: fit-content;
+  align-self: flex-start;
 }
 
+/* --- Lista de acudidos --- */
 .lista-acudidos {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* --- Imagen de acudiente --- */
 .imagen-acudiente img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #0047ab;
-    flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primario);
+  flex-shrink: 0;
 }
 
+/* --- Contenido de acudiente --- */
 .contenido-acudiente {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px;
-    gap: 10px;
-    flex-wrap: nowrap;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .contenido-acudiente input {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-width: 0;
-    border: 1px solid black;
-    padding: 5px;
-    border-radius: 3px;
-    background-color: white;
-    font-size: 14px;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  border: 1px solid black;
+  padding: 5px;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 14px;
 }
 
+/* --- Botón de acudiente --- */
 .boton-acudiente {
-    background-color: #0047ab;
-    color: white;
-    border: none;
-    padding: 6px 6px;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.contenido-perfil {
-    padding: 20px;
-}
-
-.contenido-perfil h2 {
-    margin: 10px 0;
-}
-
-.boton-perfil {
-    background-color: #0047ab;
-    color: white;
-    border: none;
-    padding: 10px;
-    width: 100%;
-    border-radius: 3px;
-    cursor: pointer;
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 6px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 

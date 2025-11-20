@@ -1,11 +1,11 @@
 <template>
   <div>
     <div class="fila-texto campo-nombre-centrado">
-      <input 
-        v-model.trim="localForm.nombre" 
-        type="text" 
-        placeholder="Nombre" 
-        required 
+      <input
+        v-model.trim="localForm.nombre"
+        type="text"
+        placeholder="Nombre"
+        required
       />
     </div>
     <hr class="form-divider" />
@@ -53,16 +53,4 @@ watch(() => localForm.value.nombre, (nuevoValor) => {
 })
 </script>
 
-<style scoped>
-.campo-nombre-centrado {
-  max-width: 400px;
-  margin: 0 auto;
-  grid-template-columns: 1fr;
-}
 
-.campo-nombre-centrado input {
-  text-align: center;
-}
-</style>
-
- 

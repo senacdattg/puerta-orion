@@ -4,8 +4,10 @@
   /* ===== PALETA DE COLORES ===== */
   --color-primario: #0047ab;
   --color-primario-hover: #0056cc;
+  --color-primario-oscuro: #0d47a1;
   --color-secundario: #f4d800;
   --color-secundario-hover: #e6c800;
+  --color-secundario-oro: #FFD700; /* Unificar #FFD700 y #f4d800 */
 
   /* ===== COLORES NEUTROS ===== */
   --color-blanco: #ffffff;
@@ -14,6 +16,20 @@
   --color-gris: #6c757d;
   --color-gris-oscuro: #343a40;
   --color-negro: #000000;
+
+  /* Fondos específicos */
+  --color-fondo-seccion: #f6f7fb;    /* Fondo común de secciones */
+
+  /* Alias para dashboards (compatibilidad) */
+  --color-azul-principal: #004AAD;    /* Alias de --color-primario */
+  --color-azul-oscuro: #003d8f;       /* Alias de --color-primario-hover */
+  --color-amarillo-acento: #FFD600;   /* Alias de --color-secundario-oro */
+  --color-amarillo-hover: #e6c800;    /* Alias de --color-secundario-hover */
+
+  /* Colores específicos para login (cancha de voleibol) */
+  --color-court: #d4a574;             /* Color de la cancha */
+  --color-court-line: #8b7355;        /* Color de líneas de la cancha */
+  --color-net: #2d5016;               /* Color de la red */
 
   /* ===== COLORES DE ESTADO ===== */
   --color-exito: #28a745;
@@ -25,17 +41,173 @@
   --color-info: #17a2b8;
   --color-info-hover: #138496;
 
+  /* Alias para compatibilidad con login.css */
+  --color-error: #ef4444;              /* Alias de --color-peligro */
+  --color-warning: #f59e0b;            /* Variante de --color-advertencia */
+  --color-info-alt: #3b82f6;           /* Variante de --color-info */
+
+  /* Colores de fondo para mensajes de feedback */
+  --color-fondo-error: #f8d7da;
+  --color-texto-error: #721c24;
+  --color-borde-error: #f5c6cb;
+  --color-fondo-exito: #d4edda;
+  --color-texto-exito: #155724;
+  --color-borde-exito: #c3e6cb;
+  --color-fondo-info: #d1edff;
+  --color-texto-info: #0c5460;
+  --color-borde-info: #bee5eb;
+
+  /* Colores de fondo claros para dashboards */
+  --color-fondo-azul-claro: #e3f2fd;      /* Fondo azul claro para acudiente dashboard */
+  --color-fondo-naranja-claro: #fff3e0;   /* Fondo naranja claro para deportista dashboard */
+
+  /* Colores adicionales para roles.css */
+  --color-morado-claro: #667eea;          /* Morado claro para gradientes */
+  --color-azul-muy-claro: #f0f8ff;        /* Azul muy claro para hover */
+  --color-gris-claro-alt: #d3d3d3;        /* Gris claro alternativo */
+  --color-exito-alt: #10b981;            /* Verde éxito alternativo */
+  --color-fondo-error-claro: #fee2e2;     /* Fondo rojo claro para mensajes */
+  --color-borde-error-claro: #fecaca;     /* Borde rojo claro para mensajes */
+  --color-fondo-info-claro: #e0f2fe;      /* Fondo azul claro para mensajes */
+  --color-borde-info-claro: #bae6fd;     /* Borde azul claro para mensajes */
+
+  /* Transparencias específicas para roles */
+  --color-oro-transparente-20: rgba(255, 215, 0, 0.2);
+  --color-exito-transparente-50: rgba(16, 185, 129, 0.5);
+  --color-secundario-transparente-50: rgba(244, 216, 0, 0.5);
+  --color-error-transparente-95: rgba(239, 68, 68, 0.95);
+
+  /* Colores adicionales para layout.css */
+  --color-azul-cielo: #87CEEB;            /* Azul cielo para placeholder */
+  --color-rojo-claro: #ff6b7a;           /* Rojo claro para hover de logout */
+
+  /* Colores adicionales para listados.css */
+  --color-gris-muy-claro: #eef0f2;       /* Gris muy claro para bordes */
+  --color-azul-alt: #0b4fb3;             /* Azul alternativo */
+
+  /* Colores adicionales para login.css */
+  --color-azul-acero: #4682b4;           /* Azul acero para gradientes */
+  --color-azul-oscuro-login: #003380;    /* Azul oscuro para login */
+  --color-exito-oscuro: #059669;         /* Verde éxito oscuro */
+  --color-fondo-error-login: #fef2f2;    /* Fondo rojo claro para login */
+  --color-texto-error-login: #991b1b;    /* Texto rojo oscuro para login */
+  --color-borde-error-login: #fecaca;    /* Borde rojo claro para login */
+  --color-fondo-exito-login: #f0fdf4;    /* Fondo verde claro para login */
+  --color-texto-exito-login: #166534;   /* Texto verde oscuro para login */
+  --color-borde-exito-login: #bbf7d0;   /* Borde verde claro para login */
+
+  /* Transparencias específicas para login */
+  --color-primario-transparente-10: rgba(0, 71, 171, 0.1);
+  --color-primario-transparente-30-login: rgba(0, 71, 171, 0.3);
+  --color-primario-transparente-40: rgba(0, 71, 171, 0.4);
+  --color-error-transparente-10: rgba(239, 68, 68, 0.1);
+
+  /* Transparencias específicas para layout */
+  --color-blanco-transparente-95: rgba(255, 255, 255, 0.95);
+  --color-blanco-transparente-90: rgba(255, 255, 255, 0.9);
+  --color-blanco-transparente-30: rgba(255, 255, 255, 0.3);
+  --color-blanco-transparente-20: rgba(255, 255, 255, 0.2);
+  --color-blanco-transparente-15: rgba(255, 255, 255, 0.15);
+  --color-oro-transparente-60: rgba(255, 214, 0, 0.6);
+  --color-oro-transparente-25: rgba(255, 214, 0, 0.25);
+  --color-oro-transparente-10: rgba(255, 214, 0, 0.1);
+  --color-peligro-transparente-20: rgba(220, 53, 69, 0.2);
+  --color-peligro-transparente-60: rgba(220, 53, 69, 0.6);
+  --color-negro-transparente-10: rgba(0, 0, 0, 0.1);
+
+  /* Colores con transparencia para scrollbar y overlays */
+  --color-primario-transparente-30: rgba(0, 74, 173, 0.3);
+  --color-primario-transparente-50: rgba(0, 74, 173, 0.5);
+  --color-primario-sombra-15: rgba(0, 74, 173, 0.15);
+  --color-primario-sombra-25: rgba(0, 74, 173, 0.25);
+  --color-overlay-oscuro: rgba(0, 0, 0, 0.5);
+
+  /* Color morado para gradientes */
+  --color-morado: #764ba2;
+
+  /* ===== COLORES DE GRIS ESPECÍFICOS (Tailwind-inspired) ===== */
+  --color-gris-50: #f8fafc;
+  --color-gris-100: #f1f5f9;
+  --color-gris-200: #e2e8f0;
+  --color-gris-300: #e5e7eb;
+  --color-gris-400: #64748b;
+  --color-gris-700: #334155;
+  --color-gris-800: #1e293b;
+  --color-gris-900: #0f172a;
+
+  /* ===== COLORES DE FONDO PARA ROLES Y BADGES ===== */
+  --color-fondo-admin: #fef3c7;
+  --color-texto-admin: #92400e;
+  --color-fondo-coach: #cffafe;
+  --color-texto-coach: #155e75;
+  --color-fondo-athlete: #dcfce7;
+  --color-texto-athlete: #166534;
+  --color-fondo-guardian: #ede9fe;
+  --color-texto-guardian: #5b21b6;
+  --color-fondo-user: #e2e8f0;
+  --color-texto-user: #334155;
+
+  /* Colores de chips/badges específicos */
+  --color-chip-primary-bg: #eef2ff;
+  --color-chip-primary-border: #c7d2fe;
+  --color-chip-primary-text: #3730a3;
+  --color-chip-success-bg: #ecfdf5;
+  --color-chip-success-border: #bbf7d0;
+  --color-chip-success-text: #065f46;
+  --color-chip-neutral-bg: #f8fafc;
+  --color-chip-neutral-border: #e5e7eb;
+  --color-chip-neutral-text: #334155;
+
+  /* Colores adicionales */
+  --color-info-badge-bg: #dbeafe;
+  --color-info-badge-text: #1e40af;
+
+  /* ===== COLORES ESPECÍFICOS DE ROLES PARA PANEL ADMIN ===== */
+  --color-rol-superadmin: #8e44ad;
+  --color-rol-entrenador: #fd7e14;
+  --color-rol-deportista: #20c997;
+  --color-rol-acudiente: #2614ac;
+  --color-rol-usuario: #ffc107;
+
+  /* Colores de gris adicionales para tablas */
+  --color-gris-200-alt: #e0e0e0;
+  --color-gris-500: #9ca3af;
+  --color-gris-600: #6b7280;
+  --color-gris-700-alt: #374151;
+  --color-gris-800-alt: #1f2937;
+  --color-gris-900-alt: #0f172a;
+
   /* ===== SOMBRAS ===== */
   --sombra-suave: 0 2px 10px rgba(0, 0, 0, 0.1);
   --sombra-media: 0 4px 20px rgba(0, 0, 0, 0.15);
   --sombra-fuerte: 0 8px 30px rgba(0, 0, 0, 0.2);
   --sombra-interna: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 
+  /* Sombras específicas */
+  --sombra-tarjeta: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --sombra-tarjeta-hover: 0 8px 30px rgba(0, 0, 0, 0.15);
+
+  /* Alias para compatibilidad con login.css */
+  --sombra-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sombra-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sombra-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --sombra-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
   /* ===== BORDES Y RADIOS ===== */
   --radio-borde-pequeno: 6px;
   --radio-borde: 12px;
   --radio-borde-grande: 20px;
   --radio-borde-circular: 50%;
+
+  /* Alias para compatibilidad con login.css */
+  --radio-sm: 8px;                     /* Similar a --radio-borde-pequeno */
+  --radio-md: 12px;                    /* Alias de --radio-borde */
+  --radio-lg: 16px;                    /* Similar a --radio-borde */
+  --radio-full: 9999px;                /* Radio completo (pill) */
+
+  /* Bordes específicos */
+  --borde-tarjeta: 2px solid var(--color-primario);
+  --borde-tarjeta-secundario: 3px solid var(--color-primario);
 
   /* ===== ESPACIADO ===== */
   --espaciado-xs: 0.25rem;   /* 4px */
@@ -45,14 +217,18 @@
   --espaciado-xl: 2rem;      /* 32px */
   --espaciado-xxl: 3rem;     /* 48px */
 
+  /* Espaciados específicos */
+  --espaciado-tarjeta: 1.5rem;    /* Padding común de tarjetas */
+  --espaciado-seccion: 2rem;      /* Espaciado entre secciones */
+
   /* ===== TIPOGRAFÍA ===== */
   --tamano-fuente-xs: 0.75rem;   /* 12px */
   --tamano-fuente-sm: 0.875rem;  /* 14px */
-  --tamano-fuente-base: 1rem;     /* 16px */
-  --tamano-fuente-lg: 1.125rem;   /* 18px */
-  --tamano-fuente-xl: 1.25rem;    /* 20px */
-  --tamano-fuente-xxl: 1.5rem;    /* 24px */
-  --tamano-fuente-xxxl: 2rem;     /* 32px */
+  --tamano-fuente-base: clamp(0.95rem, 0.5vw + 0.85rem, 1rem);     /* 16px - Responsive */
+  --tamano-fuente-lg: clamp(1.05rem, 0.6vw + 0.9rem, 1.125rem);   /* 18px - Responsive */
+  --tamano-fuente-xl: clamp(1.2rem, 0.8vw + 1rem, 1.25rem);    /* 20px - Responsive */
+  --tamano-fuente-xxl: clamp(1.35rem, 1vw + 1.1rem, 1.5rem);    /* 24px - Responsive */
+  --tamano-fuente-xxxl: clamp(1.6rem, 1.4vw + 1.2rem, 2rem);     /* 32px - Responsive */
 
   /* ===== PESOS DE FUENTE ===== */
   --peso-fuente-normal: 400;
@@ -73,6 +249,17 @@
   --z-modal: 1050;
   --z-popover: 1060;
   --z-tooltip: 1070;
+
+  /* ===== VARIABLES ESPECÍFICAS DE MODALES ===== */
+  --form-modal-header-bg: linear-gradient(135deg, #0f172a, #2563eb);
+  --form-modal-header-color: #ffffff;
+  --form-modal-footer-bg: #f8fafc;
+  --form-modal-body-padding: 1.1rem;
+  --form-modal-max-width: 780px;
+  --form-modal-radius: 20px;
+  --form-modal-title-size: 1.65rem;
+  --form-modal-title-weight: 700;
+  --form-modal-title-letter-spacing: -0.01em;
 
   /* ===== BREAKPOINTS ===== */
   --breakpoint-sm: 576px;
@@ -113,6 +300,94 @@
 /* Grid */
 .d-grid { display: grid; }
 .grid-center { place-items: center; }
+
+/* Contenedores fluidos */
+.container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--espaciado-md);
+  padding-right: var(--espaciado-md);
+}
+
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1320px;
+  }
+}
+
+/* Utilidades de columnas con CSS Grid */
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .lg\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 
 /* Texto */
 .text-center { text-align: center; }
@@ -181,4 +456,10 @@
   .d-sm-none { display: none; }
   .d-sm-block { display: block; }
   .d-sm-flex { display: flex; }
+}
+
+/* Scroll horizontal suave para tablas/listas en móvil */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

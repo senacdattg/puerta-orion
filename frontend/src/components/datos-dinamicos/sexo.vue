@@ -58,15 +58,4 @@ watch(() => localForm.value.nombre, (nuevoValor) => {
 })
 </script>
 
-<style scoped>
-.campo-nombre-centrado {
-  max-width: 400px;
-  margin: 0 auto;
-  grid-template-columns: 1fr;
-}
-
-.campo-nombre-centrado input {
-  text-align: center;
-}
-</style>
 

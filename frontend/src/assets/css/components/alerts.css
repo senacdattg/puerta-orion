@@ -1,0 +1,128 @@
+/* ===== COMPONENTES REUTILIZABLES: ALERTAS Y MENSAJES ===== */
+
+@import '../base/variables.css';
+
+/* ===== ALERTA BASE ===== */
+
+.alert {
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  border-radius: var(--radio-borde);
+  margin-bottom: var(--espaciado-lg);
+  border: 1px solid transparent;
+}
+
+/* ===== VARIANTES DE ALERTA ===== */
+
+.alert-success {
+  background-color: var(--color-fondo-exito);
+  border-color: var(--color-exito);
+  color: var(--color-texto-exito);
+}
+
+.alert-danger {
+  background-color: var(--color-fondo-error);
+  border-color: var(--color-peligro);
+  color: var(--color-texto-error);
+}
+
+.alert-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-color: var(--color-advertencia);
+  color: var(--color-advertencia);
+}
+
+.alert-info {
+  background-color: var(--color-fondo-info);
+  border-color: var(--color-info);
+  color: var(--color-texto-info);
+}
+
+/* ===== MENSAJES DE FEEDBACK ===== */
+
+.mensaje-error,
+.mensaje-exito,
+.mensaje-info {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  border-radius: var(--radio-borde-pequeno);
+  animation: slideIn 0.3s ease-out;
+}
+
+.mensaje-error {
+  background-color: var(--color-fondo-error);
+  color: var(--color-texto-error);
+  border: 1px solid var(--color-borde-error);
+}
+
+.mensaje-exito {
+  background-color: var(--color-fondo-exito);
+  color: var(--color-texto-exito);
+  border: 1px solid var(--color-borde-exito);
+}
+
+.mensaje-info {
+  background-color: var(--color-fondo-info);
+  color: var(--color-texto-info);
+  border: 1px solid var(--color-borde-info);
+}
+
+/* ===== MENSAJES DE LOGIN ===== */
+
+.alert-volleyball {
+  padding: var(--espaciado-md);
+  border-radius: var(--radio-borde);
+  margin-bottom: var(--espaciado-md);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  border: 2px solid;
+}
+
+.alert-icon-volleyball {
+  font-size: var(--tamano-fuente-lg);
+}
+
+.alert-error-volleyball {
+  background-color: var(--color-fondo-error-login);
+  border-color: var(--color-borde-error-login);
+  color: var(--color-texto-error-login);
+}
+
+.alert-success-volleyball {
+  background-color: var(--color-fondo-exito-login);
+  border-color: var(--color-borde-exito-login);
+  color: var(--color-texto-exito-login);
+}
+
+.alert-info-volleyball {
+  background-color: var(--color-fondo-info-login);
+  border-color: var(--color-borde-info-login);
+  color: var(--color-texto-info-login);
+}
+
+/* ===== MENSAJES DE CARGA ===== */
+
+.loading-message {
+  text-align: center;
+  padding: var(--espaciado-xl);
+  color: var(--color-gris);
+  font-size: var(--tamano-fuente-base);
+}
+
+/* ===== ANIMACIONES ===== */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+

@@ -54,7 +54,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-/* Los estilos están en /assets/css/dashboards.css */
-</style>
 

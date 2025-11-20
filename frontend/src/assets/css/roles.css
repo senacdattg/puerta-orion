@@ -1,135 +1,338 @@
+/* ===== ESTILOS PARA ROLES ===== */
+
+@import url('./base/variables.css');
+
+/* ===== ESTILOS BASE DE LAYOUT ===== */
+
+/* --- Contenedor de roles --- */
 .contenedor-roles {
-    display: flex;
-    justify-content: center;
-    padding: 2rem;
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
 }
 
+/* --- Contenedor principal --- */
 .contenedor {
-    width: 80%;
-    max-width: 1000px;
-    background-color: #0047ab;
-    padding: 2rem;
-    border-radius: 1rem;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 80%;
+  max-width: 1000px;
+  background-color: var(--color-primario);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: var(--sombra-fuerte);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* --- Título principal --- */
 .titulo {
-    font-size: 2.5rem;
-    font-weight: bold;
-    color: white;
-    text-align: center;
-    letter-spacing: 2px;
-    padding-bottom: 0.5rem;
-    border-bottom: 3px solid white;
-    display: inline-block;
-    padding-left: 2rem;
-    /* extiende línea a la izquierda */
-    padding-right: 2rem;
-    /* extiende línea a la derecha */
-    margin-bottom: 1rem;
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  letter-spacing: 2px;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid white;
+  display: inline-block;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  margin-bottom: 1rem;
 }
 
+/* ===== ESTILOS DE TARJETAS DE ROLES ===== */
+
+/* --- Contenedor de tarjetas --- */
 .tarjetas {
-    display: flex;
-    justify-content: center; /* centra horizontalmente */
-    gap: 1.5rem; /* espacio entre tarjetas */
-    width: 100%;
-    margin-bottom: 1rem;
-    flex-wrap: nowrap; /* 🔹 evita que bajen a otra línea */
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  margin-bottom: 1rem;
+  flex-wrap: nowrap;
 }
 
+/* --- Tarjeta de rol (sub-contenedor) --- */
 .sub-contenedor {
-    width: 180px; /* tamaño fijo para que queden iguales */
-    background-color: #f4d800;
-    padding: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
-    min-height: 150px;
-    flex-direction: column;
+  width: 180px;
+  background-color: var(--color-secundario);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0.75rem;
+  box-shadow: var(--sombra-media);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  min-height: 150px;
+  flex-direction: column;
+  position: relative;
 }
 
 .sub-contenedor:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: var(--sombra-fuerte);
 }
 
-  /* Extra: estilo gris para roles inactivos */
-  .sub-contenedor.inactivo {
-    background-color: #d3d3d3; /* gris claro */
-    color: #666;
-    cursor: not-allowed;
-  }
-
-  .sub-contenedor.inactivo .icono-rol,
-  .sub-contenedor.inactivo .sub-titulo {
-    color: #666;
-    border-color: #666;
-  }
-
-.sub-titulo {
-    font-size: 1rem;
-    font-weight: bold;
-    color: black;
-    text-align: center;
-    word-break: break-word;
-    padding-top: 0.5rem;
-    border-top: 1.5px solid black;
-    padding-bottom: 0.5rem;
-    border-bottom: 1.5px solid black;
-    letter-spacing: 0.5px;
+/* --- Icono dentro de tarjeta --- */
+.sub-contenedor i {
+  display: block;
 }
 
+/* --- Icono de rol --- */
 .icono-rol {
   font-size: 2rem;
   color: black;
   margin-bottom: 1rem;
 }
 
-
-.sub-contenedor i {
-  display: block;
+/* --- Subtítulo de rol --- */
+.sub-titulo {
+  font-size: 1rem;
+  font-weight: bold;
+  color: black;
+  text-align: center;
+  word-break: break-word;
+  padding-top: 0.5rem;
+  border-top: 1.5px solid black;
+  padding-bottom: 0.5rem;
+  border-bottom: 1.5px solid black;
+  letter-spacing: 0.5px;
 }
 
+/* ===== ESTILOS DE BOTONES ===== */
+
+/* --- Botón de acción --- */
 .boton {
-    background-color: white;
-    color: black;
-    border: none;
-    padding: 5px 10px;
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-weight: bold;
-    border-radius: 0.55rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
+  background-color: white;
+  color: black;
+  border: none;
+  padding: 5px 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: bold;
+  border-radius: 0.55rem;
+  box-shadow: var(--sombra-media);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .boton:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
+  box-shadow: var(--sombra-fuerte);
 }
 
-/* Para pantallas pequeñas */
+/* ===== ESTILOS DEL COMPONENTE selector-roles ===== */
+
+/* --- Selector de roles --- */
+.selector-roles {
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Contenido del selector --- */
+.selector-roles-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* --- Label del selector --- */
+.selector-roles-content label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.selector-roles-content label i {
+  font-size: 1.1rem;
+}
+
+/* --- Select de rol --- */
+.select-rol {
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid white;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.select-rol:hover {
+  border-color: var(--color-azul-muy-claro);
+  background: var(--color-azul-muy-claro);
+}
+
+.select-rol:focus {
+  outline: none;
+  border-color: var(--color-secundario-oro);
+  box-shadow: 0 0 0 3px var(--color-oro-transparente-20);
+}
+
+.select-rol option {
+  padding: 8px;
+  font-weight: 600;
+}
+
+.select-rol option:disabled {
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* --- Selector de rol (alternativo) --- */
+.selector-rol {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+/* --- Label de selector --- */
+.label {
+  font-weight: 600;
+}
+
+/* ===== ESTILOS DE ESTADOS DE ROLES ===== */
+
+/* --- Rol disponible (color brillante) --- */
+.rol-disponible {
+  opacity: 1 !important;
+  cursor: pointer;
+  background-color: var(--color-secundario) !important;
+  position: relative;
+}
+
+.rol-disponible:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 20px var(--color-secundario-transparente-50);
+}
+
+/* --- Rol no disponible (color opaco) --- */
+.rol-no-disponible {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  background-color: var(--color-gris-claro-alt) !important;
+  filter: grayscale(100%);
+  position: relative;
+}
+
+.rol-no-disponible:hover {
+  transform: none;
+  box-shadow: var(--sombra-media);
+}
+
+.rol-no-disponible .icono-rol,
+.rol-no-disponible .sub-titulo {
+  color: #666 !important;
+}
+
+/* --- Rol inactivo --- */
+.sub-contenedor.inactivo {
+  background-color: var(--color-gris-claro-alt);
+  color: #666;
+  cursor: not-allowed;
+}
+
+.sub-contenedor.inactivo .icono-rol,
+.sub-contenedor.inactivo .sub-titulo {
+  color: #666;
+  border-color: #666;
+}
+
+/* --- Rol seleccionado --- */
+.rol-seleccionado {
+  border: 3px solid var(--color-exito-alt) !important;
+  box-shadow: 0 0 20px var(--color-exito-transparente-50) !important;
+  transform: scale(1.05);
+}
+
+/* ===== ESTILOS DE BADGES ===== */
+
+/* --- Badge para roles no disponibles --- */
+.badge-no-disponible {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--color-error-transparente-95);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  z-index: 10;
+  box-shadow: var(--sombra-media);
+}
+
+/* ===== ESTILOS DE MENSAJES ===== */
+
+/* --- Mensajes de carga y error --- */
+.loading-message,
+.error-message {
+  text-align: center;
+  padding: 20px;
+  margin: 20px 0;
+  width: 100%;
+}
+
+/* --- Mensaje de error --- */
+.error-message {
+  color: var(--color-error);
+  background: var(--color-fondo-error-claro);
+  border-radius: 8px;
+  border: 1px solid var(--color-borde-error-claro);
+}
+
+/* --- Mensaje de carga --- */
+.loading-message {
+  color: var(--color-primario);
+  background: var(--color-fondo-info-claro);
+  border-radius: 8px;
+  border: 1px solid var(--color-borde-info-claro);
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para selector-roles (max-width: 768px) --- */
 @media (max-width: 768px) {
-    .sub-contenedor {
-        flex: 1 1 calc(50% - 1.5rem);
-        /* 2 columnas */
-    }
+  .selector-roles {
+    padding: 10px 12px;
+  }
+
+  .selector-roles-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .selector-roles-content label {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .select-rol {
+    width: 100%;
+  }
+
+  .sub-contenedor {
+    flex: 1 1 calc(50% - 1.5rem);
+  }
 }
 
+/* --- Responsive para tarjetas (max-width: 480px) --- */
 @media (max-width: 480px) {
-    .sub-contenedor {
-        flex: 1 1 100%;
-        /* 1 columna */
-    }
+  .sub-contenedor {
+    flex: 1 1 100%;
+  }
 }

@@ -1,147 +1,247 @@
+/* ===== ESTILOS PARA PERFILES ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS BASE DE TARJETAS DE PERFIL ===== */
+
+/* --- Contenido principal --- */
 .contenido-principal {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 30px;
-    justify-content: center;
-    padding: 20px;
-    position: relative;
-    flex-direction: row;
-    align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  flex-direction: row;
+  align-items: flex-start;
 }
 
+/* --- Contenedor de tarjetas --- */
 .contenedor-tarjetas {
-    display: flex;
-    flex-direction: column;
-    gap: 30px;
-    width: 100%;
-    max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+  max-width: 300px;
 }
 
-.tarjeta-perfil {
-    width: 100%;
-    max-width: 300px;
-    min-width: 300px;
-    border: 3px solid #0047ab;
-    background-color: #f4d800;
-    text-align: center;
-    margin-top: 70px;
-    padding-top: 40px;
-    position: relative;
-    z-index: 1;
-    height: fit-content;
-    align-self: flex-start;
-}
+/* --- Tarjeta de perfil --- */
+/* NOTA: Los estilos base de .tarjeta-perfil se movieron a components/cards.css para evitar duplicación.
+   Solo se mantienen aquí los estilos específicos de perfiles.
+*/
 
+/* --- Imagen de usuario --- */
 .imagen-usuario {
-    position: absolute;
-    top: -30px;
-    right: 37.5%;
+  position: absolute;
+  top: -30px;
+  right: 37.5%;
 }
 
 .imagen-usuario img {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 3px solid #0047ab;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid var(--color-primario);
 }
 
-.tarjeta-acudiente {
-    width: 100%;
-    max-width: 300px;
-    border: 3px solid #0047ab;
-    background-color: #f4d800;
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 40px;
-    position: relative;
-    z-index: 1;
-    height: fit-content;
-    align-self: flex-start;
+/* --- Contenido de perfil --- */
+.contenido-perfil {
+  padding: 20px;
 }
 
+.contenido-perfil h2 {
+  margin: 10px 0;
+}
+
+/* --- Botón de perfil --- */
+.boton-perfil {
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* ===== ESTILOS DE TARJETA DE ACUDIENTE ===== */
+
+/* --- Tarjeta de acudiente --- */
+/* NOTA: Los estilos base de .tarjeta-acudiente se movieron a components/cards.css para evitar duplicación.
+   Solo se mantienen aquí los estilos específicos de perfiles.
+*/
+
+/* --- Lista de acudidos --- */
 .lista-acudidos {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* --- Imagen de acudiente --- */
 .imagen-acudiente img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid #0047ab;
-    flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primario);
+  flex-shrink: 0;
 }
 
+/* --- Contenido de acudiente --- */
 .contenido-acudiente {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px;
-    gap: 10px;
-    flex-wrap: nowrap;
-    overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .contenido-acudiente input {
-    flex-grow: 1;
-    flex-shrink: 1;
-    min-width: 0;
-    border: 1px solid black;
-    padding: 5px;
-    border-radius: 3px;
-    background-color: white;
-    font-size: 14px;
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  border: 1px solid black;
+  padding: 5px;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 14px;
 }
 
+/* --- Botón de acudiente --- */
 .boton-acudiente {
-    background-color: #0047ab;
-    color: white;
-    border: none;
-    padding: 6px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.contenido-perfil {
-    padding: 20px;
-}
-
-.contenido-perfil h2 {
-    margin: 10px 0;
-}
-
-.boton-perfil {
-    background-color: #0047ab;
-    color: white;
-    border: none;
-    padding: 10px;
-    width: 100%;
-    border-radius: 3px;
-    cursor: pointer;
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ===== ESTILOS PARA VISTA DE PERFIL ===== */
 
+/* --- Página de perfil --- */
 .perfil-page {
   min-height: 100vh;
   background-color: var(--color-gris-claro);
 }
 
+/* --- Contenedor de perfil --- */
 .perfil-container {
-  max-width: 800px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: var(--espaciado-xl) var(--espaciado-md);
+  padding: 16px;
 }
 
+/* --- Reducir el margen del TituloClub en el perfil --- */
+.perfil-page ::v-deep .titulo-club {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* --- Header de perfil --- */
 .perfil-header {
   text-align: center;
-  margin-bottom: var(--espaciado-xl);
+  margin-bottom: 24px;
 }
 
+/* --- Hero de perfil --- */
+.perfil-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: center;
+  background: linear-gradient(135deg, var(--color-gris-50) 0%, var(--color-chip-primary-bg) 100%);
+  border: 1px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-grande);
+  padding: var(--espaciado-lg) var(--espaciado-xl);
+}
+
+/* --- Avatar --- */
+.avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radio-borde-circular);
+  display: grid;
+  place-items: center;
+  background: var(--color-blanco);
+  border: 2px solid var(--color-gris-300);
+}
+
+.avatar i {
+  font-size: 48px;
+  color: var(--color-gris-400);
+}
+
+/* --- Información del hero --- */
+.hero-info .perfil-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
+}
+
+.hero-info .perfil-subtitle {
+  margin: 6px 0 12px;
+  color: var(--color-gris-400);
+  font-size: var(--tamano-fuente-sm);
+}
+
+/* --- Badges del hero --- */
+.hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* --- Chip (badge pequeño) --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border-radius: 999px;
+  border: 1px solid var(--color-chip-neutral-border);
+  background: var(--color-blanco);
+  color: var(--color-chip-neutral-text);
+  font-weight: var(--peso-fuente-semibold);
+  font-size: var(--tamano-fuente-sm);
+}
+
+.chip i {
+  font-size: var(--tamano-fuente-sm);
+  color: inherit;
+}
+
+.chip.primary {
+  border-color: var(--color-chip-primary-border);
+  background: var(--color-chip-primary-bg);
+  color: var(--color-chip-primary-text);
+}
+
+.chip.success {
+  border-color: var(--color-chip-success-border);
+  background: var(--color-chip-success-bg);
+  color: var(--color-chip-success-text);
+}
+
+.chip.neutral {
+  border-color: var(--color-chip-neutral-border);
+  background: var(--color-chip-neutral-bg);
+  color: var(--color-chip-neutral-text);
+}
+
+/* --- Acciones del hero --- */
+.hero-actions .btn {
+  white-space: nowrap;
+}
+
+/* --- Título de perfil --- */
 .perfil-title {
   font-size: var(--tamano-fuente-xxxl);
   font-weight: var(--peso-fuente-bold);
@@ -153,117 +253,967 @@
   gap: var(--espaciado-sm);
 }
 
+/* --- Subtítulo de perfil --- */
 .perfil-subtitle {
   font-size: var(--tamano-fuente-lg);
   color: var(--color-gris);
   margin: 0;
 }
 
+/* --- Contenido de perfil --- */
 .perfil-content {
   display: flex;
   flex-direction: column;
   gap: var(--espaciado-lg);
 }
 
+.perfil-content.is-loading {
+  opacity: 0.7;
+}
+
+/* ===== ESTILOS DE GRILLAS Y LAYOUT ===== */
+
+/* --- Grid base --- */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* --- Grid de perfil --- */
+.perfil-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+  grid-column: 1 / -1;
+}
+
+/* --- Sección de deportista --- */
+.deportista-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- Grid de información --- */
+.info-grid {
+  display: grid;
+  gap: 12px;
+}
+
+/* ===== ESTILOS DE TARJETA DE PERFIL ===== */
+
+/* --- Tarjeta de perfil --- */
 .perfil-card {
   background: var(--color-blanco);
+  border: 1px solid var(--color-gris-300);
   border-radius: var(--radio-borde);
-  box-shadow: var(--sombra-media);
   overflow: hidden;
+  box-shadow: var(--sombra-suave);
 }
 
-.perfil-card .card-header {
-  background: var(--color-gris-claro);
-  padding: var(--espaciado-lg);
-  border-bottom: 1px solid var(--color-gris-medio);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.perfil-card.full-width {
+  grid-column: 1 / -1;
 }
 
-.perfil-card .card-header h3 {
+/* --- Header de tarjeta --- */
+.card-header {
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  border-bottom: 1px solid var(--color-gris-300);
+  background: var(--color-gris-50);
+}
+
+.card-header h3 {
   margin: 0;
-  font-size: var(--tamano-fuente-xl);
-  font-weight: var(--peso-fuente-semibold);
-  color: var(--color-gris-oscuro);
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
 }
 
-.perfil-card .card-content {
-  padding: var(--espaciado-lg);
+.card-header .card-subtitle {
+  margin: 4px 0 0;
+  color: var(--color-gris-400);
+  font-size: var(--tamano-fuente-sm);
 }
 
-.perfil-card .info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--espaciado-md) 0;
-  border-bottom: 1px solid var(--color-gris-claro);
+/* --- Contenido de tarjeta --- */
+.card-content {
+  padding: 16px 20px;
 }
 
-.perfil-card .info-row:last-child {
+/* --- Fila de información --- */
+.info-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--espaciado-md);
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--color-gris-100);
+  align-items: start;
+}
+
+.info-row:last-child {
   border-bottom: none;
 }
 
-.perfil-card .info-row label {
+.info-row label {
+  color: var(--color-gris-400);
   font-weight: var(--peso-fuente-semibold);
-  color: var(--color-gris-oscuro);
-  min-width: 150px;
+  font-size: var(--tamano-fuente-sm);
 }
 
-.perfil-card .info-row span {
-  color: var(--color-gris);
-  text-align: right;
-  flex: 1;
+.info-row span {
+  color: var(--color-gris-800);
 }
 
-.perfil-card .roles-list {
+/* ===== ESTILOS DE ROLES Y BADGES ===== */
+
+/* --- Lista de roles --- */
+.roles-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* --- Badge de rol --- */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.role-badge.single {
+  font-size: 1rem;
+}
+
+.role-badge i {
+  font-size: 1rem;
+}
+
+/* --- Variantes de rol --- */
+.role-admin {
+  background: var(--color-fondo-admin);
+  color: var(--color-texto-admin);
+}
+
+.role-coach {
+  background: var(--color-fondo-coach);
+  color: var(--color-texto-coach);
+}
+
+.role-athlete {
+  background: var(--color-fondo-athlete);
+  color: var(--color-texto-athlete);
+}
+
+.role-guardian {
+  background: var(--color-fondo-guardian);
+  color: var(--color-texto-guardian);
+}
+
+.role-user,
+.role-default {
+  background: var(--color-fondo-user);
+  color: var(--color-texto-user);
+}
+
+/* ===== ESTILOS DE MÉTRICAS Y ESTADÍSTICAS ===== */
+
+/* --- Grid de métricas --- */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--espaciado-md);
+  padding: var(--espaciado-md);
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-gris-300);
+}
+
+/* --- Tarjeta de métrica --- */
+.metric-card {
+  text-align: center;
+  padding: var(--espaciado-md);
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-300);
+}
+
+.metric-card label {
+  display: block;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-400);
+  font-weight: var(--peso-fuente-semibold);
+  margin-bottom: var(--espaciado-sm);
+}
+
+.metric-value {
+  display: block;
+  font-size: var(--tamano-fuente-xxl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
+}
+
+/* --- Subsección de información --- */
+.info-subsection {
+  padding: var(--espaciado-md);
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-300);
+}
+
+.info-subsection h4 {
+  margin: 0 0 var(--espaciado-md) 0;
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
+}
+
+/* ===== ESTILOS DE BADGES GENERALES ===== */
+
+/* --- Badge base --- */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* --- Variantes de badge --- */
+.badge-success {
+  background: var(--color-fondo-athlete);
+  color: var(--color-texto-athlete);
+}
+
+.badge-warning {
+  background: var(--color-fondo-admin);
+  color: var(--color-texto-admin);
+}
+
+.badge-muted {
+  background: var(--color-fondo-user);
+  color: var(--color-texto-user);
+}
+
+.badge-info {
+  background: var(--color-info-badge-bg);
+  color: var(--color-info-badge-text);
+  margin-right: 6px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+/* --- Lista de badges --- */
+.badges-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--espaciado-md);
+  gap: 6px;
 }
 
-.perfil-card .role-badge {
-  padding: var(--espaciado-sm) var(--espaciado-md);
-  border-radius: 20px;
-  font-size: var(--tamano-fuente-sm);
+/* ===== ESTILOS DE UTILIDADES ===== */
+
+/* --- Skeleton (carga) --- */
+.skeleton-row {
+  height: 16px;
+  background: linear-gradient(90deg, var(--color-gris-100) 25%, var(--color-gris-200) 50%, var(--color-gris-100) 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: var(--radio-borde-pequeno);
+  margin: 10px 0;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+/* --- Estados vacíos --- */
+.empty-state {
+  padding: var(--espaciado-xxl);
+  text-align: center;
+  color: var(--color-gris-400);
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* --- Utilidades de espaciado --- */
+.mr-1 {
+  margin-right: 6px;
+}
+
+.mt-3 {
+  margin-top: 20px;
+}
+/* ===== ESTILOS DEL COMPONENTE modal-perfil ===== */
+
+/* NOTA: Los estilos de modales (.modal-overlay, .modal-content, .modal-header, .modal-body, .modal-footer)
+   se movieron a modales.css para evitar duplicación y conflictos.
+   Solo se mantienen aquí los estilos específicos de perfiles que no son modales.
+*/
+
+/* ===== ESTILOS DE FORMULARIOS EN MODAL ===== */
+
+/* --- Grupo de formulario --- */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--espaciado-sm);
   font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-800);
+}
+
+/* --- Input de búsqueda --- */
+.input-busqueda {
   display: flex;
-  align-items: center;
   gap: var(--espaciado-sm);
 }
 
-.perfil-card .role-admin {
-  background: #f8d7da;
-  color: #721c24;
+.input-busqueda .input-text {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
 }
 
-.perfil-card .role-coach {
-  background: #d1ecf1;
-  color: #0c5460;
+.input-busqueda .input-text:focus {
+  outline: none;
+  border-color: var(--color-primario);
 }
 
-.perfil-card .role-athlete {
-  background: #fff3cd;
-  color: #856404;
+/* --- Lista de acudientes --- */
+.acudientes-lista {
+  margin-top: 1rem;
 }
 
-.perfil-card .role-guardian {
-  background: #d4edda;
-  color: #155724;
+/* --- Tarjeta de acudiente --- */
+.acudiente-card {
+  padding: var(--espaciado-md);
+  border: 2px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-pequeno);
+  margin-bottom: var(--espaciado-sm);
+  cursor: pointer;
+  transition: var(--transicion);
 }
 
-.perfil-card .role-user {
-  background: var(--color-gris-medio);
-  color: var(--color-gris-oscuro);
+.acudiente-card:hover {
+  border-color: var(--color-primario);
+  background: var(--color-gris-50);
 }
 
-.perfil-card .role-default {
+.acudiente-card.seleccionado {
+  border-color: var(--color-primario);
+  background: var(--color-chip-primary-bg);
+}
+
+.acudiente-card strong {
+  display: block;
+  color: var(--color-gris-800);
+  margin-bottom: 0.25rem;
+}
+
+.acudiente-card p {
+  margin: 0;
+  color: var(--color-gris-400);
+  font-size: var(--tamano-fuente-sm);
+}
+
+/* --- Formulario de asociación --- */
+.formulario-asociacion {
+  margin-top: var(--espaciado-lg);
+  padding-top: var(--espaciado-lg);
+  border-top: 2px solid var(--color-gris-300);
+}
+
+/* --- Select input --- */
+.select-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+}
+
+/* --- Label de checkbox --- */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+/* ===== ESTILOS DE BOTONES ===== */
+
+/* --- Botón secundario --- */
+.btn-secondary {
+  padding: 0.75rem var(--espaciado-lg);
+  border: 2px solid var(--color-gris);
+  border-radius: var(--radio-borde-pequeno);
+  background: var(--color-blanco);
+  color: var(--color-gris);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.btn-secondary:hover {
   background: var(--color-gris-claro);
+  border-color: var(--color-gris-oscuro);
+}
+
+/* ===== ESTILOS DE ALERTAS Y MENSAJES ===== */
+
+/* --- Alerta de advertencia --- */
+.alert-warning {
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid var(--color-advertencia);
+  border-radius: 8px;
+  color: #856404; /* Color oscuro de advertencia - mantener específico */
+  margin-bottom: 15px;
+}
+
+.alert-warning strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Acciones de perfil --- */
+.perfil-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* ===== ESTILOS PARA ACTUALIZAR INFORMACIÓN ===== */
+
+/* --- Página de actualizar información --- */
+.actualizar-info-page {
+  min-height: 100vh;
+  background-color: var(--color-gris-claro);
+  padding: 2rem 1rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Contenedor de actualizar --- */
+.actualizar-container {
+  max-width: 900px;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+  flex: 1;
+}
+
+/* --- Footer en página de actualizar --- */
+.actualizar-info-page ::v-deep .footer-enhanced {
+  margin-left: -1rem;
+  margin-right: -1rem;
+  width: calc(100% + 2rem);
+  margin-top: auto;
+}
+
+/* --- Header de actualizar --- */
+.actualizar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.actualizar-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.actualizar-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Contenido de actualizar --- */
+.actualizar-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* ===== ESTILOS DE ALERTAS ===== */
+
+/* --- Alerta base --- */
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --- Alerta de error --- */
+.alert-error {
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+}
+
+/* --- Alerta de éxito --- */
+.alert-success {
+  background: #efe;
+  border: 1px solid #cfc;
+  color: #3c3;
+}
+
+/* --- Alerta informativa --- */
+.alert-info {
+  background: #fff3cd;
+  border: 1px solid var(--color-advertencia);
+  color: #856404; /* Color oscuro de advertencia - mantener específico */
+}
+
+/* ===== ESTILOS DE ESTADOS ===== */
+
+/* --- Estado de carga --- */
+.loading-state {
+  text-align: center;
+  padding: 3rem;
   color: var(--color-gris);
 }
 
-/* Responsive para perfil */
+.loading-state i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* ===== ESTILOS DE FORMULARIOS ===== */
+
+/* --- Sección de formulario --- */
+.form-section {
+  margin-bottom: 2.5rem;
+}
+
+.form-section:last-of-type {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --- Fila de formulario --- */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* --- Inputs y textareas --- */
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* --- Acciones de formulario --- */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+  margin-top: 2rem;
+}
+
+/* --- Botón cancelar --- */
+.btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  background: var(--color-gris);
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #5a6268;
+}
+
+/* --- Botón guardar --- */
+.btn-save {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  background: #28a745;
+  color: white;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #218838;
+}
+
+.btn-save:disabled {
+  background: var(--color-gris);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media (max-width: 768px) {
+  .actualizar-info-page {
+    padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+
+  .actualizar-title {
+    font-size: 2rem;
+  }
+
+  .actualizar-content {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===== ESTILOS PARA COMPLETAR PERFIL ===== */
+
+/* --- Contenedor de completar perfil --- */
+.completar-perfil-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* --- Contenido de completar perfil --- */
+.completar-perfil-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* --- Secciones de completar perfil --- */
+.seleccion-perfil,
+.formulario-perfil,
+.confirmacion-perfil {
+  width: 100%;
+  max-width: 800px;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Tarjeta de completar --- */
+.card-completar {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Icono de completar --- */
+.icono-completar {
+  width: 80px;
+  height: 80px;
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+
+/* --- Título de completar --- */
+.titulo-completar {
+  text-align: center;
+  color: var(--color-gris-oscuro);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+/* --- Descripción de completar --- */
+.descripcion-completar {
+  text-align: center;
+  color: var(--color-gris);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* --- Opciones de perfil --- */
+.opciones-perfil {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* --- Botón de opción --- */
+.opcion-btn {
+  background: white;
+  border: 3px solid #e0e0e0;
+  border-radius: 15px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.opcion-btn:hover:not(:disabled) {
+  border-color: #667eea;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.opcion-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.opcion-deportista:hover:not(:disabled) {
+  border-color: #667eea;
+}
+
+.opcion-acudiente:hover:not(:disabled) {
+  border-color: #764ba2;
+}
+
+.opcion-btn h3 {
+  color: var(--color-gris-oscuro);
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.opcion-btn p {
+  color: var(--color-gris);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* --- Icono de opción --- */
+.opcion-icono {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.opcion-icono-grande {
+  font-size: 6rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* --- Formulario de deportista --- */
+.form-deportista {
+  margin-top: 2rem;
+}
+
+/* ===== ESTILOS DE MENSAJES ===== */
+
+/* --- Mensaje de error --- */
+.mensaje-error {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #fcc;
+}
+
+/* --- Mensaje de éxito --- */
+.mensaje-exito {
+  background-color: #efe;
+  color: #3c3;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #cfc;
+}
+
+/* --- Mensaje informativo --- */
+.mensaje-info {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+  text-align: center;
+  border: 1px solid #90caf9;
+  grid-column: 1 / -1;
+}
+
+.mensaje-info p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* --- Botón primario (completar perfil) --- */
+.btn-primary {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para grid y perfil-grid --- */
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para métricas --- */
+@media (max-width: 640px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para completar perfil (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .card-completar {
+    padding: 2rem;
+  }
+
+  .titulo-completar {
+    font-size: 1.5rem;
+  }
+
+  .descripcion-completar {
+    font-size: 1rem;
+  }
+
+  .opciones-perfil {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
   .perfil-container {
     padding: var(--espaciado-md) var(--espaciado-sm);
   }
@@ -290,6 +1240,31 @@
     flex-direction: column;
     gap: var(--espaciado-md);
     align-items: flex-start;
+  }
+
+  .actualizar-info-page {
+    padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+
+  .actualizar-title {
+    font-size: 2rem;
+  }
+
+  .actualizar-content {
+    padding: 1.5rem;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    justify-content: center;
   }
 }
 

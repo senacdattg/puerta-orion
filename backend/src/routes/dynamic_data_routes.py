@@ -240,7 +240,7 @@ def listar_datos_dinamicos(tema: str) -> JsonResponse:
             registros = modelo.query.filter_by(estado=True).all()
         else:
             registros = modelo.query.all()
-
+        
         return _build_response(
             True,
             data=_serializar_registros(registros),
@@ -274,7 +274,7 @@ def crear_dato_dinamico(tema: str) -> JsonResponse:
 
         db.session.add(nuevo_registro)
         db.session.commit()
-
+        
         return _build_response(
             True,
             message='Registro creado exitosamente',

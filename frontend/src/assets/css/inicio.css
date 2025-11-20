@@ -1,31 +1,41 @@
-/* Estilos específicos para la página de inicio */
+/* ===== ESTILOS PARA PÁGINA DE INICIO ===== */
 /* Siguiendo el principio SRP - este archivo solo maneja estilos del inicio */
 
-/* Variables CSS para consistencia */
+/* ===== IMPORTS Y VARIABLES ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* --- Mapeo de variables antiguas a nuevas (compatibilidad) --- */
 :root {
-  --primary-color: #0047ab;
-  --secondary-color: #f7d600;
-  --accent-color: #0d47a1;
-  --text-dark: #333;
-  --text-light: #666;
-  --background-light: #f8f9fa;
-  --shadow-light: rgba(0, 0, 0, 0.1);
-  --shadow-medium: rgba(0, 0, 0, 0.15);
-  --border-radius: 16px;
-  --transition: all 0.3s ease;
+  --primary-color: var(--color-primario);
+  --secondary-color: var(--color-secundario);
+  --accent-color: var(--color-primario-oscuro);
+  --text-dark: var(--color-gris-oscuro);
+  --text-light: var(--color-gris);
+  --background-light: var(--color-gris-claro);
+  --shadow-light: var(--sombra-suave);
+  --shadow-medium: var(--sombra-media);
+  --border-radius: var(--radio-borde-grande);
+  --transition: var(--transicion);
 }
 
-/* Estilos base para secciones */
+/* ===== ESTILOS BASE DE LAYOUT ===== */
+
+/* --- Secciones base --- */
 .section-base {
   padding: 80px 20px;
 }
 
+/* --- Contenedores base --- */
 .container-base {
   max-width: 1200px;
   margin: 0 auto;
 }
 
-/* Tipografía consistente */
+/* ===== ESTILOS BASE DE TIPOGRAFÍA ===== */
+
+/* --- Títulos base --- */
 .title-base {
   font-size: 2.5rem;
   font-weight: 700;
@@ -33,13 +43,16 @@
   margin-bottom: 25px;
 }
 
+/* --- Subtítulos base --- */
 .subtitle-base {
   font-size: 1.2rem;
   line-height: 1.6;
   margin-bottom: 30px;
 }
 
-/* Botones base */
+/* ===== ESTILOS BASE DE BOTONES ===== */
+
+/* --- Botón base --- */
 .button-base {
   display: inline-flex;
   align-items: center;
@@ -54,22 +67,9 @@
   cursor: pointer;
 }
 
-/* Responsive base */
-@media (max-width: 768px) {
-  .section-base {
-    padding: 60px 20px;
-  }
-  
-  .title-base {
-    font-size: 2rem;
-  }
-  
-  .subtitle-base {
-    font-size: 1.1rem;
-  }
-}
+/* ===== ESTILOS BASE DE ANIMACIONES ===== */
 
-/* Animaciones base */
+/* --- Animación fade-in --- */
 .fade-in {
   animation: fadeIn 0.8s ease-in;
 }
@@ -85,7 +85,9 @@
   }
 }
 
-/* Hover effects base */
+/* ===== ESTILOS BASE DE EFECTOS HOVER ===== */
+
+/* --- Efecto hover lift --- */
 .hover-lift {
   transition: var(--transition);
 }
@@ -93,5 +95,22 @@
 .hover-lift:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 25px var(--shadow-medium);
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para estilos base --- */
+@media (max-width: 768px) {
+  .section-base {
+    padding: 60px 20px;
+  }
+
+  .title-base {
+    font-size: 2rem;
+  }
+
+  .subtitle-base {
+    font-size: 1.1rem;
+  }
 }
 
