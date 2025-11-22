@@ -445,7 +445,7 @@
 /* ===== ESTILOS DEL MODAL OVERLAY ===== */
 
 /* --- Overlay del modal --- */
-/* NOTA: Los estilos base de modales (.modal-overlay, .modal-content, .modal-header) 
+/* NOTA: Los estilos base de modales (.modal-overlay, .modal-content, .modal-header)
    se movieron a components/modals.css para evitar duplicación.
    Solo se mantienen aquí los estilos específicos como .mensualidades-modal .modal-header
 */

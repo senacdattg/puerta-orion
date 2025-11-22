@@ -120,5 +120,34 @@
   }
 }
 
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .table {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--espaciado-sm);
+  }
+
+  .tabla-historial {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .tabla-historial thead th,
+  .tabla-historial tbody td {
+    padding: var(--espaciado-sm);
+  }
+}
+
+
+
+
+
+
+
+
 
 

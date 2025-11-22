@@ -336,3 +336,35 @@
     flex: 1 1 100%;
   }
 }
+
+/* --- Responsive para selector-roles (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .selector-roles {
+    padding: 10px 12px;
+  }
+
+  .selector-roles-content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .selector-roles-content label {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .select-rol {
+    width: 100%;
+  }
+
+  .sub-contenedor {
+    flex: 1 1 calc(50% - 1.5rem);
+  }
+}
+
+/* --- Responsive para tarjetas (max-width: 480px) --- */
+@media (max-width: 480px) {
+  .sub-contenedor {
+    flex: 1 1 100%;
+  }
+}

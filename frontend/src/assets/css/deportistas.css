@@ -266,19 +266,9 @@
 }
 
 /* ===== ESTILOS DEL COMPONENTE modal-deportistas ===== */
+/* Los estilos del modal están en modales.css bajo .modal-content.modal-deportistas */
 
-/* --- Modal principal --- */
-.modal-deportistas {
-  border-radius: var(--radio-borde);
-  box-shadow: var(--sombra-media);
-  max-width: 750px;
-  width: 800px;
-  max-height: 100vh;
-  overflow-y: auto;
-  animation: modalEntrada 0.3s ease-out;
-  position: relative;
-}
-
+/* --- Botón cerrar específico para otros componentes (no relacionado con el modal principal) --- */
 .btn-cerrar-deportista {
   background: var(--color-peligro);
   border: none;
@@ -305,30 +295,7 @@
 }
 
 /* --- Overlay del modal --- */
-.modal-overlay-deportistas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-  padding: 1rem;
-  padding-top: 80px; /* Espacio para el header (70px + 10px de margen) */
-}
-
-.modal-perfil-wrapper {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  max-height: calc(100vh - 100px); /* Altura máxima considerando el header */
-  overflow: auto;
-}
+/* Modal de deportistas usa las clases globales del modal en modales.css */
 
 /* --- Mensaje de error --- */
 .mensaje-error {
@@ -587,7 +554,7 @@
 /* (Estilos compartidos para modales de deportistas y acudientes) */
 
 /* --- Overlay del modal --- */
-/* NOTA: Los estilos base de modales (.modal-overlay, .modal-content, .modal-header) 
+/* NOTA: Los estilos base de modales (.modal-overlay, .modal-content, .modal-header)
    se movieron a components/modals.css para evitar duplicación.
    Solo se mantienen aquí los estilos específicos como .modal-content.modal-perfil
 */
@@ -718,7 +685,7 @@
   font-size: var(--tamano-fuente-lg);
 }
 
-/* NOTA: Los estilos de .form-group, .form-group label y .select-input 
+/* NOTA: Los estilos de .form-group, .form-group label y .select-input
    se movieron a components/forms.css para evitar duplicación.
    Este archivo ahora solo contiene estilos específicos de deportistas.
 */
@@ -1412,57 +1379,18 @@
 }
 
 /* ===== ESTILOS DEL COMPONENTE perfil-deportista-vista ===== */
+/* El modal de deportistas usa las clases globales del modal (modal-header, modal-body, etc.) */
+/* Los estilos específicos están en modales.css bajo .modal-content.modal-deportistas */
 
-/* --- Vista principal del perfil --- */
+/* --- Contenedor del perfil dentro del modal --- */
+/* Los estilos del modal (header, body, btn-cerrar) están en modales.css */
 .perfil-deportista-vista {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  max-width: 900px;
-  width: 100%;
-  max-height: calc(100vh - 100px); /* Altura máxima considerando el header */
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
   display: flex;
   flex-direction: column;
-  z-index: 10000; /* Asegurar que esté por encima de todo */
-}
-
-.perfil-header {
-  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
-  color: white;
-  padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 12px 12px 0 0;
-  position: sticky;
-  top: 0;
-  z-index: 11;
-  flex-shrink: 0; /* Evitar que se comprima */
-}
-
-/* --- Título del header --- */
-.perfil-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.btn-cerrar {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  width: 100%;
 }
 
 .btn-cerrar:hover {
@@ -1475,81 +1403,144 @@
   padding: 2rem;
 }
 
-.perfil-card {
-  background: #f8f9fa;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
+.perfil-deportista-vista .perfil-card {
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  max-width: 100%;
 }
 
 /* --- Header de tarjeta dentro del perfil --- */
-.card-header h3 {
+.perfil-deportista-vista .card-header {
+  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
+  padding: 1rem 1.5rem;
+  margin: 0;
+}
+
+.perfil-deportista-vista .card-header h3 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
   color: white !important;
 }
 
-.card-header h4 {
+.perfil-deportista-vista .card-header h4 {
   margin: 1rem 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 600;
   color: #004AAD;
 }
 
+/* --- Contenido de la tarjeta --- */
+.perfil-deportista-vista .card-content {
+  padding: 1.25rem 1.5rem;
+}
+
 /* --- Grid de información --- */
-.info-grid {
+.perfil-deportista-vista .info-grid {
   display: grid;
-  gap: 0.75rem;
-}
-
-.info-row {
-  display: grid;
-  grid-template-columns: 200px 1fr;
   gap: 1rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #dee2e6;
 }
 
-.info-row:last-child {
+.perfil-deportista-vista .info-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  align-items: start;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.perfil-deportista-vista .info-row:hover {
+  background-color: #f8f9fa;
+  margin: 0 -1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-radius: 6px;
+}
+
+.perfil-deportista-vista .info-row:last-child {
   border-bottom: none;
 }
 
 /* --- Label de la fila de información --- */
-.info-row label {
+.perfil-deportista-vista .info-row label {
   font-weight: 600;
   color: #495057;
-}
-
-.info-row span {
-  color: #6c757d;
-}
-
-.medidas-aviso {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  color: #d39e00;
-}
-
-/* --- Editor de diagnósticos --- */
-.diagnosticos-editor {
+  font-size: 0.95rem;
+  line-height: 1.5;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  align-items: center;
+  min-height: 2.5rem;
 }
 
-.checkbox-line {
+.perfil-deportista-vista .info-row span {
+  color: #6c757d;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+.perfil-deportista-vista .medidas-aviso {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #856404;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
-  color: #495057;
 }
 
-.checkbox-line input[type='checkbox'] {
+.perfil-deportista-vista .medidas-aviso::before {
+  content: "⚠️";
+  font-size: 1rem;
+}
+
+/* --- Editor de diagnósticos --- */
+.perfil-deportista-vista .diagnosticos-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.perfil-deportista-vista .checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  color: #495057;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.perfil-deportista-vista .checkbox-line:hover {
+  background-color: #ffffff;
+}
+
+.perfil-deportista-vista .checkbox-line input[type='checkbox'] {
   width: 1.1rem;
   height: 1.1rem;
   cursor: pointer;
+  accent-color: #004AAD;
+  flex-shrink: 0;
 }
 
 .diagnosticos-vacio {
@@ -1558,10 +1549,19 @@
 }
 
 /* --- Subsección de información --- */
-.info-subsection {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
+.perfil-deportista-vista .info-subsection {
+  margin-top: 2rem;
+  padding-top: 2rem;
   border-top: 2px solid #dee2e6;
+}
+
+.perfil-deportista-vista .info-subsection h4 {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #004AAD;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
 }
 
 .badge {
@@ -1597,13 +1597,18 @@
   font-weight: 500;
 }
 
-/* --- Acciones del perfil --- */
-.perfil-actions {
+/* --- Acciones del perfil (footer dentro del modal) --- */
+.perfil-deportista-vista .perfil-actions {
   display: flex;
   justify-content: center;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid #dee2e6;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2.5rem;
+  margin-top: 0;
+  border-top: 2px solid #e9ecef;
+  background: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .btn-cerrar-perfil {
@@ -1701,24 +1706,55 @@
 }
 
 /* --- Input editable --- */
-.input-editable {
+.perfil-deportista-vista .input-editable {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.625rem 0.875rem;
   border: 1px solid #ced4da;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.95rem;
-  transition: border-color 0.3s;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+  color: #495057;
+  font-family: inherit;
 }
 
-.input-editable:focus {
+.perfil-deportista-vista .input-editable:focus {
   outline: none;
   border-color: #004AAD;
-  box-shadow: 0 0 0 2px rgba(0, 74, 173, 0.1);
+  box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.1);
+  background-color: #ffffff;
 }
 
-.input-editable:disabled {
-  background-color: #e9ecef;
+.perfil-deportista-vista .input-editable:disabled {
+  background-color: #f8f9fa;
   cursor: not-allowed;
+  color: #6c757d;
+  border-color: #dee2e6;
+}
+
+.perfil-deportista-vista .input-editable::placeholder {
+  color: #adb5bd;
+}
+
+/* --- Select editable --- */
+.perfil-deportista-vista .info-row select.input-editable {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23495057' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.perfil-deportista-vista .info-row select.input-editable:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23004AAD' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+.perfil-deportista-vista .info-row textarea.input-editable {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.5;
 }
 
 .input-with-unit {
@@ -1743,20 +1779,33 @@
 }
 
 /* --- Grupo de radio buttons --- */
-.radio-group {
+.perfil-deportista-vista .radio-group {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
 }
 
-.radio-option {
+.perfil-deportista-vista .radio-option {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  font-size: 0.95rem;
 }
 
-.radio-option input[type="radio"] {
+.perfil-deportista-vista .radio-option:hover {
+  background-color: #f8f9fa;
+}
+
+.perfil-deportista-vista .radio-option input[type="radio"] {
   cursor: pointer;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #004AAD;
 }
 
 .cargando {
@@ -1767,14 +1816,45 @@
 
 /* --- Responsive del componente perfil-deportista-vista --- */
 @media (max-width: 768px) {
-  .info-row {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .perfil-content {
+  .perfil-deportista-vista .card-content {
     padding: 1rem;
   }
+
+  .perfil-deportista-vista .info-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0.875rem 0;
+  }
+
+  .perfil-deportista-vista .info-row:hover {
+    margin: 0 -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .perfil-deportista-vista .info-row label {
+    min-height: auto;
+    margin-bottom: 0.25rem;
+  }
+
+  .perfil-deportista-vista .info-row span {
+    min-height: auto;
+  }
+
+  .perfil-deportista-vista .radio-group {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .perfil-deportista-vista .card-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .perfil-deportista-vista .card-header h3 {
+    font-size: 1.1rem;
+  }
+
+  /* Los estilos de padding del modal-body están en modales.css */
 }
 
 /* --- Responsive del componente CardDeportista --- */

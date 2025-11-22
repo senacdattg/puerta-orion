@@ -114,3 +114,22 @@
   }
 }
 
+
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para estilos base --- */
+@media (max-width: 768px) {
+  .section-base {
+    padding: 60px 20px;
+  }
+
+  .title-base {
+    font-size: 2rem;
+  }
+
+  .subtitle-base {
+    font-size: 1.1rem;
+  }
+}
+

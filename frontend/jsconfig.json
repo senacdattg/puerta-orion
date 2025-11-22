@@ -1,10 +1,23 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
     "skipLibCheck": true,
-    "types": []
+    "types": [],
+    "allowJs": true,
+    "checkJs": false
   },
-  "exclude": ["node_modules", "dist", "**/@types/**", "**/winjs/**"]
+  "include": ["src/**/*.js", "src/**/*.vue", "src/**/*.jsx"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-ssr",
+    "**/@types",
+    "**/winjs",
+    "**/AppData",
+    "**/Microsoft",
+    "**/TypeScript"
+  ]
 }

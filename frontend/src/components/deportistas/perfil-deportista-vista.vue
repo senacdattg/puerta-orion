@@ -1,20 +1,20 @@
 <template>
   <div class="perfil-deportista-vista">
-    <div class="perfil-header">
-      <h2>{{ isEditing ? '✏️ Editar Deportista' : '📋 Información del Deportista' }}</h2>
+    <div class="modal-header">
+      <h2 class="modal-title">{{ isEditing ? '✏️ Editar Deportista' : '📋 Información del Deportista' }}</h2>
       <button class="btn-cerrar" @click="isEditing ? cancelarEdicion() : $emit('cerrar')" :title="isEditing ? 'Cancelar' : 'Cerrar'">
         <i class="fas fa-times"></i>
       </button>
     </div>
 
-    <div class="perfil-content" v-if="datos && catalogosCargados">
+    <div class="modal-body" v-if="datos && catalogosCargados">
       <!-- Debug temporal - eliminar en producción -->
       <div style="display: none;">
         <pre>{{ JSON.stringify(datos, null, 2) }}</pre>
       </div>
 
       <!-- Información Personal -->
-      <div class="perfil-card" v-if="datos.persona || datos.nombre1">
+      <div class="perfil-card" v-if="datos">
         <div class="card-header">
           <h3>👤 Información Personal</h3>
         </div>
@@ -122,7 +122,7 @@
       </div>
 
       <!-- Información Deportiva -->
-      <div class="perfil-card" v-if="datos.deportista || datos.categoria || datos.informacion_deportiva || datos.datos_deportista">
+      <div class="perfil-card" v-if="datos">
         <div class="card-header">
           <h3>🏃 Información Deportiva</h3>
         </div>
@@ -398,7 +398,7 @@
       <!-- Información de Salud - Diagnósticos y Enfermedades -->
       <div
         class="perfil-card"
-        v-if="(datos.salud && (datos.salud.diagnosticos || datos.salud.tipos_enfermedad_ids)) || (isEditing && formData.recomendacion_medica)"
+        v-if="datos && (datos.salud || datos.informacion_deportiva?.recomendacion_medica || isEditing)"
       >
         <div class="card-header">
           <h3>🏥 Información de Salud</h3>
@@ -479,26 +479,26 @@
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Botones de acción -->
-      <div class="perfil-actions">
-        <template v-if="!isEditing">
-        <button class="btn-editar-perfil" @click="iniciarEdicion">
-            <i class="fas fa-edit"></i> Actualizar
+    <!-- Botones de acción - FUERA del modal-body para que el scroll funcione -->
+    <div class="perfil-actions" v-if="datos && catalogosCargados">
+      <template v-if="!isEditing">
+      <button class="btn-editar-perfil" @click="iniciarEdicion">
+          <i class="fas fa-edit"></i> Actualizar
+      </button>
+      <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
+        Cerrar
+      </button>
+      </template>
+      <template v-else>
+        <button class="btn-guardar-perfil" @click="guardarCambios" :disabled="guardando">
+          <i class="fas fa-save"></i> {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
         </button>
-        <button class="btn-cerrar-perfil" @click="$emit('cerrar')">
-          Cerrar
+        <button class="btn-cancelar-perfil" @click="cancelarEdicion" :disabled="guardando">
+          Cancelar
         </button>
-        </template>
-        <template v-else>
-          <button class="btn-guardar-perfil" @click="guardarCambios" :disabled="guardando">
-            <i class="fas fa-save"></i> {{ guardando ? 'Guardando...' : 'Guardar Cambios' }}
-          </button>
-          <button class="btn-cancelar-perfil" @click="cancelarEdicion" :disabled="guardando">
-            Cancelar
-          </button>
-        </template>
-      </div>
+      </template>
     </div>
 
     <div v-else-if="!catalogosCargados" class="cargando">

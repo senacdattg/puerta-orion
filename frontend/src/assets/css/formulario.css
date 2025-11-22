@@ -6,8 +6,7 @@
 /* ===== ESTILOS DEL COMPONENTE formulario-datos ===== */
 /* (Compartido entre formulario-deportista y formulario-general) */
 
-/* --- Contenedor principal del formulario --- */
-.formulario-datos {
+/* --- Contenedor principal del formulario --- */.formulario-datos {
     background-color: var(--color-secundario);
     border: 3px solid var(--color-primario);
     padding: var(--espaciado-xl);

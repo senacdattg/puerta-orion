@@ -199,7 +199,7 @@ def _obtener_categorias_acudiente(id_persona: int) -> set:
     acudiente = Acudiente.query.filter_by(id_persona=id_persona).first()
     if not acudiente:
         return categorias
-    
+
     relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=acudiente.id_acudiente).all()
     for relacion in relaciones:
         deportista = Deportista.query.get(relacion.id_deportista)
@@ -455,7 +455,7 @@ def _aplicar_filtro_categorias(
     """Aplica filtro de categorías a la consulta de eventos."""
     if categorias_permitidas is None:
         return query
-    
+
     if id_categoria_todos:
         return query.filter(
             or_(
@@ -478,14 +478,14 @@ def _aplicar_filtro_categoria_especifica(
         or categoria_id in categorias_permitidas
         or categoria_id == id_categoria_todos
     )
-    
+
     if not categoria_permitida:
         return query, HttpResponseBuilder.success(
             message='No tienes acceso a eventos de esta categoría',
             data=[],
             pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
         )
-    
+
     return query.filter_by(id_categoria=categoria_id), None
 
 
@@ -500,19 +500,19 @@ def _aplicar_filtros_basicos(
     if search:
         query = query.filter(Evento.nombre.ilike(f"%{search}%"))
 
-    if tipo_evento_id:
-        query = query.filter_by(id_tipo_evento=tipo_evento_id)
+        if tipo_evento_id:
+            query = query.filter_by(id_tipo_evento=tipo_evento_id)
 
-    if fecha_desde:
-        fecha_desde_obj = _parse_date(fecha_desde)
-        if fecha_desde_obj:
-            query = query.filter(Evento.fecha_evento >= fecha_desde_obj)
+        if fecha_desde:
+            fecha_desde_obj = _parse_date(fecha_desde)
+            if fecha_desde_obj:
+                query = query.filter(Evento.fecha_evento >= fecha_desde_obj)
 
-    if fecha_hasta:
-        fecha_hasta_obj = _parse_date(fecha_hasta)
-        if fecha_hasta_obj:
-            query = query.filter(Evento.fecha_evento <= fecha_hasta_obj)
-    
+        if fecha_hasta:
+            fecha_hasta_obj = _parse_date(fecha_hasta)
+            if fecha_hasta_obj:
+                query = query.filter(Evento.fecha_evento <= fecha_hasta_obj)
+
     return query
 
 
@@ -525,9 +525,9 @@ def _aplicar_filtros_basicos(
 def listar_eventos() -> JsonResponse:
     """
     Lista eventos aplicando filtros y restricciones por rol.
-    
+
     GET /api/eventos/calendario?page=1&per_page=10&search=texto&categoria_id=1&tipo_evento_id=1&fecha_desde=2024-01-01&fecha_hasta=2024-12-31
-    
+
     Query params:
         page (int, opcional): Número de página
         per_page (int, opcional): Elementos por página
@@ -536,7 +536,7 @@ def listar_eventos() -> JsonResponse:
         tipo_evento_id (int, opcional): Filtrar por tipo de evento
         fecha_desde (str, opcional): Fecha desde (YYYY-MM-DD)
         fecha_hasta (str, opcional): Fecha hasta (YYYY-MM-DD)
-    
+
     Returns:
         Lista paginada de eventos o error.
     """
@@ -597,9 +597,9 @@ def listar_eventos() -> JsonResponse:
 def obtener_evento(evento_id: int) -> JsonResponse:
     """
     Obtiene un evento específico por identificador.
-    
+
     GET /api/eventos/calendario/<evento_id>
-    
+
     Returns:
         Datos del evento o error.
     """
@@ -631,9 +631,9 @@ def obtener_evento(evento_id: int) -> JsonResponse:
 def crear_evento() -> JsonResponse:
     """
     Crea un nuevo evento con validaciones de negocio.
-    
+
     POST /api/eventos/calendario
-    
+
     Body JSON requerido:
     {
         "nombre": "Nombre del evento",
@@ -645,7 +645,7 @@ def crear_evento() -> JsonResponse:
         "id_tipo_evento": 1,
         "descripcion": "Descripción opcional"
     }
-    
+
     Returns:
         Evento creado o error.
     """
@@ -773,9 +773,9 @@ def crear_evento() -> JsonResponse:
 def actualizar_evento(evento_id: int) -> JsonResponse:
     """
     Actualiza los datos de un evento existente.
-    
+
     PUT /api/eventos/calendario/<evento_id>
-    
+
     Body JSON (todos los campos son opcionales):
     {
         "nombre": "Nuevo nombre",
@@ -788,7 +788,7 @@ def actualizar_evento(evento_id: int) -> JsonResponse:
         "id_tipo_evento": 1,
         "id_sesion": 1
     }
-    
+
     Returns:
         Evento actualizado o error.
     """
@@ -1081,13 +1081,13 @@ def eliminar_sesion(sesion_id: int) -> JsonResponse:
 def eventos_proximos() -> JsonResponse:
     """
     Lista eventos futuros aplicando restricciones de rol.
-    
+
     GET /api/eventos/proximos?limit=10&categoria_id=1
-    
+
     Query params:
         limit (int, opcional): Número máximo de eventos a retornar (default: 10)
         categoria_id (int, opcional): Filtrar por categoría
-    
+
     Returns:
         Lista de eventos próximos o error.
     """
@@ -1139,12 +1139,12 @@ def eventos_proximos() -> JsonResponse:
 def eventos_por_categoria(categoria_id: int) -> JsonResponse:
     """
     Lista los eventos de una categoría específica.
-    
+
     GET /api/eventos/categoria/<categoria_id>
-    
+
     Args:
         categoria_id: ID de la categoría
-    
+
     Returns:
         Lista de eventos de la categoría o error.
     """

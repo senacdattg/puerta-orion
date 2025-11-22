@@ -306,5 +306,32 @@
   }
 }
 
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .card--profile,
+  .tarjeta-perfil {
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .card--athlete,
+  .tarjeta-deportista {
+    padding: var(--espaciado-md);
+  }
+}
+
+
+
+
+
+
+
+
 
 

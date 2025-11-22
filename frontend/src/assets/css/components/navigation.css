@@ -261,5 +261,38 @@
   }
 }
 
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .selector-roles {
+    padding: var(--espaciado-md);
+  }
+
+  .selector-roles-content {
+    grid-template-columns: 1fr;
+  }
+
+  .selector-roles-content label {
+    padding: var(--espaciado-sm);
+  }
+
+  .tabs,
+  .tabs-edicion {
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    font-size: var(--tamano-fuente-sm);
+    padding: var(--espaciado-sm) var(--espaciado-md);
+  }
+}
+
+
+
+
+
+
+
+
 
 

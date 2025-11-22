@@ -226,7 +226,8 @@
 .modal-content.modal-registro,
 .modal-content.modal-anadir,
 .modal-content.modal-editar,
-.modal-content.modal-roles {
+.modal-content.modal-roles,
+.modal-content.modal-deportistas {
   max-width: 900px !important;
   width: 100% !important;
   max-height: 90vh !important;
@@ -302,6 +303,7 @@
 .modal-content.modal-editar .modal-header,
 .modal-content.modal-roles .modal-header,
 .modal-content.modal-detalle .modal-header,
+.modal-content.modal-deportistas .modal-header,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-header {
   background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
   padding: 24px 32px;
@@ -316,6 +318,7 @@
 .modal-content.modal-editar .modal-title,
 .modal-content.modal-roles .modal-title,
 .modal-content.modal-detalle .modal-title,
+.modal-content.modal-deportistas .modal-title,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -335,6 +338,7 @@
 .modal-content.modal-editar .modal-title i,
 .modal-content.modal-roles .modal-title i,
 .modal-content.modal-detalle .modal-title i,
+.modal-content.modal-deportistas .modal-title i,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-title i {
   font-size: 1.3rem;
   opacity: 1;
@@ -346,6 +350,7 @@
 .modal-content.modal-editar .btn-cerrar,
 .modal-content.modal-roles .btn-cerrar,
 .modal-content.modal-detalle .btn-cerrar,
+.modal-content.modal-deportistas .btn-cerrar,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar {
   background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
@@ -368,6 +373,7 @@
 .modal-content.modal-editar .btn-cerrar:hover,
 .modal-content.modal-roles .btn-cerrar:hover,
 .modal-content.modal-detalle .btn-cerrar:hover,
+.modal-content.modal-deportistas .btn-cerrar:hover,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: scale(1.05) rotate(90deg);
@@ -379,6 +385,7 @@
 .modal-content.modal-editar .btn-cerrar:active,
 .modal-content.modal-roles .btn-cerrar:active,
 .modal-content.modal-detalle .btn-cerrar:active,
+.modal-content.modal-deportistas .btn-cerrar:active,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar:active {
   transform: scale(0.95) rotate(90deg);
 }
@@ -387,8 +394,30 @@
 .modal-content.modal-anadir .modal-body,
 .modal-content.modal-editar .modal-body,
 .modal-content.modal-roles .modal-body,
-.modal-content.modal-detalle .modal-body,
-.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body {
+.modal-content.modal-detalle .modal-body {
+  padding: 28px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* --- Modal body específico para deportistas - Solo padding personalizado para contenido más pequeño --- */
+.modal-content.modal-deportistas .modal-body {
+  padding: 2rem 2.5rem;
+}
+
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle):not(.modal-deportistas) .modal-body {
   padding: 24px;
   max-height: calc(90vh - 100px);
   overflow-y: auto;
@@ -435,43 +464,48 @@
 
 /* Panel del formulario dentro del modal - Estilos compartidos */
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos {
-  background: var(--color-blanco) !important;
+  background: transparent !important;
   border: none !important;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 0 !important;
   width: 100%;
-  max-width: 700px;
+  max-width: 100%;
   box-sizing: border-box;
-  margin: 0 auto;
-  overflow: hidden;
+  margin: 0;
+  overflow: visible;
   display: flex;
   flex-direction: column;
-  /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important; */
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos h3 {
-  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-azul-oscuro) 100%);
-  color: var(--color-blanco) !important;
-  padding: 20px 28px;
+  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
+  color: #ffffff !important;
+  padding: 1rem 1.5rem;
   text-align: left;
-  margin: 0;
-  border-radius: 12px 12px 0 0;
-  font-size: 1.25rem;
+  margin: 0 0 1.25rem 0;
+  border-radius: 12px;
+  font-size: 1.2rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.modal-content.modal-registro .modal-body .seccion-formulario {
-  background: transparent;
-  padding: 24px 28px 32px 28px;
+.modal-content.modal-registro .modal-body .seccion-formulario,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .seccion-formulario {
+  background: #ffffff;
+  padding: 1.25rem 1.5rem;
   flex: 1;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
 }
 
 /* Mejoras adicionales para inputs dentro de los modales estándar */
@@ -1377,25 +1411,24 @@
 
 /* --- Mejorar el título del formulario en paso 2 --- */
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .seccion-formulario h3 {
-  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-azul-oscuro) 100%);
-  color: var(--color-blanco) !important;
-  padding: 20px 28px;
+  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
+  color: #ffffff !important;
+  padding: 1rem 1.5rem;
   text-align: left;
-  margin: 0 0 24px 0;
-  border-radius: 12px;
-  font-size: 1.25rem;
+  margin: 0;
+  border-radius: 0;
+  font-size: 1.2rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.15);
+  box-shadow: none;
   font-family: 'Poppins', sans-serif;
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .seccion-formulario h3::before {
-  content: '📝';
-  font-size: 1.3rem;
-  opacity: 0.9;
+  content: '';
+  display: none;
 }
 
 /* --- Información de ayuda (se puede agregar como elemento HTML si se necesita) --- */
@@ -1411,12 +1444,16 @@
   font-family: 'Poppins', sans-serif;
 }
 
-/* --- Mejorar espaciado de la sección del formulario --- */
-.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .seccion-formulario {
+/* --- Mejorar espaciado de la sección del formulario (solo para formularios sin tarjeta) --- */
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .seccion-formulario {
   background: transparent;
   padding: 0;
   width: 100%;
   max-width: 100%;
+  margin-bottom: 0;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
 }
 
 /* --- Mejorar campos dentro del formulario de datos dinámicos --- */
@@ -1554,3 +1591,6 @@
 
 /* NOTA: Los estilos de modal-anadir están incluidos en los estilos globales arriba */
 /* NOTA: Los estilos de perfil-modal y modal-detalle están definidos arriba (líneas 642-1058) */
+
+/* ===== ESTILOS ESPECÍFICOS PARA CONTENIDO DEL MODAL DE DEPORTISTAS ===== */
+/* Los estilos del modal de deportistas usan los estilos base globales del modal */

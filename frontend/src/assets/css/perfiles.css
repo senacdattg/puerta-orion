@@ -129,6 +129,8 @@
 .perfil-page {
   min-height: 100vh;
   background-color: var(--color-gris-claro);
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Contenedor de perfil --- */
@@ -136,6 +138,14 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
+  flex: 1;
+}
+
+/* --- Footer en página de perfil --- */
+.perfil-page ::v-deep .footer-enhanced {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 /* --- Reducir el margen del TituloClub en el perfil --- */
@@ -148,6 +158,9 @@
 .perfil-header {
   text-align: center;
   margin-bottom: 24px;
+  position: relative;
+  padding: 20px 0;
+  background: transparent;
 }
 
 /* --- Hero de perfil --- */
@@ -156,10 +169,15 @@
   grid-template-columns: auto 1fr auto;
   gap: 20px;
   align-items: center;
-  background: linear-gradient(135deg, var(--color-gris-50) 0%, var(--color-chip-primary-bg) 100%);
+  background: var(--color-blanco);
   border: 1px solid var(--color-gris-300);
   border-radius: var(--radio-borde-grande);
   padding: var(--espaciado-lg) var(--espaciado-xl);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
 }
 
 /* --- Avatar --- */
@@ -239,6 +257,84 @@
 /* --- Acciones del hero --- */
 .hero-actions .btn {
   white-space: nowrap;
+}
+
+/* --- Botón primario en el hero del perfil (estilo outline) --- */
+/* Override agresivo con máxima especificidad para sobrescribir TODOS los estilos base */
+.perfil-hero .hero-actions button.btn.btn-primary.btn-icon,
+.perfil-hero .hero-actions .btn.btn-primary.btn-icon,
+.perfil-hero .hero-actions button.btn-primary,
+.perfil-hero button.btn.btn-primary.btn-icon,
+.perfil-hero .btn.btn-primary.btn-icon {
+  padding: 8px 16px !important;
+  margin: 0 !important;
+  border: 2px solid var(--color-primario) !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  line-height: 1.4 !important;
+  color: var(--color-primario) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+  text-decoration: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary i,
+.perfil-hero .hero-actions .btn.btn-primary .icon,
+.perfil-hero .btn.btn-primary.btn-icon i,
+.perfil-hero .btn.btn-primary.btn-icon .icon {
+  color: inherit !important;
+  font-size: 0.875rem !important;
+  line-height: 1 !important;
+  transition: color 0.3s ease;
+  display: inline-block !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:hover:not(:disabled),
+.perfil-hero .btn.btn-primary.btn-icon:hover:not(:disabled) {
+  background: var(--color-primario) !important;
+  background-color: var(--color-primario) !important;
+  background-image: none !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-primario) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.3) !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:hover:not(:disabled) i,
+.perfil-hero .hero-actions .btn.btn-primary:hover:not(:disabled) .icon,
+.perfil-hero .btn.btn-primary.btn-icon:hover:not(:disabled) i,
+.perfil-hero .btn.btn-primary.btn-icon:hover:not(:disabled) .icon {
+  color: var(--color-blanco) !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:active:not(:disabled),
+.perfil-hero .btn.btn-primary.btn-icon:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 71, 171, 0.2) !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:focus,
+.perfil-hero .btn.btn-primary.btn-icon:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.25) !important;
 }
 
 /* --- Título de perfil --- */
@@ -715,8 +811,7 @@
 .actualizar-info-page {
   min-height: 100vh;
   background-color: var(--color-gris-claro);
-  padding: 2rem 1rem;
-  padding-bottom: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
 }
@@ -724,18 +819,19 @@
 /* --- Contenedor de actualizar --- */
 .actualizar-container {
   max-width: 900px;
+  width: 100%;
   margin: 0 auto;
   margin-bottom: 2rem;
   margin-top: 2rem;
+  padding: 0 1rem;
   flex: 1;
 }
 
 /* --- Footer en página de actualizar --- */
 .actualizar-info-page ::v-deep .footer-enhanced {
-  margin-left: -1rem;
-  margin-right: -1rem;
-  width: calc(100% + 2rem);
   margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 /* --- Header de actualizar --- */
@@ -1139,7 +1235,9 @@
 }
 
 /* --- Botón primario (completar perfil) --- */
-.btn-primary {
+/* NOTA: Este estilo solo aplica a botones fuera del hero del perfil */
+.perfil-content .btn-primary,
+.completar-perfil-container .btn-primary {
   padding: 1rem 2rem;
   border: none;
   border-radius: 10px;
@@ -1152,7 +1250,8 @@
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
+.perfil-content .btn-primary:hover:not(:disabled),
+.completar-perfil-container .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
 }
@@ -1161,6 +1260,111 @@
 .btn-secondary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para grid y perfil-grid --- */
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para métricas --- */
+@media (max-width: 640px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para completar perfil (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .card-completar {
+    padding: 2rem;
+  }
+
+  .titulo-completar {
+    font-size: 1.5rem;
+  }
+
+  .descripcion-completar {
+    font-size: 1rem;
+  }
+
+  .opciones-perfil {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-container {
+    padding: var(--espaciado-md) var(--espaciado-sm);
+  }
+
+  .perfil-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+
+  .perfil-card .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--espaciado-xs);
+  }
+
+  .perfil-card .info-row label {
+    min-width: auto;
+  }
+
+  .perfil-card .info-row span {
+    text-align: left;
+  }
+
+  .perfil-card .card-header {
+    flex-direction: column;
+    gap: var(--espaciado-md);
+    align-items: flex-start;
+  }
+
+  .actualizar-info-page {
+    padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+
+  .actualizar-title {
+    font-size: 2rem;
+  }
+
+  .actualizar-content {
+    padding: 1.5rem;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ===== RESPONSIVE ===== */

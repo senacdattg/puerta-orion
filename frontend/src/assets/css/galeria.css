@@ -644,3 +644,22 @@ textarea[readonly] {
 	}
 }
 
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+

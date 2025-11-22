@@ -1443,5 +1443,3 @@ function roleColor(role) {
   }
 }
 </script>
-
-

@@ -42,15 +42,16 @@
 
 /* --- Sección izquierda del header --- */
 .header-left {
-  display: flex;
-  flex-direction: row;
+  display: flex !important;
+  flex-direction: row !important;
   justify-content: flex-start;
-  align-items: center;
-  gap: 10px;
+  align-items: center !important;
+  gap: 12px !important;
   white-space: nowrap;
   flex: 0 0 auto;
   margin: 0;
   padding-left: var(--espaciado-md);
+  flex-wrap: nowrap !important;
 }
 
 /* --- Botón del menú --- */
@@ -61,11 +62,13 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: transform 220ms ease, background 220ms ease;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
 .menu-trigger.open {
@@ -79,7 +82,10 @@
   object-fit: contain;
   cursor: pointer;
   transition: transform var(--transicion);
-  display: block;
+  display: inline-block !important;
+  flex-shrink: 0;
+  align-self: center;
+  vertical-align: middle;
 }
 
 .header-logo:hover {
@@ -642,6 +648,79 @@
 body.has-fixed-header {
   padding-top: 70px;
   transition: padding-left 280ms ease;
+}
+
+/* --- Body con sidebar estático en desktop --- */
+@media (min-width: 768px) {
+  body.has-static-sidebar {
+    padding-left: 248px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body.has-static-sidebar {
+    padding-left: 0;
+  }
+}
+
+/* --- Footer con sidebar estático en desktop --- */
+@media (min-width: 768px) {
+  body.has-static-sidebar .footer-enhanced {
+    padding-left: 250px;
+  }
+}
+
+/* --- Body cuando el menú se está cerrando --- */
+@media (min-width: 768px) {
+  body.menu-closing {
+    padding-left: 0 !important;
+    transition: padding-left 280ms cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive del componente encabezado --- */
+@media (max-width: 768px) {
+  .header-deportista {
+    padding: var(--espaciado-sm) var(--espaciado-md);
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    display: none;
+  }
+
+  .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    margin: var(--espaciado-sm) 0 0 0;
+  }
+
+  .welcome-message {
+    font-size: var(--tamano-fuente-base);
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-right {
+    flex: 0 0 auto;
+  }
+}
+
+/* --- Responsive del componente sidebar-deportista --- */
+@media (max-width: 768px) {
+  .sidebar-deportista {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .sidebar-deportista.open {
+    transform: translateX(0);
+    box-shadow: 2px 0 10px var(--sombra-fuerte);
+  }
 }
 
 /* --- Body con sidebar estático en desktop --- */

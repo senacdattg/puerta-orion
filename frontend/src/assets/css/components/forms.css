@@ -328,5 +328,31 @@ input[type="radio"] {
   }
 }
 
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .fila-texto {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .form-actions,
+  .botones-formulario {
+    flex-direction: column;
+  }
+
+  .form-actions .btn,
+  .botones-formulario .btn {
+    width: 100%;
+  }
+}
+
+
+
+
+
+
+
+
 
 

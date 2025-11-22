@@ -283,8 +283,8 @@ async function cambiarEstadoDeportista(deportista) {
       @agregar="agregarDeportista" @ver="verDeportista" @cambiar-estado="cambiarEstadoDeportista" />
 
     <!-- Modal para ver/editar perfil del deportista -->
-    <div v-if="mostrarFormulario" class="modal-overlay-deportistas">
-      <div class="modal-perfil-wrapper" @click.stop>
+    <div v-if="mostrarFormulario" class="modal-overlay modal-deportistas-overlay" @click.self="cerrarFormulario">
+      <div class="modal-content modal-deportistas modal-xl" @click.stop>
         <!-- Mostrar perfil en modo ver o edición -->
         <PerfilDeportistaVista
           :datos="deportistaEditando"

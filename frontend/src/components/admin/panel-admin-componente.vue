@@ -96,7 +96,7 @@
               Gestión de Datos Base
             </h2>
             <div class="panel-actions">
-              <button class="btn btn--small btn-primary" @click="abrirModalDatos">
+              <button class="btn btn--small btn-filtros" @click="abrirModalDatos">
                 <i class="fas fa-plus"></i>
                 Añadir Dato
               </button>

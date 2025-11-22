@@ -525,3 +525,129 @@ a:focus-visible {
     height: 2.5rem;
   }
 }
+
+
+/* --- Responsive del componente AcudienteDashboard --- */
+@media (max-width: 768px) {
+  /* .main-content responsive está definido arriba en DeportistaDashboard */
+}
+
+/* ===== VARIACIONES DE COLOR POR ROL ===== */
+/* (Estilos específicos para diferenciar dashboards por rol) */
+
+/* --- Acudiente Dashboard --- */
+.acudiente-dashboard .dashboard-title {
+  color: var(--color-primario);
+}
+
+.acudiente-dashboard .card-icon {
+  background: var(--color-fondo-azul-claro);
+  color: var(--color-primario);
+}
+
+.acudiente-dashboard .dashboard-card::before {
+  background: var(--color-primario);
+}
+
+.acudiente-dashboard .dashboard-card:hover {
+  border-color: var(--color-primario);
+}
+
+/* --- Deportista Dashboard --- */
+.deportista-dashboard .dashboard-title {
+  color: var(--color-advertencia);
+}
+
+.deportista-dashboard .card-icon {
+  background: var(--color-fondo-naranja-claro);
+  color: var(--color-advertencia);
+}
+
+.deportista-dashboard .dashboard-card::before {
+  background: var(--color-advertencia);
+}
+
+.deportista-dashboard .dashboard-card:hover {
+  border-color: var(--color-advertencia);
+}
+
+/* --- Admin Dashboard --- */
+.admin-dashboard .dashboard-title {
+  color: var(--color-peligro);
+}
+
+.admin-dashboard .card-icon {
+  background: var(--color-fondo-error);
+  color: var(--color-peligro);
+}
+
+.admin-dashboard .dashboard-card::before {
+  background: var(--color-peligro);
+}
+
+.admin-dashboard .dashboard-card:hover {
+  border-color: var(--color-peligro);
+}
+
+/* --- Basic Dashboard --- */
+.basic-dashboard .dashboard-title {
+  color: var(--color-gris);
+}
+
+.basic-dashboard .card-icon {
+  background: var(--color-gris-claro);
+  color: var(--color-gris);
+}
+
+.basic-dashboard .dashboard-card::before {
+  background: var(--color-gris);
+}
+
+.basic-dashboard .dashboard-card:hover {
+  border-color: var(--color-gris);
+}
+
+/* ===== RESPONSIVE COMPARTIDO PARA DASHBOARDS ===== */
+
+/* --- Responsive para dashboard-home --- */
+@media (max-width: 768px) {
+  .dashboard-home {
+    padding: var(--espaciado-md) var(--espaciado-sm);
+  }
+
+  .banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--espaciado-md);
+  }
+
+  .banner-actions {
+    justify-content: center;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .dashboard-card {
+    padding: var(--espaciado-md);
+  }
+
+  .dashboard-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+}
+
+/* --- Responsive para tarjetas en móvil pequeño --- */
+@media (max-width: 576px) {
+  .dashboard-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
