@@ -33,7 +33,7 @@ fi
 
 echo "Arrancando el servidor..."
 if [ "${FLASK_ENV}" = "development" ]; then
-  exec flask run --host=0.0.0.0 --port=5000
+  exec flask run --host=0.0.0.0 --port=5000 --reload
 else
   exec gunicorn aplicacion:app --bind 0.0.0.0:5000
 fi

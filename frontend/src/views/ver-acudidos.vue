@@ -519,7 +519,7 @@ const asociarDeportista = async () => {
 }
 
 /* Hacer que el footer se salga del padding del main y se comporte como footer */
-.ver-acudidos-page ::v-deep .footer-enhanced {
+.ver-acudidos-page :deep(.footer-enhanced) {
   margin-left: -1rem;
   margin-right: -1rem;
   width: calc(100% + 2rem);

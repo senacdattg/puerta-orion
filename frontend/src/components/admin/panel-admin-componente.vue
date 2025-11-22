@@ -554,23 +554,23 @@ function actualizarUsuario(usuarioActualizado) {
   min-height: 400px;
 }
 
-.modal-body-form ::v-deep .formulario-datos {
+.modal-body-form :deep(.formulario-datos) {
   width: 100% !important;
   max-width: 700px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
-.modal-body-form ::v-deep .seccion-formulario {
+.modal-body-form :deep(.seccion-formulario) {
   margin: 0 auto;
   width: 100%;
 }
 
-.modal-body-form ::v-deep .seccion-formulario h3 {
+.modal-body-form :deep(.seccion-formulario h3) {
   text-align: center;
 }
 
-.modal-body-form ::v-deep .fila-texto {
+.modal-body-form :deep(.fila-texto) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 15px;
@@ -578,28 +578,28 @@ function actualizarUsuario(usuarioActualizado) {
   width: 100%;
 }
 
-.modal-body-form ::v-deep .fila-texto input,
-.modal-body-form ::v-deep .fila-texto select {
+.modal-body-form :deep(.fila-texto input),
+.modal-body-form :deep(.fila-texto select) {
   width: 100%;
   box-sizing: border-box;
 }
 
 /* Campos que ocupan todo el ancho - aplicado directamente a los inputs */
-.modal-body-form ::v-deep .fila-texto input[placeholder*="Número de documento"],
-.modal-body-form ::v-deep .fila-texto input[placeholder*="Dirección"],
-.modal-body-form ::v-deep .fila-texto input[placeholder*="Nombre de usuario"] {
+.modal-body-form :deep(.fila-texto input[placeholder*="Número de documento"]),
+.modal-body-form :deep(.fila-texto input[placeholder*="Dirección"]),
+.modal-body-form :deep(.fila-texto input[placeholder*="Nombre de usuario"]) {
   grid-column: 1 / -1;
 }
 
 /* Botones centrados */
-.modal-body-form ::v-deep .botones-formulario {
+.modal-body-form :deep(.botones-formulario) {
   justify-content: center;
   gap: 15px;
   margin-top: 30px;
 }
 
 /* Ocultar el botón "Volver al login" en el modal del admin */
-.modal-body-form ::v-deep .boton-secundario {
+.modal-body-form :deep(.boton-secundario) {
   display: none;
 }
 </style>

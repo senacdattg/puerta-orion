@@ -1031,7 +1031,7 @@ const getRolId = (rol) => {
 }
 
 /* Reducir el margen del TituloClub en el perfil */
-.perfil-page ::v-deep .titulo-club {
+.perfil-page :deep(.titulo-club) {
   margin-top: 10px;
   margin-bottom: 10px;
 }

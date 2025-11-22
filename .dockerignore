@@ -1,11 +1,67 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
 env/
 venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Archivos sensibles y configuración
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.jks
+secrets/
+.secrets
+
+# Control de versiones
 .git/
+.gitignore
+.gitattributes
+
+# IDEs y editores
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependencias y builds
 node_modules/
 dist/
-.idea/
-.DS_Store
+build/
+*.egg-info/
+
+# Logs y temporales
+*.log
+*.tmp
+*.temp
+logs/
+tmp/
+temp/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentación
+docs/_build/
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore

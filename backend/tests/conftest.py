@@ -14,7 +14,7 @@ Principios aplicados:
 import os
 import pytest
 from datetime import date, datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Generator
 from unittest.mock import Mock, patch, MagicMock
 
 from flask import Flask
@@ -29,6 +29,17 @@ sys.path.insert(0, str(backend_root))
 
 # NO importar db ni create_app aquí - se importarán en los fixtures después de limpiar env
 # Esto evita que se inicialicen con la configuración incorrecta de MySQL
+
+# ============================================================================
+# CONSTANTES PARA TESTS
+# ============================================================================
+
+# URI de base de datos SQLite en memoria para tests
+SQLITE_MEMORY_URI = 'sqlite:///:memory:'
+
+# Datos de prueba comunes
+TEST_PRIMER_NOMBRE = 'Juan'
+TEST_PRIMER_APELLIDO = 'Pérez'
 
 
 # ============================================================================
@@ -63,8 +74,58 @@ def clean_env_for_tests():
         os.environ[var] = value
 
 
+def _configurar_base_datos_testing(app: Flask) -> None:
+    """Configura la URI de base de datos para testing y recrea engines si es necesario."""
+    from src.models.base import db
+    
+    current_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    if current_uri != SQLITE_MEMORY_URI:
+        app.config['SQLALCHEMY_DATABASE_URI'] = SQLITE_MEMORY_URI
+        app.config['SQLALCHEMY_BINDS'] = {}
+        _limpiar_engines_cache(app, db)
+
+
+def _limpiar_engines_cache(app: Flask, db) -> None:
+    """Limpia el cache de engines de Flask-SQLAlchemy para forzar recreación."""
+    with app.app_context():
+        try:
+            if hasattr(db, '_app_engines') and app in db._app_engines:
+                engines_dict = db._app_engines[app]
+                for bind_key, engine in list(engines_dict.items()):
+                    if engine:
+                        engine.dispose()
+                engines_dict.clear()
+        except (AttributeError, KeyError, TypeError, ValueError):
+            pass
+
+
+def _asegurar_configuracion_base_datos(app: Flask) -> None:
+    """Asegura que la configuración de base de datos esté presente."""
+    app.config.setdefault('SQLALCHEMY_DATABASE_URI', SQLITE_MEMORY_URI)
+    app.config.setdefault('SQLALCHEMY_BINDS', {})
+
+
+def _inicializar_base_datos(app: Flask, db) -> None:
+    """Inicializa la base de datos creando las tablas."""
+    try:
+        _ = db.engine
+    except Exception:
+        _limpiar_engines_cache_alternativo(app, db)
+    db.create_all()
+
+
+def _limpiar_engines_cache_alternativo(app: Flask, db) -> None:
+    """Intenta limpiar el cache de engines como alternativa."""
+    try:
+        if hasattr(db, '_app_engines') and app in db._app_engines:
+            engines_dict = db._app_engines[app]
+            engines_dict.clear()
+    except (AttributeError, KeyError):
+        pass
+
+
 @pytest.fixture(scope='function')
-def app() -> Flask:
+def app() -> Generator[Flask, None, None]:
     """
     Crea una instancia de la aplicación Flask para testing.
     
@@ -83,55 +144,20 @@ def app() -> Flask:
     # Crear app con configuración de testing
     app = create_app('testing')
     app.config['TESTING'] = True
+    # NOTA DE SEGURIDAD: Deshabilitar CSRF solo en entorno de testing
+    # - Esta configuración es SOLO para el entorno de pruebas automatizadas
+    # - En producción, CSRF está habilitado por defecto en Flask-WTF
+    # - Es una práctica común deshabilitar CSRF en tests para simplificar las pruebas
+    # - Los tests no están expuestos a ataques CSRF reales ya que se ejecutan en un entorno controlado
+    # nosonar: S4502 - Deshabilitar protección CSRF (seguro en entorno de testing)
     app.config['WTF_CSRF_ENABLED'] = False  # Deshabilitar CSRF para tests
     
     # Verificar y forzar la URI correcta
-    # TestingConfig debería tenerla, pero la verificamos por seguridad
-    current_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-    if current_uri != 'sqlite:///:memory:':
-        # Si la URI no es correcta, la establecemos
-        # Pero Flask-SQLAlchemy ya creó los engines, así que necesitamos recrearlos
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
-        app.config['SQLALCHEMY_BINDS'] = {}
-        
-        # Forzar recreación de engines limpiando el cache
-        with app.app_context():
-            try:
-                if hasattr(db, '_app_engines') and app in db._app_engines:
-                    engines_dict = db._app_engines[app]
-                    # Descartar todos los engines
-                    for bind_key, engine in list(engines_dict.items()):
-                        if engine:
-                            engine.dispose()
-                    # Limpiar para forzar recreación
-                    engines_dict.clear()
-            except (AttributeError, KeyError, TypeError, ValueError):
-                pass
+    _configurar_base_datos_testing(app)
     
     with app.app_context():
-        # CRÍTICO: Asegurar que la configuración esté presente y correcta
-        # Flask-SQLAlchemy necesita esto para crear/recrear engines
-        app.config.setdefault('SQLALCHEMY_DATABASE_URI', 'sqlite:///:memory:')
-        app.config.setdefault('SQLALCHEMY_BINDS', {})
-        
-        # Si limpiamos el cache de engines, Flask-SQLAlchemy intentará recrearlos
-        # Necesitamos asegurarnos de que la configuración esté disponible
-        try:
-            # Intentar acceder al engine - esto forzará su creación si no existe
-            # Flask-SQLAlchemy leerá SQLALCHEMY_DATABASE_URI de app.config
-            _ = db.engine
-        except Exception:
-            # Si hay un error, puede ser que necesitemos recrear el engine
-            # Forzar recreación limpiando el cache nuevamente
-            try:
-                if hasattr(db, '_app_engines') and app in db._app_engines:
-                    engines_dict = db._app_engines[app]
-                    engines_dict.clear()
-            except (AttributeError, KeyError):
-                pass
-        
-        # Crear las tablas - esto forzará la creación del engine con la URI correcta
-        db.create_all()
+        _asegurar_configuracion_base_datos(app)
+        _inicializar_base_datos(app, db)
         yield app
         db.session.remove()
         db.drop_all()
@@ -172,9 +198,9 @@ def auth_headers(client: FlaskClient) -> Dict[str, str]:
 def sample_persona_data() -> Dict[str, Any]:
     """Datos de ejemplo para crear una persona."""
     return {
-        'primer_nombre': 'Juan',
+        'primer_nombre': TEST_PRIMER_NOMBRE,
         'segundo_nombre': 'Carlos',
-        'primer_apellido': 'Pérez',
+        'primer_apellido': TEST_PRIMER_APELLIDO,
         'segundo_apellido': 'García',
         'documento': 12345678,
         'correo_electronico': 'juan.perez@example.com',
@@ -231,19 +257,21 @@ def sample_evento_data() -> Dict[str, Any]:
 @pytest.fixture
 def sample_usuario_data() -> Dict[str, Any]:
     """Datos de ejemplo para crear un usuario."""
+    from tests.test_config import TEST_PASSWORD, TEST_USERNAME, TEST_EMAIL
+    
     return {
         'persona': {
             'primer_nombre': 'Test',
             'primer_apellido': 'User',
             'documento': 99999999,
-            'correo_electronico': 'test@example.com',
+            'correo_electronico': TEST_EMAIL,
             'telefono': '3009999999',
             'id_tipo_documento': 1,
             'id_sexo': 1
         },
         'usuario': {
-            'usuario': 'testuser',
-            'password': 'Test123456!'
+            'usuario': TEST_USERNAME,
+            'password': TEST_PASSWORD
         }
     }
 
@@ -322,8 +350,8 @@ def persona(db_session, tipo_documento, sexo):
     try:
         from src.models.personas.persona import Persona
         persona_obj = Persona(
-            primer_nombre='Juan',
-            primer_apellido='Pérez',
+            primer_nombre=TEST_PRIMER_NOMBRE,
+            primer_apellido=TEST_PRIMER_APELLIDO,
             documento=12345678,
             correo_electronico='juan@example.com',
             telefono='3001234567',
@@ -335,7 +363,7 @@ def persona(db_session, tipo_documento, sexo):
         db_session.commit()
         return persona_obj
     except Exception:
-        return MagicMock(id_persona=1, primer_nombre='Juan', primer_apellido='Pérez')
+        return MagicMock(id_persona=1, primer_nombre=TEST_PRIMER_NOMBRE, primer_apellido=TEST_PRIMER_APELLIDO)
 
 
 @pytest.fixture
@@ -344,10 +372,11 @@ def usuario(db_session, persona):
     try:
         from src.models.usuarios.usuario import Usuario
         from passlib.hash import bcrypt
+        from tests.test_config import TEST_USERNAME, TEST_PASSWORD
         
         usuario_obj = Usuario(
-            usuario='testuser',
-            password=bcrypt.hash('Test123456!'),
+            usuario=TEST_USERNAME,
+            password=bcrypt.hash(TEST_PASSWORD),
             id_persona=getattr(persona, 'id_persona', 1),
             estado=True
         )
@@ -355,7 +384,8 @@ def usuario(db_session, persona):
         db_session.commit()
         return usuario_obj
     except Exception:
-        return MagicMock(id_usuario=1, usuario='testuser')
+        from tests.test_config import TEST_USERNAME
+        return MagicMock(id_usuario=1, usuario=TEST_USERNAME)
 
 
 @pytest.fixture
@@ -398,7 +428,7 @@ def mock_get_current_user():
         'username': 'testuser',
         'persona': {
             'id_persona': 1,
-            'nombre_completo': 'Juan Pérez',
+            'nombre_completo': f'{TEST_PRIMER_NOMBRE} {TEST_PRIMER_APELLIDO}',
             'documento': 12345678
         },
         'roles': [{'nombre_rol': 'Deportista'}],

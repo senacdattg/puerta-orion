@@ -36,13 +36,14 @@ services:
       - ./backend/.env
     environment:
       FLASK_ENV: development
+      FLASK_RUN_RELOAD: "true"
       RUN_SEEDERS: "true"
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-123456}
       DB_NAME: ${DB_NAME:-puerta_orion}
-      CORS_ORIGINS: http://localhost:8080,http://frontend,http://frontend:80,http://frontend:8080
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8080,http://frontend,http://frontend:80,http://frontend:8080,http://frontend:5173
     ports:
       - "5000:5000"
     volumes:
@@ -62,23 +63,25 @@ services:
   frontend:
     build:
       context: ./frontend
+      target: development
     container_name: puerta_frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: auto
+      VITE_API_URL: http://localhost:5000
     ports:
-      - "8080:8080"
+      - "5173:5173"
     volumes:
       - ./frontend:/app
+      - /app/node_modules
     depends_on:
       backend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5173 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 30s
     networks:
       - app_network
 

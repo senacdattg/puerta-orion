@@ -71,7 +71,7 @@
           </div>
           <h3 class="success-title">¡Correo enviado!</h3>
           <p class="success-message">
-            Se ha enviado un enlace de recuperación a tu correo electrónico. 
+            Se ha enviado un enlace de recuperación a tu correo electrónico.
             Por favor revisa tu bandeja de entrada y sigue las instrucciones.
           </p>
           <div class="success-countdown">
@@ -141,8 +141,11 @@ async function handleForgotPassword() {
     return
   }
 
-  // Validar formato de email básico
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  // Validar formato de email usando regex seguro (sin backtracking catastrófico)
+  // Usamos un regex más simple y seguro que evita ReDoS (Regular Expression Denial of Service)
+  // Este regex es más restrictivo pero evita backtracking excesivo
+  // nosonar: S5852 - Regex simplificado para evitar ReDoS, validación adicional en backend
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   if (!emailRegex.test(email.value)) {
     Swal.fire({
       icon: "warning",

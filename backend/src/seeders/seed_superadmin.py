@@ -6,12 +6,16 @@ Este usuario es el administrador principal y tiene acceso total.
 
 Credenciales por defecto:
 - Usuario: superadmin
-- Contraseña: SuperAdmin2024!
+- Contraseña: Se obtiene de variable de entorno SEEDER_SUPERADMIN_PASSWORD
+              o usa 'SuperAdmin2024!' por defecto
 
 ⚠️ IMPORTANTE: Cambiar la contraseña después del primer login.
 
 Uso:
     python -m backend.src.seeders.seed_superadmin
+    
+    O con variable de entorno:
+    SEEDER_SUPERADMIN_PASSWORD=MiPasswordSegura python -m backend.src.seeders.seed_superadmin
 """
 
 from werkzeug.security import generate_password_hash
@@ -22,6 +26,7 @@ from src.models.roles_y_permisos.rol import Rol
 from src.models.roles_y_permisos.usuario_rol import UsuarioRol
 from src.models.catalogos.tipo_documento import TipoDocumento
 from src.models.categorias.sexo import Sexo
+from src.config.seeder_config import get_superadmin_password
 
 
 def run():
@@ -83,11 +88,14 @@ def run():
         db.session.add(persona_superadmin)
         db.session.flush()  # Para obtener el id_persona
         
+        # Obtener password desde configuración
+        superadmin_password = get_superadmin_password()
+        
         # Crear usuario super admin
         usuario_superadmin = Usuario(
             id_persona=persona_superadmin.id_persona,
             usuario='superadmin',
-            password=generate_password_hash('SuperAdmin2024!'),
+            password=generate_password_hash(superadmin_password),
             estado=True
         )
         
@@ -106,7 +114,7 @@ def run():
         print("     ✅ Super Administrador creado exitosamente")
         print(f"\n     🔑 CREDENCIALES DE ACCESO:")
         print(f"        Usuario: superadmin")
-        print(f"        Contraseña: SuperAdmin2024!")
+        print(f"        Contraseña: {superadmin_password}")
         print(f"        Rol: SuperAdmin")
         print(f"\n     ⚠️  IMPORTANTE: Cambia la contraseña después del primer login")
         
