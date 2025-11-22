@@ -8,12 +8,7 @@
             {{ appConfig.description }} desde {{ appConfig.founded }}
           </p>
           <div class="social-links">
-            <!--
-              SECURITY: URLs are validated at compile time (constants.js) and runtime (socialLinks computed).
-              All URLs are statically defined in constants.js and are NOT user inputs.
-              Bypassing Vue's sanitization is safe because URLs are validated multiple times.
-              NOSONAR: S6299 - URLs validated multiple times, not user input
-            -->
+            <!-- nosonar: S6299 - URLs validated multiple times, not user input, safe to bypass Vue sanitization -->
             <a
               v-for="social in socialLinks"
               :key="social.name"
