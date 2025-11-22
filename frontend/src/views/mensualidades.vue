@@ -1,5 +1,5 @@
 <script setup>
-import { defineOptions, ref, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import Encabezado from '../components/layout/encabezado.vue';
 import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
 import Pie from '../components/layout/pie.vue';

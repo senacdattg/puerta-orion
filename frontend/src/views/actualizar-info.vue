@@ -1376,7 +1376,7 @@ onMounted(async () => {
 }
 
 /* Hacer que el footer se salga del padding del main y se comporte como footer */
-.actualizar-info-page ::v-deep .footer-enhanced {
+.actualizar-info-page :deep(.footer-enhanced) {
   margin-left: -1rem;
   margin-right: -1rem;
   width: calc(100% + 2rem);
@@ -1568,7 +1568,7 @@ onMounted(async () => {
     padding-bottom: 0;
   }
 
-  .actualizar-info-page ::v-deep .footer-enhanced {
+  .actualizar-info-page :deep(.footer-enhanced) {
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     width: calc(100% + 1rem);

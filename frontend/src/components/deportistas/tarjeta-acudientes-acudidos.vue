@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { defineProps, ref, computed } from "vue";
+import { ref, computed } from "vue";
 import Swal from "sweetalert2";
 
 const props = defineProps({

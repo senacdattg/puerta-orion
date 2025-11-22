@@ -29,7 +29,7 @@
 
 <script setup>
 import { useRouter } from "vue-router"
-import { defineProps, ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
 
 const router = useRouter()
