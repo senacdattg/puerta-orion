@@ -38,7 +38,7 @@ Responsabilidad:
 Este módulo sigue los principios SRP, KISS, DRY, POO y SOLID.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from datetime import date, datetime
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import and_
@@ -52,6 +52,11 @@ from ..utils.logger import obtener_registrador
 from ..utils.validations import sanitize_free_text
 
 
+# Constants for error messages
+ERROR_DUPLICACION_DATOS = 'Error de duplicación de datos'
+ERROR_DEPORTISTA_NO_ENCONTRADO = 'Deportista no encontrado'
+
+
 class DeportistaService:
     """Servicio para gestión de deportistas con operaciones CRUD."""
 
@@ -59,6 +64,73 @@ class DeportistaService:
     def _obtener_logger():
         """Obtiene el logger configurado."""
         return obtener_registrador('aplicacion')
+
+    @staticmethod
+    def _validar_campos_requeridos(datos: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Valida que los campos requeridos estén presentes."""
+        campos_requeridos = ['id_persona', 'id_categoria']
+        campos_faltantes = [campo for campo in campos_requeridos if campo not in datos or datos[campo] is None]
+        
+        if campos_faltantes:
+            return {
+                'success': False,
+                'message': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_persona_existente(id_persona: int) -> Optional[Dict[str, Any]]:
+        """Valida que la persona existe."""
+        persona = Persona.query.filter_by(id_persona=id_persona).first()
+        if not persona:
+            return {
+                'success': False,
+                'message': 'La persona especificada no existe',
+                'status_code': 404
+            }
+        return None
+
+    @staticmethod
+    def _validar_deportista_no_existente(id_persona: int) -> Optional[Dict[str, Any]]:
+        """Valida que no existe ya un deportista para esa persona."""
+        deportista_existente = Deportista.query.filter_by(id_persona=id_persona).first()
+        if deportista_existente:
+            return {
+                'success': False,
+                'message': 'Ya existe un deportista para esta persona',
+                'status_code': 409
+            }
+        return None
+
+    @staticmethod
+    def _procesar_fecha_nacimiento(fecha_nacimiento_raw: Any) -> Tuple[Optional[date], Optional[Dict[str, Any]]]:
+        """Procesa y convierte la fecha de nacimiento a date."""
+        if not fecha_nacimiento_raw:
+            return None, None
+        
+        if isinstance(fecha_nacimiento_raw, date):
+            return fecha_nacimiento_raw, None
+        
+        if isinstance(fecha_nacimiento_raw, int):
+            return date(fecha_nacimiento_raw, 1, 1), None
+        
+        if isinstance(fecha_nacimiento_raw, str):
+            try:
+                return datetime.fromisoformat(fecha_nacimiento_raw).date(), None
+            except ValueError:
+                try:
+                    anio = int(fecha_nacimiento_raw)
+                    return date(anio, 1, 1), None
+                except ValueError:
+                    error = {
+                        'success': False,
+                        'message': f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}',
+                        'status_code': 400
+                    }
+                    return None, error
+        
+        return None, None
 
     @staticmethod
     def crear_deportista(datos: Dict[str, Any]) -> Dict[str, Any]:
@@ -86,67 +158,28 @@ class DeportistaService:
         logger = DeportistaService._obtener_logger()
         
         try:
-            # Validar datos requeridos
-            campos_requeridos = ['id_persona', 'id_categoria']
-            campos_faltantes = [campo for campo in campos_requeridos if campo not in datos or datos[campo] is None]
-            
-            if campos_faltantes:
-                return {
-                    'success': False,
-                    'message': f'Campos requeridos faltantes: {", ".join(campos_faltantes)}',
-                    'status_code': 400
-                }
+            error_validacion = DeportistaService._validar_campos_requeridos(datos)
+            if error_validacion:
+                return error_validacion
 
-            # Verificar que la persona existe
-            persona = Persona.query.filter_by(id_persona=datos['id_persona']).first()
-            if not persona:
-                return {
-                    'success': False,
-                    'message': 'La persona especificada no existe',
-                    'status_code': 404
-                }
+            error_persona = DeportistaService._validar_persona_existente(datos['id_persona'])
+            if error_persona:
+                return error_persona
 
-            # Verificar que no existe ya un deportista para esa persona
-            deportista_existente = Deportista.query.filter_by(id_persona=datos['id_persona']).first()
-            if deportista_existente:
-                return {
-                    'success': False,
-                    'message': 'Ya existe un deportista para esta persona',
-                    'status_code': 409
-                }
+            error_deportista = DeportistaService._validar_deportista_no_existente(datos['id_persona'])
+            if error_deportista:
+                return error_deportista
 
-            # Procesar fecha de nacimiento - convertir string a date si es necesario
-            fecha_nacimiento_date = None
-            fecha_nacimiento_raw = datos.get('fecha_nacimiento')
-            
-            if fecha_nacimiento_raw:
-                if isinstance(fecha_nacimiento_raw, str):
-                    # Intentar parsear fecha ISO (YYYY-MM-DD)
-                    try:
-                        fecha_nacimiento_date = datetime.fromisoformat(fecha_nacimiento_raw).date()
-                    except ValueError:
-                        # Si falla, tratar como año solo (compatibilidad)
-                        try:
-                            año = int(fecha_nacimiento_raw)
-                            fecha_nacimiento_date = date(año, 1, 1)
-                        except ValueError:
-                            return {
-                                'success': False,
-                                'message': f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}',
-                                'status_code': 400
-                            }
-                elif isinstance(fecha_nacimiento_raw, int):
-                    # Compatibilidad con años antiguos
-                    fecha_nacimiento_date = date(fecha_nacimiento_raw, 1, 1)
-                elif isinstance(fecha_nacimiento_raw, date):
-                    fecha_nacimiento_date = fecha_nacimiento_raw
-            
-            # Crear instancia de deportista
-            # La fecha de ingreso se asigna automáticamente a la fecha actual
+            fecha_nacimiento_date, error_fecha = DeportistaService._procesar_fecha_nacimiento(
+                datos.get('fecha_nacimiento')
+            )
+            if error_fecha:
+                return error_fecha
+
             deportista = Deportista(
                 id_persona=datos['id_persona'],
                 id_categoria=datos['id_categoria'],
-                fecha_ingreso=datos.get('fecha_ingreso', date.today()),  # Automática por defecto
+                fecha_ingreso=datos.get('fecha_ingreso', date.today()),
                 peso=datos.get('peso'),
                 altura=datos.get('altura'),
                 fecha_nacimiento=fecha_nacimiento_date,
@@ -173,7 +206,7 @@ class DeportistaService:
             logger.error(f'Error de integridad al crear deportista: {str(e)}')
             return {
                 'success': False,
-                'message': 'Error de duplicación de datos',
+                'message': ERROR_DUPLICACION_DATOS,
                 'status_code': 409
             }
         except Exception as e:
@@ -204,7 +237,7 @@ class DeportistaService:
             if not deportista:
                 return {
                     'success': False,
-                    'message': 'Deportista no encontrado',
+                    'message': ERROR_DEPORTISTA_NO_ENCONTRADO,
                     'status_code': 404
                 }
 
@@ -338,7 +371,7 @@ class DeportistaService:
             if not deportista:
                 return {
                     'success': False,
-                    'message': 'Deportista no encontrado',
+                    'message': ERROR_DEPORTISTA_NO_ENCONTRADO,
                     'status_code': 404
                 }
 
@@ -369,7 +402,7 @@ class DeportistaService:
             logger.error(f'Error de integridad al actualizar deportista: {str(e)}')
             return {
                 'success': False,
-                'message': 'Error de duplicación de datos',
+                'message': ERROR_DUPLICACION_DATOS,
                 'status_code': 409
             }
         except Exception as e:
@@ -380,6 +413,449 @@ class DeportistaService:
                 'message': f'Error al actualizar deportista: {str(e)}',
                 'status_code': 500
             }
+
+    @staticmethod
+    def _validar_datos_entrada(datos_deportista: Optional[Dict[str, Any]], datos_informacion_deportiva: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Valida que se proporcione al menos una sección de datos."""
+        if not datos_deportista and not datos_informacion_deportiva:
+            return {
+                'success': False,
+                'message': 'Debe proporcionar al menos datos_deportista o datos_informacion_deportiva',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _extraer_roles_usuario(usuario_actual: Dict[str, Any]) -> List[str]:
+        """Extrae los nombres de roles del usuario."""
+        roles_usuario = []
+        if 'roles' in usuario_actual and usuario_actual['roles']:
+            for rol in usuario_actual['roles']:
+                if isinstance(rol, dict):
+                    nombre_rol = rol.get('nombre_rol', '') or rol.get('nombre', '') or str(rol)
+                    if nombre_rol:
+                        roles_usuario.append(nombre_rol)
+                elif hasattr(rol, 'nombre_rol'):
+                    roles_usuario.append(rol.nombre_rol)
+                elif isinstance(rol, str):
+                    roles_usuario.append(rol)
+        return roles_usuario
+
+    @staticmethod
+    def _validar_permisos_campos_restrictos(
+        datos_deportista: Dict[str, Any],
+        usuario_actual: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        """Valida permisos para actualizar campos restrictos (peso, altura)."""
+        campos_restrictos = ['peso', 'altura']
+        campos_intentados = [campo for campo in campos_restrictos if campo in datos_deportista]
+        
+        if not campos_intentados or not usuario_actual:
+            return None
+        
+        roles_usuario = DeportistaService._extraer_roles_usuario(usuario_actual)
+        roles_permitidos = ['Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin']
+        tiene_permiso = any(rol in roles_permitidos for rol in roles_usuario)
+        
+        if not tiene_permiso:
+            return {
+                'success': False,
+                'message': f'No tiene permisos para actualizar los campos: {", ".join(campos_intentados)}. Solo Acudiente, Entrenador y Administrador pueden modificar peso y altura.',
+                'status_code': 403
+            }
+        return None
+
+    @staticmethod
+    def _validar_id_categoria(id_categoria: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que la categoría existe."""
+        if id_categoria is None:
+            return None
+        from ..models.categorias.categoria import Categoria
+        categoria = Categoria.query.filter_by(id_categoria=id_categoria).first()
+        if not categoria:
+            return {
+                'success': False,
+                'message': 'La categoría especificada no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_id_tipo_sanguineo(id_tipo_sanguineo: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que el tipo sanguíneo existe."""
+        if id_tipo_sanguineo is None:
+            return None
+        from ..models.categorias.grupo_sanguineo import GrupoSanguineo
+        tipo_sangre = GrupoSanguineo.query.filter_by(id_tipo_sangre=id_tipo_sanguineo).first()
+        if not tipo_sangre:
+            return {
+                'success': False,
+                'message': 'El tipo sanguíneo especificado no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_id_ciudad_residencia(id_ciudad: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que la ciudad de residencia existe."""
+        if id_ciudad is None:
+            return None
+        from ..models.categorias.ciudad_residencia import CiudadResidencia
+        ciudad = CiudadResidencia.query.filter_by(id_ciudad=id_ciudad).first()
+        if not ciudad:
+            return {
+                'success': False,
+                'message': 'La ciudad de residencia especificada no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_id_eps(id_eps: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que la EPS existe."""
+        if id_eps is None:
+            return None
+        from ..models.catalogos.eps import EPS
+        eps = EPS.query.filter_by(id_eps=id_eps).first()
+        if not eps:
+            return {
+                'success': False,
+                'message': 'La EPS especificada no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_ids_deportista(datos_deportista: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Valida todos los IDs relacionados del deportista."""
+        error = DeportistaService._validar_id_categoria(datos_deportista.get('id_categoria'))
+        if error:
+            return error
+        
+        error = DeportistaService._validar_id_tipo_sanguineo(datos_deportista.get('id_tipo_sanguineo'))
+        if error:
+            return error
+        
+        error = DeportistaService._validar_id_ciudad_residencia(datos_deportista.get('id_ciudad_recidencia'))
+        if error:
+            return error
+        
+        error = DeportistaService._validar_id_eps(datos_deportista.get('id_eps'))
+        if error:
+            return error
+        
+        return None
+
+    @staticmethod
+    def _convertir_fecha_string(valor: str, nombre_campo: str) -> Tuple[Optional[date], Optional[Dict[str, Any]]]:
+        """Convierte una fecha desde string a date."""
+        try:
+            return datetime.fromisoformat(valor).date(), None
+        except ValueError:
+            error = {
+                'success': False,
+                'message': f'Formato de {nombre_campo} inválido. Use YYYY-MM-DD',
+                'status_code': 400
+            }
+            return None, error
+
+    @staticmethod
+    def _validar_edad_minima(fecha_nacimiento: date) -> Optional[Dict[str, Any]]:
+        """Valida que el deportista tenga mínimo 5 años de edad."""
+        hoy = date.today()
+        edad = hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+        
+        if edad < 5:
+            return {
+                'success': False,
+                'message': 'El deportista debe tener mínimo 5 años de edad. La edad mínima de la categoría Pre-infantil es 5 años.',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _procesar_campo_fecha(campo: str, valor: Any) -> Tuple[Optional[date], Optional[Dict[str, Any]]]:
+        """Procesa y valida un campo de fecha."""
+        if campo == 'fecha_nacimiento' and isinstance(valor, str):
+            fecha_date, error = DeportistaService._convertir_fecha_string(valor, 'fecha_nacimiento')
+            if error:
+                return None, error
+            error_edad = DeportistaService._validar_edad_minima(fecha_date)
+            if error_edad:
+                return None, error_edad
+            return fecha_date, None
+        
+        if campo == 'fecha_ingreso' and isinstance(valor, str):
+            return DeportistaService._convertir_fecha_string(valor, 'fecha_ingreso')
+        
+        return valor, None
+
+    @staticmethod
+    def _actualizar_campos_deportista(deportista: Deportista, datos_deportista: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Actualiza los campos del deportista."""
+        campos_deportista_actualizables = [
+            'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
+            'id_tipo_sanguineo', 'id_ciudad_recidencia',
+            'id_informacion_deportiva', 'id_eps', 'id_categoria'
+        ]
+        
+        for campo in campos_deportista_actualizables:
+            if campo in datos_deportista:
+                valor = datos_deportista[campo]
+                
+                if campo in ['fecha_nacimiento', 'fecha_ingreso']:
+                    valor_procesado, error = DeportistaService._procesar_campo_fecha(campo, valor)
+                    if error:
+                        return error
+                    valor = valor_procesado
+                
+                setattr(deportista, campo, valor)
+        
+        return None
+
+    @staticmethod
+    def _obtener_o_crear_info_deportiva(deportista: Deportista, datos_informacion_deportiva: Dict[str, Any]) -> InformacionDeportiva:
+        """Obtiene o crea información deportiva."""
+        if deportista.id_informacion_deportiva:
+            info_deportiva = InformacionDeportiva.query.filter_by(
+                id_informacion_deportiva=deportista.id_informacion_deportiva
+            ).first()
+            if info_deportiva:
+                return info_deportiva
+        
+        recomendacion_medica = datos_informacion_deportiva.get('recomendacion_medica', False)
+        descripcion_recomendacion = None
+        if recomendacion_medica:
+            descripcion_recomendacion = sanitize_free_text(
+                'descripcion_recomendacion',
+                datos_informacion_deportiva.get('descripcion_recomendacion'),
+                max_length=500
+            )
+
+        info_deportiva = InformacionDeportiva(
+            id_persona=deportista.id_persona,
+            practica_otro_deporte=datos_informacion_deportiva.get('practica_otro_deporte', False),
+            participa_escuela=datos_informacion_deportiva.get('participa_escuela', False),
+            recomendacion_medica=recomendacion_medica,
+            descripcion_recomendacion=descripcion_recomendacion,
+            id_escuela=datos_informacion_deportiva.get('id_escuela'),
+            id_deporte=datos_informacion_deportiva.get('id_deporte'),
+            id_institucion_registro=datos_informacion_deportiva.get('id_institucion_registro')
+        )
+        db.session.add(info_deportiva)
+        db.session.flush()
+        deportista.id_informacion_deportiva = info_deportiva.id_informacion_deportiva
+        return info_deportiva
+
+    @staticmethod
+    def _validar_id_escuela(id_escuela: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que la escuela existe."""
+        if id_escuela is None:
+            return None
+        from ..models.categorias.escuela import Escuela
+        escuela = Escuela.query.filter_by(id_escuela=id_escuela).first()
+        if not escuela:
+            return {
+                'success': False,
+                'message': 'La escuela especificada no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_id_deporte(id_deporte: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que el deporte existe."""
+        if id_deporte is None:
+            return None
+        from ..models.categorias.deporte import Deporte
+        deporte = Deporte.query.filter_by(id_deporte=id_deporte).first()
+        if not deporte:
+            return {
+                'success': False,
+                'message': 'El deporte especificado no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_id_institucion_registro(id_institucion: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que la institución de registro existe."""
+        if id_institucion is None:
+            return None
+        from ..models.categorias.institucion_registro import InstitucionRegistro
+        institucion = InstitucionRegistro.query.filter_by(id_institucion=id_institucion).first()
+        if not institucion:
+            return {
+                'success': False,
+                'message': 'La institución de registro especificada no existe',
+                'status_code': 400
+            }
+        return None
+
+    @staticmethod
+    def _validar_ids_info_deportiva(datos_informacion_deportiva: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Valida todos los IDs relacionados de información deportiva."""
+        error = DeportistaService._validar_id_escuela(datos_informacion_deportiva.get('id_escuela'))
+        if error:
+            return error
+        
+        error = DeportistaService._validar_id_deporte(datos_informacion_deportiva.get('id_deporte'))
+        if error:
+            return error
+        
+        error = DeportistaService._validar_id_institucion_registro(datos_informacion_deportiva.get('id_institucion_registro'))
+        if error:
+            return error
+        
+        return None
+
+    @staticmethod
+    def _actualizar_info_deportiva(info_deportiva: InformacionDeportiva, datos_informacion_deportiva: Dict[str, Any]) -> None:
+        """Actualiza los campos de información deportiva."""
+        campos_info_deportiva = [
+            'practica_otro_deporte', 'participa_escuela', 'recomendacion_medica',
+            'descripcion_recomendacion', 'id_escuela', 'id_deporte', 'id_institucion_registro'
+        ]
+        
+        for campo in campos_info_deportiva:
+            if campo in datos_informacion_deportiva:
+                valor = datos_informacion_deportiva[campo]
+
+                if campo == 'descripcion_recomendacion':
+                    recom_med = datos_informacion_deportiva.get(
+                        'recomendacion_medica', info_deportiva.recomendacion_medica
+                    )
+                    if not recom_med:
+                        valor = None
+                    elif valor:
+                        valor = sanitize_free_text('descripcion_recomendacion', valor, max_length=500)
+
+                setattr(info_deportiva, campo, valor)
+
+        if 'recomendacion_medica' in datos_informacion_deportiva and not datos_informacion_deportiva['recomendacion_medica']:
+            info_deportiva.descripcion_recomendacion = None
+
+    @staticmethod
+    def _validar_diagnosticos(diagnosticos: List[int], tipo_enfermedad: Optional[int]) -> Optional[Dict[str, Any]]:
+        """Valida que los diagnósticos existen y corresponden al tipo de enfermedad."""
+        if not tipo_enfermedad:
+            return None
+        
+        from ..models.salud.diagnostico import Diagnostico
+        for id_diagnostico in diagnosticos:
+            diagnostico = Diagnostico.query.filter_by(id_diagnostico=id_diagnostico).first()
+            if not diagnostico:
+                return {
+                    'success': False,
+                    'message': f'El diagnóstico con ID {id_diagnostico} no existe',
+                    'status_code': 400
+                }
+            if diagnostico.id_tipo_enfermedad != tipo_enfermedad:
+                return {
+                    'success': False,
+                    'message': f'El diagnóstico con ID {id_diagnostico} no corresponde al tipo de enfermedad seleccionado',
+                    'status_code': 400
+                }
+        return None
+
+    @staticmethod
+    def _actualizar_diagnosticos(id_deportista: int, diagnosticos: Optional[List[int]], tipo_enfermedad: Optional[int], logger) -> Optional[Dict[str, Any]]:
+        """Actualiza los diagnósticos del deportista."""
+        if tipo_enfermedad is None and diagnosticos is None:
+            return None
+        
+        from ..models.salud.diagnostico_deportista import DiagnosticoDeportista
+        from ..models.salud.diagnostico import Diagnostico
+        from datetime import date
+        
+        DiagnosticoDeportista.query.filter_by(id_deportista=id_deportista).delete()
+        
+        if diagnosticos and len(diagnosticos) > 0:
+            error = DeportistaService._validar_diagnosticos(diagnosticos, tipo_enfermedad)
+            if error:
+                return error
+            
+            for id_diagnostico in diagnosticos:
+                diagnostico_deportista = DiagnosticoDeportista(
+                    id_deportista=id_deportista,
+                    id_diagnostico=id_diagnostico,
+                    fecha=date.today()
+                )
+                db.session.add(diagnostico_deportista)
+            logger.info(f'{len(diagnosticos)} diagnóstico(s) actualizados para el deportista {id_deportista}')
+        
+        return None
+
+    @staticmethod
+    def _construir_respuesta_actualizacion(deportista: Deportista) -> Dict[str, Any]:
+        """Construye la respuesta con los datos actualizados del deportista."""
+        respuesta = deportista.to_dict()
+        if deportista.persona:
+            respuesta['persona'] = deportista.persona.to_dict()
+        if deportista.informacion_deportiva:
+            respuesta['informacion_deportiva'] = deportista.informacion_deportiva.to_dict()
+        return respuesta
+
+    @staticmethod
+    def _procesar_actualizacion_deportista(
+        deportista: Deportista,
+        datos_deportista: Optional[Dict[str, Any]],
+        usuario_actual: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        """Procesa la actualización de campos del deportista."""
+        if not datos_deportista:
+            return None
+        
+        error_permisos = DeportistaService._validar_permisos_campos_restrictos(datos_deportista, usuario_actual)
+        if error_permisos:
+            return error_permisos
+        
+        error_ids = DeportistaService._validar_ids_deportista(datos_deportista)
+        if error_ids:
+            return error_ids
+        
+        return DeportistaService._actualizar_campos_deportista(deportista, datos_deportista)
+
+    @staticmethod
+    def _procesar_actualizacion_info_deportiva(
+        deportista: Deportista,
+        datos_informacion_deportiva: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
+        """Procesa la actualización de información deportiva."""
+        if not datos_informacion_deportiva:
+            return None
+        
+        info_deportiva = DeportistaService._obtener_o_crear_info_deportiva(deportista, datos_informacion_deportiva)
+        
+        if deportista.id_informacion_deportiva:
+            error_ids = DeportistaService._validar_ids_info_deportiva(datos_informacion_deportiva)
+            if error_ids:
+                return error_ids
+            DeportistaService._actualizar_info_deportiva(info_deportiva, datos_informacion_deportiva)
+        
+        return None
+
+    @staticmethod
+    def _ejecutar_actualizaciones(
+        deportista: Deportista,
+        datos_deportista: Optional[Dict[str, Any]],
+        datos_informacion_deportiva: Optional[Dict[str, Any]],
+        usuario_actual: Optional[Dict[str, Any]],
+        id_deportista: int,
+        diagnosticos: Optional[List[int]],
+        tipo_enfermedad: Optional[int],
+        logger
+    ) -> Optional[Dict[str, Any]]:
+        """Ejecuta todas las actualizaciones necesarias."""
+        error_deportista = DeportistaService._procesar_actualizacion_deportista(deportista, datos_deportista, usuario_actual)
+        if error_deportista:
+            return error_deportista
+        
+        error_info = DeportistaService._procesar_actualizacion_info_deportiva(deportista, datos_informacion_deportiva)
+        if error_info:
+            return error_info
+        
+        return DeportistaService._actualizar_diagnosticos(id_deportista, diagnosticos, tipo_enfermedad, logger)
 
     @staticmethod
     def actualizar_deportista_completo(
@@ -411,301 +887,29 @@ class DeportistaService:
         logger = DeportistaService._obtener_logger()
         
         try:
-            # Validar que se proporcione al menos una sección de datos
-            if not datos_deportista and not datos_informacion_deportiva:
-                return {
-                    'success': False,
-                    'message': 'Debe proporcionar al menos datos_deportista o datos_informacion_deportiva',
-                    'status_code': 400
-                }
+            error_validacion = DeportistaService._validar_datos_entrada(datos_deportista, datos_informacion_deportiva)
+            if error_validacion:
+                return error_validacion
             
-            # Obtener el deportista
             deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
-            
             if not deportista:
                 return {
                     'success': False,
-                    'message': 'Deportista no encontrado',
+                    'message': ERROR_DEPORTISTA_NO_ENCONTRADO,
                     'status_code': 404
                 }
             
-            # Actualizar campos del deportista
-            if datos_deportista:
-                # Validar permisos para actualizar peso y altura (solo Entrenador y Administrador)
-                campos_restrictos = ['peso', 'altura']
-                campos_intentados = [campo for campo in campos_restrictos if campo in datos_deportista]
-                
-                if campos_intentados and usuario_actual:
-                    # Obtener roles del usuario
-                    roles_usuario = []
-                    if 'roles' in usuario_actual and usuario_actual['roles']:
-                        # Extraer nombres de roles desde el diccionario
-                        for rol in usuario_actual['roles']:
-                            if isinstance(rol, dict):
-                                nombre_rol = rol.get('nombre_rol', '') or rol.get('nombre', '') or str(rol)
-                                if nombre_rol:
-                                    roles_usuario.append(nombre_rol)
-                            elif hasattr(rol, 'nombre_rol'):
-                                roles_usuario.append(rol.nombre_rol)
-                            elif isinstance(rol, str):
-                                roles_usuario.append(rol)
-                    
-                    # Roles permitidos para actualizar peso y altura
-                    roles_permitidos = ['Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin']
-                    tiene_permiso = any(rol in roles_permitidos for rol in roles_usuario)
-                    
-                    if not tiene_permiso:
-                        return {
-                            'success': False,
-                            'message': f'No tiene permisos para actualizar los campos: {", ".join(campos_intentados)}. Solo Acudiente, Entrenador y Administrador pueden modificar peso y altura.',
-                            'status_code': 403
-                        }
-                
-                # Validar IDs relacionados si se proporcionan
-                from ..models.categorias.grupo_sanguineo import GrupoSanguineo
-                from ..models.categorias.ciudad_residencia import CiudadResidencia
-                from ..models.catalogos.eps import EPS
-                from ..models.categorias.categoria import Categoria
-                from ..models.pagos.mensualidad import Mensualidad
-                
-                # Validar categoría
-                if 'id_categoria' in datos_deportista and datos_deportista['id_categoria'] is not None:
-                    categoria = Categoria.query.filter_by(id_categoria=datos_deportista['id_categoria']).first()
-                    if not categoria:
-                        return {
-                            'success': False,
-                            'message': 'La categoría especificada no existe',
-                            'status_code': 400
-                        }
-                
-                # Validar tipo sanguíneo
-                if 'id_tipo_sanguineo' in datos_deportista and datos_deportista['id_tipo_sanguineo'] is not None:
-                    tipo_sangre = GrupoSanguineo.query.filter_by(id_tipo_sangre=datos_deportista['id_tipo_sanguineo']).first()
-                    if not tipo_sangre:
-                        return {
-                            'success': False,
-                            'message': 'El tipo sanguíneo especificado no existe',
-                            'status_code': 400
-                        }
-                
-                # Validar ciudad de residencia
-                if 'id_ciudad_recidencia' in datos_deportista and datos_deportista['id_ciudad_recidencia'] is not None:
-                    ciudad = CiudadResidencia.query.filter_by(id_ciudad=datos_deportista['id_ciudad_recidencia']).first()
-                    if not ciudad:
-                        return {
-                            'success': False,
-                            'message': 'La ciudad de residencia especificada no existe',
-                            'status_code': 400
-                        }
-                
-                # Validar EPS
-                if 'id_eps' in datos_deportista and datos_deportista['id_eps'] is not None:
-                    eps = EPS.query.filter_by(id_eps=datos_deportista['id_eps']).first()
-                    if not eps:
-                        return {
-                            'success': False,
-                            'message': 'La EPS especificada no existe',
-                            'status_code': 400
-                        }
-                
-                # Campos actualizables del deportista
-                campos_deportista_actualizables = [
-                    'peso', 'altura', 'fecha_ingreso', 'fecha_nacimiento',
-                    'id_tipo_sanguineo', 'id_ciudad_recidencia',
-                    'id_informacion_deportiva', 'id_eps', 'id_categoria'
-                ]
-                
-                for campo in campos_deportista_actualizables:
-                    if campo in datos_deportista:
-                        valor = datos_deportista[campo]
-                        # Convertir fecha_nacimiento si viene como string
-                        if campo == 'fecha_nacimiento' and isinstance(valor, str):
-                            try:
-                                valor = datetime.fromisoformat(valor).date()
-                            except ValueError:
-                                return {
-                                    'success': False,
-                                    'message': 'Formato de fecha_nacimiento inválido. Use YYYY-MM-DD',
-                                    'status_code': 400
-                                }
-                        
-                        # Validar edad mínima (5 años) si se está actualizando fecha_nacimiento
-                        if campo == 'fecha_nacimiento' and valor:
-                            fecha_nacimiento_date = valor if isinstance(valor, date) else datetime.fromisoformat(str(valor)).date()
-                            hoy = date.today()
-                            edad = hoy.year - fecha_nacimiento_date.year - ((hoy.month, hoy.day) < (fecha_nacimiento_date.month, fecha_nacimiento_date.day))
-                            
-                            if edad < 5:
-                                return {
-                                    'success': False,
-                                    'message': 'El deportista debe tener mínimo 5 años de edad. La edad mínima de la categoría Pre-infantil es 5 años.',
-                                    'status_code': 400
-                                }
-                        
-                        # Convertir fecha_ingreso si viene como string
-                        if campo == 'fecha_ingreso' and isinstance(valor, str):
-                            try:
-                                valor = datetime.fromisoformat(valor).date()
-                            except ValueError:
-                                return {
-                                    'success': False,
-                                    'message': 'Formato de fecha_ingreso inválido. Use YYYY-MM-DD',
-                                    'status_code': 400
-                                }
-                        setattr(deportista, campo, valor)
+            error_actualizacion = DeportistaService._ejecutar_actualizaciones(
+                deportista, datos_deportista, datos_informacion_deportiva,
+                usuario_actual, id_deportista, diagnosticos, tipo_enfermedad, logger
+            )
+            if error_actualizacion:
+                return error_actualizacion
             
-            # Actualizar campos de información deportiva
-            if datos_informacion_deportiva:
-                # Obtener o crear información deportiva
-                if deportista.id_informacion_deportiva:
-                    info_deportiva = InformacionDeportiva.query.filter_by(
-                        id_informacion_deportiva=deportista.id_informacion_deportiva
-                    ).first()
-                    if not info_deportiva:
-                        # Si el ID existe pero no se encuentra el registro, crear uno nuevo
-                        info_deportiva = None
-                else:
-                    info_deportiva = None
-                
-                if not info_deportiva:
-                    # Crear nueva información deportiva
-                    recomendacion_medica = datos_informacion_deportiva.get('recomendacion_medica', False)
-                    descripcion_recomendacion = None
-                    if recomendacion_medica:
-                        descripcion_recomendacion = sanitize_free_text(
-                            'descripcion_recomendacion',
-                            datos_informacion_deportiva.get('descripcion_recomendacion'),
-                            max_length=500
-                        )
-
-                    info_deportiva = InformacionDeportiva(
-                        id_persona=deportista.id_persona,
-                        practica_otro_deporte=datos_informacion_deportiva.get('practica_otro_deporte', False),
-                        participa_escuela=datos_informacion_deportiva.get('participa_escuela', False),
-                        recomendacion_medica=recomendacion_medica,
-                        descripcion_recomendacion=descripcion_recomendacion,
-                        id_escuela=datos_informacion_deportiva.get('id_escuela'),
-                        id_deporte=datos_informacion_deportiva.get('id_deporte'),
-                        id_institucion_registro=datos_informacion_deportiva.get('id_institucion_registro')
-                    )
-                    db.session.add(info_deportiva)
-                    db.session.flush()  # Para obtener el ID
-                    deportista.id_informacion_deportiva = info_deportiva.id_informacion_deportiva
-                else:
-                    # Validar IDs relacionados si se proporcionan
-                    from ..models.categorias.escuela import Escuela
-                    from ..models.categorias.deporte import Deporte
-                    from ..models.categorias.institucion_registro import InstitucionRegistro
-                    
-                    # Validar escuela
-                    if 'id_escuela' in datos_informacion_deportiva and datos_informacion_deportiva['id_escuela'] is not None:
-                        escuela = Escuela.query.filter_by(id_escuela=datos_informacion_deportiva['id_escuela']).first()
-                        if not escuela:
-                            return {
-                                'success': False,
-                                'message': 'La escuela especificada no existe',
-                                'status_code': 400
-                            }
-                    
-                    # Validar deporte
-                    if 'id_deporte' in datos_informacion_deportiva and datos_informacion_deportiva['id_deporte'] is not None:
-                        deporte = Deporte.query.filter_by(id_deporte=datos_informacion_deportiva['id_deporte']).first()
-                        if not deporte:
-                            return {
-                                'success': False,
-                                'message': 'El deporte especificado no existe',
-                                'status_code': 400
-                            }
-                    
-                    # Validar institución de registro
-                    if 'id_institucion_registro' in datos_informacion_deportiva and datos_informacion_deportiva['id_institucion_registro'] is not None:
-                        institucion = InstitucionRegistro.query.filter_by(
-                            id_institucion=datos_informacion_deportiva['id_institucion_registro']
-                        ).first()
-                        if not institucion:
-                            return {
-                                'success': False,
-                                'message': 'La institución de registro especificada no existe',
-                                'status_code': 400
-                            }
-                    
-                    # Campos actualizables de información deportiva
-                    campos_info_deportiva = [
-                        'practica_otro_deporte', 'participa_escuela', 'recomendacion_medica',
-                        'descripcion_recomendacion', 'id_escuela', 'id_deporte', 'id_institucion_registro'
-                    ]
-                    
-                    for campo in campos_info_deportiva:
-                        if campo in datos_informacion_deportiva:
-                            valor = datos_informacion_deportiva[campo]
-
-                            if campo == 'descripcion_recomendacion':
-                                recom_med = datos_informacion_deportiva.get(
-                                    'recomendacion_medica', info_deportiva.recomendacion_medica
-                                )
-                                if not recom_med:
-                                    valor = None
-                                elif valor:
-                                    valor = sanitize_free_text('descripcion_recomendacion', valor, max_length=500)
-
-                            setattr(info_deportiva, campo, valor)
-
-                    if 'recomendacion_medica' in datos_informacion_deportiva and not datos_informacion_deportiva['recomendacion_medica']:
-                        info_deportiva.descripcion_recomendacion = None
-            
-            # Actualizar diagnósticos si se proporcionan
-            if tipo_enfermedad is not None or diagnosticos is not None:
-                from ..models.salud.diagnostico_deportista import DiagnosticoDeportista
-                from ..models.salud.diagnostico import Diagnostico
-                
-                # Eliminar diagnósticos existentes del deportista
-                DiagnosticoDeportista.query.filter_by(id_deportista=id_deportista).delete()
-                
-                # Si se proporcionan nuevos diagnósticos, validar y agregar
-                if diagnosticos and len(diagnosticos) > 0:
-                    # Validar tipo de enfermedad si se proporciona
-                    if tipo_enfermedad:
-                        # Validar que los diagnósticos pertenecen al tipo de enfermedad seleccionado
-                        for id_diagnostico in diagnosticos:
-                            diagnostico = Diagnostico.query.filter_by(id_diagnostico=id_diagnostico).first()
-                            if not diagnostico:
-                                db.session.rollback()
-                                return {
-                                    'success': False,
-                                    'message': f'El diagnóstico con ID {id_diagnostico} no existe',
-                                    'status_code': 400
-                                }
-                            if diagnostico.id_tipo_enfermedad != tipo_enfermedad:
-                                db.session.rollback()
-                                return {
-                                    'success': False,
-                                    'message': f'El diagnóstico con ID {id_diagnostico} no corresponde al tipo de enfermedad seleccionado',
-                                    'status_code': 400
-                                }
-                    
-                    # Agregar nuevos diagnósticos
-                    from datetime import date
-                    for id_diagnostico in diagnosticos:
-                        diagnostico_deportista = DiagnosticoDeportista(
-                            id_deportista=id_deportista,
-                            id_diagnostico=id_diagnostico,
-                            fecha=date.today()
-                        )
-                        db.session.add(diagnostico_deportista)
-                    logger.info(f'{len(diagnosticos)} diagnóstico(s) actualizados para el deportista {id_deportista}')
-            
-            # Confirmar todos los cambios
             db.session.commit()
-            
             logger.info(f'Deportista actualizado completamente: ID {id_deportista}')
             
-            # Construir respuesta con datos actualizados
-            respuesta = deportista.to_dict()
-            if deportista.persona:
-                respuesta['persona'] = deportista.persona.to_dict()
-            if deportista.informacion_deportiva:
-                respuesta['informacion_deportiva'] = deportista.informacion_deportiva.to_dict()
-            
+            respuesta = DeportistaService._construir_respuesta_actualizacion(deportista)
             return {
                 'success': True,
                 'message': 'Deportista actualizado exitosamente',
@@ -718,7 +922,7 @@ class DeportistaService:
             logger.error(f'Error de integridad al actualizar deportista completo: {str(e)}')
             return {
                 'success': False,
-                'message': 'Error de duplicación de datos',
+                'message': ERROR_DUPLICACION_DATOS,
                 'status_code': 409
             }
         except Exception as e:

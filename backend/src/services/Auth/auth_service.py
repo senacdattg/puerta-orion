@@ -14,7 +14,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 import jwt
 
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, Optional, Tuple
 from flask import current_app, request
 from werkzeug.security import check_password_hash
@@ -80,7 +80,7 @@ class AuthService:
             token_jwt = self._generar_token_jwt(usuario)
             
             # Registrar sesión
-            sesion = self._registrar_sesion(usuario, token_jwt, ip_origen, user_agent)
+            sesion = self._registrar_sesion(usuario, ip_origen, user_agent)
             
             # Preparar respuesta
             respuesta = self._preparar_respuesta_login(usuario, token_jwt, sesion)
@@ -166,7 +166,7 @@ class AuthService:
                 expires_seconds = int(expires_in)
             
             # Calcular fecha de expiración
-            expiracion = datetime.utcnow() + timedelta(seconds=expires_seconds)
+            expiracion = datetime.now(timezone.utc) + timedelta(seconds=expires_seconds)
             
             # Obtener roles del usuario
             roles_usuario = []
@@ -183,7 +183,7 @@ class AuthService:
                 'roles': roles_usuario,
                 'rol_activo': rol_activo,
                 'exp': expiracion,
-                'iat': datetime.utcnow(),
+                'iat': datetime.now(timezone.utc),
                 'iss': 'puerta_orion_api'
             }
             
@@ -201,7 +201,6 @@ class AuthService:
     def _registrar_sesion(
         self, 
         usuario: Usuario, 
-        token_jwt: str, 
         ip_origen: Optional[str] = None,
         user_agent: Optional[str] = None
     ) -> SesionAuth:
@@ -210,7 +209,6 @@ class AuthService:
         
         Args:
             usuario (Usuario): Usuario autenticado
-            token_jwt (str): Token JWT generado
             ip_origen (str): IP de origen
             user_agent (str): User agent del cliente
             
@@ -227,7 +225,7 @@ class AuthService:
                 expires_seconds = int(expires_in.total_seconds())
             else:
                 expires_seconds = int(expires_in)
-            fecha_expiracion = datetime.utcnow() + timedelta(seconds=expires_seconds)
+            fecha_expiracion = datetime.now(timezone.utc) + timedelta(seconds=expires_seconds)
             
             # Generar token único para la sesión
             token_sesion = self._generar_token_sesion()
@@ -236,7 +234,7 @@ class AuthService:
             sesion = SesionAuth(
                 id_usuario=usuario.id_usuario,
                 token_sesion=token_sesion,
-                fecha_inicio=datetime.utcnow(),
+                fecha_inicio=datetime.now(timezone.utc),
                 fecha_expiracion=fecha_expiracion,
                 ip_origen=ip_origen or self._obtener_ip_origen(),
                 user_agent=user_agent or self._obtener_user_agent(),
@@ -285,7 +283,7 @@ class AuthService:
                 else:
                     return request.remote_addr or '127.0.0.1'
             return '127.0.0.1'
-        except:
+        except Exception:
             return '127.0.0.1'
     
     def _obtener_user_agent(self) -> str:
@@ -299,7 +297,7 @@ class AuthService:
             if request:
                 return request.headers.get('User-Agent', 'Unknown')[:500]
             return 'Unknown'
-        except:
+        except Exception:
             return 'Unknown'
     
     def _preparar_respuesta_login(
@@ -428,7 +426,7 @@ class AuthService:
                 id_usuario=usuario_id,
                 estado=True
             ).filter(
-                SesionAuth.fecha_expiracion > datetime.utcnow()
+                SesionAuth.fecha_expiracion > datetime.now(timezone.utc)
             ).all()
             
             if sesiones_activas:
@@ -462,7 +460,7 @@ class AuthService:
                 id_usuario=id_usuario,
                 estado=True
             ).filter(
-                SesionAuth.fecha_expiracion > datetime.utcnow()
+                SesionAuth.fecha_expiracion > datetime.now(timezone.utc)
             ).all()
             
             return [sesion.to_dict() for sesion in sesiones]

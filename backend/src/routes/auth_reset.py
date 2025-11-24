@@ -13,7 +13,7 @@ import os
 import smtplib
 import ssl
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -183,7 +183,7 @@ def _eliminar_tokens_previos(usuario_id: int) -> None:
 def _generar_y_guardar_token(usuario_id: int) -> str:
     """Genera un nuevo token de reset y lo guarda en la base de datos."""
     token = str(uuid.uuid4())
-    expires_at = datetime.utcnow() + timedelta(hours=TOKEN_EXPIRY_HOURS)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRY_HOURS)
 
     reset_token = PasswordResetToken(
         id_usuario=usuario_id,

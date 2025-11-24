@@ -2,7 +2,7 @@
 Modelo para tokens de recuperación de contraseña.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from ..base import BaseModel
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
@@ -43,7 +43,7 @@ class PasswordResetToken(BaseModel):
         Returns:
             bool: True si el token ha expirado, False en caso contrario.
         """
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
     
     def to_dict(self):
         """

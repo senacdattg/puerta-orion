@@ -11,7 +11,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
 import jwt
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 from typing import Dict, Any, Optional, Callable, Tuple
 from flask import request, jsonify, g, current_app, make_response
@@ -397,7 +397,7 @@ class TokenRequired:
                 id_usuario=payload['usuario_id'],
                 estado=True
             ).filter(
-                SesionAuth.fecha_expiracion > datetime.utcnow()
+                SesionAuth.fecha_expiracion > datetime.now(timezone.utc)
             ).first()
             
             return sesion
