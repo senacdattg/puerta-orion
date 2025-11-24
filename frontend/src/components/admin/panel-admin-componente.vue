@@ -65,12 +65,12 @@
             <div class="panel-controls" v-if="mostrarFiltros || mostrarBusqueda">
               <div class="controls-grid">
                 <div v-if="mostrarBusqueda" class="control-item">
-                  <label class="control-label">Buscar usuario</label>
-                  <input v-model="terminoBusqueda" type="text" placeholder="Nombre..." class="control-input" />
+                  <label for="buscar-usuario" class="control-label">Buscar usuario</label>
+                  <input id="buscar-usuario" v-model="terminoBusqueda" type="text" placeholder="Nombre..." class="control-input" />
                 </div>
                 <div v-if="mostrarFiltros" class="control-item">
-                  <label class="control-label">Filtrar por rol</label>
-                  <select v-model="filtroRol" class="control-input">
+                  <label for="filtro-rol" class="control-label">Filtrar por rol</label>
+                  <select id="filtro-rol" v-model="filtroRol" class="control-input">
                     <option v-for="opt in rolesOptions" :key="opt.value" :value="opt.value">
                       {{ opt.label }}
                     </option>
@@ -442,7 +442,7 @@ async function onGuardarDato(payload) {
       // Error: mostrar notificación con el error específico
       const mensajeError = extraerMensajeErrorDato(result.error);
       const nombreEntidad = obtenerNombreEntidadLegible(entidad);
-      
+
       await Swal.fire({
         icon: 'error',
         title: 'Error al crear dato',
@@ -454,12 +454,12 @@ async function onGuardarDato(payload) {
   } catch (error) {
     // Cerrar el loading si aún está abierto
     Swal.close();
-    
+
     console.error('Error al guardar dato:', error)
-    
+
     // Error de conexión o excepción no manejada
     const mensajeError = extraerMensajeErrorDato(error);
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al guardar dato',

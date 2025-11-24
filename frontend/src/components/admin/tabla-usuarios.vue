@@ -139,39 +139,39 @@
             </h3>
             <div class="info-grid-detalle">
               <div class="info-item-detalle">
-                <label>Nombre Completo:</label>
+                <span class="info-label">Nombre Completo:</span>
                 <span>{{ usuarioDetalle.persona?.nombre_completo || `${usuarioDetalle.persona?.primer_nombre || ''} ${usuarioDetalle.persona?.primer_apellido || ''}`.trim() || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Primer Nombre:</label>
+                <span class="info-label">Primer Nombre:</span>
                 <span>{{ usuarioDetalle.persona?.primer_nombre || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Segundo Nombre:</label>
+                <span class="info-label">Segundo Nombre:</span>
                 <span>{{ usuarioDetalle.persona?.segundo_nombre || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Primer Apellido:</label>
+                <span class="info-label">Primer Apellido:</span>
                 <span>{{ usuarioDetalle.persona?.primer_apellido || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Segundo Apellido:</label>
+                <span class="info-label">Segundo Apellido:</span>
                 <span>{{ usuarioDetalle.persona?.segundo_apellido || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Documento:</label>
+                <span class="info-label">Documento:</span>
                 <span>{{ usuarioDetalle.persona?.documento || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Correo Electrónico:</label>
+                <span class="info-label">Correo Electrónico:</span>
                 <span>{{ usuarioDetalle.persona?.correo_electronico || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Teléfono:</label>
+                <span class="info-label">Teléfono:</span>
                 <span>{{ usuarioDetalle.persona?.telefono || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle info-item-direccion-detalle">
-                <label>Dirección:</label>
+                <span class="info-label">Dirección:</span>
                 <span>{{ usuarioDetalle.persona?.direccion || 'N/A' }}</span>
               </div>
             </div>
@@ -185,15 +185,15 @@
             </h3>
             <div class="info-grid-detalle info-grid-usuario">
               <div class="info-item-detalle">
-                <label>Username:</label>
+                <span class="info-label">Username:</span>
                 <span>{{ usuarioDetalle.usuario?.usuario || usuarioDetalle.usuario || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>ID Usuario:</label>
+                <span class="info-label">ID Usuario:</span>
                 <span>{{ usuarioDetalle.usuario?.id_usuario || usuarioDetalle.id_usuario || 'N/A' }}</span>
               </div>
               <div class="info-item-detalle">
-                <label>Estado:</label>
+                <span class="info-label">Estado:</span>
                 <span :class="['badge-estado', usuarioDetalle.usuario?.estado !== false ? 'activo' : 'inactivo']">
                   {{ usuarioDetalle.usuario?.estado !== false ? 'Activo' : 'Inactivo' }}
                 </span>
@@ -290,8 +290,9 @@
           </h3>
           <div class="info-grid-detalle info-grid-usuario-solo">
             <div class="info-item-detalle">
-              <label>Username *</label>
+              <label for="edicion-username">Username *</label>
               <input
+                id="edicion-username"
                 v-model="formularioEdicion.datos_usuario.usuario"
                 type="text"
                 class="control-input"
@@ -312,8 +313,9 @@
           </h3>
           <div class="info-grid-detalle">
             <div class="info-item-detalle">
-              <label>Primer Nombre *</label>
+              <label for="edicion-primer-nombre">Primer Nombre *</label>
               <input
+                id="edicion-primer-nombre"
                 v-model="formularioEdicion.datos_persona.primer_nombre"
                 type="text"
                 class="control-input"
@@ -324,8 +326,9 @@
               <small v-if="erroresCamposEdicion.primer_nombre" class="input-error">{{ erroresCamposEdicion.primer_nombre }}</small>
             </div>
             <div class="info-item-detalle">
-              <label>Segundo Nombre</label>
+              <label for="edicion-segundo-nombre">Segundo Nombre</label>
               <input
+                id="edicion-segundo-nombre"
                 v-model="formularioEdicion.datos_persona.segundo_nombre"
                 type="text"
                 class="control-input"
@@ -336,8 +339,9 @@
               <small v-if="erroresCamposEdicion.segundo_nombre" class="input-error">{{ erroresCamposEdicion.segundo_nombre }}</small>
             </div>
             <div class="info-item-detalle">
-              <label>Primer Apellido *</label>
+              <label for="edicion-primer-apellido">Primer Apellido *</label>
               <input
+                id="edicion-primer-apellido"
                 v-model="formularioEdicion.datos_persona.primer_apellido"
                 type="text"
                 class="control-input"
@@ -348,8 +352,9 @@
               <small v-if="erroresCamposEdicion.primer_apellido" class="input-error">{{ erroresCamposEdicion.primer_apellido }}</small>
             </div>
             <div class="info-item-detalle">
-              <label>Segundo Apellido</label>
+              <label for="edicion-segundo-apellido">Segundo Apellido</label>
               <input
+                id="edicion-segundo-apellido"
                 v-model="formularioEdicion.datos_persona.segundo_apellido"
                 type="text"
                 class="control-input"
@@ -360,8 +365,9 @@
               <small v-if="erroresCamposEdicion.segundo_apellido" class="input-error">{{ erroresCamposEdicion.segundo_apellido }}</small>
             </div>
             <div class="info-item-detalle info-item-documento">
-              <label>Documento *</label>
+              <label for="edicion-documento">Documento *</label>
               <input
+                id="edicion-documento"
                 v-model="formularioEdicion.datos_persona.documento"
                 type="text"
                 class="control-input"
@@ -382,8 +388,9 @@
           </h3>
           <div class="info-grid-detalle">
             <div class="info-item-detalle">
-              <label>Correo Electrónico *</label>
+              <label for="edicion-correo">Correo Electrónico *</label>
               <input
+                id="edicion-correo"
                 v-model="formularioEdicion.datos_persona.correo_electronico"
                 type="email"
                 class="control-input"
@@ -394,8 +401,9 @@
               <small v-if="erroresCamposEdicion.correo_electronico" class="input-error">{{ erroresCamposEdicion.correo_electronico }}</small>
             </div>
             <div class="info-item-detalle">
-              <label>Teléfono</label>
+              <label for="edicion-telefono">Teléfono</label>
               <input
+                id="edicion-telefono"
                 v-model="formularioEdicion.datos_persona.telefono"
                 type="text"
                 class="control-input"
@@ -1146,7 +1154,7 @@ function construirHtmlErrores(errores) {
 async function cerrarModalEdicion() {
   // Verificar si hay cambios sin guardar
   const tieneCambios = verificarCambiosSinGuardar();
-  
+
   if (tieneCambios) {
     const result = await Swal.fire({
       icon: 'question',
@@ -1158,12 +1166,12 @@ async function cerrarModalEdicion() {
       confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d'
     });
-    
+
     if (!result.isConfirmed) {
       return;
     }
   }
-  
+
   mostrarModalEdicion.value = false;
   errorEdicion.value = null;
   resetErroresCampos();
@@ -1171,17 +1179,17 @@ async function cerrarModalEdicion() {
 
 function verificarCambiosSinGuardar() {
   if (!usuarioDetalle.value) return false;
-  
+
   const usuarioForm = formularioEdicion.value.datos_usuario || {};
   const personaForm = formularioEdicion.value.datos_persona || {};
   const usuarioOriginal = usuarioDetalle.value.usuario || {};
   const personaOriginal = usuarioDetalle.value.persona || {};
-  
+
   // Comparar username
   if (usuarioForm.usuario !== (usuarioOriginal.usuario || '')) {
     return true;
   }
-  
+
   // Comparar campos de persona
   const camposPersona = ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'documento', 'correo_electronico', 'telefono', 'direccion'];
   for (const campo of camposPersona) {
@@ -1191,7 +1199,7 @@ function verificarCambiosSinGuardar() {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -1301,7 +1309,7 @@ async function guardarEdicion() {
 
   // Verificar si hay cambios antes de continuar
   const tieneCambios = verificarCambiosSinGuardar();
-  
+
   if (!tieneCambios) {
     await Swal.fire({
       icon: 'info',
@@ -1363,10 +1371,10 @@ async function guardarEdicion() {
     guardandoEdicion.value = true;
     errorEdicion.value = null;
     const resp = await usuariosService.actualizarUsuario(idUsuario, payload);
-    
+
     // Cerrar el loading
     Swal.close();
-    
+
     if (!resp.success) {
       const mensajeError = extraerMensajeErrorUsuario(resp.error);
       await Swal.fire({
@@ -1399,7 +1407,7 @@ async function guardarEdicion() {
     }
 
     formularioEdicion.value = JSON.parse(JSON.stringify(payload));
-    
+
     // Éxito: mostrar notificación de confirmación
     await Swal.fire({
       icon: 'success',
@@ -1408,16 +1416,16 @@ async function guardarEdicion() {
       confirmButtonText: 'Aceptar',
       confirmButtonColor: '#004AAD'
     });
-    
+
     cerrarModalEdicion();
   } catch (e) {
     // Cerrar el loading si aún está abierto
     Swal.close();
-    
+
     console.error(e);
     const mensajeError = extraerMensajeErrorUsuario(e);
     errorEdicion.value = mensajeError;
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al actualizar usuario',
@@ -1491,7 +1499,7 @@ function abrirGestionRoles(user) {
   const rolesIds = rolesActuales.map(rol => rol.id_rol);
   rolesSeleccionados.value = [...rolesIds];
   rolesIniciales.value = [...rolesIds]; // Guardar una copia para comparar cambios
-  
+
   console.log('Roles iniciales:', rolesIniciales.value);
   console.log('Roles seleccionados:', rolesSeleccionados.value);
 
@@ -1503,13 +1511,13 @@ function abrirGestionRoles(user) {
 async function cerrarModalRoles() {
   // Verificar si hay cambios sin guardar
   const tieneCambios = verificarCambiosRoles();
-  
+
   console.log('Verificando cambios al cerrar:', {
     tieneCambios,
     rolesIniciales: rolesIniciales.value,
     rolesSeleccionados: rolesSeleccionados.value
   });
-  
+
   if (tieneCambios) {
     const result = await Swal.fire({
       icon: 'question',
@@ -1521,12 +1529,12 @@ async function cerrarModalRoles() {
       confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d'
     });
-    
+
     if (!result.isConfirmed) {
       return;
     }
   }
-  
+
   mostrarModalRoles.value = false;
   usuarioParaRoles.value = null;
   rolesSeleccionados.value = [];
@@ -1538,32 +1546,27 @@ function verificarCambiosRoles() {
   if (!usuarioParaRoles.value) {
     return false;
   }
-  
+
   // Si rolesIniciales no está inicializado (array vacío o undefined), considerar que no hay cambios iniciales
   // pero si rolesSeleccionados tiene elementos, entonces hay cambios
   if (rolesIniciales.value.length === 0) {
-    // Si ambos están vacíos, no hay cambios
-    if (rolesSeleccionados.value.length === 0) {
-      return false;
-    }
-    // Si rolesSeleccionados tiene elementos pero rolesIniciales está vacío, hay cambios
-    return true;
+    return rolesSeleccionados.value.length > 0;
   }
-  
+
   // Si rolesSeleccionados está vacío pero rolesIniciales tiene elementos, hay cambios
   if (rolesSeleccionados.value.length === 0 && rolesIniciales.value.length > 0) {
     return true;
   }
-  
+
   // Comparar arrays de roles (orden no importa)
   const rolesInicialesSorted = [...rolesIniciales.value].sort((a, b) => a - b);
   const rolesSeleccionadosSorted = [...rolesSeleccionados.value].sort((a, b) => a - b);
-  
+
   // Si las longitudes son diferentes, hay cambios
   if (rolesInicialesSorted.length !== rolesSeleccionadosSorted.length) {
     return true;
   }
-  
+
   // Comparar elemento por elemento
   return rolesInicialesSorted.some((rol, index) => rol !== rolesSeleccionadosSorted[index]);
 }
@@ -1584,7 +1587,7 @@ async function guardarRoles() {
 
   // Verificar si hay cambios antes de continuar
   const tieneCambios = verificarCambiosRoles();
-  
+
   if (!tieneCambios) {
     await Swal.fire({
       icon: 'info',
@@ -1713,11 +1716,11 @@ async function guardarRoles() {
   } catch (err) {
     // Cerrar el loading si aún está abierto
     Swal.close();
-    
+
     console.error('Error al guardar roles:', err);
     const mensajeError = extraerMensajeErrorRoles(err);
     errorRoles.value = mensajeError;
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al actualizar roles',

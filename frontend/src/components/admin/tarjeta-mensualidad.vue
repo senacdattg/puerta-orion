@@ -139,7 +139,7 @@ const puedeIniciarPago = computed(() => roles.value.includes('Deportista') || ro
 const saldoPendientePositivo = computed(() => {
   const spRaw = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldoPendiente;
   const spNum = Number(spRaw);
-  if (!isNaN(spNum)) return spNum > 0;
+  if (!Number.isNaN(spNum)) return spNum > 0;
   // Fallback si no viene saldo: mostrar pagar si no está pagado
   return props.mensualidad.estado !== 'Pagado';
 });
@@ -148,11 +148,11 @@ const saldoPendientePositivo = computed(() => {
 function parseISODateLocal(iso) {
   if (!iso) return null;
   if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-    const [y, m, d] = iso.split('-').map(n => parseInt(n));
+    const [y, m, d] = iso.split('-').map(n => Number.parseInt(n));
     return new Date(y, m - 1, d);
   }
   const d = new Date(iso);
-  return isNaN(d) ? null : d;
+  return Number.isNaN(d) ? null : d;
 }
 
 // Computed properties
@@ -288,7 +288,7 @@ function getClaseSaldo() {
 
 function saldoPendienteTexto() {
   const saldo = Number(props.mensualidad.saldo_pendiente_raw);
-  if (!isNaN(saldo)) return `$${Math.max(0, saldo).toLocaleString('es-CO')}`;
+  if (!Number.isNaN(saldo)) return `$${Math.max(0, saldo).toLocaleString('es-CO')}`;
   // Fallback si no viene del backend
   const monto = Number(props.mensualidad.monto_pago_raw || 0);
   return `$${monto.toLocaleString('es-CO')}`;
@@ -297,7 +297,7 @@ function saldoPendienteTexto() {
 function totalPagadoTexto() {
   const monto = Number(props.mensualidad.monto_pago_raw);
   const saldo = Number(props.mensualidad.saldo_pendiente_raw);
-  if (!isNaN(monto) && !isNaN(saldo)) {
+  if (!Number.isNaN(monto) && !Number.isNaN(saldo)) {
     const pagado = Math.max(0, monto - saldo);
     return `$${pagado.toLocaleString('es-CO')}`;
   }

@@ -196,16 +196,16 @@
             </div>
 
             <div class="campo-formulario">
-                  <label>
+                  <label for="fecha_pago">
                     <i class="fas fa-calendar-check"></i>
                     Fecha de Pago
               </label>
-                  <input type="date" :value="formEdicion.fecha_pago" class="input-edicion" disabled />
+                  <input id="fecha_pago" type="date" :value="formEdicion.fecha_pago" class="input-edicion" disabled />
                   <small class="hint">Se llena sola cuando el saldo llega a 0.</small>
             </div>
 
                 <div class="campo-formulario">
-                  <label>
+                  <label for="activo">
                     <i class="fas fa-toggle-on"></i>
                     Activo
                   </label>
@@ -470,7 +470,7 @@ function normalizarMonto(valor = '') {
   const saneado = valor
     .toString()
     .replace(/[^0-9.,]/g, '')
-    .replace(/,/g, '.');
+    .replaceAll(',', '.');
 
   const partes = saneado.split('.');
   if (partes.length === 1) {
@@ -483,9 +483,9 @@ function normalizarMonto(valor = '') {
 }
 
 function parseMonto(valor = '') {
-  if (valor === '' || valor === null || valor === undefined) return NaN;
+  if (valor === '' || valor === null || valor === undefined) return Number.NaN;
   const numero = Number(valor);
-  return Number.isFinite(numero) ? numero : NaN;
+  return Number.isFinite(numero) ? numero : Number.NaN;
 }
 
 function esFechaValida(fecha) {
@@ -685,7 +685,7 @@ function configurarFormularioDesdeProps() {
     fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
   };
   inicializarDocumentoEdicion();
-  
+
   // Si estamos editando, guardar estado inicial
   if (editando.value && !formEdicionInicial.value) {
     formEdicionInicial.value = JSON.parse(JSON.stringify(formEdicion.value));
@@ -700,12 +700,12 @@ watch(() => props.mensualidad, async () => {
   if (props.mensualidad?.id) {
     try {
       const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
-      abonos.value = (respAb.data || []).map(a => ({ 
-        id_abono: a.id_abono, 
-        monto: Number(a.monto) || 0, 
-        fecha_abono: a.fecha_abono, 
-        id_metodo_pago: a.id_metodo_pago, 
-        es_pago_final: !!a.es_pago_final 
+      abonos.value = (respAb.data || []).map(a => ({
+        id_abono: a.id_abono,
+        monto: Number(a.monto) || 0,
+        fecha_abono: a.fecha_abono,
+        id_metodo_pago: a.id_metodo_pago,
+        es_pago_final: !!a.es_pago_final
       }));
     } catch {
       abonos.value = [];
@@ -767,7 +767,7 @@ onMounted(async () => {
 function getClaseSaldo() {
   if (props.mensualidad.estado === 'Pagado') return 'saldo-completo';
 
-  const valorTotal = parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
+  const valorTotal = Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
   const saldoPendiente = props.mensualidad.saldoPendiente || valorTotal;
 
   if (saldoPendiente === 0) return 'saldo-completo';
@@ -779,7 +779,7 @@ function getClaseSaldo() {
 const calcularSaldoPendiente = () => {
   if (props.mensualidad.estado === 'Pagado') return '$0';
 
-  const valorTotal = parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
+  const valorTotal = Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
   const saldoPendiente = props.mensualidad.saldoPendiente || valorTotal;
 
   return `$${saldoPendiente.toLocaleString('es-CO')}`;
@@ -876,7 +876,7 @@ function formatearAInputDate(valor) {
   if (!valor) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(valor)) return valor;
   if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(valor)) {
-    const [d, m, y] = valor.split('/').map(x => parseInt(x));
+    const [d, m, y] = valor.split('/').map(x => Number.parseInt(x));
     const mm = String(m).padStart(2, '0');
     const dd = String(d).padStart(2, '0');
     return `${y}-${mm}-${dd}`;
@@ -916,7 +916,7 @@ function mostrarVencimiento() {
     }
     try {
       const d = new Date(raw);
-      if (!isNaN(d)) return d.toLocaleDateString('es-CO');
+      if (!Number.isNaN(d)) return d.toLocaleDateString('es-CO');
     } catch {
       // ignorar formato inválido y caer al fallback
     }
@@ -929,7 +929,7 @@ function mostrarSaldoPendiente() {
   const sp = props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
   if (sp !== undefined && sp !== null) {
     const n = Number(sp);
-    if (!isNaN(n)) return `$${n.toLocaleString('es-CO')}`;
+    if (!Number.isNaN(n)) return `$${n.toLocaleString('es-CO')}`;
   }
   // Fallback al cálculo local
   return calcularSaldoPendiente();
@@ -949,7 +949,7 @@ async function cerrarModal() {
   // Si está editando, verificar cambios antes de cerrar
   if (editando.value) {
     const tieneCambios = verificarCambios()
-    
+
     if (tieneCambios) {
       const result = await Swal.fire({
         icon: 'question',
@@ -961,13 +961,13 @@ async function cerrarModal() {
         confirmButtonColor: '#dc3545',
         cancelButtonColor: '#6c757d'
       })
-      
+
       if (!result.isConfirmed) {
         return
       }
     }
   }
-  
+
   emit('cerrar')
 }
 
@@ -980,11 +980,11 @@ function toggleEdicion() {
     });
     return;
   }
-  
+
   // Si está editando y quiere cancelar, verificar cambios
   if (editando.value) {
     const tieneCambios = verificarCambios()
-    
+
     if (tieneCambios) {
       Swal.fire({
         icon: 'question',
@@ -1005,9 +1005,9 @@ function toggleEdicion() {
       return;
     }
   }
-  
+
   editando.value = !editando.value;
-  
+
   // Si inicia edición, guardar estado inicial
   if (editando.value) {
     formEdicionInicial.value = JSON.parse(JSON.stringify(formEdicion.value));
@@ -1020,7 +1020,7 @@ function toggleEdicion() {
 async function guardarCambios() {
   // Verificar si hay cambios antes de continuar
   const tieneCambios = verificarCambios()
-  
+
   if (!tieneCambios) {
     await Swal.fire({
       icon: 'info',
@@ -1119,7 +1119,7 @@ async function guardarCambios() {
 
   // Emitir evento (el componente padre manejará el éxito/error)
   emit('guardar-cambios', mensualidadActualizada);
-  
+
   // Actualizar estado inicial después de guardar exitosamente
   formEdicionInicial.value = JSON.parse(JSON.stringify(formEdicion.value));
   editando.value = false;
@@ -1268,7 +1268,7 @@ function calcularTotalPagado() {
 
 function obtenerMontoPago(pago) {
   if (typeof pago === 'object' && pago.monto !== undefined) {
-    return parseFloat(pago.monto) || 0;
+    return Number.parseFloat(pago.monto) || 0;
   }
   return 0;
 }
@@ -1278,7 +1278,7 @@ function calcularSaldoPendienteHistorial() {
   const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
   if (spBackend !== undefined && spBackend !== null && spBackend !== '') {
     const n = Number(spBackend);
-    if (!isNaN(n)) return Math.max(0, n);
+    if (!Number.isNaN(n)) return Math.max(0, n);
   }
 
   // 2) Fallback: calcular con (valor total - total pagado) cuando no hay saldo del backend
@@ -1292,9 +1292,9 @@ function calcularPagadoMostrado() {
   // Si tenemos saldo del backend y el total de la mensualidad, calcular pagado como (total - saldo)
   const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
   const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
-  if (!isNaN(totalMensualidad) && spBackend !== undefined && spBackend !== null && spBackend !== '') {
+  if (!Number.isNaN(totalMensualidad) && spBackend !== undefined && spBackend !== null && spBackend !== '') {
     const n = Number(spBackend);
-    if (!isNaN(n)) return Math.max(0, totalMensualidad - n);
+    if (!Number.isNaN(n)) return Math.max(0, totalMensualidad - n);
   }
   // Fallback al total de abonos/pagos registrados en el historial
   return calcularTotalPagado();
@@ -1304,7 +1304,7 @@ const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());
 
 function obtenerValorNumericoMensualidad() {
   if (!props.mensualidad.valor) return 0;
-  return parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
+  return Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
 }
 
 function formatearFecha(fecha) {
@@ -1315,20 +1315,20 @@ function formatearFecha(fecha) {
     }
     if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
       const [año, mes, dia] = fecha.split('-');
-      return `${parseInt(dia)}/${parseInt(mes)}/${año}`;
+      return `${Number.parseInt(dia)}/${Number.parseInt(mes)}/${año}`;
     }
     let fechaObj;
     if (typeof fecha === 'string') {
       if (fecha.includes('-')) {
         const [año, mes, dia] = fecha.split('-');
-        fechaObj = new Date(parseInt(año), parseInt(mes) - 1, parseInt(dia));
+        fechaObj = new Date(Number.parseInt(año), Number.parseInt(mes) - 1, Number.parseInt(dia));
       } else {
         fechaObj = new Date(fecha + 'T00:00:00');
       }
     } else {
       fechaObj = new Date(fecha);
     }
-    if (isNaN(fechaObj.getTime())) return fecha;
+    if (Number.isNaN(fechaObj.getTime())) return fecha;
     const dia = fechaObj.getDate();
     const mes = fechaObj.getMonth() + 1;
     const año = fechaObj.getFullYear();
@@ -1351,7 +1351,7 @@ function listaPagosYAbonos() {
     const tipo = a.es_pago_final ? 'Pago' : 'Abono';
     return { id_abono: a.id_abono, fecha: a.fecha_abono || a.fecha || a.f, monto: a.monto, metodo, tipo };
   });
-  
+
   // Buscar abono inicial (el más antiguo que coincide con la fecha de creación)
   const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
   let abonoInicial = null;
@@ -1359,7 +1359,7 @@ function listaPagosYAbonos() {
     const fechaCreacionStr = String(fechaCreacion).slice(0, 10);
     abonoInicial = abonosList.find(a => String(a.fecha).slice(0, 10) === fechaCreacionStr);
   }
-  
+
   // Registro de creación de la mensualidad
   if (fechaCreacion) {
     const metodoCreacion = (() => {
@@ -1372,19 +1372,19 @@ function listaPagosYAbonos() {
       const found = (metodosPago.value || []).find(x => x.id === idm);
       return found ? found.nombre : `Método ${idm}`;
     })();
-    
+
     // Si hay abono inicial, usar su monto, sino undefined
     const montoCreacion = abonoInicial ? abonoInicial.monto : undefined;
-    
-    items.push({ 
-      id_abono: abonoInicial?.id_abono, 
-      fecha: fechaCreacion, 
-      monto: montoCreacion, 
-      metodo: metodoCreacion, 
-      tipo: 'Creación' 
+
+    items.push({
+      id_abono: abonoInicial?.id_abono,
+      fecha: fechaCreacion,
+      monto: montoCreacion,
+      metodo: metodoCreacion,
+      tipo: 'Creación'
     });
   }
-  
+
   // Agregar abonos que no sean el inicial (para evitar duplicados)
   if (abonosList.length > 0) {
     abonosList.forEach(a => {
