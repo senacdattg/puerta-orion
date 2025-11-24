@@ -3,7 +3,7 @@ Modelo para transacciones de Mercado Pago.
 Maneja las transacciones procesadas a través de Mercado Pago.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from ..base import BaseModel
 from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey, Text
@@ -42,8 +42,8 @@ class TransaccionMercadoPago(BaseModel):
     estado = Column(String(50), nullable=False, default='pending')
     monto = Column(Numeric(10, 2), nullable=False)
     moneda = Column(String(3), nullable=False, default='COP')
-    fecha_creacion = Column(DateTime, nullable=False, default=datetime.utcnow)
-    fecha_actualizacion = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    fecha_creacion = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    fecha_actualizacion = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     datos_pago = Column(JSON, nullable=True)
     
     # Relaciones con tus modelos existentes (opcionales)
@@ -122,4 +122,4 @@ class TransaccionMercadoPago(BaseModel):
         self.estado = nuevo_estado
         if datos_pago:
             self.datos_pago = datos_pago
-        self.fecha_actualizacion = datetime.utcnow()
+        self.fecha_actualizacion = datetime.now(timezone.utc)

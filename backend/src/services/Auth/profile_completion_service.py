@@ -12,7 +12,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
@@ -40,6 +40,10 @@ class ProfileCompletionError(Exception):
     pass
 
 
+# Constants for error messages
+ERROR_USUARIO_NO_ENCONTRADO = "Usuario no encontrado"
+
+
 @dataclass
 class ProfileCompletionResult:
     """Resultado de completar perfil."""
@@ -64,45 +68,58 @@ class ProfileValidator(ABC):
 class DeportistaValidator(ProfileValidator):
     """Validador para datos de deportista."""
 
-    def validate(self, data: Dict[str, Any]) -> None:
-        """Valida datos requeridos para deportista."""
+    def _validar_campos_requeridos(self, data: Dict[str, Any]) -> None:
+        """Valida que los campos requeridos estén presentes."""
         required_fields = ['id_categoria']
-
         missing_fields = [
             field for field in required_fields
             if field not in data or data[field] is None or data[field] == ''
         ]
-
         if missing_fields:
             raise ProfileCompletionError(
                 f"Campos requeridos faltantes: {', '.join(missing_fields)}"
             )
 
-        # Validaciones adicionales
-        if 'peso' in data and data['peso'] is not None and data['peso'] != '':
-            try:
-                peso = float(data['peso'])
-                if peso <= 0 or peso > 300:  # Rango razonable
-                    raise ProfileCompletionError("El peso debe estar entre 1 y 300 kg")
-            except (ValueError, TypeError):
-                raise ProfileCompletionError("El peso debe ser un número válido")
+    def _validar_peso(self, data: Dict[str, Any]) -> None:
+        """Valida el campo peso si está presente."""
+        if 'peso' not in data or data['peso'] is None or data['peso'] == '':
+            return
+        try:
+            peso = float(data['peso'])
+            if peso <= 0 or peso > 300:
+                raise ProfileCompletionError("El peso debe estar entre 1 y 300 kg")
+        except (ValueError, TypeError):
+            raise ProfileCompletionError("El peso debe ser un número válido")
 
-        if 'altura' in data and data['altura'] is not None and data['altura'] != '':
-            try:
-                altura = float(data['altura'])
-                if altura <= 0 or altura > 3:  # Rango razonable en metros
-                    raise ProfileCompletionError("La altura debe estar entre 0.1 y 3 metros")
-            except (ValueError, TypeError):
-                raise ProfileCompletionError("La altura debe ser un número válido")
+    def _validar_altura(self, data: Dict[str, Any]) -> None:
+        """Valida el campo altura si está presente."""
+        if 'altura' not in data or data['altura'] is None or data['altura'] == '':
+            return
+        try:
+            altura = float(data['altura'])
+            if altura <= 0 or altura > 3:
+                raise ProfileCompletionError("La altura debe estar entre 0.1 y 3 metros")
+        except (ValueError, TypeError):
+            raise ProfileCompletionError("La altura debe ser un número válido")
 
-        if 'fecha_nacimiento' in data and data['fecha_nacimiento'] is not None and data['fecha_nacimiento'] != '':
-            try:
-                año = int(data['fecha_nacimiento'])
-                año_actual = datetime.now().year
-                if año < 1900 or año > año_actual:
-                    raise ProfileCompletionError(f"El año de nacimiento debe estar entre 1900 y {año_actual}")
-            except (ValueError, TypeError):
-                raise ProfileCompletionError("El año de nacimiento debe ser un número válido")
+    def _validar_fecha_nacimiento(self, data: Dict[str, Any]) -> None:
+        """Valida el campo fecha_nacimiento si está presente."""
+        if 'fecha_nacimiento' not in data or data['fecha_nacimiento'] is None or data['fecha_nacimiento'] == '':
+            return
+        try:
+            anio = int(data['fecha_nacimiento'])
+            anio_actual = datetime.now().year
+            if anio < 1900 or anio > anio_actual:
+                raise ProfileCompletionError(f"El año de nacimiento debe estar entre 1900 y {anio_actual}")
+        except (ValueError, TypeError):
+            raise ProfileCompletionError("El año de nacimiento debe ser un número válido")
+
+    def validate(self, data: Dict[str, Any]) -> None:
+        """Valida datos requeridos para deportista."""
+        self._validar_campos_requeridos(data)
+        self._validar_peso(data)
+        self._validar_altura(data)
+        self._validar_fecha_nacimiento(data)
 
 
 class AcudienteValidator(ProfileValidator):
@@ -180,7 +197,7 @@ class DeportistaCreator(ProfileCreator):
         # Obtener usuario para acceder a id_persona
         usuario = Usuario.query.filter_by(id_usuario=usuario_id).first()
         if not usuario:
-            raise ProfileCompletionError("Usuario no encontrado")
+            raise ProfileCompletionError(ERROR_USUARIO_NO_ENCONTRADO)
 
         # Procesar fecha de nacimiento - convertir string a date si es necesario
         fecha_nacimiento_date = None
@@ -195,8 +212,8 @@ class DeportistaCreator(ProfileCreator):
                 except ValueError:
                     # Si falla, tratar como año solo (compatibilidad)
                     try:
-                        año = int(fecha_nacimiento_raw)
-                        fecha_nacimiento_date = date(año, 1, 1)
+                        anio = int(fecha_nacimiento_raw)
+                        fecha_nacimiento_date = date(anio, 1, 1)
                     except ValueError:
                         raise ProfileCompletionError(f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}')
             elif isinstance(fecha_nacimiento_raw, int):
@@ -247,7 +264,7 @@ class AcudienteCreator(ProfileCreator):
         # Obtener usuario para acceder a id_persona
         usuario = Usuario.query.filter_by(id_usuario=usuario_id).first()
         if not usuario:
-            raise ProfileCompletionError("Usuario no encontrado")
+            raise ProfileCompletionError(ERROR_USUARIO_NO_ENCONTRADO)
         
         # Crear el registro de acudiente (solo id_persona y estado)
         acudiente = Acudiente(
@@ -492,7 +509,7 @@ class ProfileCompletionService:
             usuario = Usuario.query.filter_by(id_usuario=usuario_id).first()
 
             if not usuario:
-                raise ProfileCompletionError("Usuario no encontrado")
+                raise ProfileCompletionError(ERROR_USUARIO_NO_ENCONTRADO)
 
             # Verificar perfiles existentes
             deportista = Deportista.query.filter_by(id_persona=usuario.id_persona).first()
@@ -518,6 +535,36 @@ class ProfileCompletionService:
             self.logger.error(f"Error al verificar estado del perfil: {str(e)}")
             raise ProfileCompletionError(f"Error al verificar estado del perfil: {str(e)}")
 
+    def _validar_usuario_existe(self, usuario: Optional[Usuario]) -> None:
+        """Valida que el usuario exista."""
+        if not usuario:
+            raise ProfileCompletionError(ERROR_USUARIO_NO_ENCONTRADO)
+
+    def _validar_deportista_no_existe(self, deportista: Optional[Deportista], roles_usuario: List[str]) -> None:
+        """Valida que el usuario no esté ya registrado como deportista."""
+        if 'Deportista' in roles_usuario:
+            raise ProfileCompletionError(
+                "El usuario ya tiene el rol de deportista. No puede realizar el registro nuevamente."
+            )
+        if deportista:
+            raise ProfileCompletionError("El usuario ya está registrado como deportista")
+
+    def _validar_acudiente_no_existe(self, acudiente: Optional[Acudiente], usuario: Usuario, deportista: Optional[Deportista]) -> None:
+        """Valida que el usuario no esté ya registrado como acudiente y cumpla requisitos de edad."""
+        if acudiente:
+            raise ProfileCompletionError("El usuario ya está registrado como acudiente")
+        
+        if not puede_registrarse_como_acudiente(usuario):
+            edad = calcular_edad(deportista.fecha_nacimiento) if deportista else None
+            if edad is None:
+                raise ProfileCompletionError(
+                    "Para ser acudiente debe ser mayor de edad. Actualice primero su fecha de nacimiento."
+                )
+            raise ProfileCompletionError(
+                f"Para ser acudiente debe ser mayor de edad. Su edad actual es {edad} años."
+            )
+        self.logger.info("Validación de edad para acudiente superada")
+
     def _validate_user_can_complete_profile(self, usuario_id: int, profile_type: str) -> None:
         """
         Valida que el usuario pueda completar el perfil especificado.
@@ -529,44 +576,17 @@ class ProfileCompletionService:
         Raises:
             ProfileCompletionError: Si no puede completar el perfil
         """
-        from datetime import date
-        
         usuario = Usuario.query.filter_by(id_usuario=usuario_id).first()
+        self._validar_usuario_existe(usuario)
 
-        if not usuario:
-            raise ProfileCompletionError("Usuario no encontrado")
-
-        # Verificar roles del usuario
         roles_usuario = [rol.nombre_rol for rol in usuario.roles]
-        
-        # Verificar que no esté intentando completar el mismo tipo que ya tiene
         deportista = Deportista.query.filter_by(id_persona=usuario.id_persona).first()
         acudiente = Acudiente.query.filter_by(id_persona=usuario.id_persona).first()
 
         if profile_type == 'deportista':
-            # Validar que no tenga ya el rol de deportista
-            if 'Deportista' in roles_usuario:
-                raise ProfileCompletionError(
-                    "El usuario ya tiene el rol de deportista. No puede realizar el registro nuevamente."
-                )
-            # Validar que no exista ya un registro de deportista
-            if deportista:
-                raise ProfileCompletionError("El usuario ya está registrado como deportista")
+            self._validar_deportista_no_existe(deportista, roles_usuario)
         elif profile_type == 'acudiente':
-            # Validar que no exista ya un registro de acudiente
-            if acudiente:
-                raise ProfileCompletionError("El usuario ya está registrado como acudiente")
-            
-            if not puede_registrarse_como_acudiente(usuario):
-                edad = calcular_edad(deportista.fecha_nacimiento) if deportista else None
-                if edad is None:
-                    raise ProfileCompletionError(
-                        "Para ser acudiente debe ser mayor de edad. Actualice primero su fecha de nacimiento."
-                    )
-                raise ProfileCompletionError(
-                    f"Para ser acudiente debe ser mayor de edad. Su edad actual es {edad} años."
-                )
-            self.logger.info("Validación de edad para acudiente superada")
+            self._validar_acudiente_no_existe(acudiente, usuario, deportista)
 
 
 # Instancia global del servicio para uso en la aplicación

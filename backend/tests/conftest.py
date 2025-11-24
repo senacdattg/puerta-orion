@@ -91,7 +91,7 @@ def _limpiar_engines_cache(app: Flask, db) -> None:
         try:
             if hasattr(db, '_app_engines') and app in db._app_engines:
                 engines_dict = db._app_engines[app]
-                for bind_key, engine in list(engines_dict.items()):
+                for bind_key, engine in engines_dict.items():
                     if engine:
                         engine.dispose()
                 engines_dict.clear()
@@ -149,8 +149,7 @@ def app() -> Generator[Flask, None, None]:
     # - En producción, CSRF está habilitado por defecto en Flask-WTF
     # - Es una práctica común deshabilitar CSRF en tests para simplificar las pruebas
     # - Los tests no están expuestos a ataques CSRF reales ya que se ejecutan en un entorno controlado
-    # nosonar: S4502 - Deshabilitar protección CSRF (seguro en entorno de testing)
-    app.config['WTF_CSRF_ENABLED'] = False  # Deshabilitar CSRF para tests
+    app.config['WTF_CSRF_ENABLED'] = False  # nosonar: S4502 - Deshabilitar protección CSRF (seguro en entorno de testing)
     
     # Verificar y forzar la URI correcta
     _configurar_base_datos_testing(app)
@@ -505,13 +504,13 @@ def create_auth_token(user_id: int, username: str) -> str:
         Token JWT como string
     """
     import jwt
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     
     payload = {
         'usuario_id': user_id,
         'username': username,
-        'exp': datetime.utcnow() + timedelta(hours=1),
-        'iat': datetime.utcnow()
+        'exp': datetime.now(timezone.utc) + timedelta(hours=1),
+        'iat': datetime.now(timezone.utc)
     }
     
     # Usar una clave secreta de prueba

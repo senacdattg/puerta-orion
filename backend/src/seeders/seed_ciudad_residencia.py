@@ -148,7 +148,7 @@ def run():
     
     db.session.commit()
     
-    print(f"✅ Seeder CiudadResidencia completado:")
+    print("✅ Seeder CiudadResidencia completado:")
     print(f"   - Ciudades insertadas: {insertados}")
     print(f"   - Ciudades existentes: {existentes}")
     print(f"   - Total procesadas: {len(ciudades)}")
