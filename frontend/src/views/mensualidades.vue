@@ -225,11 +225,21 @@ async function nuevaMensualidad(payload) {
       saldo_pendiente: payload.saldo_pendiente
     });
     await cargarMensualidades();
+    await Swal.fire({
+      icon: 'success',
+      title: '¡Mensualidad creada exitosamente!',
+      text: 'La mensualidad se ha creado correctamente en el sistema.',
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#004AAD'
+    });
   } catch (e) {
+    const mensajeError = typeof e === 'string' ? e : (e?.message || 'No se pudo crear la mensualidad.');
     await Swal.fire({
       icon: 'error',
       title: 'Error al crear mensualidad',
-      text: e?.message || 'No se pudo crear la mensualidad.'
+      html: `<p><strong>No se pudo crear la mensualidad.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     });
   }
 }

@@ -95,6 +95,7 @@
       <!-- Modal de Detalles Completos -->
       <ModalDetalles v-if="modalDetalleCompletoVisible" :mensualidad="mensualidadSeleccionada"
         :modo-edicion="modalDetalleEnEdicion"
+        :mostrar="modalDetalleCompletoVisible"
         @cerrar="cerrarModalDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
         @guardar-cambios="guardarCambiosMensualidad" />
 
@@ -387,6 +388,8 @@ const form = ref({
   saldo_pendiente: undefined,
   estado_ui: 'Pendiente'
 });
+// Guardar estado inicial para comparar cambios
+const formInicial = ref(null);
 
 const metodosPago = ref([]);
 const cargandoMetodosPago = ref(false);
@@ -465,14 +468,25 @@ async function guardarCambiosMensualidad(mensualidadActualizada) {
 
 async function eliminarMensualidad(mensualidad) {
   if (!mensualidad || !mensualidad.id) return;
+  
+  const estaActiva = mensualidad.activo !== false;
+  const accion = estaActiva ? 'desactivar' : 'activar';
+  const titulo = estaActiva ? '¿Desactivar mensualidad?' : '¿Activar mensualidad?';
+  const texto = estaActiva 
+    ? 'La mensualidad se desactivará en el sistema.' 
+    : 'La mensualidad se activará en el sistema.';
+  
   const confirmacion = await Swal.fire({
     icon: 'question',
-    title: '¿Eliminar mensualidad?',
-    text: 'Se desactivará en el sistema.',
+    title: titulo,
+    text: texto,
     showCancelButton: true,
-    confirmButtonText: 'Sí, eliminar',
-    cancelButtonText: 'Cancelar'
+    confirmButtonText: `Sí, ${accion}`,
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
   });
+  
   if (!confirmacion.isConfirmed) return;
   emit('eliminar', mensualidad);
 }
@@ -524,12 +538,111 @@ async function abrirFormulario() {
   if (ninguno) {
     form.value.id_metodo_pago = ninguno.id;
   }
+  // Guardar estado inicial cuando se abre el formulario
+  formInicial.value = JSON.parse(JSON.stringify(form.value));
   mostrarFormulario.value = true;
 }
 
-function cerrarFormulario() {
+// Función para normalizar valores para comparación
+function normalizarValorParaComparacion(valor) {
+  if (valor === null || valor === undefined) {
+    return ''
+  }
+  if (typeof valor === 'string') {
+    return valor.trim()
+  }
+  if (typeof valor === 'number') {
+    return valor
+  }
+  if (typeof valor === 'boolean') {
+    return valor
+  }
+  return valor
+}
+
+// Verificar si hay cambios
+function verificarCambios() {
+  if (!formInicial.value) {
+    return false
+  }
+
+  const campos = [
+    'numero_documento', 'id_metodo_pago', 'valorSinSimbolo', 'vencimiento',
+    'activo', 'saldo_pendiente', 'estado_ui'
+  ]
+
+  for (const campo of campos) {
+    const valorInicial = normalizarValorParaComparacion(formInicial.value[campo])
+    const valorActual = normalizarValorParaComparacion(form.value[campo])
+    if (valorInicial !== valorActual) {
+      return true
+    }
+  }
+
+  return false
+}
+
+// Extraer mensaje de error de manera legible
+function extraerMensajeError(error) {
+  if (!error) {
+    return 'No se pudo completar la creación. Por favor, intenta nuevamente.'
+  }
+
+  if (typeof error === 'string') {
+    return error
+  }
+
+  if (error.message) {
+    return error.message
+  }
+
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+  }
+
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
+  }
+
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error)
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
+      }
+      return errorStr
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.'
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.'
+}
+
+async function cerrarFormulario() {
+  // Verificar si hay cambios sin guardar
+  const tieneCambios = verificarCambios()
+  
+  if (tieneCambios) {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Descartar cambios?',
+      text: '¿Estás seguro de que deseas cerrar? Los datos ingresados se perderán.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar',
+      cancelButtonText: 'Continuar',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    })
+    
+    if (!result.isConfirmed) {
+      return
+    }
+  }
+  
   mostrarFormulario.value = false;
   limpiarFormulario();
+  formInicial.value = null;
 }
 
 function limpiarFormulario() {
@@ -699,16 +812,59 @@ function validarFormularioMensualidad() {
 }
 
 async function guardarMensualidad() {
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambios()
+  
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han ingresado datos en el formulario. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    })
+    return
+  }
+
   const { errores, monto, saldo } = validarFormularioMensualidad();
 
   if (errores.length > 0) {
     await Swal.fire({
       icon: 'error',
       title: 'Corrige los errores',
-      html: errores.join('<br>')
+      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     });
     return;
   }
+
+  // Confirmación antes de crear
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Crear mensualidad?',
+    text: '¿Estás seguro de que deseas crear esta mensualidad?',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, crear',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
+  });
+
+  if (!confirmacion.isConfirmed) {
+    return;
+  }
+
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Creando mensualidad...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
 
   const payload = {
     numero_documento: form.value.numero_documento,
@@ -732,7 +888,27 @@ async function guardarMensualidad() {
     payload.saldo_pendiente = 0;
   }
 
-  emit('nueva', payload);
-  cerrarFormulario();
+  try {
+    // Cerrar el loading
+    Swal.close()
+    
+    // Emitir evento y esperar respuesta del padre
+    emit('nueva', payload);
+    
+    // El componente padre manejará el éxito/error, pero aquí cerramos el formulario
+    cerrarFormulario();
+  } catch (error) {
+    // Cerrar el loading si aún está abierto
+    Swal.close()
+    
+    const mensajeError = extraerMensajeError(error)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al crear mensualidad',
+      html: `<p><strong>No se pudo crear la mensualidad.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    });
+  }
 }
 </script>

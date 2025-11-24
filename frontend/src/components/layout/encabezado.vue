@@ -44,7 +44,7 @@
         </button>
 
         <transition name="fade">
-          <div v-if="showProfileMenu" class="profile-dropdown">
+          <div v-if="showProfileMenu" class="profile-dropdown" @click.stop>
             <button @click="verPerfil" class="dropdown-item">
               <i class="fas fa-user"></i>
               Ver perfil
@@ -139,6 +139,8 @@ const opciones = ref([])
 const isMobile = ref(false)
 const hoverTimeout = ref(null)
 const menuOpenedByClick = ref(false) // Track si se abrió por click
+const profileMenuClickHandler = ref(null) // Handler para clicks fuera del menú
+const profileMenuOpenTime = ref(0) // Timestamp cuando se abrió el menú
 
 // Computed para obtener el rol del usuario desde la sesión
 const userRole = computed(() => {
@@ -195,8 +197,54 @@ const nombreUsuario = computed(() => {
 })
 
 // Métodos
-function toggleProfileMenu() {
+function toggleProfileMenu(e) {
+  // Detener propagación inmediatamente
+  if (e) {
+    e.stopPropagation()
+    e.preventDefault()
+    e.stopImmediatePropagation()
+  }
+
+  // Simplemente toggle el estado - el watch se encargará del listener
   showProfileMenu.value = !showProfileMenu.value
+
+  if (showProfileMenu.value) {
+    profileMenuOpenTime.value = Date.now()
+  } else {
+    profileMenuOpenTime.value = 0
+  }
+}
+
+function handleProfileMenuOutsideClick(e) {
+  // No hacer nada si el menú está cerrado o no existe el ref
+  if (!showProfileMenu.value || !profileMenuRef.value) {
+    return
+  }
+
+  // No cerrar si el menú acaba de abrirse (menos de 600ms) - tiempo muy largo
+  const timeSinceOpen = Date.now() - profileMenuOpenTime.value
+  if (timeSinceOpen < 600) {
+    return
+  }
+
+  // Verificar que el click no es en el contenedor del menú
+  if (profileMenuRef.value.contains(e.target)) {
+    return
+  }
+
+  // Verificar específicamente que no es el botón
+  const profileButton = profileMenuRef.value.querySelector('.profile-button')
+  if (profileButton && (profileButton.contains(e.target) || profileButton === e.target)) {
+    return
+  }
+
+  // Si el click está fuera del contenedor, cerrar el menú
+  showProfileMenu.value = false
+  if (profileMenuClickHandler.value) {
+    document.removeEventListener('click', profileMenuClickHandler.value, true)
+    profileMenuClickHandler.value = null
+  }
+  profileMenuOpenTime.value = 0
 }
 
 function toggleMenu() {
@@ -247,6 +295,18 @@ async function handleLogout() {
 }
 
 function handleOutsideClick(e) {
+  // IGNORAR completamente el menú de perfil - tiene su propio listener
+  // Verificar tanto el contenedor como el botón
+  if (profileMenuRef.value) {
+    if (profileMenuRef.value.contains(e.target)) {
+      return
+    }
+    const profileButton = profileMenuRef.value.querySelector('.profile-button')
+    if (profileButton && profileButton.contains(e.target)) {
+      return
+    }
+  }
+
   const header = document.querySelector('.header-deportista')
   const sidebar = document.querySelector('.sidebar-deportista')
 
@@ -257,11 +317,6 @@ function handleOutsideClick(e) {
       menuVisible.value = false
       applyLayoutOffsets()
     }
-  }
-
-  // Cerrar el menú de perfil si se hace clic fuera
-  if (profileMenuRef.value && !profileMenuRef.value.contains(e.target)) {
-    showProfileMenu.value = false
   }
 }
 
@@ -356,6 +411,42 @@ watch(() => route.path, async () => {
   applyLayoutOffsets()
 })
 
+// Watcher para manejar el listener del menú de perfil
+watch(showProfileMenu, (isOpen) => {
+  if (isOpen) {
+    // Al abrir, esperar suficiente tiempo antes de agregar el listener
+    setTimeout(() => {
+      nextTick(() => {
+        // Verificar que el menú todavía está abierto
+        if (!showProfileMenu.value || !profileMenuRef.value) {
+          return
+        }
+
+        const dropdown = profileMenuRef.value.querySelector('.profile-dropdown')
+        if (!dropdown) {
+          return
+        }
+
+        // Remover listener anterior si existe
+        if (profileMenuClickHandler.value) {
+          document.removeEventListener('click', profileMenuClickHandler.value, true)
+        }
+
+        // Agregar nuevo listener
+        profileMenuClickHandler.value = handleProfileMenuOutsideClick
+        document.addEventListener('click', profileMenuClickHandler.value, true)
+      })
+    }, 350) // Delay suficiente para que la transición de Vue termine (0.25s + margen)
+  } else {
+    // Al cerrar, remover listener inmediatamente
+    if (profileMenuClickHandler.value) {
+      document.removeEventListener('click', profileMenuClickHandler.value, true)
+      profileMenuClickHandler.value = null
+    }
+    profileMenuOpenTime.value = 0
+  }
+})
+
 function verPerfil() {
   showProfileMenu.value = false
   // Usar siempre el nuevo perfil con selector de roles
@@ -421,6 +512,10 @@ onUpdated(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener("click", handleOutsideClick)
+  if (profileMenuClickHandler.value) {
+    document.removeEventListener('click', profileMenuClickHandler.value, true)
+    profileMenuClickHandler.value = null
+  }
   if (hoverTimeout.value) {
     clearTimeout(hoverTimeout.value)
   }

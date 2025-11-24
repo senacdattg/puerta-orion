@@ -1435,16 +1435,36 @@ html.modal-open {
 }
 
 /* --- Mejorar campos dentro del formulario de datos dinámicos --- */
-.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .fila-texto {
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .fila-texto,
+.modal-content.modal-editar .modal-body .formulario-edicion .fila-texto {
   gap: 18px;
   margin-bottom: 22px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .campo-nombre-centrado {
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .campo-nombre-centrado,
+.modal-content.modal-editar .modal-body .formulario-edicion .campo-nombre-centrado {
   grid-template-columns: 1fr !important;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.modal-content.modal-editar .modal-body .formulario-edicion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-content.modal-editar .modal-body .formulario-edicion .fila-texto input,
+.modal-content.modal-editar .modal-body .formulario-edicion .fila-texto select {
+  text-align: center;
 }
 
 /* --- Mejorar inputs y selects dentro del formulario de datos dinámicos --- */

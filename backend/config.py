@@ -51,7 +51,7 @@ class Config:
     CORS_ORIGINS = [
         origin.strip() for origin in cors_origins_env.split(',') if origin.strip()
     ]
-    CORS_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']
+    CORS_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS']
     CORS_HEADERS = ['Content-Type', 'Authorization']
     CORS_SUPPORTS_CREDENTIALS = True
     

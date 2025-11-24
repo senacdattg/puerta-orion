@@ -170,7 +170,7 @@
                 <label>Teléfono:</label>
                 <span>{{ usuarioDetalle.persona?.telefono || 'N/A' }}</span>
               </div>
-              <div class="info-item-detalle">
+              <div class="info-item-detalle info-item-direccion-detalle">
                 <label>Dirección:</label>
                 <span>{{ usuarioDetalle.persona?.direccion || 'N/A' }}</span>
               </div>
@@ -211,11 +211,11 @@
               <span
                 v-for="rol in usuarioDetalle.roles || []"
                 :key="rol.id_rol"
-                :class="['badge-detalle', roleColor(rol.nombre_rol)]"
+                :class="['badge', 'badge-detalle', roleColor(rol.nombre_rol), `badge-${rol.nombre_rol.toLowerCase()}`]"
               >
                 {{ rol.nombre_rol }}
               </span>
-              <span v-if="!usuarioDetalle.roles || usuarioDetalle.roles.length === 0" class="badge-detalle badge-none">
+              <span v-if="!usuarioDetalle.roles || usuarioDetalle.roles.length === 0" class="badge badge-detalle badge-none">
                 Sin roles asignados
               </span>
             </div>
@@ -580,6 +580,7 @@ const guardandoRoles = ref(false);
 const errorRoles = ref(null);
 const usuarioParaRoles = ref(null);
 const rolesSeleccionados = ref([]);
+const rolesIniciales = ref([]); // Guardar roles iniciales para comparar cambios
 
 // Obtener ID del usuario actual para prevenir auto-desactivación
 const currentUserId = computed(() => authStore.user?.id_usuario);
@@ -1142,10 +1143,56 @@ function construirHtmlErrores(errores) {
   return `<ul style="text-align:left;margin:0;padding-left:18px;">${itemsErrores}</ul>`;
 }
 
-function cerrarModalEdicion() {
+async function cerrarModalEdicion() {
+  // Verificar si hay cambios sin guardar
+  const tieneCambios = verificarCambiosSinGuardar();
+  
+  if (tieneCambios) {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar edición?',
+      text: '¿Estás seguro de que deseas cerrar el formulario? Los cambios no guardados se perderán.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar',
+      cancelButtonText: 'Continuar editando',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    });
+    
+    if (!result.isConfirmed) {
+      return;
+    }
+  }
+  
   mostrarModalEdicion.value = false;
   errorEdicion.value = null;
   resetErroresCampos();
+}
+
+function verificarCambiosSinGuardar() {
+  if (!usuarioDetalle.value) return false;
+  
+  const usuarioForm = formularioEdicion.value.datos_usuario || {};
+  const personaForm = formularioEdicion.value.datos_persona || {};
+  const usuarioOriginal = usuarioDetalle.value.usuario || {};
+  const personaOriginal = usuarioDetalle.value.persona || {};
+  
+  // Comparar username
+  if (usuarioForm.usuario !== (usuarioOriginal.usuario || '')) {
+    return true;
+  }
+  
+  // Comparar campos de persona
+  const camposPersona = ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'documento', 'correo_electronico', 'telefono', 'direccion'];
+  for (const campo of camposPersona) {
+    const valorForm = personaForm[campo] || '';
+    const valorOriginal = personaOriginal[campo] || '';
+    if (valorForm.trim() !== valorOriginal.trim()) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 function validarUsername(username, nuevosErrores, errores) {
@@ -1252,6 +1299,37 @@ async function guardarEdicion() {
     return;
   }
 
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambiosSinGuardar();
+  
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han realizado modificaciones en los datos del usuario. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    });
+    return;
+  }
+
+  // Confirmar antes de guardar
+  const nombreUsuario = datos.username || usuarioDetalle.value.usuario?.usuario || 'usuario';
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Guardar cambios?',
+    text: `¿Estás seguro de que deseas guardar los cambios en el usuario "${nombreUsuario}"?`,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
+  });
+
+  if (!confirmacion.isConfirmed) {
+    return;
+  }
+
   erroresCamposEdicion.value = nuevosErrores;
 
   const payload = {
@@ -1270,11 +1348,37 @@ async function guardarEdicion() {
     }
   };
 
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando cambios...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
   try {
     guardandoEdicion.value = true;
     errorEdicion.value = null;
     const resp = await usuariosService.actualizarUsuario(idUsuario, payload);
-    if (!resp.success) throw new Error(resp.error || 'Error al actualizar');
+    
+    // Cerrar el loading
+    Swal.close();
+    
+    if (!resp.success) {
+      const mensajeError = extraerMensajeErrorUsuario(resp.error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar usuario',
+        html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
+      });
+      errorEdicion.value = mensajeError;
+      return;
+    }
 
     // Actualizar en tabla
     const idx = users.value.findIndex(u => u.id_usuario === idUsuario);
@@ -1295,24 +1399,80 @@ async function guardarEdicion() {
     }
 
     formularioEdicion.value = JSON.parse(JSON.stringify(payload));
-    cerrarModalEdicion();
+    
+    // Éxito: mostrar notificación de confirmación
     await Swal.fire({
       icon: 'success',
-      title: 'Usuario actualizado',
-      timer: 1500,
-      showConfirmButton: false
+      title: '¡Usuario actualizado exitosamente!',
+      text: `Los cambios en el usuario "${nombreUsuario}" se han guardado correctamente.`,
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#004AAD'
     });
+    
+    cerrarModalEdicion();
   } catch (e) {
+    // Cerrar el loading si aún está abierto
+    Swal.close();
+    
     console.error(e);
-    errorEdicion.value = e.message;
+    const mensajeError = extraerMensajeErrorUsuario(e);
+    errorEdicion.value = mensajeError;
+    
     await Swal.fire({
       icon: 'error',
-      title: 'Error al actualizar',
-      text: e.message || 'No se pudieron guardar los cambios.'
+      title: 'Error al actualizar usuario',
+      html: `<p><strong>Ocurrió un error inesperado.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     });
   } finally {
     guardandoEdicion.value = false;
   }
+}
+
+/**
+ * Extrae y formatea el mensaje de error de manera más legible
+ */
+function extraerMensajeErrorUsuario(error) {
+  if (!error) {
+    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.';
+  }
+
+  // Si es un string, devolverlo directamente
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  // Si es un objeto con mensaje
+  if (error.message) {
+    return error.message;
+  }
+
+  // Si es un objeto con error
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+  }
+
+  // Si es un objeto con detalles
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details);
+  }
+
+  // Si es un objeto, intentar convertirlo a string legible
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error);
+      // Si el JSON es muy largo, devolver un mensaje genérico
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.';
+      }
+      return errorStr;
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.';
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.';
 }
 
 // Abrir gestión de roles
@@ -1328,18 +1488,84 @@ function abrirGestionRoles(user) {
   });
 
   // Mapear los roles actuales a sus IDs
-  rolesSeleccionados.value = rolesActuales.map(rol => rol.id_rol);
+  const rolesIds = rolesActuales.map(rol => rol.id_rol);
+  rolesSeleccionados.value = [...rolesIds];
+  rolesIniciales.value = [...rolesIds]; // Guardar una copia para comparar cambios
+  
+  console.log('Roles iniciales:', rolesIniciales.value);
+  console.log('Roles seleccionados:', rolesSeleccionados.value);
 
   mostrarModalRoles.value = true;
   console.log('mostrarModalRoles.value =', mostrarModalRoles.value);
 }
 
 // Cerrar modal de gestión de roles
-function cerrarModalRoles() {
+async function cerrarModalRoles() {
+  // Verificar si hay cambios sin guardar
+  const tieneCambios = verificarCambiosRoles();
+  
+  console.log('Verificando cambios al cerrar:', {
+    tieneCambios,
+    rolesIniciales: rolesIniciales.value,
+    rolesSeleccionados: rolesSeleccionados.value
+  });
+  
+  if (tieneCambios) {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar gestión de roles?',
+      text: '¿Estás seguro de que deseas cerrar? Los cambios en los roles no guardados se perderán.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar',
+      cancelButtonText: 'Continuar',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    });
+    
+    if (!result.isConfirmed) {
+      return;
+    }
+  }
+  
   mostrarModalRoles.value = false;
   usuarioParaRoles.value = null;
   rolesSeleccionados.value = [];
+  rolesIniciales.value = [];
   errorRoles.value = null;
+}
+
+function verificarCambiosRoles() {
+  if (!usuarioParaRoles.value) {
+    return false;
+  }
+  
+  // Si rolesIniciales no está inicializado (array vacío o undefined), considerar que no hay cambios iniciales
+  // pero si rolesSeleccionados tiene elementos, entonces hay cambios
+  if (rolesIniciales.value.length === 0) {
+    // Si ambos están vacíos, no hay cambios
+    if (rolesSeleccionados.value.length === 0) {
+      return false;
+    }
+    // Si rolesSeleccionados tiene elementos pero rolesIniciales está vacío, hay cambios
+    return true;
+  }
+  
+  // Si rolesSeleccionados está vacío pero rolesIniciales tiene elementos, hay cambios
+  if (rolesSeleccionados.value.length === 0 && rolesIniciales.value.length > 0) {
+    return true;
+  }
+  
+  // Comparar arrays de roles (orden no importa)
+  const rolesInicialesSorted = [...rolesIniciales.value].sort((a, b) => a - b);
+  const rolesSeleccionadosSorted = [...rolesSeleccionados.value].sort((a, b) => a - b);
+  
+  // Si las longitudes son diferentes, hay cambios
+  if (rolesInicialesSorted.length !== rolesSeleccionadosSorted.length) {
+    return true;
+  }
+  
+  // Comparar elemento por elemento
+  return rolesInicialesSorted.some((rol, index) => rol !== rolesSeleccionadosSorted[index]);
 }
 
 // Toggle de selección de rol
@@ -1356,7 +1582,49 @@ function toggleRolSeleccionado(idRol) {
 async function guardarRoles() {
   if (!usuarioParaRoles.value) return;
 
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambiosRoles();
+  
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han realizado modificaciones en los roles del usuario. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    });
+    return;
+  }
+
   const idUsuario = usuarioParaRoles.value.usuario?.id_usuario || usuarioParaRoles.value.id_usuario;
+  const nombreUsuario = usuarioParaRoles.value.usuario?.usuario || usuarioParaRoles.value.usuario || 'usuario';
+
+  // Confirmar antes de guardar
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Guardar cambios de roles?',
+    text: `¿Estás seguro de que deseas guardar los cambios en los roles del usuario "${nombreUsuario}"?`,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
+  });
+
+  if (!confirmacion.isConfirmed) {
+    return;
+  }
+
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando roles...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
 
   try {
     guardandoRoles.value = true;
@@ -1365,8 +1633,20 @@ async function guardarRoles() {
     // Enviar los roles seleccionados al backend
     const response = await usuariosService.cambiarRolUsuario(idUsuario, rolesSeleccionados.value);
 
+    // Cerrar el loading
+    Swal.close();
+
     if (!response.success) {
-      throw new Error(response.error || 'Error al actualizar roles');
+      const mensajeError = extraerMensajeErrorRoles(response.error);
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar roles',
+        html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
+      });
+      errorRoles.value = mensajeError;
+      return;
     }
 
     // Obtener los roles actualizados desde la respuesta del backend
@@ -1411,24 +1691,88 @@ async function guardarRoles() {
       }
     }
 
-    cerrarModalRoles();
+    // Actualizar roles iniciales con los nuevos roles guardados
+    const rolesActualizadosIds = rolesActualizados
+      .filter(rol => {
+        const nombreLower = rol.nombre_rol?.toLowerCase() || '';
+        return nombreLower === 'administrador' || nombreLower === 'entrenador';
+      })
+      .map(rol => rol.id_rol);
+    rolesIniciales.value = [...rolesActualizadosIds];
+
+    // Éxito: mostrar notificación de confirmación
     await Swal.fire({
       icon: 'success',
-      title: 'Roles actualizados',
-      timer: 1500,
-      showConfirmButton: false
+      title: '¡Roles actualizados exitosamente!',
+      text: `Los roles del usuario "${nombreUsuario}" se han guardado correctamente.`,
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#004AAD'
     });
+
+    cerrarModalRoles();
   } catch (err) {
+    // Cerrar el loading si aún está abierto
+    Swal.close();
+    
     console.error('Error al guardar roles:', err);
-    errorRoles.value = err.message;
+    const mensajeError = extraerMensajeErrorRoles(err);
+    errorRoles.value = mensajeError;
+    
     await Swal.fire({
       icon: 'error',
       title: 'Error al actualizar roles',
-      text: err.message || 'No pudimos guardar los cambios.'
+      html: `<p><strong>Ocurrió un error inesperado.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     });
   } finally {
     guardandoRoles.value = false;
   }
+}
+
+/**
+ * Extrae y formatea el mensaje de error de manera más legible para roles
+ */
+function extraerMensajeErrorRoles(error) {
+  if (!error) {
+    return 'No se pudo completar la actualización de roles. Por favor, intenta nuevamente.';
+  }
+
+  // Si es un string, devolverlo directamente
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  // Si es un objeto con mensaje
+  if (error.message) {
+    return error.message;
+  }
+
+  // Si es un objeto con error
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+  }
+
+  // Si es un objeto con detalles
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details);
+  }
+
+  // Si es un objeto, intentar convertirlo a string legible
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error);
+      // Si el JSON es muy largo, devolver un mensaje genérico
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.';
+      }
+      return errorStr;
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.';
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.';
 }
 
 function roleColor(role) {

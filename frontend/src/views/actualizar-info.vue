@@ -32,6 +32,7 @@
                   :disabled="!puedeEditarCampo.primerNombre"
                   class="form-input"
                   :style="!puedeEditarCampo.primerNombre ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
+                  @input="(event) => puedeEditarCampo.primerNombre && manejarEntradaNombre('primer_nombre', event)"
                 >
                 <small v-if="!puedeEditarCampo.primerNombre" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
@@ -47,6 +48,7 @@
                   :disabled="!puedeEditarCampo.segundoNombre"
                   class="form-input"
                   :style="!puedeEditarCampo.segundoNombre ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
+                  @input="(event) => puedeEditarCampo.segundoNombre && manejarEntradaNombre('segundo_nombre', event, false)"
                 >
                 <small v-if="!puedeEditarCampo.segundoNombre" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
@@ -65,6 +67,7 @@
                   :disabled="!puedeEditarCampo.primerApellido"
                   class="form-input"
                   :style="!puedeEditarCampo.primerApellido ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
+                  @input="(event) => puedeEditarCampo.primerApellido && manejarEntradaNombre('primer_apellido', event)"
                 >
                 <small v-if="!puedeEditarCampo.primerApellido" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
@@ -80,6 +83,7 @@
                   :disabled="!puedeEditarCampo.segundoApellido"
                   class="form-input"
                   :style="!puedeEditarCampo.segundoApellido ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
+                  @input="(event) => puedeEditarCampo.segundoApellido && manejarEntradaNombre('segundo_apellido', event, false)"
                 >
                 <small v-if="!puedeEditarCampo.segundoApellido" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
@@ -112,6 +116,7 @@
                   :disabled="!puedeEditarCampo.numeroDocumento"
                   class="form-input"
                   :style="!puedeEditarCampo.numeroDocumento ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
+                  @input="(event) => puedeEditarCampo.numeroDocumento && manejarDocumento(event)"
                 >
                 <small v-if="!puedeEditarCampo.numeroDocumento" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
@@ -127,6 +132,7 @@
                   required
                   maxlength="100"
                   class="form-input"
+                  @input="manejarCorreo"
                 >
               </div>
 
@@ -138,6 +144,7 @@
                   v-model="formData.telefono"
                   maxlength="20"
                   class="form-input"
+                  @input="manejarTelefono"
                 >
               </div>
             </div>
@@ -150,6 +157,7 @@
                 class="form-textarea"
                 rows="3"
                 maxlength="200"
+                @input="manejarEntradaDireccion"
               ></textarea>
             </div>
 
@@ -184,6 +192,7 @@
                 required
                 maxlength="50"
                 class="form-input"
+                @input="manejarUsuario"
               >
             </div>
           </div>
@@ -662,6 +671,42 @@ const formDataDeportista = ref({
   descripcion_recomendacion: ''
 })
 
+// Guardar datos iniciales para comparar cambios
+const formDataInicial = ref({
+  primer_nombre: '',
+  segundo_nombre: '',
+  primer_apellido: '',
+  segundo_apellido: '',
+  correo_electronico: '',
+  telefono: '',
+  direccion: '',
+  documento: '',
+  id_tipo_documento: null,
+  id_sexo: null,
+  usuario: ''
+})
+
+const formDataDeportistaInicial = ref({
+  fecha_nacimiento: '',
+  fecha_ingreso: '',
+  id_tipo_sanguineo: null,
+  id_ciudad_residencia: null,
+  id_eps: null,
+  id_categoria: null,
+  peso: null,
+  altura: null,
+  id_deporte: null,
+  id_escuela: null,
+  id_institucion_registro: null,
+  practica_otro_deporte: false,
+  participa_escuela: false,
+  tiene_enfermedades: null,
+  tipo_enfermedad: null,
+  diagnostico: [],
+  recomendacion_medica: false,
+  descripcion_recomendacion: ''
+})
+
 // Computed para filtrar diagnósticos según el tipo de enfermedad seleccionado
 const diagnosticosDisponibles = computed(() => {
   if (!formDataDeportista.value.tipo_enfermedad) return []
@@ -922,26 +967,130 @@ async function cargarCatalogosDeportista() {
   }
 }
 
+// Constantes para validación (igual que en formulario-general.vue)
+const LOCALE_COL = 'es-CO'
+const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ ]+$/
+const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
+const MAX_DOCUMENTO = 20
+const MIN_DOCUMENTO = 6
+const MAX_TELEFONO = 15
+const MIN_TELEFONO = 7
+
+// Función para transformar a mayúsculas (igual que en formulario-general.vue)
+function transformarMayusculas(valor = '') {
+  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
+}
+
+// Función para sanitizar nombres (igual que en formulario-general.vue)
+function sanitizarNombre(valor = '', obligatorio = true) {
+  const mayus = transformarMayusculas(valor)
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ')
+  if (!obligatorio && !limpio.trim()) {
+    return ''
+  }
+  return limpio.trimStart()
+}
+
+// Función para sanitizar dirección (igual que en formulario-general.vue)
+function sanitizarDireccion(valor = '') {
+  const mayus = transformarMayusculas(valor)
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+}
+
+// Función para sanitizar strings (normalizar espacios, trim) - mantener para compatibilidad
+function sanitizarString(valor) {
+  if (!valor || typeof valor !== 'string') return ''
+  return valor.replace(/\s+/g, ' ').trim()
+}
+
+// Handlers para validación en tiempo real (igual que en formulario-general.vue)
+function manejarEntradaNombre(campo, event, obligatorio = true) {
+  if (!event || !event.target) return
+  const valor = event.target.value || ''
+  const valorSanitizado = sanitizarNombre(valor, obligatorio)
+  // Forzar actualización del valor sanitizado
+  formData.value[campo] = valorSanitizado
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado
+  }
+}
+
+function manejarDocumento(event) {
+  if (!event || !event.target) return
+  const valor = event.target.value || ''
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO)
+  formData.value.documento = digitos
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== digitos) {
+    event.target.value = digitos
+  }
+}
+
+function manejarTelefono(event) {
+  if (!event || !event.target) return
+  const valor = event.target.value || ''
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO)
+  formData.value.telefono = digitos
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== digitos) {
+    event.target.value = digitos
+  }
+}
+
+function manejarEntradaDireccion(event) {
+  if (!event || !event.target) return
+  const valor = event.target.value || ''
+  const valorSanitizado = sanitizarDireccion(valor)
+  formData.value.direccion = valorSanitizado
+  // Asegurar que el textarea también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado
+  }
+}
+
+function manejarCorreo(event) {
+  if (!event || !event.target) return
+  const valor = event.target.value || ''
+  const valorSanitizado = valor.trim().toLowerCase()
+  formData.value.correo_electronico = valorSanitizado
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado
+  }
+}
+
+function manejarUsuario(event) {
+  if (!event || !event.target) return
+  const valor = event.target.value || ''
+  const valorSanitizado = valor.trim()
+  formData.value.usuario = valorSanitizado
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado
+  }
+}
+
 const cargarDatosPersona = (persona) => {
   if (!persona) return
 
-  formData.value.primer_nombre = persona.primer_nombre || ''
-  formData.value.segundo_nombre = persona.segundo_nombre || ''
-  formData.value.primer_apellido = persona.primer_apellido || ''
-  formData.value.segundo_apellido = persona.segundo_apellido || ''
-  formData.value.correo_electronico = persona.correo_electronico || ''
-  formData.value.telefono = persona.telefono || ''
-  formData.value.direccion = persona.direccion || ''
-  formData.value.documento = persona.documento || ''
+  formData.value.primer_nombre = sanitizarNombre(persona.primer_nombre)
+  formData.value.segundo_nombre = sanitizarNombre(persona.segundo_nombre, false)
+  formData.value.primer_apellido = sanitizarNombre(persona.primer_apellido)
+  formData.value.segundo_apellido = sanitizarNombre(persona.segundo_apellido, false)
+  formData.value.correo_electronico = (persona.correo_electronico || '').trim().toLowerCase()
+  formData.value.telefono = (persona.telefono || '').replace(/\D/g, '')
+  formData.value.direccion = sanitizarDireccion(persona.direccion || '')
+  formData.value.documento = (persona.documento || '').replace(/\D/g, '')
   formData.value.id_tipo_documento = persona.id_tipo_documento || null
   formData.value.id_sexo = persona.id_sexo || null
 }
 
 const cargarDatosUsuarioForm = (detalle, usuario) => {
   if (detalle?.usuario) {
-    formData.value.usuario = detalle.usuario.usuario || ''
+    formData.value.usuario = (detalle.usuario.usuario || '').trim()
   } else if (usuario) {
-    formData.value.usuario = usuario.usuario || usuario.username || ''
+    formData.value.usuario = (usuario.usuario || usuario.username || '').trim()
   }
 }
 
@@ -999,7 +1148,7 @@ const cargarInformacionDeportiva = (info) => {
     formDataDeportista.value.recomendacion_medica = info.recomendacion_medica
   }
   if (info.descripcion_recomendacion) {
-    formDataDeportista.value.descripcion_recomendacion = info.descripcion_recomendacion
+    formDataDeportista.value.descripcion_recomendacion = sanitizarString(info.descripcion_recomendacion)
   }
 }
 
@@ -1048,6 +1197,10 @@ async function cargarDatosUsuario() {
     if (detalle?.salud) {
       cargarDatosSalud(detalle.salud)
     }
+
+    // Guardar datos iniciales después de cargar
+    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+    formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value))
   } catch (err) {
     console.error('Error al cargar datos del usuario:', err)
     error.value = 'Error al cargar los datos del usuario. Por favor, recarga la página.'
@@ -1061,40 +1214,165 @@ async function cargarDatosUsuario() {
   }
 }
 
+// Función para normalizar valores para comparación
+function normalizarValorParaComparacion(valor) {
+  if (valor === null || valor === undefined) {
+    return ''
+  }
+  if (typeof valor === 'string') {
+    return sanitizarString(valor)
+  }
+  if (typeof valor === 'number') {
+    return valor
+  }
+  if (typeof valor === 'boolean') {
+    return valor
+  }
+  if (Array.isArray(valor)) {
+    return valor.map(v => typeof v === 'object' ? v.id_diagnostico || v : v).sort()
+  }
+  return valor
+}
+
+// Verificar si hay cambios
+function verificarCambios() {
+  // Comparar datos de persona
+  const camposPersona = ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido',
+                          'correo_electronico', 'telefono', 'direccion', 'usuario', 'id_sexo']
+
+  for (const campo of camposPersona) {
+    const valorInicial = normalizarValorParaComparacion(formDataInicial.value[campo])
+    const valorActual = normalizarValorParaComparacion(formData.value[campo])
+    if (valorInicial !== valorActual) {
+      return true
+    }
+  }
+
+  // Comparar datos de deportista si es deportista
+  if (esDeportista.value) {
+    const camposDeportista = ['id_tipo_sanguineo', 'id_ciudad_residencia', 'id_eps', 'id_categoria',
+                              'peso', 'altura', 'id_deporte', 'id_escuela', 'id_institucion_registro',
+                              'practica_otro_deporte', 'participa_escuela', 'tiene_enfermedades',
+                              'tipo_enfermedad', 'recomendacion_medica', 'descripcion_recomendacion']
+
+    for (const campo of camposDeportista) {
+      const valorInicial = normalizarValorParaComparacion(formDataDeportistaInicial.value[campo])
+      const valorActual = normalizarValorParaComparacion(formDataDeportista.value[campo])
+      if (valorInicial !== valorActual) {
+        return true
+      }
+    }
+
+    // Comparar diagnóstico (array)
+    const diagnosticoInicial = normalizarValorParaComparacion(formDataDeportistaInicial.value.diagnostico)
+    const diagnosticoActual = normalizarValorParaComparacion(formDataDeportista.value.diagnostico)
+    if (JSON.stringify(diagnosticoInicial) !== JSON.stringify(diagnosticoActual)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+// Función para validar formulario antes de guardar (igual que en formulario-general.vue)
+function validarFormulario() {
+  const errores = []
+
+  // Validar nombres (solo si se pueden editar)
+  if (rolUsuario.value === 'Entrenador') {
+    if (puedeEditarCampo.value.primerNombre && formData.value.primer_nombre) {
+      if (!REGEX_NOMBRE.test(formData.value.primer_nombre)) {
+        errores.push('El primer nombre solo debe contener letras y espacios')
+      }
+    }
+    if (puedeEditarCampo.value.primerApellido && formData.value.primer_apellido) {
+      if (!REGEX_NOMBRE.test(formData.value.primer_apellido)) {
+        errores.push('El primer apellido solo debe contener letras y espacios')
+      }
+    }
+    if (puedeEditarCampo.value.segundoNombre && formData.value.segundo_nombre) {
+      if (formData.value.segundo_nombre && !REGEX_NOMBRE.test(formData.value.segundo_nombre)) {
+        errores.push('El segundo nombre solo debe contener letras y espacios')
+      }
+    }
+    if (puedeEditarCampo.value.segundoApellido && formData.value.segundo_apellido) {
+      if (formData.value.segundo_apellido && !REGEX_NOMBRE.test(formData.value.segundo_apellido)) {
+        errores.push('El segundo apellido solo debe contener letras y espacios')
+      }
+    }
+  }
+
+  // Validar correo electrónico
+  if (formData.value.correo_electronico && !REGEX_CORREO.test(formData.value.correo_electronico)) {
+    errores.push('Ingrese un correo electrónico válido')
+  }
+
+  // Validar teléfono (solo números y longitud)
+  if (puedeEditarCampo.value.telefono && formData.value.telefono) {
+    const telefonoLimpio = formData.value.telefono.replace(/\D/g, '')
+    if (telefonoLimpio.length < MIN_TELEFONO || telefonoLimpio.length > MAX_TELEFONO) {
+      errores.push(`El teléfono debe tener entre ${MIN_TELEFONO} y ${MAX_TELEFONO} dígitos`)
+    }
+  }
+
+  // Validar documento (solo números y longitud) - solo si se puede editar
+  if (puedeEditarCampo.value.numeroDocumento && formData.value.documento) {
+    const documentoLimpio = formData.value.documento.replace(/\D/g, '')
+    if (documentoLimpio.length < MIN_DOCUMENTO || documentoLimpio.length > MAX_DOCUMENTO) {
+      errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`)
+    }
+  }
+
+  // Validar usuario
+  if (formData.value.usuario) {
+    const usuarioLimpio = formData.value.usuario.trim()
+    if (usuarioLimpio.length < 3) {
+      errores.push('El nombre de usuario debe tener al menos 3 caracteres')
+    }
+    if (usuarioLimpio.length > 200) {
+      errores.push('El nombre de usuario no puede exceder 200 caracteres')
+    }
+  }
+
+  return errores
+}
+
 const confirmarActualizacion = async () => {
   const confirmacion = await Swal.fire({
     icon: 'question',
     title: '¿Guardar cambios?',
-    text: 'Se actualizará tu perfil con la información ingresada.',
+    text: '¿Estás seguro de que deseas guardar los cambios en tu perfil?',
     showCancelButton: true,
-    confirmButtonText: 'Sí, actualizar',
-    cancelButtonText: 'Cancelar'
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
   })
   return confirmacion.isConfirmed
 }
 
 const prepararDatosPersona = () => {
   const datosPersona = {
-    correo_electronico: formData.value.correo_electronico.trim()
+    correo_electronico: (formData.value.correo_electronico || '').trim().toLowerCase()
   }
 
-  if (puedeEditarCampo.value.telefono && formData.value.telefono?.trim()) {
-    datosPersona.telefono = formData.value.telefono.trim()
+  if (puedeEditarCampo.value.telefono && formData.value.telefono) {
+    datosPersona.telefono = formData.value.telefono.replace(/\D/g, '')
   }
-  if (puedeEditarCampo.value.direccion && formData.value.direccion?.trim()) {
-    datosPersona.direccion = formData.value.direccion.trim()
+  if (puedeEditarCampo.value.direccion && formData.value.direccion) {
+    datosPersona.direccion = sanitizarDireccion(formData.value.direccion)
   }
 
   if (rolUsuario.value === 'Entrenador') {
-    datosPersona.primer_nombre = formData.value.primer_nombre.trim()
-    datosPersona.primer_apellido = formData.value.primer_apellido.trim()
+    datosPersona.primer_nombre = sanitizarNombre(formData.value.primer_nombre)
+    datosPersona.primer_apellido = sanitizarNombre(formData.value.primer_apellido)
     datosPersona.id_sexo = formData.value.id_sexo
 
-    if (formData.value.segundo_nombre?.trim()) {
-      datosPersona.segundo_nombre = formData.value.segundo_nombre.trim()
+    if (formData.value.segundo_nombre) {
+      datosPersona.segundo_nombre = sanitizarNombre(formData.value.segundo_nombre, false)
     }
-    if (formData.value.segundo_apellido?.trim()) {
-      datosPersona.segundo_apellido = formData.value.segundo_apellido.trim()
+    if (formData.value.segundo_apellido) {
+      datosPersona.segundo_apellido = sanitizarNombre(formData.value.segundo_apellido, false)
     }
   }
 
@@ -1103,7 +1381,7 @@ const prepararDatosPersona = () => {
 
 const prepararDatosUsuario = () => {
   return {
-    usuario: formData.value.usuario.trim()
+    usuario: (formData.value.usuario || '').trim()
   }
 }
 
@@ -1180,7 +1458,10 @@ const agregarDatosAntecedentesMedicos = (datosInfo) => {
   }
 
   datosInfo.recomendacion_medica = calcularRecomendacionMedica()
-  datosInfo.descripcion_recomendacion = calcularDescripcionRecomendacion()
+  const descripcion = calcularDescripcionRecomendacion()
+  if (descripcion) {
+    datosInfo.descripcion_recomendacion = sanitizarString(descripcion)
+  }
 }
 
 const prepararDatosInformacionDeportiva = () => {
@@ -1254,14 +1535,19 @@ const mostrarExitoYRecargar = async () => {
 
   await Swal.fire({
     icon: 'success',
-    title: 'Cambios guardados',
-    text: 'Tu perfil se actualizó correctamente.',
-    timer: 1500,
-    showConfirmButton: false
+    title: '¡Perfil actualizado exitosamente!',
+    text: 'Tu información se ha guardado correctamente en el sistema.',
+    confirmButtonText: 'Aceptar',
+    confirmButtonColor: '#004AAD'
   })
 
   await authStore.loadUserProfileDetail()
   await authStore.loadUserProfile()
+
+  // Actualizar datos iniciales con los nuevos datos guardados
+  formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+  formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value))
+
   router.push('/perfil')
 }
 
@@ -1270,9 +1556,47 @@ const actualizarInformacion = async () => {
     return
   }
 
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambios()
+
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han realizado modificaciones en tu perfil. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    })
+    return
+  }
+
+  // Validar formulario antes de continuar
+  const erroresValidacion = validarFormulario()
+  if (erroresValidacion.length > 0) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${erroresValidacion.join('<br>')}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    })
+    return
+  }
+
   if (!(await confirmarActualizacion())) {
     return
   }
+
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando cambios...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
 
   guardando.value = true
   error.value = null
@@ -1289,8 +1613,20 @@ const actualizarInformacion = async () => {
 
     const resultado = await authService.updateUser(idUsuario, datosPersona, datosUsuario)
 
+    // Cerrar el loading
+    Swal.close()
+
     if (!resultado.success) {
-      throw new Error(resultado.error || 'Error al actualizar la información')
+      const mensajeError = extraerMensajeError(resultado.error)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar perfil',
+        html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
+      })
+      error.value = mensajeError
+      return
     }
 
     if (esDeportista.value) {
@@ -1318,29 +1654,103 @@ const actualizarInformacion = async () => {
 
     await mostrarExitoYRecargar()
   } catch (err) {
+    // Cerrar el loading si aún está abierto
+    Swal.close()
+
     console.error('Error actualizando información:', err)
-    error.value = err.message || 'Error al actualizar la información. Por favor, intenta nuevamente.'
+    const mensajeError = extraerMensajeError(err)
+    error.value = mensajeError
+
     await Swal.fire({
       icon: 'error',
-      title: 'No pudimos actualizar',
-      text: err.message || 'Intenta de nuevo en unos minutos.'
+      title: 'Error al actualizar perfil',
+      html: `<p><strong>Ocurrió un error inesperado.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     })
   } finally {
     guardando.value = false
   }
 }
 
+/**
+ * Extrae y formatea el mensaje de error de manera más legible
+ */
+function extraerMensajeError(error) {
+  if (!error) {
+    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.'
+  }
+
+  // Si es un string, devolverlo directamente
+  if (typeof error === 'string') {
+    return error
+  }
+
+  // Si es un objeto con mensaje
+  if (error.message) {
+    return error.message
+  }
+
+  // Si es un objeto con error
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+  }
+
+  // Si es un objeto con detalles
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
+  }
+
+  // Si es un objeto, intentar convertirlo a string legible
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error)
+      // Si el JSON es muy largo, devolver un mensaje genérico
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
+      }
+      return errorStr
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.'
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.'
+}
+
 const cancelar = async () => {
-  const result = await Swal.fire({
-    icon: 'question',
-    title: '¿Descartar cambios?',
-    text: 'Los cambios sin guardar se perderán.',
-    showCancelButton: true,
-    confirmButtonText: 'Sí, salir',
-    cancelButtonText: 'Continuar editando'
-  })
-  if (result.isConfirmed) {
-    router.push('/perfil')
+  // Verificar si hay cambios sin guardar
+  const tieneCambios = verificarCambios()
+
+  if (tieneCambios) {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Descartar cambios?',
+      text: '¿Estás seguro de que deseas salir? Los cambios sin guardar se perderán.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Continuar editando',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    })
+    if (result.isConfirmed) {
+      router.push('/perfil')
+    }
+  } else {
+    // Si no hay cambios, solo confirmar salida
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Salir de la edición?',
+      text: '¿Estás seguro de que deseas salir sin guardar cambios?',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, salir',
+      cancelButtonText: 'Continuar',
+      confirmButtonColor: '#6c757d',
+      cancelButtonColor: '#004AAD'
+    })
+    if (result.isConfirmed) {
+      router.push('/perfil')
+    }
   }
 }
 

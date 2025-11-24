@@ -50,20 +50,22 @@ function normalizarNombre(valor = '') {
 
 function normalizarCodigo(valor = '') {
   if (!valor) return ''
-  const mayus = valor.toLocaleUpperCase(LOCALE_COL)
+  // Convertir a string si es número u otro tipo
+  const valorStr = String(valor)
+  const mayus = valorStr.toLocaleUpperCase(LOCALE_COL)
   return mayus.replace(/[^A-Z0-9-]/g, '').slice(0, MAX_CODIGO)
 }
 
 const localForm = ref({
   nombre: normalizarNombre(props.modelValue?.nombre || ''),
-  codigo: normalizarCodigo(props.modelValue?.codigo || ''),
+  codigo: normalizarCodigo(props.modelValue?.codigo || props.modelValue?.codigo_eps || ''),
   estado: props.modelValue?.estado ?? true
 })
 
 // Solo actualizar localForm si el valor realmente cambió desde el padre
 watch(() => props.modelValue, (newVal) => {
   const nuevoNombre = normalizarNombre(newVal?.nombre || '')
-  const nuevoCodigo = normalizarCodigo(newVal?.codigo || '')
+  const nuevoCodigo = normalizarCodigo(newVal?.codigo || newVal?.codigo_eps || '')
   const nuevoEstado = newVal?.estado ?? true
 
   if (localForm.value.nombre !== nuevoNombre ||
@@ -95,7 +97,7 @@ watch([() => localForm.value.nombre, () => localForm.value.codigo, () => localFo
 
     const valorActual = props.modelValue
     const nombreActual = normalizarNombre(valorActual?.nombre || '')
-    const codigoActual = normalizarCodigo(valorActual?.codigo || '')
+    const codigoActual = normalizarCodigo(valorActual?.codigo || valorActual?.codigo_eps || '')
     const estadoActual = valorActual?.estado ?? true
 
     if (nombreNormalizado !== nombreActual ||

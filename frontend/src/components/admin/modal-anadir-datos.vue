@@ -42,10 +42,6 @@
 
       <!-- Paso 2: formulario simple para la entidad seleccionada -->
       <div v-else-if="paso === 2" class="modal-body">
-        <button class="btn-volver" @click="volverPaso1">
-          <i class="fas fa-arrow-left"></i>
-          Volver
-        </button>
         <form class="formulario-datos" @submit.prevent="enviar">
           <section class="seccion-formulario">
             <h3>Crear {{ seleccionado?.nombre }}</h3>
@@ -55,7 +51,11 @@
               v-model="form"
             />
 
-            <div class="botones-formulario" style="justify-content: center; gap: 10px;">
+            <div class="botones-formulario" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" class="boton-formulario btn-volver" @click="volverPaso1" style="width: 150px; background-color: #6c757d; color: white;">
+                <i class="fas fa-arrow-left"></i>
+                Volver
+              </button>
               <button type="submit" class="boton-formulario" style="width: 150px;">Guardar</button>
             </div>
           </section>
@@ -165,7 +165,30 @@ function validarFormulario() {
   return errores
 }
 
-function cerrar() {
+async function cerrar() {
+  // Si está en el paso 2 (formulario), confirmar antes de cerrar
+  if (paso.value === 2) {
+    const tieneDatos = form.value.nombre?.trim() || form.value.codigo?.trim() || form.value.descripcion?.trim()
+    const mensaje = tieneDatos 
+      ? '¿Estás seguro de que deseas cerrar el formulario? Los datos ingresados se perderán.'
+      : '¿Estás seguro de que deseas cerrar el formulario?'
+    
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar formulario?',
+      text: mensaje,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar',
+      cancelButtonText: 'Continuar',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    })
+    
+    if (!result.isConfirmed) {
+      return
+    }
+  }
+  
   // Limpiar selección y resetear al cerrar
   seleccionado.value = null
   paso.value = 1
@@ -225,7 +248,28 @@ function seleccionar(item){
   }
 }
 
-function volverPaso1(){
+async function volverPaso1(){
+  // Confirmar antes de volver
+  const tieneDatos = form.value.nombre?.trim() || form.value.codigo?.trim() || form.value.descripcion?.trim()
+  const mensaje = tieneDatos 
+    ? '¿Estás seguro de que deseas volver? Los datos ingresados se perderán.'
+    : '¿Estás seguro de que deseas volver?'
+  
+  const result = await Swal.fire({
+    icon: 'question',
+    title: '¿Volver a selección?',
+    text: mensaje,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, volver',
+    cancelButtonText: 'Continuar',
+    confirmButtonColor: '#6c757d',
+    cancelButtonColor: '#004AAD'
+  })
+  
+  if (!result.isConfirmed) {
+    return
+  }
+  
   paso.value = 1
   form.value = {
     nombre: '',
@@ -246,15 +290,25 @@ async function enviar(){
     return
   }
 
-  emit('guardar-dato', { entidad: seleccionado.value.id, ...form.value })
-  await Swal.fire({
-    icon: 'success',
-    title: 'Dato creado',
-    timer: 1500,
-    showConfirmButton: false
+  // Confirmar antes de guardar
+  const nombreEntidad = seleccionado.value?.nombre || 'dato'
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Guardar datos?',
+    text: `¿Estás seguro de que deseas crear este ${nombreEntidad.toLowerCase()} con los datos ingresados?`,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
   })
-  volverPaso1()
-  cerrar()
+
+  if (!confirmacion.isConfirmed) {
+    return
+  }
+
+  // Emitir evento para que el padre maneje el guardado
+  emit('guardar-dato', { entidad: seleccionado.value.id, ...form.value })
 }
 </script>
 

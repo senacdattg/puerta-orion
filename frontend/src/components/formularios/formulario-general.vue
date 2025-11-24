@@ -477,7 +477,8 @@ async function manejarSubmit() {
   }
 
   if (props.modo === 'registrar') {
-    await registrarUsuario()
+    // Emitir evento submit para que el padre pueda mostrar confirmación
+    emit('submit', form.value)
   } else {
     emit('submit', form.value)
   }

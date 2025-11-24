@@ -12,7 +12,7 @@
       </div>
 
       <div class="modal-body">
-        <form class="formulario-edicion" @submit.prevent="guardar">
+        <form class="formulario-edicion formulario-datos" @submit.prevent="guardar">
           <component
             :is="componenteFormulario"
             v-model="formData"
@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { API_CONFIG } from '@/config/environment'
 import TipoDocumento from '../datos-dinamicos/tipo-documento.vue'
 import Sexo from '../datos-dinamicos/sexo.vue'
@@ -58,6 +58,7 @@ useModalScrollLock(computed(() => props.mostrar))
 
 const guardando = ref(false)
 const formData = ref({})
+const formDataInicial = ref({}) // Guardar datos iniciales para comparar cambios
 
 const REGEX_CODIGO_EPS = /^[A-Z0-9-]{2,20}$/
 const NAME_MIN_LENGTH = 2
@@ -127,85 +128,253 @@ const camposNombre = {
 }
 
 const componenteFormulario = computed(() => {
-  if (!props.tema) return null
-  return componentes[props.tema] || null
+  if (!props.tema) {
+    console.log('modal-editar-dato: No hay tema')
+    return null
+  }
+  const componente = componentes[props.tema] || null
+  console.log('modal-editar-dato: tema =', props.tema, 'componente =', componente ? componente.name : 'null')
+  return componente
 })
 
 const nombreTipo = computed(() => {
   return nombresTipo[props.tema] || 'Dato'
 })
 
+// Función para normalizar valores igual que al guardar
+function normalizarValorParaComparacion(valor) {
+  if (valor === null || valor === undefined) {
+    return ''
+  }
+  if (typeof valor === 'string') {
+    return valor.trim()
+  }
+  return valor
+}
+
 // Inicializar formData cuando cambia el dato
-watch(() => props.dato, (nuevoDato) => {
+watch(() => props.dato, async (nuevoDato) => {
   if (!nuevoDato || Object.keys(nuevoDato).length === 0) {
     formData.value = {}
+    formDataInicial.value = {}
     return
   }
 
   const campoNombre = camposNombre[props.tema]
 
   // Construir el objeto formData según el tipo
-  formData.value = {
+  // Los valores se normalizarán automáticamente por el componente hijo (eps.vue, etc.)
+  const datosIniciales = {
     nombre: nuevoDato[campoNombre] || nuevoDato.nombre || ''
   }
 
   // Agregar campos adicionales según el tipo
   if (props.tema === 'eps') {
-    formData.value.codigo = nuevoDato.codigo_eps || ''
-    formData.value.estado = nuevoDato.estado !== undefined ? nuevoDato.estado : true
+    datosIniciales.codigo = nuevoDato.codigo_eps || ''
+    datosIniciales.estado = nuevoDato.estado !== undefined ? Boolean(nuevoDato.estado) : true
   } else if (props.tema === 'metodo-pago') {
-    formData.value.estado = nuevoDato.estado !== undefined ? nuevoDato.estado : true
+    datosIniciales.estado = nuevoDato.estado !== undefined ? Boolean(nuevoDato.estado) : true
   } else if (props.tema === 'tipo-evento') {
-    formData.value.descripcion = nuevoDato.descripcion || ''
+    datosIniciales.descripcion = nuevoDato.descripcion || ''
   }
+
+  formData.value = { ...datosIniciales }
+  
+  // Esperar a que el componente hijo normalice los valores antes de guardar los iniciales
+  // Usar nextTick para asegurar que el componente hijo haya procesado los valores
+  await nextTick()
+  // Esperar un momento adicional para que la normalización del componente hijo se complete
+  setTimeout(() => {
+    // Guardar los valores normalizados que vienen del componente hijo
+    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+  }, 150)
 }, { immediate: true, deep: true })
 
-function cerrar() {
+function verificarCambios() {
+  if (!formDataInicial.value || Object.keys(formDataInicial.value).length === 0) {
+    return false
+  }
+
+  // Normalizar y comparar nombre
+  const nombreInicial = normalizarValorParaComparacion(formDataInicial.value.nombre)
+  const nombreActual = normalizarValorParaComparacion(formData.value.nombre)
+  if (nombreInicial !== nombreActual) {
+    return true
+  }
+
+  // Comparar campos adicionales según el tipo (normalizados igual que al guardar)
+  if (props.tema === 'eps') {
+    const codigoInicial = normalizarValorParaComparacion(formDataInicial.value.codigo)
+    const codigoActual = normalizarValorParaComparacion(formData.value.codigo)
+    
+    // Comparar código normalizado
+    if (codigoInicial !== codigoActual) {
+      return true
+    }
+    
+    // Comparar estado (convertir a boolean para comparación estricta)
+    const estadoInicial = Boolean(formDataInicial.value.estado)
+    const estadoActual = Boolean(formData.value.estado)
+    if (estadoInicial !== estadoActual) {
+      return true
+    }
+  } else if (props.tema === 'metodo-pago') {
+    const estadoInicial = Boolean(formDataInicial.value.estado)
+    const estadoActual = Boolean(formData.value.estado)
+    if (estadoInicial !== estadoActual) {
+      return true
+    }
+  } else if (props.tema === 'tipo-evento') {
+    const descripcionInicial = normalizarValorParaComparacion(formDataInicial.value.descripcion)
+    const descripcionActual = normalizarValorParaComparacion(formData.value.descripcion)
+    if (descripcionInicial !== descripcionActual) {
+      return true
+    }
+  }
+
+  return false
+}
+
+async function cerrar() {
+  // Verificar si hay cambios sin guardar
+  const tieneCambios = verificarCambios()
+  
+  if (tieneCambios) {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar edición?',
+      text: '¿Estás seguro de que deseas cerrar? Los cambios no guardados se perderán.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cerrar',
+      cancelButtonText: 'Continuar',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    })
+    
+    if (!result.isConfirmed) {
+      return
+    }
+  }
+  
   formData.value = {}
+  formDataInicial.value = {}
   emit('cerrar')
 }
 
-async function guardar() {
-  guardando.value = true
+// Función para sanitizar datos igual que en crear
+function prepararDatosPorEntidad() {
+  const campoNombre = camposNombre[props.tema]
+  const nombre = formData.value.nombre?.trim() || ''
+  
+  const mapeoCampos = {
+    'tipo-documento': { nombre_documento: nombre },
+    'sexo': { nombre: nombre },
+    'ciudad-residencia': { nombre_ciudad: nombre }
+  }
 
-  try {
-    const id = obtenerId(props.dato)
+  if (mapeoCampos[props.tema]) {
+    return mapeoCampos[props.tema]
+  }
 
-    if (!id) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'No se pudo obtener el ID del registro'
-      })
-      guardando.value = false
-      return
+  if (props.tema === 'metodo-pago') {
+    return {
+      nombre_metodo: nombre,
+      estado: formData.value.estado !== undefined ? formData.value.estado : true
     }
+  }
 
-    const errores = validarDatos()
-    if (errores.length > 0) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Corrige los errores',
-        html: errores.join('<br>')
-      })
-      guardando.value = false
-      return
-    }
-
-    const campoNombre = camposNombre[props.tema]
-
-    // Preparar datos según el tipo
-    const datos = {}
-    datos[campoNombre] = formData.value.nombre?.trim()
-
-    // Campos adicionales según el tipo
-    if (props.tema === 'eps') {
+  if (props.tema === 'eps') {
+    const datos = { nombre_eps: nombre }
+    if (formData.value.codigo) {
       datos.codigo_eps = formData.value.codigo.trim()
-      datos.estado = formData.value.estado
-    } else if (props.tema === 'metodo-pago') {
-      datos.estado = formData.value.estado
-    } else if (props.tema === 'tipo-evento') {
+    }
+    datos.estado = formData.value.estado !== undefined ? formData.value.estado : true
+    return datos
+  }
+
+  if (props.tema === 'tipo-evento') {
+    const datos = { nombre: nombre }
+    if (formData.value.descripcion) {
       datos.descripcion = formData.value.descripcion.trim()
     }
+    return datos
+  }
+
+  return { nombre: nombre }
+}
+
+async function guardar() {
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambios()
+  
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han realizado modificaciones. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    })
+    return
+  }
+
+  const errores = validarDatos()
+  if (errores.length > 0) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    })
+    return
+  }
+
+  const id = obtenerId(props.dato)
+  if (!id) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo obtener el ID del registro',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    })
+    return
+  }
+
+  // Confirmar antes de guardar
+  const nombreEntidad = nombreTipo.value
+  const nombreDato = formData.value.nombre?.trim() || 'dato'
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Guardar cambios?',
+    text: `¿Estás seguro de que deseas guardar los cambios en el ${nombreEntidad.toLowerCase()} "${nombreDato}"?`,
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
+  })
+
+  if (!confirmacion.isConfirmed) {
+    return
+  }
+
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando cambios...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
+
+  try {
+    guardando.value = true
+
+    const datos = prepararDatosPorEntidad()
 
     const base = API_CONFIG.baseURL || ''
     const response = await fetch(`${base}/api/dynamic-data/${props.tema}/${id}`, {
@@ -217,6 +386,9 @@ async function guardar() {
       body: JSON.stringify(datos)
     })
 
+    // Cerrar el loading
+    Swal.close()
+
     if (!response.ok) {
       // Intentar obtener el mensaje de error del JSON
       let errorMessage = `Error ${response.status}: ${response.statusText}`
@@ -226,37 +398,106 @@ async function guardar() {
       } catch {
         // Si no es JSON, usar el mensaje por defecto
       }
-      throw new Error(errorMessage)
+      
+      const mensajeError = extraerMensajeErrorDato(errorMessage)
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error al actualizar',
+        html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
+      })
+      return
     }
 
     const result = await response.json()
 
     if (result.success) {
+      // Actualizar datos iniciales con los nuevos datos guardados
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+      
+      // Éxito: mostrar notificación de confirmación
       await Swal.fire({
         icon: 'success',
-        title: 'Registro actualizado',
-        timer: 1500,
-        showConfirmButton: false
+        title: '¡Dato actualizado exitosamente!',
+        text: `El ${nombreEntidad.toLowerCase()} "${nombreDato}" ha sido actualizado correctamente en el sistema.`,
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#004AAD'
       })
       emit('guardado', result.data)
       cerrar()
     } else {
+      const mensajeError = extraerMensajeErrorDato(result.error)
       await Swal.fire({
         icon: 'error',
         title: 'Error al actualizar',
-        text: result.error || 'No se pudo actualizar el registro'
+        html: `<p><strong>No se pudo actualizar el registro.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
       })
     }
   } catch (error) {
+    // Cerrar el loading si aún está abierto
+    Swal.close()
+    
     console.error('Error al guardar:', error)
+    const mensajeError = extraerMensajeErrorDato(error)
+    
     await Swal.fire({
       icon: 'error',
       title: 'Error al guardar',
-      text: error.message || 'Error de conexión'
+      html: `<p><strong>Ocurrió un error inesperado.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     })
   } finally {
     guardando.value = false
   }
+}
+
+/**
+ * Extrae y formatea el mensaje de error de manera más legible
+ */
+function extraerMensajeErrorDato(error) {
+  if (!error) {
+    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.'
+  }
+
+  // Si es un string, devolverlo directamente
+  if (typeof error === 'string') {
+    return error
+  }
+
+  // Si es un objeto con mensaje
+  if (error.message) {
+    return error.message
+  }
+
+  // Si es un objeto con error
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+  }
+
+  // Si es un objeto con detalles
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
+  }
+
+  // Si es un objeto, intentar convertirlo a string legible
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error)
+      // Si el JSON es muy largo, devolver un mensaje genérico
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
+      }
+      return errorStr
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.'
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.'
 }
 
 function obtenerId(dato) {

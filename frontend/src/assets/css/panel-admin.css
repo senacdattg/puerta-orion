@@ -705,7 +705,8 @@ select:hover {
 }
 
 /* --- Badge de SuperAdmin --- */
-.badge.badge-admin.badge-superadmin {
+.badge.badge-admin.badge-superadmin,
+.badge.badge-detalle.badge-admin.badge-superadmin {
   background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%) !important;
   color: #ffffff !important;
   border-color: #6c3483 !important;
@@ -713,7 +714,8 @@ select:hover {
 }
 
 /* --- Badge de Administrador --- */
-.badge.badge-admin.badge-administrador {
+.badge.badge-admin.badge-administrador,
+.badge.badge-detalle.badge-admin.badge-administrador {
   background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
   color: #ffffff !important;
   border-color: #c82333 !important;
@@ -721,7 +723,8 @@ select:hover {
 }
 
 /* --- Badge de Entrenador --- */
-.badge.badge-moderator.badge-entrenador {
+.badge.badge-moderator.badge-entrenador,
+.badge.badge-detalle.badge-moderator.badge-entrenador {
   background: linear-gradient(135deg, #fd7e14 0%, #e66a00 100%) !important;
   color: #ffffff !important;
   border-color: #e66a00 !important;
@@ -729,7 +732,8 @@ select:hover {
 }
 
 /* --- Badge de Deportista (Verde turquesa) --- */
-.badge.badge-user.badge-deportista {
+.badge.badge-user.badge-deportista,
+.badge.badge-detalle.badge-user.badge-deportista {
   background: linear-gradient(135deg, #20c997 0%, #1aa179 100%) !important;
   color: #ffffff !important;
   border-color: #1aa179 !important;
@@ -737,7 +741,8 @@ select:hover {
 }
 
 /* --- Badge de Acudiente (Azul oscuro) --- */
-.badge.badge-user.badge-acudiente {
+.badge.badge-user.badge-acudiente,
+.badge.badge-detalle.badge-user.badge-acudiente {
   background: linear-gradient(135deg, #2614ac 0%, #1d0f7a 100%) !important;
   color: #ffffff !important;
   border-color: #1d0f7a !important;
@@ -745,7 +750,8 @@ select:hover {
 }
 
 /* --- Badge de Usuario (Amarillo - solo para rol genérico "Usuario") --- */
-.badge.badge-user.badge-usuario {
+.badge.badge-user.badge-usuario,
+.badge.badge-detalle.badge-user.badge-usuario {
   background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
   color: #1f2937 !important;
   border-color: #e0a800 !important;
@@ -753,11 +759,12 @@ select:hover {
 }
 
 /* --- Badge sin rol --- */
-.badge-none {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
-  color: #ffffff;
-  border-color: #6b7280;
-  box-shadow: 0 2px 6px rgba(107, 114, 128, 0.35);
+.badge-none,
+.badge.badge-detalle.badge-none {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
+  color: #ffffff !important;
+  border-color: #6b7280 !important;
+  box-shadow: 0 2px 6px rgba(107, 114, 128, 0.35) !important;
 }
 
 /* --- Badge de estado --- */
@@ -1154,6 +1161,17 @@ select:hover {
   font-size: var(--tamano-fuente-base);
   color: var(--color-gris-800-alt);
   font-weight: var(--peso-fuente-medio);
+}
+
+/* Centrar solo el texto de dirección en el modal de detalle */
+.info-item-direccion-detalle {
+  grid-column: 1 / -1;
+}
+
+.info-item-direccion-detalle span {
+  text-align: center !important;
+  display: block;
+  width: 100%;
 }
 
 /* --- Sección de acciones de detalle --- */

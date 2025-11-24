@@ -34,6 +34,7 @@
                 type="text"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'primer_nombre')"
+                @input="(event) => campoEditable('persona', 'primer_nombre') && manejarEntradaNombre('primer_nombre', event)"
               />
             </div>
             <div class="info-row">
@@ -45,6 +46,7 @@
                 type="text"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'segundo_nombre')"
+                @input="(event) => campoEditable('persona', 'segundo_nombre') && manejarEntradaNombre('segundo_nombre', event, false)"
               />
             </div>
             <div class="info-row">
@@ -56,6 +58,7 @@
                 type="text"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'primer_apellido')"
+                @input="(event) => campoEditable('persona', 'primer_apellido') && manejarEntradaNombre('primer_apellido', event)"
               />
             </div>
             <div class="info-row">
@@ -67,6 +70,7 @@
                 type="text"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'segundo_apellido')"
+                @input="(event) => campoEditable('persona', 'segundo_apellido') && manejarEntradaNombre('segundo_apellido', event, false)"
               />
             </div>
             <div class="info-row">
@@ -82,6 +86,7 @@
                 type="text"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'documento')"
+                @input="(event) => campoEditable('persona', 'documento') && manejarDocumento(event)"
               />
             </div>
             <div class="info-row">
@@ -93,6 +98,7 @@
                 type="email"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'correo_electronico')"
+                @input="manejarCorreo"
               />
             </div>
             <div class="info-row">
@@ -104,6 +110,7 @@
                 type="tel"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'telefono')"
+                @input="manejarTelefono"
               />
             </div>
             <div class="info-row">
@@ -115,6 +122,7 @@
                 type="text"
                 class="input-editable"
                 :disabled="!campoEditable('persona', 'direccion')"
+                @input="manejarEntradaDireccion"
               />
             </div>
           </div>
@@ -557,6 +565,95 @@ const catalogosCargados = ref(false);
 
 const guardando = ref(false);
 const formData = ref(crearEstadoInicial(props.datos));
+// Guardar estado inicial para comparar cambios
+const formDataInicial = ref(null);
+
+// Constantes para validación (igual que en formulario-general.vue)
+const LOCALE_COL = 'es-CO';
+const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ ]+$/;
+const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+const MAX_DOCUMENTO = 20;
+const MIN_DOCUMENTO = 6;
+const MAX_TELEFONO = 15;
+const MIN_TELEFONO = 7;
+
+// Función para transformar a mayúsculas (igual que en formulario-general.vue)
+function transformarMayusculas(valor = '') {
+  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : '';
+}
+
+// Función para sanitizar nombres (igual que en formulario-general.vue)
+function sanitizarNombre(valor = '', obligatorio = true) {
+  const mayus = transformarMayusculas(valor);
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ');
+  if (!obligatorio && !limpio.trim()) {
+    return '';
+  }
+  return limpio.trimStart();
+}
+
+// Función para sanitizar dirección (igual que en formulario-general.vue)
+function sanitizarDireccion(valor = '') {
+  const mayus = transformarMayusculas(valor);
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart();
+}
+
+// Handlers para validación en tiempo real (igual que en formulario-general.vue)
+function manejarEntradaNombre(campo, event, obligatorio = true) {
+  if (!event || !event.target) return;
+  const valor = event.target.value || '';
+  const valorSanitizado = sanitizarNombre(valor, obligatorio);
+  // Forzar actualización del valor sanitizado
+  formData.value[campo] = valorSanitizado;
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado;
+  }
+}
+
+function manejarDocumento(event) {
+  if (!event || !event.target) return;
+  const valor = event.target.value || '';
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO);
+  formData.value.documento = digitos;
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== digitos) {
+    event.target.value = digitos;
+  }
+}
+
+function manejarTelefono(event) {
+  if (!event || !event.target) return;
+  const valor = event.target.value || '';
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO);
+  formData.value.telefono = digitos;
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== digitos) {
+    event.target.value = digitos;
+  }
+}
+
+function manejarEntradaDireccion(event) {
+  if (!event || !event.target) return;
+  const valor = event.target.value || '';
+  const valorSanitizado = sanitizarDireccion(valor);
+  formData.value.direccion = valorSanitizado;
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado;
+  }
+}
+
+function manejarCorreo(event) {
+  if (!event || !event.target) return;
+  const valor = event.target.value || '';
+  const valorSanitizado = valor.trim().toLowerCase();
+  formData.value.correo_electronico = valorSanitizado;
+  // Asegurar que el input también muestre el valor sanitizado
+  if (event.target.value !== valorSanitizado) {
+    event.target.value = valorSanitizado;
+  }
+}
 
 const isEditing = computed(() => !!props.modoEdicion);
 
@@ -626,6 +723,10 @@ watch(
   () => props.datos,
   (nuevo) => {
     formData.value = crearEstadoInicial(nuevo);
+    // Si no estamos editando, actualizar también el estado inicial
+    if (!isEditing.value) {
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value));
+    }
   },
   { immediate: true }
 );
@@ -699,14 +800,14 @@ function crearEstadoInicial(origen = null) {
   }
 
   return {
-    primer_nombre: persona.primer_nombre || datos.nombre1 || '',
-    segundo_nombre: persona.segundo_nombre || datos.nombre2 || '',
-    primer_apellido: persona.primer_apellido || datos.apellido1 || '',
-    segundo_apellido: persona.segundo_apellido || datos.apellido2 || '',
-    documento: persona.documento || datos.documento || '',
-    correo_electronico: persona.correo_electronico || datos.correo || '',
-    telefono: persona.telefono || datos.telefono || '',
-    direccion: persona.direccion || datos.direccion || '',
+    primer_nombre: sanitizarNombre(persona.primer_nombre || datos.nombre1 || ''),
+    segundo_nombre: sanitizarNombre(persona.segundo_nombre || datos.nombre2 || '', false),
+    primer_apellido: sanitizarNombre(persona.primer_apellido || datos.apellido1 || ''),
+    segundo_apellido: sanitizarNombre(persona.segundo_apellido || datos.apellido2 || '', false),
+    documento: (persona.documento || datos.documento || '').replace(/\D/g, ''),
+    correo_electronico: (persona.correo_electronico || datos.correo || '').trim().toLowerCase(),
+    telefono: (persona.telefono || datos.telefono || '').replace(/\D/g, ''),
+    direccion: sanitizarDireccion(persona.direccion || datos.direccion || ''),
     fecha_nacimiento: normalizarFechaParaInput(
       persona.fecha_nacimiento ||
       datosDeportista.fecha_nacimiento ||
@@ -853,14 +954,127 @@ function filtrarCamposPermitidos(payload, tipo, opciones = {}) {
   return limpiarObjeto(filtrado, opciones);
 }
 
-function iniciarEdicion() {
-  inicializarFormulario();
-  emit('editar');
+// Función para normalizar valores para comparación
+function normalizarValorParaComparacion(valor) {
+  if (valor === null || valor === undefined) {
+    return ''
+  }
+  if (typeof valor === 'string') {
+    return valor.trim()
+  }
+  if (typeof valor === 'number') {
+    return valor
+  }
+  if (typeof valor === 'boolean') {
+    return valor
+  }
+  if (Array.isArray(valor)) {
+    return valor.map(v => typeof v === 'object' ? v.id_diagnostico || v : v).sort()
+  }
+  return valor
 }
 
-function cancelarEdicion() {
-  inicializarFormulario();
-  emit('cancelar');
+// Verificar si hay cambios
+function verificarCambios() {
+  if (!formDataInicial.value) {
+    return false
+  }
+
+  const campos = [
+    'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido',
+    'documento', 'correo_electronico', 'telefono', 'direccion',
+    'fecha_nacimiento', 'peso', 'altura', 'practica_otro_deporte',
+    'participa_escuela', 'recomendacion_medica', 'descripcion_recomendacion',
+    'id_tipo_sanguineo', 'id_ciudad_recidencia', 'id_eps', 'id_deporte',
+    'id_escuela', 'id_institucion_registro', 'id_categoria', 'id_tipo_enfermedad'
+  ]
+
+  for (const campo of campos) {
+    const valorInicial = normalizarValorParaComparacion(formDataInicial.value[campo])
+    const valorActual = normalizarValorParaComparacion(formData.value[campo])
+    if (valorInicial !== valorActual) {
+      return true
+    }
+  }
+
+  // Comparar diagnosticos (array)
+  const diagnosticosInicial = normalizarValorParaComparacion(formDataInicial.value.diagnosticos)
+  const diagnosticosActual = normalizarValorParaComparacion(formData.value.diagnosticos)
+  if (JSON.stringify(diagnosticosInicial) !== JSON.stringify(diagnosticosActual)) {
+    return true
+  }
+
+  return false
+}
+
+// Extraer mensaje de error de manera legible
+function extraerMensajeError(error) {
+  if (!error) {
+    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.'
+  }
+
+  if (typeof error === 'string') {
+    return error
+  }
+
+  if (error.message) {
+    return error.message
+  }
+
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+  }
+
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
+  }
+
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error)
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
+      }
+      return errorStr
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.'
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.'
+}
+
+function iniciarEdicion() {
+  inicializarFormulario()
+  // Guardar estado inicial cuando se inicia la edición
+  formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+  emit('editar')
+}
+
+async function cancelarEdicion() {
+  // Verificar si hay cambios sin guardar
+  const tieneCambios = verificarCambios()
+  
+  if (tieneCambios) {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Descartar cambios?',
+      text: '¿Estás seguro de que deseas cancelar? Los cambios sin guardar se perderán.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, descartar',
+      cancelButtonText: 'Continuar editando',
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d'
+    })
+    
+    if (!result.isConfirmed) {
+      return
+    }
+  }
+  
+  inicializarFormulario()
+  formDataInicial.value = null
+  emit('cancelar')
 }
 
 async function validarIdentificadores() {
@@ -875,6 +1089,59 @@ async function validarIdentificadores() {
   return true;
 }
 
+// Función para validar formulario antes de guardar
+function validarFormulario() {
+  const errores = [];
+
+  // Validar nombres obligatorios
+  if (campoEditable('persona', 'primer_nombre') && formData.value.primer_nombre) {
+    if (!REGEX_NOMBRE.test(formData.value.primer_nombre)) {
+      errores.push('El primer nombre solo debe contener letras y espacios');
+    }
+  }
+
+  if (campoEditable('persona', 'primer_apellido') && formData.value.primer_apellido) {
+    if (!REGEX_NOMBRE.test(formData.value.primer_apellido)) {
+      errores.push('El primer apellido solo debe contener letras y espacios');
+    }
+  }
+
+  if (campoEditable('persona', 'segundo_nombre') && formData.value.segundo_nombre) {
+    if (formData.value.segundo_nombre && !REGEX_NOMBRE.test(formData.value.segundo_nombre)) {
+      errores.push('El segundo nombre solo debe contener letras y espacios');
+    }
+  }
+
+  if (campoEditable('persona', 'segundo_apellido') && formData.value.segundo_apellido) {
+    if (formData.value.segundo_apellido && !REGEX_NOMBRE.test(formData.value.segundo_apellido)) {
+      errores.push('El segundo apellido solo debe contener letras y espacios');
+    }
+  }
+
+  // Validar correo electrónico
+  if (formData.value.correo_electronico && !REGEX_CORREO.test(formData.value.correo_electronico)) {
+    errores.push('Ingrese un correo electrónico válido');
+  }
+
+  // Validar teléfono (solo números y longitud)
+  if (campoEditable('persona', 'telefono') && formData.value.telefono) {
+    const telefonoLimpio = formData.value.telefono.replace(/\D/g, '');
+    if (telefonoLimpio.length < MIN_TELEFONO || telefonoLimpio.length > MAX_TELEFONO) {
+      errores.push(`El teléfono debe tener entre ${MIN_TELEFONO} y ${MAX_TELEFONO} dígitos`);
+    }
+  }
+
+  // Validar documento (solo números y longitud) - solo si se puede editar
+  if (campoEditable('persona', 'documento') && formData.value.documento) {
+    const documentoLimpio = formData.value.documento.replace(/\D/g, '');
+    if (documentoLimpio.length < MIN_DOCUMENTO || documentoLimpio.length > MAX_DOCUMENTO) {
+      errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+    }
+  }
+
+  return errores;
+}
+
 async function validarCamposObligatorios() {
   const camposObligatorios = [
     { campo: 'primer_nombre', etiqueta: 'primer nombre' },
@@ -884,7 +1151,11 @@ async function validarCamposObligatorios() {
     { campo: 'telefono', etiqueta: 'teléfono' }
   ];
 
-  const faltantes = camposObligatorios.filter(({ campo }) => !limpiarTexto(formData.value[campo]));
+  const faltantes = camposObligatorios.filter(({ campo }) => {
+    const valor = formData.value[campo];
+    return !valor || (typeof valor === 'string' && !valor.trim());
+  });
+  
   if (faltantes.length > 0) {
     const lista = faltantes.map(item => item.etiqueta).join(', ');
     await Swal.fire({
@@ -894,6 +1165,20 @@ async function validarCamposObligatorios() {
     });
     return false;
   }
+  
+  // Validar formato de campos
+  const erroresValidacion = validarFormulario();
+  if (erroresValidacion.length > 0) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${erroresValidacion.join('<br>')}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    });
+    return false;
+  }
+  
   return true;
 }
 
@@ -997,6 +1282,36 @@ async function guardarCambios() {
     return;
   }
 
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambios()
+  
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han realizado modificaciones en el deportista. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    })
+    return
+  }
+
+  // Confirmación antes de guardar
+  const confirmacion = await Swal.fire({
+    icon: 'question',
+    title: '¿Guardar cambios?',
+    text: '¿Estás seguro de que deseas guardar los cambios en el deportista?',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, guardar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#004AAD',
+    cancelButtonColor: '#6c757d'
+  })
+
+  if (!confirmacion.isConfirmed) {
+    return
+  }
+
   if (!(await validarIdentificadores())) {
     return;
   }
@@ -1013,6 +1328,17 @@ async function guardarCambios() {
     return;
   }
 
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando cambios...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
+
   guardando.value = true;
 
   try {
@@ -1023,22 +1349,34 @@ async function guardarCambios() {
       ? await deportistasService.actualizarDeportista(idDeportista.value, datosActualizacion)
       : null;
 
+    // Cerrar el loading
+    Swal.close()
+
     inicializarFormulario();
+    // Actualizar estado inicial después de guardar exitosamente
+    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
 
     await Swal.fire({
       icon: 'success',
-      title: 'Cambios guardados',
-      text: 'Información del deportista actualizada correctamente.',
-      timer: 1500,
-      showConfirmButton: false
+      title: '¡Deportista actualizado exitosamente!',
+      text: 'La información del deportista se ha guardado correctamente en el sistema.',
+      confirmButtonText: 'Aceptar',
+      confirmButtonColor: '#004AAD'
     });
     emit('guardar', respuestaActualizacion);
   } catch (error) {
+    // Cerrar el loading si aún está abierto
+    Swal.close()
+    
     console.error('Error al guardar cambios del deportista:', error);
+    const mensajeError = extraerMensajeError(error)
+    
     await Swal.fire({
       icon: 'error',
-      title: 'Error al guardar',
-      text: error.message || 'No fue posible guardar los cambios.'
+      title: 'Error al actualizar deportista',
+      html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     });
   } finally {
     guardando.value = false;
@@ -1056,25 +1394,36 @@ function construirPayloadPersona() {
   };
 
   Object.entries(mapaCampos).forEach(([campoFormulario, campoBackend]) => {
-    const valor = limpiarTexto(formData.value[campoFormulario]);
-    if (valor) {
-      payload[campoBackend] = valor;
+    const valor = formData.value[campoFormulario];
+    if (campoFormulario === 'direccion') {
+      // Sanitizar dirección
+      const valorSanitizado = sanitizarDireccion(valor || '');
+      if (valorSanitizado) {
+        payload[campoBackend] = valorSanitizado;
+      }
+    } else {
+      // Sanitizar nombres
+      const esObligatorio = campoFormulario === 'primer_nombre' || campoFormulario === 'primer_apellido';
+      const valorSanitizado = sanitizarNombre(valor || '', esObligatorio);
+      if (valorSanitizado) {
+        payload[campoBackend] = valorSanitizado;
+      }
     }
   });
 
-  const documento = limpiarTexto(formData.value.documento);
+  const documento = formData.value.documento;
   if (documento) {
-    payload.documento = documento;
+    payload.documento = documento.replace(/\D/g, '');
   }
 
-  const correo = limpiarTexto(formData.value.correo_electronico);
+  const correo = formData.value.correo_electronico;
   if (correo) {
-    payload.correo_electronico = correo.toLowerCase();
+    payload.correo_electronico = correo.trim().toLowerCase();
   }
 
-  const telefono = limpiarTexto(formData.value.telefono);
+  const telefono = formData.value.telefono;
   if (telefono) {
-    payload.telefono = telefono;
+    payload.telefono = telefono.replace(/\D/g, '');
   }
 
   return filtrarCamposPermitidos(payload, 'persona');

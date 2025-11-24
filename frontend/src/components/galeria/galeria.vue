@@ -227,7 +227,11 @@ export default {
         descripcion: "",
         id_tipo_evento: "",
         id_categoria: ""
-      }
+      },
+      // Guardar estado inicial para comparar cambios
+      formInicial: null,
+      archivoInicial: null,
+      scrollPositionGuardada: undefined // Guardar posición del scroll
     };
   },
   computed: {
@@ -272,6 +276,39 @@ export default {
     puedeGestionarGaleria() {
       return this.authStore.hasPermission('gestionar_galeria');
     }
+  },
+  watch: {
+    mostrarFormulario(newValue) {
+      if (newValue) {
+        // Guardar la posición actual del scroll
+        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
+        // Aplicar la posición guardada al body antes de fijarlo
+        document.body.style.top = `-${scrollPosition}px`;
+        document.body.classList.add('modal-open');
+        document.documentElement.classList.add('modal-open');
+
+        // Guardar la posición en el componente para restaurarla después
+        this.scrollPositionGuardada = scrollPosition;
+      } else {
+        // Remover las clases y estilos
+        document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
+        document.body.style.top = '';
+
+        // Restaurar la posición del scroll
+        if (this.scrollPositionGuardada !== undefined) {
+          window.scrollTo(0, this.scrollPositionGuardada);
+          this.scrollPositionGuardada = undefined;
+        }
+      }
+    }
+  },
+  beforeUnmount() {
+    // Limpiar el estado del scroll si el componente se desmonta con el modal abierto
+    document.body.classList.remove('modal-open');
+    document.documentElement.classList.remove('modal-open');
+    document.body.style.top = '';
   },
   methods: {
     normalizarEspacios(valor = "") {
@@ -373,10 +410,122 @@ export default {
       };
       this.normalizarFormulario();
       this.mostrarFormulario = true;
+
+      // Guardar estado inicial cuando se abre el formulario
+      this.formInicial = JSON.parse(JSON.stringify(this.form));
+      this.archivoInicial = null;
     },
-    cerrarFormulario() {
+    // Función para normalizar valores para comparación
+    normalizarValorParaComparacion(valor) {
+      if (valor === null || valor === undefined) {
+        return ''
+      }
+      if (typeof valor === 'string') {
+        return valor.trim()
+      }
+      if (typeof valor === 'number') {
+        return valor
+      }
+      if (typeof valor === 'boolean') {
+        return valor
+      }
+      return valor
+    },
+
+    // Verificar si hay cambios
+    verificarCambios() {
+      if (!this.formInicial) {
+        return false
+      }
+
+      // Verificar cambios en el formulario
+      const campos = [
+        'titulo', 'descripcion', 'id_tipo_evento', 'id_categoria'
+      ]
+
+      for (const campo of campos) {
+        const valorInicial = this.normalizarValorParaComparacion(this.formInicial[campo])
+        const valorActual = this.normalizarValorParaComparacion(this.form[campo])
+        if (valorInicial !== valorActual) {
+          return true
+        }
+      }
+
+      // Verificar si se cambió la imagen
+      if (this.archivoSeleccionado !== this.archivoInicial) {
+        return true
+      }
+
+      // Verificar si se activó el cambio de imagen
+      if (this.cambiandoImagen && !this.archivoSeleccionado) {
+        return true
+      }
+
+      return false
+    },
+
+    // Extraer mensaje de error de manera legible
+    extraerMensajeError(error) {
+      if (!error) {
+        return 'No se pudo completar la operación. Por favor, intenta nuevamente.'
+      }
+
+      if (typeof error === 'string') {
+        return error
+      }
+
+      if (error.message) {
+        return error.message
+      }
+
+      if (error.error) {
+        return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+      }
+
+      if (error.details) {
+        return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
+      }
+
+      if (typeof error === 'object') {
+        try {
+          const errorStr = JSON.stringify(error)
+          if (errorStr.length > 200) {
+            return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
+          }
+          return errorStr
+        } catch {
+          return 'Error desconocido. Por favor, intenta nuevamente.'
+        }
+      }
+
+      return 'Error desconocido. Por favor, intenta nuevamente.'
+    },
+
+    async cerrarFormulario() {
+      // Verificar si hay cambios sin guardar
+      const tieneCambios = this.verificarCambios()
+
+      if (tieneCambios) {
+        const result = await Swal.fire({
+          icon: 'question',
+          title: '¿Descartar cambios?',
+          text: '¿Estás seguro de que deseas cerrar? Los cambios sin guardar se perderán.',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, cerrar',
+          cancelButtonText: 'Continuar',
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d'
+        })
+
+        if (!result.isConfirmed) {
+          return
+        }
+      }
+
       this.mostrarFormulario = false;
       this.limpiarFormulario();
+      this.formInicial = null;
+      this.archivoInicial = null;
     },
 
     verDetalleEvento(index) {
@@ -424,6 +573,10 @@ export default {
       this.archivoSeleccionado = null;
       this.cambiandoImagen = false;
       this.mostrarFormulario = true;
+
+      // Guardar estado inicial cuando se inicia la edición
+      this.formInicial = JSON.parse(JSON.stringify(this.form));
+      this.archivoInicial = null;
     },
     async manejarSeleccionArchivo(event) {
       const file = event.target.files[0];
@@ -498,41 +651,160 @@ export default {
       return formData
     },
     async actualizarEventoConImagen() {
-      const formData = this.construirFormData()
-      await galeriaService.eliminarImagen(this.eventos[this.editando].id)
-      await galeriaService.crearImagenConArchivo(formData)
+      // Mostrar loading mientras se procesa
+      Swal.fire({
+        title: 'Guardando cambios...',
+        text: 'Por favor espera mientras procesamos tu solicitud.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading()
+        }
+      })
+
+      try {
+        const formData = this.construirFormData()
+        await galeriaService.eliminarImagen(this.eventos[this.editando].id)
+        await galeriaService.crearImagenConArchivo(formData)
+
+        // Cerrar el loading
+        Swal.close()
+      } catch (error) {
+        Swal.close()
+        throw error
+      }
     },
     async actualizarEventoSinImagen() {
-      const datosImagen = {
-        titulo: this.form.titulo,
-        descripcion: this.form.descripcion,
-        id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
-        id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
+      // Mostrar loading mientras se procesa
+      Swal.fire({
+        title: 'Guardando cambios...',
+        text: 'Por favor espera mientras procesamos tu solicitud.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading()
+        }
+      })
+
+      try {
+        const datosImagen = {
+          titulo: this.form.titulo,
+          descripcion: this.form.descripcion,
+          id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
+          id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
+        }
+        await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen)
+
+        // Cerrar el loading
+        Swal.close()
+      } catch (error) {
+        Swal.close()
+        throw error
       }
-      await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen)
     },
     async crearNuevoEvento() {
-      const formData = this.construirFormData()
-      await galeriaService.crearImagenConArchivo(formData)
+      // Mostrar loading mientras se procesa
+      Swal.fire({
+        title: 'Creando evento...',
+        text: 'Por favor espera mientras procesamos tu solicitud.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading()
+        }
+      })
+
+      try {
+        const formData = this.construirFormData()
+        await galeriaService.crearImagenConArchivo(formData)
+
+        // Cerrar el loading
+        Swal.close()
+      } catch (error) {
+        Swal.close()
+        throw error
+      }
     },
     async manejarErrorGuardado(error) {
       console.error('Error guardando evento:', error)
+      const mensajeError = this.extraerMensajeError(error)
       await Swal.fire({
         icon: 'error',
         title: 'Error al guardar',
-        text: error.message || 'No se pudo guardar el evento.'
+        html: `<p><strong>No se pudo guardar el evento.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
       })
     },
     async finalizarGuardado() {
       await this.cargarEventos()
+
+      // Mostrar notificación de éxito
+      await Swal.fire({
+        icon: 'success',
+        title: this.editando !== null ? '¡Evento actualizado exitosamente!' : '¡Evento creado exitosamente!',
+        text: this.editando !== null
+          ? 'La información del evento se ha guardado correctamente en el sistema.'
+          : 'El evento se ha creado correctamente en el sistema.',
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#004AAD'
+      })
+
+      // Actualizar estado inicial después de guardar exitosamente
+      this.formInicial = JSON.parse(JSON.stringify(this.form));
+      this.archivoInicial = this.archivoSeleccionado;
+
       this.mostrarFormulario = false
+      this.limpiarFormulario()
+      this.formInicial = null
+      this.archivoInicial = null
     },
     async guardarEvento() {
       try {
+        // Verificar si hay cambios antes de continuar (solo para edición)
+        if (this.editando !== null) {
+          const tieneCambios = this.verificarCambios()
+
+          if (!tieneCambios) {
+            await Swal.fire({
+              icon: 'info',
+              title: 'Sin cambios',
+              text: 'No se han realizado modificaciones en el evento. No hay nada que guardar.',
+              confirmButtonText: 'Entendido',
+              confirmButtonColor: '#004AAD'
+            })
+            return
+          }
+        }
+
         this.normalizarFormulario()
         const errores = this.validarFormulario()
         if (errores.length > 0) {
-          await this.mostrarErroresValidacion(errores)
+          await Swal.fire({
+            icon: 'error',
+            title: 'Corrige los errores',
+            html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#dc3545'
+          })
+          return
+        }
+
+        // Confirmación antes de guardar
+        const confirmacion = await Swal.fire({
+          icon: 'question',
+          title: this.editando !== null ? '¿Actualizar evento?' : '¿Crear evento?',
+          text: this.editando !== null
+            ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
+            : '¿Estás seguro de que deseas crear este evento?',
+          showCancelButton: true,
+          confirmButtonText: this.editando !== null ? 'Sí, actualizar' : 'Sí, crear',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#004AAD',
+          cancelButtonColor: '#6c757d'
+        })
+
+        if (!confirmacion.isConfirmed) {
           return
         }
 
@@ -566,20 +838,69 @@ export default {
         return;
       }
 
+      // Confirmación antes de eliminar
+      const confirmacion = await Swal.fire({
+        icon: 'warning',
+        title: '¿Eliminar evento?',
+        text: `¿Estás seguro de que deseas eliminar "${evento.nombre}"? Esta acción no se puede deshacer.`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+      });
+
+      if (!confirmacion.isConfirmed) {
+        return;
+      }
+
+      // Mostrar loading mientras se procesa
+      Swal.fire({
+        title: 'Eliminando evento...',
+        text: 'Por favor espera mientras procesamos tu solicitud.',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+          Swal.showLoading()
+        }
+      })
+
       try {
         await galeriaService.eliminarImagen(evento.id);
+
+        // Cerrar el loading
+        Swal.close()
+
         await this.cargarEventos(); // Recargar la lista
+
+        // Mostrar notificación de éxito
+        await Swal.fire({
+          icon: 'success',
+          title: '¡Evento eliminado exitosamente!',
+          text: 'El evento se ha eliminado correctamente del sistema.',
+          confirmButtonText: 'Aceptar',
+          confirmButtonColor: '#004AAD'
+        });
 
         // Cerrar formulario y resetear estado
         this.mostrarFormulario = false;
         this.editando = null;
         this.limpiarFormulario();
+        this.formInicial = null;
+        this.archivoInicial = null;
       } catch (error) {
+        // Cerrar el loading si aún está abierto
+        Swal.close()
+
         console.error('Error eliminando evento:', error);
+        const mensajeError = this.extraerMensajeError(error);
+
         await Swal.fire({
           icon: 'error',
           title: 'Error al eliminar',
-          text: error.message || 'No se pudo eliminar el evento.'
+          html: `<p><strong>No se pudo eliminar el evento.</strong></p><p>${mensajeError}</p>`,
+          confirmButtonText: 'Entendido',
+          confirmButtonColor: '#dc3545'
         });
       }
     },
@@ -600,6 +921,9 @@ export default {
       this.archivoSeleccionado = null;
       this.editando = null;
       this.cambiandoImagen = false;
+      // Resetear estado inicial cuando se limpia el formulario
+      this.formInicial = null;
+      this.archivoInicial = null;
     },
     limpiarFiltros() {
       this.busqueda = '';

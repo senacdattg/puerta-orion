@@ -301,7 +301,6 @@ import { computed, watch, onUnmounted } from 'vue';
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
-import { useModalScrollLock } from '@/composables/useModalScrollLock';
 
 const LOCALE_COL = 'es-CO';
 const MAX_TITULO = 120;
@@ -342,11 +341,14 @@ export default {
                 descripcion: '',
                 fecha: null
             },
+            // Guardar estado inicial para comparar cambios
+            nuevoEventoInicial: null,
             fechaBloqueada: false,
             cargando: false,
             error: null,
             tiposEvento: [],
-            categorias: []
+            categorias: [],
+            scrollPositionGuardada: undefined // Guardar posición del scroll
         };
     },
 
@@ -376,18 +378,42 @@ export default {
     watch: {
         modalVisible(newValue) {
             if (newValue) {
+                // Guardar la posición actual del scroll
+                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+                
+                // Aplicar la posición guardada al body antes de fijarlo
+                document.body.style.top = `-${scrollPosition}px`;
                 document.body.classList.add('modal-open');
                 document.documentElement.classList.add('modal-open');
+                
+                // Guardar la posición en el componente para restaurarla después
+                this.scrollPositionGuardada = scrollPosition;
             } else {
+                // Remover las clases y estilos
                 document.body.classList.remove('modal-open');
                 document.documentElement.classList.remove('modal-open');
+                document.body.style.top = '';
+                
+                // Restaurar la posición del scroll
+                if (this.scrollPositionGuardada !== undefined) {
+                    window.scrollTo(0, this.scrollPositionGuardada);
+                    this.scrollPositionGuardada = undefined;
+                }
             }
         }
     },
-
     beforeUnmount() {
+        // Limpiar el estado del scroll si el componente se desmonta con el modal abierto
         document.body.classList.remove('modal-open');
         document.documentElement.classList.remove('modal-open');
+        document.body.style.top = '';
+    },
+
+    beforeUnmount() {
+        // Limpiar el estado del scroll si el componente se desmonta con el modal abierto
+        document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
+        document.body.style.top = '';
     },
 
     async mounted() {
@@ -644,12 +670,112 @@ export default {
             if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
             }
+            
+            // Guardar estado inicial cuando se abre el formulario
+            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
         },
 
-        cerrarModal() {
+        // Función para normalizar valores para comparación
+        normalizarValorParaComparacion(valor) {
+            if (valor === null || valor === undefined) {
+                return ''
+            }
+            if (typeof valor === 'string') {
+                return valor.trim()
+            }
+            if (typeof valor === 'number') {
+                return valor
+            }
+            if (typeof valor === 'boolean') {
+                return valor
+            }
+            return valor
+        },
+
+        // Verificar si hay cambios
+        verificarCambios() {
+            if (!this.nuevoEventoInicial) {
+                return false
+            }
+
+            const campos = [
+                'titulo', 'idTipoEvento', 'idCategoria', 'lugar', 'horaInicio',
+                'horaFin', 'descripcion', 'fecha'
+            ]
+
+            for (const campo of campos) {
+                const valorInicial = this.normalizarValorParaComparacion(this.nuevoEventoInicial[campo])
+                const valorActual = this.normalizarValorParaComparacion(this.nuevoEvento[campo])
+                if (valorInicial !== valorActual) {
+                    return true
+                }
+            }
+
+            return false
+        },
+
+        // Extraer mensaje de error de manera legible
+        extraerMensajeError(error) {
+            if (!error) {
+                return 'No se pudo completar la operación. Por favor, intenta nuevamente.'
+            }
+
+            if (typeof error === 'string') {
+                return error
+            }
+
+            if (error.message) {
+                return error.message
+            }
+
+            if (error.error) {
+                return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
+            }
+
+            if (error.details) {
+                return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
+            }
+
+            if (typeof error === 'object') {
+                try {
+                    const errorStr = JSON.stringify(error)
+                    if (errorStr.length > 200) {
+                        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
+                    }
+                    return errorStr
+                } catch {
+                    return 'Error desconocido. Por favor, intenta nuevamente.'
+                }
+            }
+
+            return 'Error desconocido. Por favor, intenta nuevamente.'
+        },
+
+        async cerrarModal() {
+            // Verificar si hay cambios sin guardar
+            const tieneCambios = this.verificarCambios()
+            
+            if (tieneCambios) {
+                const result = await Swal.fire({
+                    icon: 'question',
+                    title: '¿Descartar cambios?',
+                    text: '¿Estás seguro de que deseas cerrar? Los cambios sin guardar se perderán.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, cerrar',
+                    cancelButtonText: 'Continuar',
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d'
+                })
+                
+                if (!result.isConfirmed) {
+                    return
+                }
+            }
+            
             this.modalVisible = false;
             this.fechaBloqueada = false;
             this.limpiarFormulario();
+            this.nuevoEventoInicial = null;
         },
 
         mostrarSelectorEventos(fecha = null) {
@@ -675,6 +801,14 @@ export default {
         },
 
         editarEvento(evento) {
+            if (!this.puedeEditar) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Acción no permitida',
+                    text: 'No tienes permiso para editar eventos.'
+                });
+                return;
+            }
             this.eventoSeleccionado = evento;
             this.nuevoEvento = {
                 ...evento,
@@ -686,6 +820,9 @@ export default {
             this.selectorEventosVisible = false;
             this.fechaBloqueada = true;
             this.modalVisible = true;
+            
+            // Guardar estado inicial cuando se inicia la edición
+            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
         },
 
         verEvento(evento) {
@@ -795,8 +932,23 @@ export default {
             if (!(await this.validarPermisosEdicion())) {
                 return;
             }
+            
+            // Mostrar loading mientras se procesa
+            Swal.fire({
+                title: 'Guardando cambios...',
+                text: 'Por favor espera mientras procesamos tu solicitud.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                }
+            })
+            
             try {
                 await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+
+                // Cerrar el loading
+                Swal.close()
 
                 // El evento ya fue actualizado en la cache local en el servicio
                 // Actualizar el calendario inmediatamente
@@ -804,10 +956,10 @@ export default {
 
                 await Swal.fire({
                     icon: 'success',
-                    title: 'Evento actualizado',
-                    text: 'El evento se ha actualizado exitosamente.',
-                    timer: 2000,
-                    showConfirmButton: false
+                    title: '¡Evento actualizado exitosamente!',
+                    text: 'La información del evento se ha guardado correctamente en el sistema.',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#004AAD'
                 });
 
                 // Intentar recargar eventos del servidor, pero no fallar si hay error
@@ -819,45 +971,44 @@ export default {
                     // El evento ya está actualizado en la cache local
                 }
 
+                // Actualizar estado inicial después de guardar exitosamente
+                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
                 this.cerrarModal();
             } catch (error) {
+                // Cerrar el loading si aún está abierto
+                Swal.close()
+                
                 // Mostrar error específico al usuario
-                let mensajeError = 'Error al actualizar el evento';
-
-                if (error.message && (error.message.includes('horario') || error.message.includes('solapa'))) {
-                    mensajeError = error.message;
-                } else if (error.message) {
-                    mensajeError = error.message;
-                }
+                const mensajeError = this.extraerMensajeError(error);
 
                 await Swal.fire({
                     icon: 'error',
                     title: 'Error al actualizar evento',
-                    text: mensajeError,
-                    confirmButtonText: 'Entendido'
+                    html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc3545'
                 });
                 throw error; // Re-lanzar para que el catch superior lo maneje
             }
         },
 
         async preguntarAgregarOtroEvento(fechaActual) {
-            const eventosDelDia = calendarioService.obtenerEventosPorFecha(fechaActual);
-            if (!eventosDelDia || eventosDelDia.length <= 1) {
-                return false;
-            }
-
             const confirmacion = await Swal.fire({
                 icon: 'question',
                 title: '¿Agregar otro evento?',
-                text: 'Ya existen eventos en este día. ¿Quieres crear otro de inmediato?',
+                text: '¿Quieres crear otro evento para este mismo día?',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, agregar',
-                cancelButtonText: 'No'
+                cancelButtonText: 'No',
+                confirmButtonColor: '#004AAD',
+                cancelButtonColor: '#6c757d'
             });
 
             if (confirmacion.isConfirmed) {
                 this.limpiarFormulario();
                 this.nuevoEvento.fecha = fechaActual;
+                // Guardar estado inicial para el nuevo formulario
+                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
                 return true;
             }
             return false;
@@ -868,8 +1019,22 @@ export default {
                 return;
             }
 
+            // Mostrar loading mientras se procesa
+            Swal.fire({
+                title: 'Creando evento...',
+                text: 'Por favor espera mientras procesamos tu solicitud.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading()
+                }
+            })
+
             try {
                 const nuevoEventoCreado = await calendarioService.crearEvento(this.nuevoEvento);
+
+                // Cerrar el loading
+                Swal.close()
 
                 // El evento ya fue agregado a la cache local en el servicio
                 // Actualizar el calendario inmediatamente con el evento nuevo
@@ -877,10 +1042,10 @@ export default {
 
                 await Swal.fire({
                     icon: 'success',
-                    title: 'Evento creado',
-                    text: 'El evento se ha creado exitosamente.',
-                    timer: 2000,
-                    showConfirmButton: false
+                    title: '¡Evento creado exitosamente!',
+                    text: 'El evento se ha creado correctamente en el sistema.',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#004AAD'
                 });
 
                 // Intentar recargar eventos del servidor, pero no fallar si hay error
@@ -899,20 +1064,18 @@ export default {
                     this.cerrarModal();
                 }
             } catch (error) {
+                // Cerrar el loading si aún está abierto
+                Swal.close()
+                
                 // Mostrar error específico al usuario
-                let mensajeError = 'Error al crear el evento';
-
-                if (error.message && (error.message.includes('horario') || error.message.includes('solapa'))) {
-                    mensajeError = error.message;
-                } else if (error.message) {
-                    mensajeError = error.message;
-                }
+                const mensajeError = this.extraerMensajeError(error);
 
                 await Swal.fire({
                     icon: 'error',
                     title: 'Error al crear evento',
-                    text: mensajeError,
-                    confirmButtonText: 'Entendido'
+                    html: `<p><strong>No se pudo crear el evento.</strong></p><p>${mensajeError}</p>`,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc3545'
                 });
                 throw error; // Re-lanzar para que el catch superior lo maneje
             }
@@ -921,11 +1084,51 @@ export default {
         async guardarEvento() {
             if (!this.puedeCrear && !this.puedeEditar) return;
 
+            // Verificar si hay cambios antes de continuar (solo para edición)
+            if (this.modoEdicion) {
+                const tieneCambios = this.verificarCambios()
+                
+                if (!tieneCambios) {
+                    await Swal.fire({
+                        icon: 'info',
+                        title: 'Sin cambios',
+                        text: 'No se han realizado modificaciones en el evento. No hay nada que guardar.',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#004AAD'
+                    })
+                    return
+                }
+            }
+
             this.normalizarCamposEvento();
             const errores = this.validarEvento();
 
             if (errores.length > 0) {
-                await this.mostrarErroresValidacion(errores);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Corrige los errores',
+                    html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc3545'
+                });
+                return;
+            }
+
+            // Confirmación antes de guardar
+            const confirmacion = await Swal.fire({
+                icon: 'question',
+                title: this.modoEdicion ? '¿Actualizar evento?' : '¿Crear evento?',
+                text: this.modoEdicion 
+                    ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
+                    : '¿Estás seguro de que deseas crear este evento?',
+                showCancelButton: true,
+                confirmButtonText: this.modoEdicion ? 'Sí, actualizar' : 'Sí, crear',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#004AAD',
+                cancelButtonColor: '#6c757d'
+            });
+
+            if (!confirmacion.isConfirmed) {
                 return;
             }
 
@@ -942,11 +1145,13 @@ export default {
                 // El error ya fue mostrado en crearNuevoEvento o actualizarEventoExistente
                 // Solo mostrar aquí si no se mostró antes
                 if (!error.mostrado) {
+                    const mensajeError = this.extraerMensajeError(error);
                     await Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: error.message || 'Error al guardar el evento',
-                        confirmButtonText: 'Entendido'
+                        html: `<p><strong>Error al guardar el evento.</strong></p><p>${mensajeError}</p>`,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#dc3545'
                     });
                 }
             } finally {
@@ -1003,6 +1208,8 @@ export default {
             this.normalizarCamposEvento();
             this.eventoSeleccionado = null;
             this.modoEdicion = false;
+            // Resetear estado inicial cuando se limpia el formulario
+            this.nuevoEventoInicial = null;
         },
 
         mostrarNotificacion(mensaje, tipo) {

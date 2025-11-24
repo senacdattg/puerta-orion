@@ -183,29 +183,20 @@
   background: var(--color-blanco);
   border-radius: 14px;
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 260px;
-  padding: 10px 0;
+  min-width: 280px;
+  padding: 12px 0;
   overflow: hidden;
   z-index: var(--z-dropdown);
   border: 1px solid var(--color-gris-200);
-  animation: dropdownFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Removida animación CSS - Vue maneja la transición */
 }
 
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+/* Removido @keyframes dropdownFadeIn - Vue maneja la transición */
 
 /* --- Items del dropdown --- */
 .dropdown-item {
   width: calc(100% - 16px);
-  padding: 14px 20px;
+  padding: 16px 24px;
   background: none;
   border: none;
   text-align: left;
@@ -213,9 +204,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   color: var(--color-gris-700);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: var(--peso-fuente-medio);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: 'Poppins', sans-serif;
@@ -250,11 +241,11 @@
 
 /* Iconos con fondo circular - siempre al frente */
 .dropdown-item i {
-  width: 24px;
-  min-width: 24px;
-  height: 24px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
   text-align: center;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-azul-principal);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
@@ -276,9 +267,14 @@
 /* --- Item de logout en el dropdown --- */
 .dropdown-item.logout {
   color: var(--color-peligro);
-  margin-top: 6px;
+  margin-top: 4px;
+  margin-left: 8px;
+  margin-right: 8px;
+  margin-bottom: 2px;
   border-top: 1px solid var(--color-gris-200);
-  padding-top: 14px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  align-items: center; /* Asegurar alineación vertical */
 }
 
 .dropdown-item.logout::before {
@@ -288,6 +284,14 @@
 .dropdown-item.logout:hover {
   background: linear-gradient(90deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
   color: var(--color-peligro-hover);
+  transform: translateX(4px);
+  margin-top: 4px; /* Mantener el mismo margin-top */
+  margin-left: 8px;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  padding-top: 10px; /* Mantener el mismo padding-top */
+  padding-bottom: 10px;
+  align-items: center; /* Asegurar alineación vertical en hover */
 }
 
 .dropdown-item.logout i {
@@ -303,12 +307,12 @@
 
 /* --- Divisor del dropdown --- */
 .dropdown-divider {
-  margin: 6px 16px;
+  margin: 8px 20px;
   border: none;
   border-top: 1px solid var(--color-gris-300);
   height: 0;
   opacity: 1;
-  width: calc(100% - 32px);
+  width: calc(100% - 40px);
 }
 
 /* --- Transiciones del dropdown --- */

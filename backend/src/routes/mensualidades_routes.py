@@ -524,7 +524,7 @@ def _procesar_cambio_documento(mensualidad: Mensualidad, data: Dict[str, Any]) -
 
 
 def _actualizar_metodo_pago_campo(mensualidad: Mensualidad, valor: Any) -> None:
-    """Actualiza el método de pago de la mensualidad."""
+    """Actualiza el método de pago de la mensualidad y del abono inicial si existe."""
     if valor in (None, '',):
         raise RequestValidationError(ERROR_METODO_REQUERIDO, status_code=400)
 
@@ -539,7 +539,23 @@ def _actualizar_metodo_pago_campo(mensualidad: Mensualidad, valor: Any) -> None:
             status_code=404,
         )
 
+    metodo_anterior = mensualidad.id_metodo_pago
     mensualidad.id_metodo_pago = nuevo_metodo
+    
+    # Si solo se cambió el método de pago (no el monto ni el saldo), actualizar el abono inicial si existe
+    # Buscar el abono inicial (el más antiguo que coincide con la fecha de creación/pago inicial)
+    if mensualidad.id_mensualidad and metodo_anterior != nuevo_metodo:
+        abono_inicial = (
+            AbonoMensualidad.query
+            .filter_by(id_mensualidad=mensualidad.id_mensualidad)
+            .order_by(AbonoMensualidad.id_abono.asc())
+            .first()
+        )
+        
+        # Si existe un abono inicial y coincide con la fecha de pago de la mensualidad, actualizarlo
+        if abono_inicial and mensualidad.fecha_pago:
+            if abono_inicial.fecha_abono == mensualidad.fecha_pago:
+                abono_inicial.id_metodo_pago = nuevo_metodo
 
 
 def _actualizar_monto_pago_campo(mensualidad: Mensualidad, valor: Any) -> None:

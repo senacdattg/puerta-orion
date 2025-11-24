@@ -293,9 +293,11 @@ function abrirModalDatosConTema(tema) {
 }
 
 function abrirModalEdicion({ tema, dato }) {
+  console.log('abrirModalEdicion llamado con:', { tema, dato })
   temaEdicion.value = tema;
   datoEdicion.value = dato;
   mostrarModalEdicion.value = true;
+  console.log('Estado después de abrir:', { temaEdicion: temaEdicion.value, mostrarModalEdicion: mostrarModalEdicion.value })
 }
 
 function cerrarModalEdicion() {
@@ -384,12 +386,24 @@ function prepararDatosPorEntidad(entidad, nombre, codigo, payload) {
 }
 
 async function onGuardarDato(payload) {
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando datos...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+
   try {
     const { entidad, nombre, codigo } = payload
 
     const tema = obtenerTemaBackend(entidad)
 
     if (!tema) {
+      Swal.close();
       await mostrarErrorEntidadNoDisponible(payload.entidad)
       return
     }
@@ -408,32 +422,112 @@ async function onGuardarDato(payload) {
 
     const result = await response.json()
 
+    // Cerrar el loading
+    Swal.close();
+
     if (result.success) {
+      // Éxito: mostrar notificación de confirmación
+      const nombreEntidad = obtenerNombreEntidadLegible(entidad);
       await Swal.fire({
         icon: 'success',
-        title: 'Dato creado',
-        text: `${payload.entidad} creado exitosamente.`,
-        timer: 1500,
-        showConfirmButton: false
+        title: '¡Dato creado exitosamente!',
+        text: `El ${nombreEntidad} "${nombre}" ha sido creado correctamente en el sistema.`,
+        confirmButtonText: 'Aceptar',
+        confirmButtonColor: '#004AAD'
       })
       // Recargar la tabla de datos
       recargarTablaDatos.value = !recargarTablaDatos.value
       cerrarModalDatos()
     } else {
+      // Error: mostrar notificación con el error específico
+      const mensajeError = extraerMensajeErrorDato(result.error);
+      const nombreEntidad = obtenerNombreEntidadLegible(entidad);
+      
       await Swal.fire({
         icon: 'error',
-        title: 'No se pudo crear',
-        text: result.error || 'No se pudo crear el registro.'
+        title: 'Error al crear dato',
+        html: `<p><strong>No se pudo crear el ${nombreEntidad}.</strong></p><p>${mensajeError}</p>`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#dc3545'
       })
     }
   } catch (error) {
+    // Cerrar el loading si aún está abierto
+    Swal.close();
+    
     console.error('Error al guardar dato:', error)
+    
+    // Error de conexión o excepción no manejada
+    const mensajeError = extraerMensajeErrorDato(error);
+    
     await Swal.fire({
       icon: 'error',
-      title: 'Error de conexión',
-      text: error.message || 'No pudimos comunicarnos con el servidor.'
+      title: 'Error al guardar dato',
+      html: `<p><strong>Ocurrió un error inesperado.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
     })
   }
+}
+
+/**
+ * Extrae y formatea el mensaje de error de manera más legible
+ */
+function extraerMensajeErrorDato(error) {
+  if (!error) {
+    return 'No se pudo completar la operación. Por favor, intenta nuevamente.';
+  }
+
+  // Si es un string, devolverlo directamente
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  // Si es un objeto con mensaje
+  if (error.message) {
+    return error.message;
+  }
+
+  // Si es un objeto con error
+  if (error.error) {
+    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+  }
+
+  // Si es un objeto con detalles
+  if (error.details) {
+    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details);
+  }
+
+  // Si es un objeto, intentar convertirlo a string legible
+  if (typeof error === 'object') {
+    try {
+      const errorStr = JSON.stringify(error);
+      // Si el JSON es muy largo, devolver un mensaje genérico
+      if (errorStr.length > 200) {
+        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.';
+      }
+      return errorStr;
+    } catch {
+      return 'Error desconocido. Por favor, intenta nuevamente.';
+    }
+  }
+
+  return 'Error desconocido. Por favor, intenta nuevamente.';
+}
+
+/**
+ * Obtiene un nombre legible para la entidad
+ */
+function obtenerNombreEntidadLegible(entidad) {
+  const nombres = {
+    'tipo_documento': 'tipo de documento',
+    'sexo': 'sexo',
+    'ciudad': 'ciudad',
+    'eps': 'EPS',
+    'metodo_pago': 'método de pago',
+    'tipo-evento': 'tipo de evento'
+  };
+  return nombres[entidad] || 'dato';
 }
 
 async function manejarUsuarioRegistrado(datosUsuario) {
