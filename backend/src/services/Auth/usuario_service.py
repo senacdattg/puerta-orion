@@ -373,8 +373,8 @@ class UsuarioService:
                         except ValueError:
                             # Si falla, tratar como año solo (compatibilidad)
                             try:
-                                año = int(fecha_nacimiento_raw)
-                                fecha_nacimiento_date = date(año, 1, 1)
+                                anio = int(fecha_nacimiento_raw)
+                                fecha_nacimiento_date = date(anio, 1, 1)
                             except ValueError:
                                 raise UsuarioServiceError(f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}')
                     elif isinstance(fecha_nacimiento_raw, int):

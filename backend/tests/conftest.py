@@ -91,7 +91,7 @@ def _limpiar_engines_cache(app: Flask, db) -> None:
         try:
             if hasattr(db, '_app_engines') and app in db._app_engines:
                 engines_dict = db._app_engines[app]
-                for bind_key, engine in list(engines_dict.items()):
+                for bind_key, engine in engines_dict.items():
                     if engine:
                         engine.dispose()
                 engines_dict.clear()

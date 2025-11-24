@@ -225,7 +225,7 @@ def obtener_permisos_usuario():
                         permisos_usuario.add(permiso.nombre)
         
         # Convertir set a lista ordenada
-        permisos_lista = sorted(list(permisos_usuario))
+        permisos_lista = sorted(permisos_usuario)
         
         return jsonify({
             'success': True,
