@@ -65,12 +65,12 @@
             <div class="panel-controls" v-if="mostrarFiltros || mostrarBusqueda">
               <div class="controls-grid">
                 <div v-if="mostrarBusqueda" class="control-item">
-                  <label class="control-label">Buscar usuario</label>
-                  <input v-model="terminoBusqueda" type="text" placeholder="Nombre..." class="control-input" />
+                  <label for="buscar-usuario" class="control-label">Buscar usuario</label>
+                  <input id="buscar-usuario" v-model="terminoBusqueda" type="text" placeholder="Nombre..." class="control-input" />
                 </div>
                 <div v-if="mostrarFiltros" class="control-item">
-                  <label class="control-label">Filtrar por rol</label>
-                  <select v-model="filtroRol" class="control-input">
+                  <label for="filtro-rol" class="control-label">Filtrar por rol</label>
+                  <select id="filtro-rol" v-model="filtroRol" class="control-input">
                     <option v-for="opt in rolesOptions" :key="opt.value" :value="opt.value">
                       {{ opt.label }}
                     </option>
@@ -204,7 +204,7 @@ const tarjetasStats = computed(() => {
   ];
 
   // Agregar una tarjeta por cada rol encontrado
-  Object.entries(conteosPorRol.value).forEach(([nombreRol, count]) => {
+  for (const [nombreRol, count] of Object.entries(conteosPorRol.value)) {
     // Determinar icono y clase según el rol específico
     let iconClass = 'fas fa-user'; // Por defecto
     let statClass = 'stat-icon--user'; // Por defecto
@@ -237,7 +237,7 @@ const tarjetasStats = computed(() => {
       icon: iconClass,
       class: statClass
     });
-  });
+  }
 
   // Agregar pendientes (usuarios sin rol)
   const sinRol = usuariosPanel.value.filter(u => !u.roles || u.roles.length === 0).length;
@@ -442,7 +442,7 @@ async function onGuardarDato(payload) {
       // Error: mostrar notificación con el error específico
       const mensajeError = extraerMensajeErrorDato(result.error);
       const nombreEntidad = obtenerNombreEntidadLegible(entidad);
-      
+
       await Swal.fire({
         icon: 'error',
         title: 'Error al crear dato',
@@ -454,12 +454,12 @@ async function onGuardarDato(payload) {
   } catch (error) {
     // Cerrar el loading si aún está abierto
     Swal.close();
-    
+
     console.error('Error al guardar dato:', error)
-    
+
     // Error de conexión o excepción no manejada
     const mensajeError = extraerMensajeErrorDato(error);
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al guardar dato',

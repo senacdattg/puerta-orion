@@ -30,19 +30,19 @@
 
       <!-- Estadísticas -->
       <div class="estadisticas ordenadas">
-        <div id="statCard" class="stat-card stat-total">
+        <div id="statCard-total" class="stat-card stat-total">
           <span class="stat-numero">{{ mensualidadesFiltradas.length }}</span>
           <span class="stat-label">TOTAL</span>
         </div>
-        <div id="statCard" class="stat-card stat-pagadas">
+        <div id="statCard-pagadas" class="stat-card stat-pagadas">
           <span class="stat-numero">{{ estadisticas.pagadas }}</span>
           <span class="stat-label">PAGADAS</span>
         </div>
-        <div id="statCard" class="stat-card stat-pendientes">
+        <div id="statCard-pendientes" class="stat-card stat-pendientes">
           <span class="stat-numero">{{ estadisticas.pendientes }}</span>
           <span class="stat-label">PENDIENTES</span>
         </div>
-        <div id="statCard" class="stat-card stat-vencidas">
+        <div id="statCard-vencidas" class="stat-card stat-vencidas">
           <span class="stat-numero">{{ estadisticas.vencidas }}</span>
           <span class="stat-label">VENCIDAS</span>
         </div>
@@ -330,7 +330,7 @@ function normalizarMonto(valor = '') {
   const saneado = valor
     .toString()
     .replace(/[^0-9.,]/g, '')
-    .replace(/,/g, '.');
+    .replaceAll(',', '.');
 
   const partes = saneado.split('.');
   if (partes.length === 1) {
@@ -343,9 +343,9 @@ function normalizarMonto(valor = '') {
 }
 
 function parseMonto(valor = '') {
-  if (valor === '' || valor === null || valor === undefined) return NaN;
+  if (valor === '' || valor === null || valor === undefined) return Number.NaN;
   const numero = Number(valor);
-  return Number.isFinite(numero) ? numero : NaN;
+  return Number.isFinite(numero) ? numero : Number.NaN;
 }
 
 function esFechaValida(fecha) {
@@ -468,14 +468,14 @@ async function guardarCambiosMensualidad(mensualidadActualizada) {
 
 async function eliminarMensualidad(mensualidad) {
   if (!mensualidad || !mensualidad.id) return;
-  
+
   const estaActiva = mensualidad.activo !== false;
   const accion = estaActiva ? 'desactivar' : 'activar';
   const titulo = estaActiva ? '¿Desactivar mensualidad?' : '¿Activar mensualidad?';
-  const texto = estaActiva 
-    ? 'La mensualidad se desactivará en el sistema.' 
+  const texto = estaActiva
+    ? 'La mensualidad se desactivará en el sistema.'
     : 'La mensualidad se activará en el sistema.';
-  
+
   const confirmacion = await Swal.fire({
     icon: 'question',
     title: titulo,
@@ -486,7 +486,7 @@ async function eliminarMensualidad(mensualidad) {
     confirmButtonColor: '#004AAD',
     cancelButtonColor: '#6c757d'
   });
-  
+
   if (!confirmacion.isConfirmed) return;
   emit('eliminar', mensualidad);
 }
@@ -622,7 +622,7 @@ function extraerMensajeError(error) {
 async function cerrarFormulario() {
   // Verificar si hay cambios sin guardar
   const tieneCambios = verificarCambios()
-  
+
   if (tieneCambios) {
     const result = await Swal.fire({
       icon: 'question',
@@ -634,12 +634,12 @@ async function cerrarFormulario() {
       confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d'
     })
-    
+
     if (!result.isConfirmed) {
       return
     }
   }
-  
+
   mostrarFormulario.value = false;
   limpiarFormulario();
   formInicial.value = null;
@@ -780,7 +780,7 @@ function validarFormularioMensualidad() {
   }
 
   let saldo = form.value.saldo_pendiente;
-  let saldoNumero = undefined;
+  let saldoNumero;
   if (saldo === undefined || saldo === null || String(saldo).trim() === '') {
     errores.push('Debes especificar el saldo pendiente');
   } else {
@@ -814,7 +814,7 @@ function validarFormularioMensualidad() {
 async function guardarMensualidad() {
   // Verificar si hay cambios antes de continuar
   const tieneCambios = verificarCambios()
-  
+
   if (!tieneCambios) {
     await Swal.fire({
       icon: 'info',
@@ -891,16 +891,16 @@ async function guardarMensualidad() {
   try {
     // Cerrar el loading
     Swal.close()
-    
+
     // Emitir evento y esperar respuesta del padre
     emit('nueva', payload);
-    
+
     // El componente padre manejará el éxito/error, pero aquí cerramos el formulario
     cerrarFormulario();
   } catch (error) {
     // Cerrar el loading si aún está abierto
     Swal.close()
-    
+
     const mensajeError = extraerMensajeError(error)
     await Swal.fire({
       icon: 'error',

@@ -21,35 +21,35 @@
             <div class="info-section">
               <h4>Información Personal</h4>
               <div class="info-row">
-                <label>Nombre completo:</label>
+                <span class="info-label">Nombre completo:</span>
                 <span>{{ usuario?.persona?.nombre_completo || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Documento:</label>
+                <span class="info-label">Documento:</span>
                 <span>{{ usuario?.persona?.documento || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Correo electrónico:</label>
+                <span class="info-label">Correo electrónico:</span>
                 <span>{{ usuario?.persona?.correo_electronico || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Teléfono:</label>
+                <span class="info-label">Teléfono:</span>
                 <span>{{ usuario?.persona?.telefono || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Fecha de nacimiento:</label>
+                <span class="info-label">Fecha de nacimiento:</span>
                 <span>{{ formatearFecha(usuario?.persona?.fecha_nacimiento) || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Tipo sanguíneo:</label>
+                <span class="info-label">Tipo sanguíneo:</span>
                 <span>{{ tipoSangre || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Ciudad:</label>
+                <span class="info-label">Ciudad:</span>
                 <span>{{ ciudad || 'No disponible' }}</span>
               </div>
               <div v-if="diagnostico" class="info-row">
-                <label>Diagnóstico:</label>
+                <span class="info-label">Diagnóstico:</span>
                 <span>{{ diagnostico }}</span>
               </div>
             </div>
