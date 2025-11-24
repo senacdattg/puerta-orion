@@ -909,7 +909,7 @@ def obtener_perfil_detalle():
         if usuario_obj:
             logger.info(f"[PERFIL] Objeto Usuario obtenido del contexto: {usuario_obj.usuario}")
         else:
-            logger.warning(f"[PERFIL] No se pudo obtener objeto Usuario del contexto, se buscará en BD")
+            logger.warning("[PERFIL] No se pudo obtener objeto Usuario del contexto, se buscará en BD")
         
         detalle = usuario_service.obtener_detalle_completo_usuario(usuario_id, usuario_obj=usuario_obj)
         if not detalle:

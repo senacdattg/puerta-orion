@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from flask import current_app
 
@@ -123,7 +123,7 @@ def obtener_roles_usuario(usuario: Usuario) -> Set[str]:
     return {normalizar_nombre_rol(rol.nombre_rol) for rol in usuario.roles}
 
 
-def calcular_edad(fecha_nacimiento: Union[date, datetime, int, None]) -> Optional[int]:
+def calcular_edad(fecha_nacimiento: date | datetime | int | None) -> Optional[int]:
     if not fecha_nacimiento:
         return None
     if isinstance(fecha_nacimiento, int):
@@ -226,7 +226,7 @@ def obtener_paneles_autorizados(usuario: Usuario) -> List[PanelVisibility]:
     return paneles
 
 
-def puede_registrarse_como_acudiente(usuario: Usuario, edad_minima: int = 18) -> bool:
+def puede_registrarse_como_acudiente(usuario: Usuario) -> bool:
     if not usuario or not getattr(usuario, 'persona', None):
         return False
 

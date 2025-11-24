@@ -11,7 +11,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
 from datetime import date
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -205,6 +205,35 @@ class UsuarioService:
         if Usuario.query.filter_by(usuario=username).first():
             raise UsuarioServiceError(f"Ya existe un usuario con el nombre {username}")
     
+    def _asignar_rol_especifico(self, usuario: Usuario, rol_opcional: str, rol_por_defecto: Optional[Rol]) -> None:
+        """Asigna un rol específico al usuario si se proporciona."""
+        rol_especifico = Rol.query.filter_by(nombre_rol=rol_opcional.capitalize()).first()
+        if rol_especifico:
+            rol_existente = UsuarioRol.query.filter_by(
+                id_usuario=usuario.id_usuario,
+                id_rol=rol_especifico.id_rol
+            ).first()
+            
+            if not rol_existente:
+                usuario_rol = UsuarioRol(
+                    id_usuario=usuario.id_usuario,
+                    id_rol=rol_especifico.id_rol
+                )
+                db.session.add(usuario_rol)
+                usuario.set_rol_activo(rol_especifico)
+        elif rol_por_defecto:
+            usuario.set_rol_activo(rol_por_defecto)
+
+    def _procesar_rol_opcional(self, usuario: Usuario, rol_opcional: str, datos_rol: Optional[Dict[str, Any]], rol_por_defecto: Optional[Rol]) -> None:
+        """Procesa el rol opcional si se especifica."""
+        if not rol_opcional or rol_opcional not in ['deportista', 'acudiente']:
+            if rol_por_defecto:
+                usuario.set_rol_activo(rol_por_defecto)
+            return
+        
+        self._crear_registro_rol(usuario, rol_opcional, datos_rol)
+        self._asignar_rol_especifico(usuario, rol_opcional, rol_por_defecto)
+
     def _crear_persona_y_usuario(
         self, 
         datos_persona: Dict[str, Any], 
@@ -228,48 +257,16 @@ class UsuarioService:
             UsuarioServiceError: Si hay errores en la creación
         """
         try:
-            # Crear persona
             persona = self._crear_persona(datos_persona)
-            db.session.flush()  # Obtener ID sin hacer commit
+            db.session.flush()
             
-            # Crear usuario asociado
             usuario = self._crear_usuario(persona.id_persona, datos_usuario)
             db.session.flush()
             
-            # Asignar rol por defecto
             rol_por_defecto = self._asignar_rol_por_defecto(usuario)
+            self._procesar_rol_opcional(usuario, rol_opcional, datos_rol, rol_por_defecto)
             
-            # Si se especifica un rol, crear el registro correspondiente
-            if rol_opcional and rol_opcional in ['deportista', 'acudiente']:
-                self._crear_registro_rol(usuario, rol_opcional, datos_rol)
-                
-                # Asignar rol específico además del rol por defecto
-                rol_especifico = Rol.query.filter_by(nombre_rol=rol_opcional.capitalize()).first()
-                if rol_especifico:
-                    # Verificar si ya tiene el rol
-                    rol_existente = UsuarioRol.query.filter_by(
-                        id_usuario=usuario.id_usuario,
-                        id_rol=rol_especifico.id_rol
-                    ).first()
-                    
-                    if not rol_existente:
-                        usuario_rol = UsuarioRol(
-                            id_usuario=usuario.id_usuario,
-                            id_rol=rol_especifico.id_rol
-                        )
-                        db.session.add(usuario_rol)
-                        usuario.set_rol_activo(rol_especifico)
-                else:
-                    if rol_por_defecto:
-                        usuario.set_rol_activo(rol_por_defecto)
-            else:
-                if rol_por_defecto:
-                    usuario.set_rol_activo(rol_por_defecto)
-            
-            # Commit de la transacción
             db.session.commit()
-            
-            # Retornar datos del usuario (sin password)
             return self._serializar_usuario(usuario)
             
         except IntegrityError as e:
@@ -333,6 +330,75 @@ class UsuarioService:
         db.session.add(usuario)
         return usuario
     
+    def _procesar_fecha_nacimiento_deportista(self, fecha_nacimiento_raw: Any) -> Optional[date]:
+        """Procesa y convierte la fecha de nacimiento para deportista."""
+        if not fecha_nacimiento_raw:
+            return None
+        
+        from datetime import datetime
+        
+        if isinstance(fecha_nacimiento_raw, date):
+            return fecha_nacimiento_raw
+        
+        if isinstance(fecha_nacimiento_raw, int):
+            return date(fecha_nacimiento_raw, 1, 1)
+        
+        if isinstance(fecha_nacimiento_raw, str):
+            try:
+                return datetime.fromisoformat(fecha_nacimiento_raw).date()
+            except ValueError:
+                try:
+                    anio = int(fecha_nacimiento_raw)
+                    return date(anio, 1, 1)
+                except ValueError:
+                    raise UsuarioServiceError(f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}')
+        
+        return None
+
+    def _crear_deportista_registro(self, id_persona: int, datos: Dict[str, Any]) -> None:
+        """Crea un registro de deportista."""
+        deportista_existente = Deportista.query.filter_by(id_persona=id_persona).first()
+        if deportista_existente:
+            raise UsuarioServiceError("Ya existe un registro de deportista para esta persona")
+        
+        if not datos or not datos.get('id_categoria'):
+            raise UsuarioServiceError("El campo 'id_categoria' es obligatorio para crear un deportista")
+        
+        fecha_nacimiento_date = self._procesar_fecha_nacimiento_deportista(datos.get('fecha_nacimiento'))
+        
+        deportista = Deportista(
+            id_persona=id_persona,
+            id_categoria=datos['id_categoria'],
+            peso=datos.get('peso'),
+            altura=datos.get('altura'),
+            fecha_ingreso=datos.get('fecha_ingreso', date.today()),
+            fecha_nacimiento=fecha_nacimiento_date,
+            id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
+            id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
+            id_informacion_deportiva=datos.get('id_informacion_deportiva'),
+            id_eps=datos.get('id_eps')
+        )
+        db.session.add(deportista)
+        self.logger.info(f"Registro de deportista creado para persona ID: {id_persona}")
+
+    def _crear_acudiente_registro(self, id_persona: int, usuario: Usuario, datos: Optional[Dict[str, Any]]) -> None:
+        """Crea un registro de acudiente."""
+        acudiente_existente = Acudiente.query.filter_by(id_persona=id_persona).first()
+        if acudiente_existente:
+            raise UsuarioServiceError("Ya existe un registro de acudiente para esta persona")
+
+        if not puede_registrarse_como_acudiente(usuario):
+            raise UsuarioServiceError(
+                "Para registrarse como acudiente debe cumplir la mayoría de edad o no ser deportista activo"
+            )
+        
+        acudiente = Acudiente(
+            id_persona=id_persona,
+            estado=datos.get('estado', True) if datos else True
+        )
+        db.session.add(acudiente)
+        self.logger.info(f"Registro de acudiente creado para persona ID: {id_persona}")
+
     def _crear_registro_rol(self, usuario: Usuario, rol: str, datos: Dict[str, Any]) -> None:
         """
         Crea un registro de Deportista o Acudiente según el rol especificado.
@@ -345,77 +411,13 @@ class UsuarioService:
         Raises:
             UsuarioServiceError: Si hay errores en la creación
         """
-        from datetime import date
-        
         try:
             id_persona = usuario.id_persona
 
             if rol == 'deportista':
-                # Verificar que no exista ya un deportista para esta persona
-                deportista_existente = Deportista.query.filter_by(id_persona=id_persona).first()
-                if deportista_existente:
-                    raise UsuarioServiceError("Ya existe un registro de deportista para esta persona")
-                
-                # Validar que se proporcione id_categoria (obligatorio)
-                if not datos or not datos.get('id_categoria'):
-                    raise UsuarioServiceError("El campo 'id_categoria' es obligatorio para crear un deportista")
-                
-                # Procesar fecha de nacimiento - convertir string a date si es necesario
-                fecha_nacimiento_date = None
-                fecha_nacimiento_raw = datos.get('fecha_nacimiento')
-                
-                if fecha_nacimiento_raw:
-                    from datetime import datetime
-                    if isinstance(fecha_nacimiento_raw, str):
-                        # Intentar parsear fecha ISO (YYYY-MM-DD)
-                        try:
-                            fecha_nacimiento_date = datetime.fromisoformat(fecha_nacimiento_raw).date()
-                        except ValueError:
-                            # Si falla, tratar como año solo (compatibilidad)
-                            try:
-                                anio = int(fecha_nacimiento_raw)
-                                fecha_nacimiento_date = date(anio, 1, 1)
-                            except ValueError:
-                                raise UsuarioServiceError(f'Formato de fecha de nacimiento inválido: {fecha_nacimiento_raw}')
-                    elif isinstance(fecha_nacimiento_raw, int):
-                        # Compatibilidad con años antiguos
-                        fecha_nacimiento_date = date(fecha_nacimiento_raw, 1, 1)
-                    elif isinstance(fecha_nacimiento_raw, date):
-                        fecha_nacimiento_date = fecha_nacimiento_raw
-                
-                deportista = Deportista(
-                    id_persona=id_persona,
-                    id_categoria=datos['id_categoria'],
-                    peso=datos.get('peso'),
-                    altura=datos.get('altura'),
-                    fecha_ingreso=datos.get('fecha_ingreso', date.today()),
-                    fecha_nacimiento=fecha_nacimiento_date,
-                    id_tipo_sanguineo=datos.get('id_tipo_sanguineo'),
-                    id_ciudad_recidencia=datos.get('id_ciudad_recidencia'),
-                    id_informacion_deportiva=datos.get('id_informacion_deportiva'),
-                    id_eps=datos.get('id_eps')
-                )
-                db.session.add(deportista)
-                self.logger.info(f"Registro de deportista creado para persona ID: {id_persona}")
-            
+                self._crear_deportista_registro(id_persona, datos)
             elif rol == 'acudiente':
-                # Verificar que no exista ya un acudiente para esta persona
-                acudiente_existente = Acudiente.query.filter_by(id_persona=id_persona).first()
-                if acudiente_existente:
-                    raise UsuarioServiceError("Ya existe un registro de acudiente para esta persona")
-
-                if not puede_registrarse_como_acudiente(usuario):
-                    raise UsuarioServiceError(
-                        "Para registrarse como acudiente debe cumplir la mayoría de edad o no ser deportista activo"
-                    )
-                
-                acudiente = Acudiente(
-                    id_persona=id_persona,
-                    estado=datos.get('estado', True) if datos else True
-                )
-                db.session.add(acudiente)
-                self.logger.info(f"Registro de acudiente creado para persona ID: {id_persona}")
-            
+                self._crear_acudiente_registro(id_persona, usuario, datos)
             else:
                 raise UsuarioServiceError(f"Rol inválido: {rol}")
                 
@@ -729,6 +731,98 @@ class UsuarioService:
         if 'estado' in datos:
             raise UsuarioServiceError("El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar usuarios")
     
+    def _actualizar_campo_nombre(self, persona: Persona, datos: Dict[str, Any], campo: str, campos_actualizados: List[str]) -> None:
+        """Actualiza un campo de nombre de la persona."""
+        if campo not in datos:
+            return
+        
+        es_segundo = campo in ['segundo_nombre', 'segundo_apellido']
+        valor_validado = validate_name(campo, datos.get(campo), required=not es_segundo)
+        valor_db = valor_validado or None if es_segundo else valor_validado
+        
+        if getattr(persona, campo) != valor_db:
+            setattr(persona, campo, valor_db)
+            campos_actualizados.append(campo)
+
+    def _actualizar_documento(self, persona: Persona, datos: Dict[str, Any], id_persona: int, campos_actualizados: List[str]) -> None:
+        """Valida y actualiza el documento de la persona."""
+        if 'documento' not in datos:
+            return
+        
+        documento = validate_document('documento', datos['documento'])
+        documento_existente = (
+            Persona.query.filter_by(documento=documento)
+            .filter(Persona.id_persona != id_persona)
+            .first()
+        )
+        
+        if documento_existente:
+            raise UsuarioServiceError(f"Ya existe una persona con el documento {documento}")
+        
+        if persona.documento != documento:
+            persona.documento = documento
+            campos_actualizados.append('documento')
+
+    def _actualizar_email(self, persona: Persona, datos: Dict[str, Any], id_persona: int, campos_actualizados: List[str]) -> None:
+        """Valida y actualiza el correo electrónico de la persona."""
+        if 'correo_electronico' not in datos:
+            return
+        
+        email = validate_email('correo_electronico', datos['correo_electronico'])
+        email_existente = (
+            Persona.query.filter_by(correo_electronico=email)
+            .filter(Persona.id_persona != id_persona)
+            .first()
+        )
+        
+        if email_existente:
+            raise UsuarioServiceError(f"Ya existe una persona con el email {email}")
+        
+        if persona.correo_electronico != email:
+            persona.correo_electronico = email
+            campos_actualizados.append('correo_electronico')
+
+    def _actualizar_direccion(self, persona: Persona, datos: Dict[str, Any], campos_actualizados: List[str]) -> None:
+        """Actualiza la dirección de la persona."""
+        if 'direccion' not in datos:
+            return
+        
+        nueva_direccion = sanitize_address('direccion', datos.get('direccion'), required=False)
+        nueva_direccion_db = nueva_direccion or None
+        if persona.direccion != nueva_direccion_db:
+            persona.direccion = nueva_direccion_db
+            campos_actualizados.append('direccion')
+
+    def _actualizar_telefono(self, persona: Persona, datos: Dict[str, Any], campos_actualizados: List[str]) -> None:
+        """Valida y actualiza el teléfono de la persona."""
+        if 'telefono' not in datos:
+            return
+        
+        telefono = validate_phone('telefono', datos['telefono'])
+        if persona.telefono != telefono:
+            persona.telefono = telefono
+            campos_actualizados.append('telefono')
+
+    def _actualizar_relaciones_persona(self, persona: Persona, datos: Dict[str, Any], campos_actualizados: List[str]) -> None:
+        """Valida y actualiza las relaciones de la persona (tipo_documento, sexo)."""
+        if 'id_tipo_documento' in datos:
+            from src.models.catalogos.tipo_documento import TipoDocumento
+            tipo_doc = TipoDocumento.query.get(datos['id_tipo_documento'])
+            if not tipo_doc:
+                raise UsuarioServiceError(f"Tipo de documento con ID {datos['id_tipo_documento']} no encontrado")
+            if persona.id_tipo_documento != datos['id_tipo_documento']:
+                persona.id_tipo_documento = datos['id_tipo_documento']
+                campos_actualizados.append('id_tipo_documento')
+        
+        if 'id_sexo' in datos:
+            from src.models.categorias.sexo import Sexo
+            sexo = Sexo.query.get(datos['id_sexo'])
+            if not sexo:
+                raise UsuarioServiceError(f"Sexo con ID {datos['id_sexo']} no encontrado")
+            if persona.id_sexo != datos['id_sexo']:
+                persona.id_sexo = datos['id_sexo']
+                campos_actualizados.append('id_sexo')
+
     def _validar_y_actualizar_persona(
         self, 
         persona: Persona, 
@@ -747,114 +841,148 @@ class UsuarioService:
             UsuarioServiceError: Si hay errores de validación
         """
         campos_actualizados = []
-        # Validar y actualizar nombre completo
-        try:
-            if 'primer_nombre' in datos:
-                primer_nombre = validate_name('primer_nombre', datos['primer_nombre'])
-                if persona.primer_nombre != primer_nombre:
-                    persona.primer_nombre = primer_nombre
-                    campos_actualizados.append('primer_nombre')
-
-            if 'segundo_nombre' in datos:
-                segundo_nombre = validate_name('segundo_nombre', datos.get('segundo_nombre'), required=False)
-                segundo_nombre_db = segundo_nombre or None
-                if persona.segundo_nombre != segundo_nombre_db:
-                    persona.segundo_nombre = segundo_nombre_db
-                    campos_actualizados.append('segundo_nombre')
-
-            if 'primer_apellido' in datos:
-                primer_apellido = validate_name('primer_apellido', datos['primer_apellido'])
-                if persona.primer_apellido != primer_apellido:
-                    persona.primer_apellido = primer_apellido
-                    campos_actualizados.append('primer_apellido')
-
-            if 'segundo_apellido' in datos:
-                segundo_apellido = validate_name('segundo_apellido', datos.get('segundo_apellido'), required=False)
-                segundo_apellido_db = segundo_apellido or None
-                if persona.segundo_apellido != segundo_apellido_db:
-                    persona.segundo_apellido = segundo_apellido_db
-                    campos_actualizados.append('segundo_apellido')
         
-            # Validar y actualizar documento
-            if 'documento' in datos:
-                documento = validate_document('documento', datos['documento'])
-
-                documento_existente = (
-                    Persona.query.filter_by(documento=documento)
-                    .filter(Persona.id_persona != id_persona)
-                    .first()
-                )
-
-                if documento_existente:
-                    raise UsuarioServiceError(f"Ya existe una persona con el documento {documento}")
-
-                if persona.documento != documento:
-                    persona.documento = documento
-                    campos_actualizados.append('documento')
+        try:
+            self._actualizar_campo_nombre(persona, datos, 'primer_nombre', campos_actualizados)
+            self._actualizar_campo_nombre(persona, datos, 'segundo_nombre', campos_actualizados)
+            self._actualizar_campo_nombre(persona, datos, 'primer_apellido', campos_actualizados)
+            self._actualizar_campo_nombre(persona, datos, 'segundo_apellido', campos_actualizados)
             
-            # Validar y actualizar correo electrónico
-            if 'correo_electronico' in datos:
-                email = validate_email('correo_electronico', datos['correo_electronico'])
-
-                email_existente = (
-                    Persona.query.filter_by(correo_electronico=email)
-                    .filter(Persona.id_persona != id_persona)
-                    .first()
-                )
-
-                if email_existente:
-                    raise UsuarioServiceError(f"Ya existe una persona con el email {email}")
-
-                if persona.correo_electronico != email:
-                    persona.correo_electronico = email
-                    campos_actualizados.append('correo_electronico')
+            self._actualizar_documento(persona, datos, id_persona, campos_actualizados)
+            self._actualizar_email(persona, datos, id_persona, campos_actualizados)
+            self._actualizar_direccion(persona, datos, campos_actualizados)
+            self._actualizar_telefono(persona, datos, campos_actualizados)
             
-            # Actualizar dirección
-            if 'direccion' in datos:
-                nueva_direccion = sanitize_address('direccion', datos.get('direccion'), required=False)
-                nueva_direccion_db = nueva_direccion or None
-                if persona.direccion != nueva_direccion_db:
-                    persona.direccion = nueva_direccion_db
-                    campos_actualizados.append('direccion')
-            
-            # Validar y actualizar teléfono
-            if 'telefono' in datos:
-                telefono = validate_phone('telefono', datos['telefono'])
-                if persona.telefono != telefono:
-                    persona.telefono = telefono
-                    campos_actualizados.append('telefono')
-
         except ValidationError as error:
             raise UsuarioServiceError(str(error))
         
-        # Validar y actualizar relaciones
-        if 'id_tipo_documento' in datos:
-            from src.models.catalogos.tipo_documento import TipoDocumento
-            tipo_doc = TipoDocumento.query.get(datos['id_tipo_documento'])
-            if not tipo_doc:
-                raise UsuarioServiceError(f"Tipo de documento con ID {datos['id_tipo_documento']} no encontrado")
-            if persona.id_tipo_documento != datos['id_tipo_documento']:
-                persona.id_tipo_documento = datos['id_tipo_documento']
-                campos_actualizados.append('id_tipo_documento')
+        self._actualizar_relaciones_persona(persona, datos, campos_actualizados)
         
-        if 'id_sexo' in datos:
-            from src.models.categorias.sexo import Sexo
-            sexo = Sexo.query.get(datos['id_sexo'])
-            if not sexo:
-                raise UsuarioServiceError(f"Sexo con ID {datos['id_sexo']} no encontrado")
-            if persona.id_sexo != datos['id_sexo']:
-                persona.id_sexo = datos['id_sexo']
-                campos_actualizados.append('id_sexo')
-        
-        # No permitir actualizar estado desde este endpoint
         if 'estado' in datos:
             raise UsuarioServiceError("El estado no se puede actualizar desde este endpoint. Use los endpoints dedicados para activar/desactivar personas")
         
-        # Log de campos actualizados
         if campos_actualizados:
             self.logger.info(f"Campos de persona actualizados: {', '.join(campos_actualizados)}")
         else:
-            self.logger.warning(f"No se actualizaron campos de persona (todos los valores son iguales a los existentes)")
+            self.logger.warning("No se actualizaron campos de persona (todos los valores son iguales a los existentes)")
+
+    def _obtener_usuario_para_detalle(self, id_usuario: int, usuario_obj: Optional[Usuario]) -> Optional[Usuario]:
+        """Obtiene el usuario para el detalle completo."""
+        if usuario_obj:
+            self.logger.info(f"[DETALLE] Usando usuario proporcionado: {usuario_obj.usuario} (ID: {usuario_obj.id_usuario}, estado: {usuario_obj.estado})")
+            return usuario_obj
+        
+        usuario_sin_filtro = Usuario.query.filter_by(id_usuario=id_usuario).first()
+        if usuario_sin_filtro:
+            self.logger.info(f"[DETALLE] Usuario encontrado sin filtro de estado: {usuario_sin_filtro.usuario}, estado: {usuario_sin_filtro.estado}")
+        
+        usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
+        
+        if not usuario and usuario_sin_filtro:
+            self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} existe pero está inactivo, usando de todas formas (token válido)")
+            usuario = usuario_sin_filtro
+        
+        if not usuario:
+            self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} no encontrado en la base de datos")
+            return None
+        
+        self.logger.info(f"[DETALLE] Usuario encontrado: {usuario.usuario} (ID: {usuario.id_usuario}, estado: {usuario.estado})")
+        return usuario
+
+    def _obtener_fecha_nacimiento_persona(self, id_persona: int) -> Optional[date]:
+        """Obtiene la fecha de nacimiento del deportista si existe."""
+        deportista_temp = Deportista.query.filter_by(id_persona=id_persona).first()
+        if deportista_temp and deportista_temp.fecha_nacimiento:
+            return deportista_temp.fecha_nacimiento
+        return None
+
+    def _obtener_roles_usuario(self, usuario: Usuario) -> List[Dict[str, Any]]:
+        """Obtiene los roles del usuario en formato de lista."""
+        if not hasattr(usuario, 'roles') or not usuario.roles:
+            return []
+        
+        return [{
+            'id_rol': rol.id_rol,
+            'nombre_rol': rol.nombre_rol,
+            'descripcion': rol.descripcion
+        } for rol in usuario.roles]
+
+    def _construir_datos_persona(self, persona: Persona, fecha_nacimiento: Optional[date]) -> Dict[str, Any]:
+        """Construye el diccionario de datos de la persona."""
+        return {
+            'primer_nombre': persona.primer_nombre,
+            'segundo_nombre': persona.segundo_nombre,
+            'primer_apellido': persona.primer_apellido,
+            'segundo_apellido': persona.segundo_apellido,
+            'documento': persona.documento,
+            'correo_electronico': persona.correo_electronico,
+            'direccion': persona.direccion,
+            'telefono': persona.telefono,
+            'fecha_nacimiento': fecha_nacimiento,
+            'id_tipo_documento': persona.id_tipo_documento,
+            'id_sexo': persona.id_sexo,
+            'nombre_completo': persona.nombre_completo
+        }
+
+    def _agregar_info_deportista(self, resultado: Dict[str, Any], deportista: Deportista) -> None:
+        """Agrega información del deportista al resultado."""
+        from src.models.deportistas.informacion_deportiva import InformacionDeportiva
+        from src.models.salud.diagnostico_deportista import DiagnosticoDeportista
+        from src.models.salud.diagnostico import Diagnostico
+        
+        resultado['deportista'] = {
+            'id_deportista': deportista.id_deportista,
+            'fecha_nacimiento': deportista.fecha_nacimiento,
+            'id_tipo_sanguineo': deportista.id_tipo_sanguineo,
+            'id_ciudad_recidencia': deportista.id_ciudad_recidencia,
+            'id_eps': deportista.id_eps,
+            'peso': deportista.peso,
+            'altura': deportista.altura
+        }
+
+        if deportista.id_informacion_deportiva:
+            info_deportiva = InformacionDeportiva.query.filter_by(
+                id_informacion_deportiva=deportista.id_informacion_deportiva
+            ).first()
+            if info_deportiva:
+                resultado['informacion_deportiva'] = {
+                    'practica_otro_deporte': info_deportiva.practica_otro_deporte,
+                    'participa_escuela': info_deportiva.participa_escuela,
+                    'recomendacion_medica': info_deportiva.recomendacion_medica,
+                    'descripcion_recomendacion': info_deportiva.descripcion_recomendacion,
+                    'id_escuela': info_deportiva.id_escuela,
+                    'id_deporte': info_deportiva.id_deporte,
+                    'id_institucion_registro': info_deportiva.id_institucion_registro,
+                    'id_categoria': deportista.id_categoria
+                }
+
+        diagnosticos_deportista = DiagnosticoDeportista.query.filter_by(
+            id_deportista=deportista.id_deportista
+        ).all()
+
+        if diagnosticos_deportista:
+            ids_diagnosticos = [dd.id_diagnostico for dd in diagnosticos_deportista]
+            resultado['diagnostico'] = ids_diagnosticos
+
+            if ids_diagnosticos:
+                primer_diagnostico = Diagnostico.query.filter_by(
+                    id_diagnostico=ids_diagnosticos[0]
+                ).first()
+                if primer_diagnostico:
+                    resultado['tipo_enfermedad'] = primer_diagnostico.id_tipo_enfermedad
+
+    def _agregar_info_acudiente(self, resultado: Dict[str, Any], acudiente: Acudiente) -> None:
+        """Agrega información del acudiente al resultado."""
+        from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+        
+        relacion = DeportistaAcudiente.query.filter_by(
+            id_acudiente=acudiente.id_acudiente
+        ).first()
+
+        resultado['informacion_acudiente'] = {
+            'id_acudiente': acudiente.id_acudiente,
+            'es_respondable': relacion.es_responsable if relacion else False
+        }
 
     def obtener_detalle_completo_usuario(self, id_usuario: int, usuario_obj: Optional[Usuario] = None) -> Optional[Dict[str, Any]]:
         """
@@ -871,83 +999,28 @@ class UsuarioService:
             Dict: Estructura con la información completa o None si no existe
         """
         try:
-            from src.models.deportistas.informacion_deportiva import InformacionDeportiva
-            from src.models.salud.diagnostico_deportista import DiagnosticoDeportista
-            from src.models.salud.diagnostico import Diagnostico
-            from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
-            
             self.logger.info(f"[DETALLE] Buscando detalle completo para usuario ID: {id_usuario}")
             
-            # Si se proporciona el objeto usuario directamente, usarlo
-            if usuario_obj:
-                self.logger.info(f"[DETALLE] Usando usuario proporcionado: {usuario_obj.usuario} (ID: {usuario_obj.id_usuario}, estado: {usuario_obj.estado})")
-                usuario = usuario_obj
-            else:
-                # Primero buscar sin filtro de estado para ver si existe
-                usuario_sin_filtro = Usuario.query.filter_by(id_usuario=id_usuario).first()
-                if usuario_sin_filtro:
-                    self.logger.info(f"[DETALLE] Usuario encontrado sin filtro de estado: {usuario_sin_filtro.usuario}, estado: {usuario_sin_filtro.estado}")
-                
-                # Buscar primero con estado activo
-                usuario = Usuario.query.filter_by(id_usuario=id_usuario, estado=True).first()
-                
-                # Si no se encuentra activo pero existe, usar el inactivo (ya pasó autenticación)
-                if not usuario and usuario_sin_filtro:
-                    self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} existe pero está inactivo, usando de todas formas (token válido)")
-                    usuario = usuario_sin_filtro
-                
-                if not usuario:
-                    self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} no encontrado en la base de datos")
-                    return None
+            usuario = self._obtener_usuario_para_detalle(id_usuario, usuario_obj)
+            if not usuario:
+                return None
 
-            self.logger.info(f"[DETALLE] Usuario encontrado: {usuario.usuario} (ID: {usuario.id_usuario}, estado: {usuario.estado})")
-
-            # Obtener persona completa
             persona = usuario.persona
             if not persona:
                 self.logger.warning(f"[DETALLE] Usuario ID {id_usuario} no tiene persona asociada (id_persona: {usuario.id_persona})")
-                # Retornar al menos la información básica del usuario
                 return {
-                    'usuario': {
-                        'usuario': usuario.usuario
-                    },
+                    'usuario': {'usuario': usuario.usuario},
                     'persona': None,
                     'error': 'El usuario no tiene una persona asociada'
                 }
 
             self.logger.info(f"[DETALLE] Persona encontrada: {persona.primer_nombre} {persona.primer_apellido} (ID: {persona.id_persona})")
 
-            # Obtener fecha_nacimiento de deportista si existe, si no None
-            fecha_nacimiento_persona = None
-            deportista_temp = Deportista.query.filter_by(id_persona=persona.id_persona).first()
-            if deportista_temp and deportista_temp.fecha_nacimiento:
-                fecha_nacimiento_persona = deportista_temp.fecha_nacimiento
+            fecha_nacimiento_persona = self._obtener_fecha_nacimiento_persona(persona.id_persona)
+            roles_usuario = self._obtener_roles_usuario(usuario)
 
-            # Obtener roles del usuario
-            roles_usuario = []
-            if hasattr(usuario, 'roles') and usuario.roles:
-                roles_usuario = [{
-                    'id_rol': rol.id_rol,
-                    'nombre_rol': rol.nombre_rol,
-                    'descripcion': rol.descripcion
-                } for rol in usuario.roles]
-
-            # Construir resultado base con estructura solicitada
             resultado: Dict[str, Any] = {
-                'persona': {
-                    'primer_nombre': persona.primer_nombre,
-                    'segundo_nombre': persona.segundo_nombre,
-                    'primer_apellido': persona.primer_apellido,
-                    'segundo_apellido': persona.segundo_apellido,
-                    'documento': persona.documento,
-                    'correo_electronico': persona.correo_electronico,
-                    'direccion': persona.direccion,
-                    'telefono': persona.telefono,
-                    'fecha_nacimiento': fecha_nacimiento_persona,
-                    'id_tipo_documento': persona.id_tipo_documento,
-                    'id_sexo': persona.id_sexo,
-                    'nombre_completo': persona.nombre_completo
-                },
+                'persona': self._construir_datos_persona(persona, fecha_nacimiento_persona),
                 'usuario': {
                     'id_usuario': usuario.id_usuario,
                     'usuario': usuario.usuario,
@@ -957,66 +1030,13 @@ class UsuarioService:
                 'roles': roles_usuario
             }
 
-            # Deportista - información completa
             deportista = Deportista.query.filter_by(id_persona=persona.id_persona).first()
             if deportista:
-                resultado['deportista'] = {
-                    'id_deportista': deportista.id_deportista,
-                    'fecha_nacimiento': deportista.fecha_nacimiento,
-                    'id_tipo_sanguineo': deportista.id_tipo_sanguineo,
-                    'id_ciudad_recidencia': deportista.id_ciudad_recidencia,
-                    'id_eps': deportista.id_eps,
-                    'peso': deportista.peso,
-                    'altura': deportista.altura
-                }
+                self._agregar_info_deportista(resultado, deportista)
 
-                # Información deportiva
-                if deportista.id_informacion_deportiva:
-                    info_deportiva = InformacionDeportiva.query.filter_by(
-                        id_informacion_deportiva=deportista.id_informacion_deportiva
-                    ).first()
-                    if info_deportiva:
-                        resultado['informacion_deportiva'] = {
-                            'practica_otro_deporte': info_deportiva.practica_otro_deporte,
-                            'participa_escuela': info_deportiva.participa_escuela,
-                            'recomendacion_medica': info_deportiva.recomendacion_medica,
-                            'descripcion_recomendacion': info_deportiva.descripcion_recomendacion,
-                            'id_escuela': info_deportiva.id_escuela,
-                            'id_deporte': info_deportiva.id_deporte,
-                            'id_institucion_registro': info_deportiva.id_institucion_registro,
-                            'id_categoria': deportista.id_categoria
-                        }
-
-                # Diagnósticos del deportista
-                diagnosticos_deportista = DiagnosticoDeportista.query.filter_by(
-                    id_deportista=deportista.id_deportista
-                ).all()
-
-                if diagnosticos_deportista:
-                    # Obtener IDs de diagnósticos
-                    ids_diagnosticos = [dd.id_diagnostico for dd in diagnosticos_deportista]
-                    resultado['diagnostico'] = ids_diagnosticos
-
-                    # Obtener tipo_enfermedad del primer diagnóstico
-                    if ids_diagnosticos:
-                        primer_diagnostico = Diagnostico.query.filter_by(
-                            id_diagnostico=ids_diagnosticos[0]
-                        ).first()
-                        if primer_diagnostico:
-                            resultado['tipo_enfermedad'] = primer_diagnostico.id_tipo_enfermedad
-
-            # Acudiente - información completa
             acudiente = Acudiente.query.filter_by(id_persona=persona.id_persona).first()
             if acudiente:
-                # Buscar relación DeportistaAcudiente para este acudiente
-                relacion = DeportistaAcudiente.query.filter_by(
-                    id_acudiente=acudiente.id_acudiente
-                ).first()
-
-                resultado['informacion_acudiente'] = {
-                    'id_acudiente': acudiente.id_acudiente,
-                    'es_respondable': relacion.es_responsable if relacion else False
-                }
+                self._agregar_info_acudiente(resultado, acudiente)
 
             self.logger.info(f"[DETALLE] Detalle completo obtenido exitosamente para usuario ID: {id_usuario}")
             return resultado

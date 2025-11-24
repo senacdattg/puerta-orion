@@ -157,7 +157,7 @@ def run():
             print(f"     Email: {datos_usuario['email']}")
             print("     " + "-"*30)
         
-        print(f"\n  ⚠️  IMPORTANTE: Cambia las contraseñas después del primer login")
+        print("\n  ⚠️  IMPORTANTE: Cambia las contraseñas después del primer login")
         
     except Exception as e:
         db.session.rollback()

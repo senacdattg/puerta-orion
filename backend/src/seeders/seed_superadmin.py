@@ -38,7 +38,7 @@ def run():
     
     if superadmin_existente:
         print("     ℹ️  Super Administrador ya existe")
-        print(f"        Usuario: superadmin")
+        print("        Usuario: superadmin")
         print(f"        ID: {superadmin_existente.id_usuario}")
         return
     
@@ -112,11 +112,11 @@ def run():
         db.session.commit()
         
         print("     ✅ Super Administrador creado exitosamente")
-        print(f"\n     🔑 CREDENCIALES DE ACCESO:")
-        print(f"        Usuario: superadmin")
+        print("\n     🔑 CREDENCIALES DE ACCESO:")
+        print("        Usuario: superadmin")
         print(f"        Contraseña: {superadmin_password}")
-        print(f"        Rol: SuperAdmin")
-        print(f"\n     ⚠️  IMPORTANTE: Cambia la contraseña después del primer login")
+        print("        Rol: SuperAdmin")
+        print("\n     ⚠️  IMPORTANTE: Cambia la contraseña después del primer login")
         
     except Exception as e:
         db.session.rollback()
