@@ -61,7 +61,7 @@ async function cerrarModal() {
     confirmButtonColor: '#dc3545',
     cancelButtonColor: '#6c757d'
   });
-  
+
   if (result.isConfirmed) {
     emit('cerrar');
   }
@@ -165,7 +165,7 @@ async function manejarRegistro(datosFormulario) {
     } else {
       // Error: mostrar notificación con el error específico
       const mensajeError = extraerMensajeError(resultado.error);
-      
+
       await Swal.fire({
         icon: 'error',
         title: 'Error al registrar usuario',
@@ -177,12 +177,12 @@ async function manejarRegistro(datosFormulario) {
   } catch (error) {
     // Cerrar el loading si aún está abierto
     Swal.close();
-    
+
     console.error('Error al registrar usuario:', error);
-    
+
     // Error de conexión o excepción no manejada
     const mensajeError = extraerMensajeError(error);
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al registrar usuario',
