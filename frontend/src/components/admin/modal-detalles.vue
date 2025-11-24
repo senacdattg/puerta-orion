@@ -634,43 +634,6 @@ function verificarCambios() {
   return false
 }
 
-// Extraer mensaje de error de manera legible
-function extraerMensajeError(error) {
-  if (!error) {
-    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.'
-  }
-
-  if (typeof error === 'string') {
-    return error
-  }
-
-  if (error.message) {
-    return error.message
-  }
-
-  if (error.error) {
-    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
-  }
-
-  if (error.details) {
-    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
-  }
-
-  if (typeof error === 'object') {
-    try {
-      const errorStr = JSON.stringify(error)
-      if (errorStr.length > 200) {
-        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
-      }
-      return errorStr
-    } catch {
-      return 'Error desconocido. Por favor, intenta nuevamente.'
-    }
-  }
-
-  return 'Error desconocido. Por favor, intenta nuevamente.'
-}
-
 function configurarFormularioDesdeProps() {
   documentoOriginal.value = normalizarDocumento(props.mensualidad.numero_documento || '');
   formEdicion.value = {
@@ -1100,7 +1063,7 @@ async function guardarCambios() {
   }
 
   const nombrePersonaActualizada = personaDocumentoEdicion.value?.nombre_completo || props.mensualidad.persona_nombre || props.mensualidad.nombre;
-  const idMetodoEnRespuesta = Object.prototype.hasOwnProperty.call(payloadUpdate, 'id_metodo_pago') ? payloadUpdate.id_metodo_pago : props.mensualidad.id_metodo_pago;
+  const idMetodoEnRespuesta = Object.hasOwn(payloadUpdate, 'id_metodo_pago') ? payloadUpdate.id_metodo_pago : props.mensualidad.id_metodo_pago;
 
   const mensualidadActualizada = {
     ...props.mensualidad,
@@ -1307,6 +1270,27 @@ function obtenerValorNumericoMensualidad() {
   return Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
 }
 
+function formatearFechaDDMMYYYY(fechaStr) {
+  const [año, mes, dia] = fechaStr.split('-');
+  return `${Number.parseInt(dia)}/${Number.parseInt(mes)}/${año}`;
+}
+
+function crearFechaObjDesdeString(fechaStr) {
+  if (fechaStr.includes('-')) {
+    const [año, mes, dia] = fechaStr.split('-');
+    return new Date(Number.parseInt(año), Number.parseInt(mes) - 1, Number.parseInt(dia));
+  }
+  return new Date(fechaStr + 'T00:00:00');
+}
+
+function formatearFechaObj(fechaObj) {
+  if (Number.isNaN(fechaObj.getTime())) return null;
+  const dia = fechaObj.getDate();
+  const mes = fechaObj.getMonth() + 1;
+  const año = fechaObj.getFullYear();
+  return `${dia}/${mes}/${año}`;
+}
+
 function formatearFecha(fecha) {
   if (!fecha) return '';
   try {
@@ -1314,98 +1298,95 @@ function formatearFecha(fecha) {
       return fecha;
     }
     if (typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-      const [año, mes, dia] = fecha.split('-');
-      return `${Number.parseInt(dia)}/${Number.parseInt(mes)}/${año}`;
+      return formatearFechaDDMMYYYY(fecha);
     }
-    let fechaObj;
-    if (typeof fecha === 'string') {
-      if (fecha.includes('-')) {
-        const [año, mes, dia] = fecha.split('-');
-        fechaObj = new Date(Number.parseInt(año), Number.parseInt(mes) - 1, Number.parseInt(dia));
-      } else {
-        fechaObj = new Date(fecha + 'T00:00:00');
-      }
-    } else {
-      fechaObj = new Date(fecha);
-    }
-    if (Number.isNaN(fechaObj.getTime())) return fecha;
-    const dia = fechaObj.getDate();
-    const mes = fechaObj.getMonth() + 1;
-    const año = fechaObj.getFullYear();
-    return `${dia}/${mes}/${año}`;
+    const fechaObj = typeof fecha === 'string'
+      ? crearFechaObjDesdeString(fecha)
+      : new Date(fecha);
+    const fechaFormateada = formatearFechaObj(fechaObj);
+    return fechaFormateada || fecha;
   } catch {
     return fecha;
   }
 }
 
+function obtenerNombreMetodoPago(idMetodo) {
+  if (!idMetodo) return undefined;
+  const found = (metodosPago.value || []).find(x => x.id === idMetodo);
+  return found ? found.nombre : `Método ${idMetodo}`;
+}
+
+function mapearAbonoAItem(abono) {
+  const metodo = obtenerNombreMetodoPago(abono.id_metodo_pago);
+  const tipo = abono.es_pago_final ? 'Pago' : 'Abono';
+  return {
+    id_abono: abono.id_abono,
+    fecha: abono.fecha_abono || abono.fecha || abono.f,
+    monto: abono.monto,
+    metodo,
+    tipo
+  };
+}
+
+function buscarAbonoInicial(abonosList, fechaCreacion) {
+  if (!fechaCreacion || abonosList.length === 0) return null;
+  const fechaCreacionStr = String(fechaCreacion).slice(0, 10);
+  return abonosList.find(a => String(a.fecha).slice(0, 10) === fechaCreacionStr);
+}
+
+function obtenerMetodoCreacion(abonoInicial) {
+  if (abonoInicial && abonoInicial.metodo) {
+    return abonoInicial.metodo;
+  }
+  const idm = props.mensualidad.id_metodo_pago;
+  if (!idm) return 'Ninguno';
+  return obtenerNombreMetodoPago(idm);
+}
+
+function agregarRegistroCreacion(items, fechaCreacion, abonoInicial) {
+  if (!fechaCreacion) return;
+  const metodoCreacion = obtenerMetodoCreacion(abonoInicial);
+  const montoCreacion = abonoInicial ? abonoInicial.monto : undefined;
+  items.push({
+    id_abono: abonoInicial?.id_abono,
+    fecha: fechaCreacion,
+    monto: montoCreacion,
+    metodo: metodoCreacion,
+    tipo: 'Creación'
+  });
+}
+
+function agregarAbonosNoIniciales(items, abonosList, abonoInicial) {
+  if (abonosList.length === 0) return;
+  for (const a of abonosList) {
+    if (abonoInicial && a.id_abono === abonoInicial.id_abono) {
+      continue;
+    }
+    items.push(a);
+  }
+}
+
+function agregarFechasPagoHeredadas(items, fechasPago) {
+  if (!fechasPago || fechasPago.length === 0) return;
+  for (const p of fechasPago) {
+    const fecha = (typeof p === 'object' && p.fecha) ? p.fecha : p;
+    const yaExiste = items.some(x => String(x.fecha).slice(0, 10) === String(fecha).slice(0, 10));
+    if (yaExiste) continue;
+    const monto = (typeof p === 'object' && p.monto !== undefined) ? p.monto : undefined;
+    items.push({ id_abono: undefined, fecha, monto, metodo: undefined, tipo: 'Pago' });
+  }
+}
+
 function listaPagosYAbonos() {
   const items = [];
-  // Abonos desde backend (cargar primero para verificar si hay abono inicial)
-  const abonosList = (abonos.value || []).map(a => {
-    const metodo = (() => {
-      const id = a.id_metodo_pago;
-      if (!id) return undefined;
-      const found = (metodosPago.value || []).find(x => x.id === id);
-      return found ? found.nombre : `Método ${id}`;
-    })();
-    const tipo = a.es_pago_final ? 'Pago' : 'Abono';
-    return { id_abono: a.id_abono, fecha: a.fecha_abono || a.fecha || a.f, monto: a.monto, metodo, tipo };
-  });
-
-  // Buscar abono inicial (el más antiguo que coincide con la fecha de creación)
+  const abonosList = (abonos.value || []).map(mapearAbonoAItem);
   const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
-  let abonoInicial = null;
-  if (fechaCreacion && abonosList.length > 0) {
-    const fechaCreacionStr = String(fechaCreacion).slice(0, 10);
-    abonoInicial = abonosList.find(a => String(a.fecha).slice(0, 10) === fechaCreacionStr);
-  }
+  const abonoInicial = buscarAbonoInicial(abonosList, fechaCreacion);
 
-  // Registro de creación de la mensualidad
-  if (fechaCreacion) {
-    const metodoCreacion = (() => {
-      // Si hay abono inicial, usar su método de pago, sino el de la mensualidad
-      if (abonoInicial && abonoInicial.metodo) {
-        return abonoInicial.metodo;
-      }
-      const idm = props.mensualidad.id_metodo_pago;
-      if (!idm) return 'Ninguno';
-      const found = (metodosPago.value || []).find(x => x.id === idm);
-      return found ? found.nombre : `Método ${idm}`;
-    })();
+  agregarRegistroCreacion(items, fechaCreacion, abonoInicial);
+  agregarAbonosNoIniciales(items, abonosList, abonoInicial);
+  agregarFechasPagoHeredadas(items, props.mensualidad.fechasPago);
 
-    // Si hay abono inicial, usar su monto, sino undefined
-    const montoCreacion = abonoInicial ? abonoInicial.monto : undefined;
-
-    items.push({
-      id_abono: abonoInicial?.id_abono,
-      fecha: fechaCreacion,
-      monto: montoCreacion,
-      metodo: metodoCreacion,
-      tipo: 'Creación'
-    });
-  }
-
-  // Agregar abonos que no sean el inicial (para evitar duplicados)
-  if (abonosList.length > 0) {
-    abonosList.forEach(a => {
-      // Si este abono es el inicial, ya lo agregamos como "Creación", así que lo saltamos
-      if (abonoInicial && a.id_abono === abonoInicial.id_abono) {
-        return;
-      }
-      items.push(a);
-    });
-  }
-  // Fechas de pago heredadas (si existen en la tarjeta)
-  if (props.mensualidad.fechasPago && props.mensualidad.fechasPago.length > 0) {
-    props.mensualidad.fechasPago.forEach(p => {
-      const fecha = (typeof p === 'object' && p.fecha) ? p.fecha : p;
-      // Evitar duplicar si ya existe un registro (abono/pago) con la misma fecha
-      const yaExiste = items.some(x => String(x.fecha).slice(0, 10) === String(fecha).slice(0, 10));
-      if (yaExiste) return;
-      const monto = (typeof p === 'object' && p.monto !== undefined) ? p.monto : undefined;
-      items.push({ id_abono: undefined, fecha, monto, metodo: undefined, tipo: 'Pago' });
-    });
-  }
   return items.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 }
 
@@ -1449,7 +1430,7 @@ async function pagarConMercadoPago() {
     }
     const url = json.init_point || json.preference_url || json.initPoint || json.url;
     if (!url) throw new Error('Preferencia creada sin URL de inicio');
-    window.location.href = url;
+    globalThis.location.href = url;
   } catch (e) {
     try {
       if (typeof e === 'object' && e !== null && e.message) {

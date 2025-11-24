@@ -780,7 +780,7 @@ function validarFormularioMensualidad() {
   }
 
   let saldo = form.value.saldo_pendiente;
-  let saldoNumero = undefined;
+  let saldoNumero;
   if (saldo === undefined || saldo === null || String(saldo).trim() === '') {
     errores.push('Debes especificar el saldo pendiente');
   } else {

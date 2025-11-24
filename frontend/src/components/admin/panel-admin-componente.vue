@@ -204,7 +204,7 @@ const tarjetasStats = computed(() => {
   ];
 
   // Agregar una tarjeta por cada rol encontrado
-  Object.entries(conteosPorRol.value).forEach(([nombreRol, count]) => {
+  for (const [nombreRol, count] of Object.entries(conteosPorRol.value)) {
     // Determinar icono y clase según el rol específico
     let iconClass = 'fas fa-user'; // Por defecto
     let statClass = 'stat-icon--user'; // Por defecto
@@ -237,7 +237,7 @@ const tarjetasStats = computed(() => {
       icon: iconClass,
       class: statClass
     });
-  });
+  }
 
   // Agregar pendientes (usuarios sin rol)
   const sinRol = usuariosPanel.value.filter(u => !u.roles || u.roles.length === 0).length;

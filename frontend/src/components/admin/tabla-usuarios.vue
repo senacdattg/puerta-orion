@@ -748,11 +748,11 @@ async function cargarDatos() {
 
     if (rolesResponse.success) {
       // Solo mostrar Entrenador y Administrador (excluir SuperAdmin, Usuario, Deportista, Acudiente)
-      const rolesPermitidos = ['entrenador', 'administrador'];
+      const rolesPermitidos = new Set(['entrenador', 'administrador']);
       roles.value = rolesResponse.data
         .filter(rol => {
           const nombreLower = rol.nombre_rol.toLowerCase();
-          return rolesPermitidos.includes(nombreLower);
+          return rolesPermitidos.has(nombreLower);
         })
         .map(rol => ({
           value: rol.id_rol,
@@ -826,9 +826,9 @@ function userRolesIds(user) {
 
 // Obtener IDs de roles gestionables del usuario (solo Entrenador y Administrador)
 function userGestionableRolesIds(user) {
-  const rolesPermitidos = ['entrenador', 'administrador'];
+  const rolesPermitidos = new Set(['entrenador', 'administrador']);
   return (user.roles || [])
-    .filter(r => rolesPermitidos.includes(r.nombre_rol?.toLowerCase()))
+    .filter(r => rolesPermitidos.has(r.nombre_rol?.toLowerCase()))
     .map(r => r.id_rol);
 }
 
@@ -1406,7 +1406,7 @@ async function guardarEdicion() {
       usuarioDetalle.value = refreshed.data;
     }
 
-    formularioEdicion.value = JSON.parse(JSON.stringify(payload));
+    formularioEdicion.value = structuredClone(payload);
 
     // Éxito: mostrar notificación de confirmación
     await Swal.fire({

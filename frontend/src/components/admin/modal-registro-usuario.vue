@@ -120,8 +120,8 @@ async function manejarRegistro(datosFormulario) {
       correo_electronico: datosFormulario.correo,
       direccion: datosFormulario.direccion || null,
       telefono: datosFormulario.telefono || null,
-      id_tipo_documento: parseInt(datosFormulario.idTipoDocumento),
-      id_sexo: parseInt(datosFormulario.idSexo)
+      id_tipo_documento: Number.parseInt(datosFormulario.idTipoDocumento),
+      id_sexo: Number.parseInt(datosFormulario.idSexo)
     };
 
     const datosUsuario = {
