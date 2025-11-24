@@ -43,6 +43,7 @@ import Eps from '../datos-dinamicos/eps.vue'
 import MetodoPago from '../datos-dinamicos/metodo-pago.vue'
 import TipoEvento from '../datos-dinamicos/tipo-evento.vue'
 import Swal from 'sweetalert2'
+import { useModalScrollLock } from '@/composables/useModalScrollLock'
 
 const props = defineProps({
   mostrar: { type: Boolean, default: false },
@@ -51,6 +52,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['cerrar', 'guardado'])
+
+// Bloquear scroll del body cuando el modal está abierto
+useModalScrollLock(computed(() => props.mostrar))
 
 const guardando = ref(false)
 const formData = ref({})

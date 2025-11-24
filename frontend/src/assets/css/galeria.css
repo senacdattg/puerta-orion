@@ -178,11 +178,24 @@
   flex-direction: column;
   height: 100%;
   min-height: 350px;
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-media);
+  border: 1px solid var(--color-gris-200);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tarjeta:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-fuerte);
+  border-color: var(--color-primario);
 }
 
 /* --- Contenido de la tarjeta --- */
 .contenido-tarjeta {
-  padding: 0 16px 16px 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -192,9 +205,9 @@
 .foto-evento {
   width: 100%;
   height: 200px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: var(--radio-borde-pequeno) var(--radio-borde-pequeno) 0 0;
-  margin-bottom: var(--espaciado-md);
+  margin-bottom: 0;
   display: block;
   max-width: 100%;
   background: var(--color-gris-claro);
@@ -543,9 +556,53 @@ textarea[readonly] {
   overflow: hidden;
 }
 
+/* --- Modal pequeño --- */
+.galeria-modal.modal-sm {
+  --modal-max-width: 600px;
+}
+
 /* --- Header del modal --- */
-.galeria-modal .modal-header h3 {
+.galeria-modal .modal-header h3,
+.galeria-modal .modal-header .modal-title {
   font-size: 1.65rem;
+}
+
+/* --- Estilos para modal pequeño --- */
+.galeria-modal.modal-sm .modal-header .modal-title {
+  font-size: 1.4rem;
+}
+
+.galeria-modal.modal-sm .input-edicion,
+.galeria-modal.modal-sm .select-edicion {
+  padding: 0.875rem 1rem;
+  font-size: 0.95rem;
+}
+
+.galeria-modal.modal-sm .campo-formulario label {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.galeria-modal.modal-sm .campo-formulario label i {
+  font-size: 0.85rem;
+}
+
+.galeria-modal.modal-sm .seccion-form h6 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.galeria-modal.modal-sm .descripcion-seccion {
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.galeria-modal.modal-sm .modal-body {
+  padding: 1.25rem;
+}
+
+.galeria-modal.modal-sm .modal-footer {
+  padding: 1rem 1.25rem;
 }
 
 /* --- Panel del formulario dentro del modal --- */
@@ -607,6 +664,59 @@ textarea[readonly] {
 	.cuadricula-tarjetas {
 		--listado-grid-min: 280px;
 		--listado-grid-gap: 20px;
+	}
+}
+
+@media (max-width: 700px) {
+	.cuadricula-tarjetas {
+		grid-template-columns: 1fr;
+	}
+
+	.seccion-contenido.grande {
+		padding: 10px 2px;
+	}
+
+	.tarjeta {
+		min-width: 0;
+		max-width: 100%;
+	}
+}
+
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
 	}
 }
 

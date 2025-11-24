@@ -17,7 +17,6 @@
               <option value="">Filtrar por eventos</option>
               <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.nombre">{{ tipo.nombre }}</option>
             </select>
-            <button @click="limpiarFiltros" class="btn-limpiar-filtros">Limpiar filtros</button>
           </div>
         </div>
       </div>
@@ -64,93 +63,123 @@
 
     <!-- Modal de formulario -->
     <div v-if="mostrarFormulario" class="modal-overlay">
-      <div class="modal-content mensualidades-modal galeria-modal form-modal" @click.stop>
+      <div class="modal-content mensualidades-modal galeria-modal modal-sm" @click.stop>
          <div class="modal-header">
-           <h3>{{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}</h3>
+           <h2 class="modal-title">
+             <i :class="editando !== null ? (puedeEditarFoto ? 'fas fa-edit' : 'fas fa-eye') : 'fas fa-plus-circle'"></i>
+             {{ editando !== null ? (puedeEditarFoto ? 'Editar Evento' : 'Ver Evento') : 'Agregar Evento' }}
+           </h2>
            <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
              <i class="fas fa-times"></i>
            </button>
          </div>
 
         <div class="modal-body">
-        <form @submit.prevent="guardarEvento" class="formulario-evento form-modal-panel">
-          <div class="campo-formulario">
-            <label for="titulo">
-              <i class="fas fa-heading"></i>
-              Título del evento *
-            </label>
-            <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-evento input-mensualidad" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
-          </div>
-          <div class="campo-formulario">
-            <label for="archivo_imagen">
-              <i class="fas fa-camera"></i>
-              Imagen *
-            </label>
-
-            <!-- Mostrar imagen actual cuando se está editando -->
-            <div v-if="editando !== null && !cambiandoImagen && eventos[editando]" class="imagen-actual">
-              <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre" class="imagen-preview" />
-              <p class="texto-imagen-actual">Imagen actual</p>
-              <button type="button" @click="cambiarImagen" class="btn-cambiar-imagen" v-if="puedeEditarFoto">
-                <i class="fas fa-edit"></i> Cambiar imagen
-              </button>
-            </div>
-
-            <!-- Input de archivo -->
-            <div v-if="(editando === null || cambiandoImagen) && puedeEditarFoto">
-              <input
-                id="archivo_imagen"
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                @change="manejarSeleccionArchivo"
-                class="input-evento input-mensualidad"
-                :required="imagenRequerida"
-              />
-              <div v-if="archivoSeleccionado" class="archivo-info">
-                <i class="fas fa-file-image"></i>
-                {{ archivoSeleccionado.name }}
-                <button type="button" @click="limpiarArchivo" class="btn-limpiar">
-                  <i class="fas fa-times"></i>
-                </button>
+        <form id="form-galeria" @submit.prevent="guardarEvento" class="formulario-evento">
+          <!-- Sección: Información básica -->
+          <div class="seccion-form">
+            <h6>Información básica</h6>
+            <p class="descripcion-seccion">Identifica el evento con un título, tipo y categoría.</p>
+            <div class="grid-detalles">
+              <div class="campo-formulario">
+                <label for="titulo">
+                  <i class="fas fa-heading"></i>
+                  Título del evento *
+                </label>
+                <input id="titulo" v-model="form.titulo" type="text" placeholder="Ej: Megaweekend" class="input-edicion" :readonly="!puedeEditarFoto" @input="manejarTitulo" />
+              </div>
+              <div class="campo-formulario">
+                <label for="id_tipo_evento">
+                  <i class="fas fa-tag"></i>
+                  Tipo de evento *
+                </label>
+                <select id="id_tipo_evento" v-model="form.id_tipo_evento" class="select-edicion" :disabled="!puedeEditarFoto" required>
+                  <option value="">Selecciona tipo de evento</option>
+                  <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">{{ tipo.nombre }}</option>
+                </select>
+              </div>
+              <div class="campo-formulario">
+                <label for="id_categoria">
+                  <i class="fas fa-list"></i>
+                  Categoría
+                </label>
+                <select id="id_categoria" v-model="form.id_categoria" class="select-edicion" :disabled="!puedeEditarFoto">
+                  <option value="">Selecciona categoría</option>
+                  <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">{{ categoria.nombre_categoria }}</option>
+                </select>
               </div>
             </div>
           </div>
-          <div class="campo-formulario">
-            <label for="id_tipo_evento">
-              <i class="fas fa-tag"></i>
-              Tipo de evento *
-            </label>
-            <select v-model="form.id_tipo_evento" class="select-evento select-mensualidad" :disabled="!puedeEditarFoto" required>
-              <option value="">Selecciona tipo de evento</option>
-              <option v-for="tipo in tipos" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">{{ tipo.nombre }}</option>
-            </select>
-          </div>
-          <div class="campo-formulario">
-            <label for="id_categoria">
-              <i class="fas fa-list"></i>
-              Categoría
-            </label>
-            <select v-model="form.id_categoria" class="select-evento select-mensualidad" :disabled="!puedeEditarFoto">
-              <option value="">Selecciona categoría</option>
-              <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">{{ categoria.nombre_categoria }}</option>
-            </select>
-          </div>
-          <div class="campo-formulario">
-            <label for="descripcion">
-              <i class="fas fa-align-left"></i>
-              Descripción *
-            </label>
-            <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
-              class="input-evento input-mensualidad" :readonly="!puedeEditarFoto" @input="manejarDescripcion"></textarea>
-          </div>
+          <div class="linea-abajo" style="margin:12px 0;"></div>
 
-          <div class="acciones centrado">
-            <button type="submit" class="btn btn-success" v-if="puedeEditarFoto">{{ editando !== null ? 'Actualizar' : 'Crear' }}</button>
-            <button type="button" class="btn btn-secondary" v-if="!puedeEditarFoto" @click="cerrarFormulario">Cerrar</button>
-            <button type="button" class="btn btn-danger" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento">Eliminar</button>
+          <!-- Sección: Imagen -->
+          <div class="seccion-form">
+            <h6>Imagen</h6>
+            <p class="descripcion-seccion">Sube una imagen para el evento.</p>
+            <div class="campo-formulario">
+              <label for="archivo_imagen">
+                <i class="fas fa-camera"></i>
+                Imagen *
+              </label>
+
+              <!-- Mostrar imagen actual cuando se está editando -->
+              <div v-if="editando !== null && !cambiandoImagen && eventos[editando]" class="imagen-actual">
+                <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre" class="imagen-preview" />
+                <p class="texto-imagen-actual">Imagen actual</p>
+                <button type="button" @click="cambiarImagen" class="btn-cambiar-imagen" v-if="puedeEditarFoto">
+                  <i class="fas fa-edit"></i> Cambiar imagen
+                </button>
+              </div>
+
+              <!-- Input de archivo -->
+              <div v-if="(editando === null || cambiandoImagen) && puedeEditarFoto">
+                <input
+                  id="archivo_imagen"
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  @change="manejarSeleccionArchivo"
+                  class="input-edicion"
+                  :required="imagenRequerida"
+                />
+                <div v-if="archivoSeleccionado" class="archivo-info">
+                  <i class="fas fa-file-image"></i>
+                  {{ archivoSeleccionado.name }}
+                  <button type="button" @click="limpiarArchivo" class="btn-limpiar">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="linea-abajo" style="margin:12px 0;"></div>
+
+          <!-- Sección: Descripción -->
+          <div class="seccion-form">
+            <h6>Descripción</h6>
+            <p class="descripcion-seccion">Añade detalles adicionales sobre el evento.</p>
+            <div class="campo-formulario">
+              <label for="descripcion">
+                <i class="fas fa-align-left"></i>
+                Descripción *
+              </label>
+              <textarea id="descripcion" v-model="form.descripcion" placeholder="Descripción del evento"
+                class="input-edicion" :readonly="!puedeEditarFoto" @input="manejarDescripcion" rows="3"></textarea>
+            </div>
           </div>
         </form>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" @click="cerrarFormulario" class="btn btn-secondary">
+            Cerrar
+          </button>
+          <button type="button" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento" class="btn btn-danger">
+            Eliminar
+          </button>
+          <button type="submit" form="form-galeria" v-if="puedeEditarFoto" class="btn btn-primary">
+            {{ editando !== null ? 'Actualizar' : 'Crear' }}
+          </button>
         </div>
 
       </div>
@@ -603,4 +632,5 @@ export default {
   }
 };
 </script>
+
 

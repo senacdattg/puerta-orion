@@ -197,7 +197,7 @@ def _register_domain_blueprints(app: Flask) -> None:
         (catalogos_bp, None),
         (dynamic_data_bp, '/api'),
         (personas_bp, '/api'),
-        (eventos_bp, '/api'),
+        (eventos_bp, None),  # El blueprint ya tiene url_prefix='/api/eventos'
         (usuarios_bp, None),
         (deportistas_bp, '/api/deportistas'),
         (galeria_bp, None),

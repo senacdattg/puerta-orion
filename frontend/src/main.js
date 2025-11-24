@@ -21,7 +21,6 @@ import '@/assets/css/galeria.css'
 import '@/assets/css/calendario.css'
 import '@/assets/css/mensualidades.css'
 import '@/assets/css/panel-admin.css'
-import '@/assets/css/perfiles.css'
 import '@/assets/css/dashboards.css'
 
 // ===== LIBRERÍAS EXTERNAS (cargadas al final, no bloquean) =====
@@ -29,6 +28,10 @@ import '@/assets/css/dashboards.css'
 import '@fortawesome/fontawesome-free/css/all.min.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+
+// ===== ESTILOS QUE DEBEN CARGARSE DESPUÉS DE BOOTSTRAP =====
+// Estos estilos necesitan sobrescribir Bootstrap, por lo que se cargan al final
+import '@/assets/css/perfiles.css'
 
 // Vue y plugins
 import { createApp } from 'vue'

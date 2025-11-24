@@ -101,142 +101,168 @@
 
       <!-- Modal de formulario para nueva mensualidad -->
       <div v-if="mostrarFormulario && esAdmin" class="modal-overlay">
-        <div class="modal-content mensualidades-modal form-modal" @click.stop>
+        <div class="modal-content mensualidades-modal modal-sm" @click.stop>
           <div class="modal-header">
-            <h3>Agregar Nueva Mensualidad</h3>
+            <h2 class="modal-title">
+              <i class="fas fa-plus-circle"></i>
+              Agregar Nueva Mensualidad
+            </h2>
             <button class="btn-cerrar" title="Cerrar" @click="cerrarFormulario">
               <i class="fas fa-times"></i>
             </button>
           </div>
 
-          <form @submit.prevent="guardarMensualidad" class="form-modal-panel" :key="formKey" autocomplete="off">
-            <div class="campo-formulario">
-              <label for="docPersona">
-                <i class="fas fa-id-card"></i>
-                Número de documento de la persona *
-              </label>
-              <input
-                id="docPersona"
-                v-model="form.numero_documento"
-                type="text"
-                inputmode="numeric"
-                placeholder="Ej: 12345678"
-                autocomplete="off"
-                class="input-mensualidad"
-                required
-                @input="manejarDocumento"
-                @blur="verificarDocumento"
-              />
-              <small
-                v-if="estadoDocumento.mensaje"
-                :class="['mensaje-documento', estadoDocumento.status]"
-              >
-                {{ estadoDocumento.mensaje }}
-              </small>
-            </div>
+          <div class="modal-body">
+          <form id="form-nueva-mensualidad" @submit.prevent="guardarMensualidad" class="form-modal-panel" :key="formKey" autocomplete="off">
+            <!-- Sección: Información básica -->
+            <div class="seccion-form">
+              <h6>Información básica</h6>
+              <p class="descripcion-seccion">Identifica al deportista y configura el método de pago.</p>
+              <div class="grid-detalles">
+                <div class="campo-formulario">
+                  <label for="docPersona">
+                    <i class="fas fa-id-card"></i>
+                    Documento *
+                  </label>
+                  <input
+                    id="docPersona"
+                    v-model="form.numero_documento"
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="Ej: 12345678"
+                    autocomplete="off"
+                    class="input-edicion"
+                    required
+                    @input="manejarDocumento"
+                    @blur="verificarDocumento"
+                  />
+                  <small
+                    v-if="estadoDocumento.mensaje"
+                    :class="['mensaje-documento', estadoDocumento.status]"
+                  >
+                    {{ estadoDocumento.mensaje }}
+                  </small>
+                </div>
 
-            <div class="campo-formulario">
-              <label for="idMetodo">
-                <i class="fas fa-money-bill-wave"></i>
-                Método de Pago *
-              </label>
-              <select id="idMetodo" v-model.number="form.id_metodo_pago" class="select-mensualidad" required>
-                <option :value="''">— Sin seleccionar —</option>
-                <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
-              </select>
-              <small class="hint">Selecciona el método con el que se pagará la mensualidad.</small>
+                <div class="campo-formulario">
+                  <label for="idMetodo">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Método de Pago *
+                  </label>
+                  <select id="idMetodo" v-model.number="form.id_metodo_pago" class="select-edicion" required>
+                    <option disabled value="">Selecciona un método</option>
+                    <option v-for="m in metodosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+                  </select>
+                  <small class="hint">Usa el método por defecto de esta mensualidad.</small>
+                </div>
+              </div>
             </div>
+            <div class="linea-abajo" style="margin:12px 0;"></div>
 
-            <div class="campo-formulario">
-              <label for="monto">
-                <i class="fas fa-dollar-sign"></i>
-                Valor Total *
-              </label>
-              <div class="input-with-symbol">
-                <span class="dollar-symbol">$</span>
-                <input
-                  id="monto"
-                  v-model="form.valorSinSimbolo"
-                  type="text"
-                  inputmode="decimal"
-                  placeholder="150000"
-                  autocomplete="off"
-                  class="input-mensualidad"
-                  required
-                  @input="manejarMontoCampo('valorSinSimbolo', $event)"
-                />
+            <!-- Sección: Montos y estado -->
+            <div class="seccion-form">
+              <h6>Montos y estado</h6>
+              <p class="descripcion-seccion">Configura el método, el estado deseado y los importes.</p>
+              <div class="grid-detalles">
+                <div class="campo-formulario">
+                  <label for="estado-inicial">
+                    <i class="fas fa-info-circle"></i>
+                    Estado (visual)
+                  </label>
+                  <select id="estado-inicial" v-model="form.estado_ui" class="select-edicion">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Pagado">Pagado</option>
+                  </select>
+                  <small class="hint">El estado real lo fija el saldo pendiente (0 = Pagado).</small>
+                </div>
+              </div>
+              <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin-top:16px;">
+                <div class="campo-formulario">
+                  <label for="monto">
+                    <i class="fas fa-dollar-sign"></i>
+                    Valor Total *
+                  </label>
+                  <div class="input-with-symbol">
+                    <span class="dollar-symbol">$</span>
+                    <input
+                      id="monto"
+                      v-model="form.valorSinSimbolo"
+                      type="text"
+                      inputmode="decimal"
+                      placeholder="150000"
+                      autocomplete="off"
+                      class="input-edicion"
+                      required
+                      @input="manejarMontoCampo('valorSinSimbolo', $event)"
+                    />
+                  </div>
+                  <small class="hint">Es el valor base de cada mensualidad.</small>
+                </div>
+                <div class="campo-formulario">
+                  <label for="saldoPendiente">
+                    <i class="fas fa-balance-scale"></i>
+                    Saldo Pendiente
+                  </label>
+                  <input
+                    id="saldoPendiente"
+                    v-model="form.saldo_pendiente"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="0"
+                    class="input-edicion"
+                    @input="manejarMontoCampo('saldo_pendiente', $event)"
+                  />
+                  <small class="hint">Si eliges "Pagado", se guardará con saldo 0 automáticamente.</small>
+                </div>
+              </div>
+            </div>
+            <div class="linea-abajo" style="margin:12px 0;"></div>
+
+            <!-- Sección: Fechas y vigencia -->
+            <div class="seccion-form">
+              <h6>Fechas y vigencia</h6>
+              <p class="descripcion-seccion">Controla vigencia y confirma cuándo quedó pago.</p>
+              <div class="grid-detalles">
+                <div class="campo-formulario">
+                  <label for="vencimiento">
+                    <i class="fas fa-clock"></i>
+                    Fecha de Vencimiento
+                  </label>
+                  <input id="vencimiento" v-model="form.vencimiento" type="date" class="input-edicion" required autocomplete="off" />
+                </div>
+
+                <div class="campo-formulario">
+                  <label>
+                    <i class="fas fa-calendar-check"></i>
+                    Fecha de Pago
+                  </label>
+                  <input type="date" :value="''" class="input-edicion" disabled />
+                  <small class="hint">Se llena sola cuando el saldo llega a 0.</small>
+                </div>
+
+                <div class="campo-formulario">
+                  <label>
+                    <i class="fas fa-toggle-on"></i>
+                    Activo
+                  </label>
+                  <button type="button"
+                          class="btn-toggle-activo"
+                          :class="{ on: form.activo }"
+                          @click="form.activo = !form.activo">
+                    {{ form.activo ? 'Activo' : 'Inactivo' }}
+                  </button>
+                  <small class="hint">Click para activar/desactivar.</small>
+                </div>
               </div>
             </div>
 
-            <div class="campo-formulario">
-              <label for="saldoPendiente">
-                <i class="fas fa-balance-scale"></i>
-                Saldo Pendiente (opcional)
-              </label>
-              <input
-                id="saldoPendiente"
-                v-model="form.saldo_pendiente"
-                type="text"
-                inputmode="decimal"
-                placeholder="Ej: 0"
-                class="input-mensualidad"
-                @input="manejarMontoCampo('saldo_pendiente', $event)"
-                required
-              />
-              <small class="hint">Si lo dejas vacío, será igual al valor total.</small>
-            </div>
-
-            <div class="campo-formulario">
-              <label for="vencimiento">
-                <i class="fas fa-clock"></i>
-                Fecha de vencimiento *
-              </label>
-              <input id="vencimiento" v-model="form.vencimiento" type="date" class="input-mensualidad" required autocomplete="off" />
-            </div>
-
-            <div class="campo-formulario">
-              <label>
-                <i class="fas fa-toggle-on"></i>
-                Activo
-              </label>
-              <button type="button"
-                      class="btn-toggle-activo"
-                      :class="{ on: form.activo }"
-                      @click="form.activo = !form.activo">
-                {{ form.activo ? 'Activo' : 'Inactivo' }}
-              </button>
-            </div>
-
-
-
-            <div class="campo-formulario">
-              <label>
-                <i class="fas fa-info-circle"></i>
-                Estado inicial
-              </label>
-              <div>
-                <select v-model="form.estado_ui" class="select-mensualidad">
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="Pagado">Pagado</option>
-                </select>
-              </div>
-              <small class="hint">El estado real se calculará según el saldo pendiente.</small>
-            </div>
-
-            <div class="campo-formulario">
-              <label>
-                <i class="fas fa-calendar-check"></i>
-                Fecha de pago
-              </label>
-              <input type="date" :value="''" class="input-mensualidad" disabled />
-              <small class="hint">Se establecerá automáticamente cuando el saldo llegue a 0.</small>
-            </div>
-
-            <div class="acciones centrado">
-              <button type="submit" class="btn btn-primary btn-lg">Guardar</button>
-              <button type="button" class="btn btn-danger btn-lg" @click="cerrarFormulario">Cancelar</button>
-            </div>
           </form>
+          </div>
+
+          <div class="modal-footer">
+            <button type="submit" form="form-nueva-mensualidad" class="btn btn-primary">Guardar</button>
+            <button type="button" class="btn btn-secondary" @click="cerrarFormulario">Cancelar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -249,6 +275,7 @@
 import { ref, computed, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import TarjetaMensualidad from './tarjeta-mensualidad.vue';
+import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
@@ -346,6 +373,9 @@ const modalDetalleEnEdicion = ref(false);
 
 // Estado del formulario
 const mostrarFormulario = ref(false);
+
+// Bloquear scroll del body cuando el modal está abierto
+useModalScrollLock(computed(() => mostrarFormulario.value));
 const formKey = ref(0);
 const form = ref({
   numero_documento: '',

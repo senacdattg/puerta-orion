@@ -279,15 +279,38 @@ def validar_solapamiento_horario(
 
 def _serializar_evento(evento: Evento) -> Dict[str, Any]:
     """Serializa un evento incluyendo relaciones asociadas."""
-    evento_dict = evento.to_dict()
-    if evento.categoria:
-        evento_dict['categoria'] = evento.categoria.to_dict()
-    if evento.sesion:
-        evento_dict['sesion'] = evento.sesion.to_dict()
-    tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-    if tipo_evento:
-        evento_dict['tipo_evento'] = tipo_evento.to_dict()
-    return evento_dict
+    try:
+        evento_dict = evento.to_dict()
+        
+        # Agregar relaciones de forma segura
+        # Categoría
+        if hasattr(evento, 'categoria') and evento.categoria:
+            try:
+                evento_dict['categoria'] = evento.categoria.to_dict()
+            except Exception as e:
+                logger.warning('Error al serializar categoría del evento %s: %s', evento.id_evento, str(e))
+        
+        # Sesión - verificar si existe el atributo antes de acceder
+        if hasattr(evento, 'sesion') and evento.sesion:
+            try:
+                evento_dict['sesion'] = evento.sesion.to_dict()
+            except Exception as e:
+                logger.warning('Error al serializar sesión del evento %s: %s', evento.id_evento, str(e))
+        
+        # Tipo de evento
+        if evento.id_tipo_evento:
+            try:
+                tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
+                if tipo_evento:
+                    evento_dict['tipo_evento'] = tipo_evento.to_dict()
+            except Exception as e:
+                logger.warning('Error al obtener tipo_evento del evento %s: %s', evento.id_evento, str(e))
+        
+        return evento_dict
+    except Exception as e:
+        logger.error('Error al serializar evento %s: %s', evento.id_evento if evento else 'desconocido', str(e))
+        logger.error('Traceback: %s', traceback.format_exc())
+        raise
 
 
 # ============================================================================
@@ -499,20 +522,20 @@ def _aplicar_filtros_basicos(
     """Aplica filtros básicos a la consulta de eventos."""
     if search:
         query = query.filter(Evento.nombre.ilike(f"%{search}%"))
-
+        
         if tipo_evento_id:
             query = query.filter_by(id_tipo_evento=tipo_evento_id)
-
+        
         if fecha_desde:
             fecha_desde_obj = _parse_date(fecha_desde)
             if fecha_desde_obj:
                 query = query.filter(Evento.fecha_evento >= fecha_desde_obj)
-
+        
         if fecha_hasta:
             fecha_hasta_obj = _parse_date(fecha_hasta)
             if fecha_hasta_obj:
                 query = query.filter(Evento.fecha_evento <= fecha_hasta_obj)
-
+        
     return query
 
 
@@ -559,7 +582,6 @@ def listar_eventos() -> JsonResponse:
 
         query = Evento.query
         id_categoria_todos = _obtener_categoria_todos()
-
         query = _aplicar_filtro_categorias(query, categorias_permitidas, id_categoria_todos)
 
         if categoria_id:
@@ -571,14 +593,38 @@ def listar_eventos() -> JsonResponse:
 
         query = _aplicar_filtros_basicos(query, search, tipo_evento_id, fecha_desde, fecha_hasta)
 
-        pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
-            page=page,
-            per_page=per_page,
-            error_out=False,
-        )
+        total_antes_paginar = query.count()
 
-        eventos_data = [_serializar_evento(evento) for evento in pagination.items]
+        # Obtener eventos directamente si hay pocos (evitar problema de paginación)
+        if total_antes_paginar <= per_page:
+            eventos_items = query.order_by(Evento.fecha_evento.desc()).all()
+            # Crear objeto similar a pagination para mantener compatibilidad
+            class SimplePagination:
+                def __init__(self, items, total, page, per_page):
+                    self.items = items
+                    self.total = total
+                    self.page = page
+                    self.per_page = per_page
+                    self.pages = (total + per_page - 1) // per_page if per_page > 0 else 1
+            
+            pagination = SimplePagination(eventos_items, total_antes_paginar, page, per_page)
+        else:
+            pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
+                page=page,
+                per_page=per_page,
+                error_out=False,
+            )
 
+        eventos_data = []
+        for evento in pagination.items:
+            try:
+                evento_serializado = _serializar_evento(evento)
+                eventos_data.append(evento_serializado)
+            except Exception as exc_serializar:
+                logger.error('Error al serializar evento %s: %s', evento.id_evento, str(exc_serializar))
+                logger.error('Traceback: %s', traceback.format_exc())
+                continue
+        
         return HttpResponseBuilder.success(
             data=eventos_data,
             pagination={
@@ -589,6 +635,8 @@ def listar_eventos() -> JsonResponse:
             }
         )
     except Exception as exc:  # pylint: disable=broad-except
+        logger.error('Error completo en listar_eventos: %s', str(exc))
+        logger.error('Traceback completo: %s', traceback.format_exc())
         return handle_exception(exc, logger, "listar eventos")
 
 
@@ -611,7 +659,7 @@ def obtener_evento(evento_id: int) -> JsonResponse:
                 error=ERROR_EVENTO_NO_ENCONTRADO.format(id=evento_id),
                 status_code=404,
             )
-
+        
         evento_dict = evento.to_dict()
         if evento.categoria:
             evento_dict['categoria'] = evento.categoria.to_dict()
@@ -620,7 +668,7 @@ def obtener_evento(evento_id: int) -> JsonResponse:
         tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
         if tipo_evento:
             evento_dict['tipo_evento'] = tipo_evento.to_dict()
-
+        
         return _build_response(True, data=evento_dict)
     except Exception as exc:  # pylint: disable=broad-except
         return handle_exception(exc, logger, "obtener evento")
@@ -681,11 +729,11 @@ def crear_evento() -> JsonResponse:
             return _build_response(False, error=str(exc), status_code=400)
         if len(nombre) < 3:
             return HttpResponseBuilder.bad_request(error=ERROR_NOMBRE_MINIMO_CARACTERES)
-
+        
         fecha_evento = _parse_date(data['fecha_evento'])
         if not fecha_evento:
             return _build_response(False, error='Formato de fecha inválido. Use YYYY-MM-DD', status_code=400)
-
+        
         hora_inicio = _parse_time(data['hora_inicio'])
         if not hora_inicio:
             return _build_response(
@@ -717,7 +765,7 @@ def crear_evento() -> JsonResponse:
         )
         if not validacion_horario:
             return _build_response(False, error=mensaje_error, status_code=400)
-
+        
         categoria = Categoria.query.get(data['id_categoria'])
         if not categoria:
             return _build_response(
@@ -725,7 +773,7 @@ def crear_evento() -> JsonResponse:
                 error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=data['id_categoria']),
                 status_code=404,
             )
-
+        
         tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
         if not tipo_evento:
             return _build_response(
@@ -750,10 +798,10 @@ def crear_evento() -> JsonResponse:
             id_categoria=data['id_categoria'],
             id_tipo_evento=data['id_tipo_evento'],
         )
-
+        
         db.session.add(nuevo_evento)
         db.session.commit()
-
+        
         return _build_response(
             True,
             message='Evento creado exitosamente',
@@ -839,7 +887,7 @@ def actualizar_evento(evento_id: int) -> JsonResponse:
         error_response = _validar_solapamiento_evento_actualizado(evento, evento_id, data)
         if error_response:
             return error_response
-
+        
         db.session.commit()
         return HttpResponseBuilder.success(
             message='Evento actualizado exitosamente',
@@ -865,12 +913,12 @@ def eliminar_evento(evento_id: int) -> JsonResponse:
                 error=ERROR_EVENTO_NO_ENCONTRADO.format(id=evento_id),
                 status_code=404,
             )
-
+        
         nombre_evento = evento.nombre
-
+        
         db.session.delete(evento)
         db.session.commit()
-
+        
         return _build_response(
             True,
             message=f'Evento "{nombre_evento}" eliminado exitosamente',
@@ -892,7 +940,7 @@ def listar_sesiones() -> JsonResponse:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = (request.args.get('search') or '').strip()
-
+        
         query = Sesion.query
         if search:
             query = query.filter(Sesion.nombre.ilike(f"%{search}%"))
@@ -962,7 +1010,7 @@ def crear_sesion() -> JsonResponse:
 
         db.session.add(nueva_sesion)
         db.session.commit()
-
+        
         return _build_response(
             True,
             message='Sesión creada exitosamente',
@@ -997,7 +1045,7 @@ def actualizar_sesion(sesion_id: int) -> JsonResponse:
             mensaje_tipo=ERROR_NO_SE_ENVIARON_DATOS,
             mensaje_vacio=ERROR_NO_SE_PROPORCIONARON_DATOS,
         )
-
+        
         if 'nombre' in data:
             nombre = str(data['nombre']).strip()
             if len(nombre) < 3:
@@ -1012,12 +1060,12 @@ def actualizar_sesion(sesion_id: int) -> JsonResponse:
                     status_code=400,
                 )
             sesion.nombre = nombre
-
+        
         if 'descripcion' in data:
             sesion.descripcion = (data['descripcion'] or '').strip()
-
+        
         db.session.commit()
-
+        
         return _build_response(
             True,
             message='Sesión actualizada exitosamente',
@@ -1051,12 +1099,12 @@ def eliminar_sesion(sesion_id: int) -> JsonResponse:
                 error=f'No se puede eliminar la sesión porque tiene {eventos_count} evento(s) asociado(s)',
                 status_code=400,
             )
-
+        
         nombre_sesion = sesion.nombre
-
+        
         db.session.delete(sesion)
         db.session.commit()
-
+        
         return _build_response(
             True,
             message=f'Sesión "{nombre_sesion}" eliminada exitosamente',
@@ -1099,10 +1147,10 @@ def eventos_proximos() -> JsonResponse:
                 total=0,
                 message='No tienes eventos próximos asignados a tus categorías'
             )
-
+        
         limit = request.args.get('limit', 10, type=int)
         categoria_id = request.args.get('categoria_id', type=int)
-
+        
         query = Evento.query.filter(Evento.fecha_evento >= date.today())
         id_categoria_todos = _obtener_categoria_todos()
 
@@ -1156,7 +1204,7 @@ def eventos_por_categoria(categoria_id: int) -> JsonResponse:
                 error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=categoria_id),
                 status_code=404,
             )
-
+        
         eventos = Evento.query.filter_by(id_categoria=categoria_id).order_by(Evento.fecha_evento.desc()).all()
         eventos_data = [_serializar_evento(evento) for evento in eventos]
 

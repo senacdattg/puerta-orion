@@ -139,6 +139,7 @@
   margin: 0 auto;
   padding: 16px;
   flex: 1;
+  box-sizing: border-box;
 }
 
 /* --- Footer en página de perfil --- */
@@ -155,59 +156,84 @@
 }
 
 /* --- Header de perfil --- */
-.perfil-header {
-  text-align: center;
-  margin-bottom: 24px;
-  position: relative;
-  padding: 20px 0;
-  background: transparent;
+.perfil-page .perfil-container .perfil-header {
+  text-align: center !important;
+  margin-bottom: 24px !important;
+  position: relative !important;
+  padding: 20px 0 !important;
+  background: transparent !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* --- Hero de perfil --- */
-.perfil-hero {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 20px;
-  align-items: center;
-  background: var(--color-blanco);
-  border: 1px solid var(--color-gris-300);
-  border-radius: var(--radio-borde-grande);
-  padding: var(--espaciado-lg) var(--espaciado-xl);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  max-width: 1200px;
-  width: 100%;
-  margin: 0 auto;
-  position: relative;
+.perfil-page .perfil-container .perfil-header .perfil-hero {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  background: var(--color-blanco) !important;
+  border: 1px solid var(--color-gris-300) !important;
+  border-radius: var(--radio-borde-grande) !important;
+  padding: var(--espaciado-lg) var(--espaciado-xl) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  max-width: 1200px !important;
+  width: calc(100% - 32px) !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  box-sizing: border-box !important;
 }
 
 /* --- Avatar --- */
-.avatar {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radio-borde-circular);
-  display: grid;
-  place-items: center;
-  background: var(--color-blanco);
-  border: 2px solid var(--color-gris-300);
+.perfil-hero .avatar {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #f3f4f6 !important;
+  border: none !important;
+  flex-shrink: 0 !important;
 }
 
-.avatar i {
-  font-size: 48px;
-  color: var(--color-gris-400);
+.perfil-hero .avatar i {
+  font-size: 56px !important;
+  color: #6b7280 !important;
 }
 
 /* --- Información del hero --- */
-.hero-info .perfil-title {
-  margin: 0;
-  font-size: 1.6rem;
-  font-weight: var(--peso-fuente-bold);
-  color: var(--color-gris-800);
+.perfil-hero .hero-info {
+  flex: 1 !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
-.hero-info .perfil-subtitle {
-  margin: 6px 0 12px;
-  color: var(--color-gris-400);
-  font-size: var(--tamano-fuente-sm);
+.perfil-hero .hero-info .perfil-title {
+  margin: 0 0 6px 0 !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  display: block !important;
+  text-align: center !important;
+  align-items: normal !important;
+  justify-content: normal !important;
+  gap: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.perfil-hero .hero-info .perfil-subtitle {
+  margin: 0 !important;
+  color: #4b5563 !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+}
+
+.perfil-hero .hero-actions {
+  flex-shrink: 0 !important;
 }
 
 /* --- Badges del hero --- */
@@ -361,6 +387,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--espaciado-lg);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .perfil-content.is-loading {
@@ -370,10 +398,14 @@
 /* ===== ESTILOS DE GRILLAS Y LAYOUT ===== */
 
 /* --- Grid base --- */
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+.perfil-page .perfil-container .perfil-content .grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  max-width: 1200px !important;
+  width: calc(100% - 32px) !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
 }
 
 /* --- Grid de perfil --- */

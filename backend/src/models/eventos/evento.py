@@ -50,10 +50,10 @@ class Evento(BaseModel):
             'id_evento': self.id_evento,
             'id_categoria': self.id_categoria,
             'id_tipo_evento': self.id_tipo_evento,
-            'nombre': self.nombre,
+            'nombre': self.nombre if self.nombre else '',
             'fecha_evento': self.fecha_evento.isoformat() if self.fecha_evento else None,
             'hora_inicio': self.hora_inicio.isoformat() if self.hora_inicio else None,
             'hora_fin': self.hora_fin.isoformat() if self.hora_fin else None,
-            'lugar': self.lugar,
-            'descripcion': self.descripcion
+            'lugar': self.lugar if self.lugar else '',
+            'descripcion': self.descripcion if self.descripcion else ''
         }

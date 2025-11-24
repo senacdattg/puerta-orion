@@ -6,10 +6,11 @@ import Encabezado from '../components/layout/encabezado.vue';
 import ListaDeportistas from '../components/deportistas/lista-deportistas.vue';
 import PerfilDeportistaVista from '../components/deportistas/perfil-deportista-vista.vue';
 import Pie from '../components/layout/pie.vue';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import deportistasService from '@/services/deportistasService';
 import usuariosService from '@/services/usuariosService';
 import Swal from 'sweetalert2';
+import { useModalScrollLock } from '@/composables/useModalScrollLock';
 
 // Estado de deportistas cargados desde el backend
 const deportistas = ref([]);
@@ -84,6 +85,9 @@ onMounted(() => {
 const mostrarFormulario = ref(false);
 const modoFormulario = ref('registrar');
 const deportistaEditando = ref(null);
+
+// Bloquear scroll del body cuando el modal está abierto
+useModalScrollLock(computed(() => mostrarFormulario.value));
 
 // Funciones para manejar eventos de deportistas
 // Solo modo visualización - edición y eliminación deshabilitadas
@@ -284,7 +288,7 @@ async function cambiarEstadoDeportista(deportista) {
 
     <!-- Modal para ver/editar perfil del deportista -->
     <div v-if="mostrarFormulario" class="modal-overlay modal-deportistas-overlay" @click.self="cerrarFormulario">
-      <div class="modal-content modal-deportistas modal-xl" @click.stop>
+      <div class="modal-content modal-deportistas" @click.stop>
         <!-- Mostrar perfil en modo ver o edición -->
         <PerfilDeportistaVista
           :datos="deportistaEditando"

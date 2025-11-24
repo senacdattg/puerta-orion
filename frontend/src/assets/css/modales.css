@@ -4,6 +4,15 @@
 
 /* ===== ESTILOS BASE DE MODALES ===== */
 
+/* Bloquear scroll del body cuando hay un modal abierto */
+body.modal-open,
+html.modal-open {
+  overflow: hidden !important;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
 /* --- Overlay del modal --- */
 .modal-overlay {
   position: fixed;
@@ -15,6 +24,8 @@
   align-items: center;
   padding: clamp(1rem, 4vw, 2.5rem);
   z-index: var(--z-modal-backdrop);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .modal-overlay.modal-overlay--blur {
@@ -24,7 +35,6 @@
 /* --- Contenido del modal --- */
 .modal-content {
   background: var(--modal-bg, var(--color-blanco));
-  border-radius: var(--modal-radius, 20px);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
   border: 1px solid rgba(148, 163, 184, 0.18);
   width: min(92vw, var(--modal-max-width, 640px));
@@ -44,8 +54,10 @@
 }
 
 /* --- Tamaños de modal --- */
-.modal-content.modal-sm {
-  --modal-max-width: 400px;
+.modal-content.modal-sm,
+.modal-content.modal-edicion.modal-sm,
+.modal-content.mensualidades-modal.modal-sm {
+  max-width: 600px !important;
 }
 
 .modal-content.modal-md {
@@ -69,7 +81,6 @@
   padding: var(--espaciado-lg);
   background: var(--modal-header-bg, linear-gradient(135deg, #0f172a, #1e40af));
   color: var(--modal-header-color, var(--color-blanco));
-  border-radius: var(--modal-radius, 20px) var(--modal-radius, 20px) 0 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -103,7 +114,6 @@
   align-items: center;
   background: var(--modal-footer-bg, var(--color-gris-50));
   border-top: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 0 0 var(--modal-radius, 20px) var(--modal-radius, 20px);
 }
 
 /* --- Botón cerrar --- */
@@ -145,7 +155,6 @@
   --modal-footer-bg: var(--form-modal-footer-bg);
   --modal-body-padding: var(--form-modal-body-padding);
   --modal-max-width: var(--form-modal-max-width);
-  --modal-radius: var(--form-modal-radius);
 }
 
 .form-modal .modal-body {
@@ -227,7 +236,9 @@
 .modal-content.modal-anadir,
 .modal-content.modal-editar,
 .modal-content.modal-roles,
-.modal-content.modal-deportistas {
+.modal-content.modal-deportistas,
+.modal-content.modal-detalle,
+.modal-content.mensualidades-modal:not(.modal-sm) {
   max-width: 900px !important;
   width: 100% !important;
   max-height: 90vh !important;
@@ -235,7 +246,8 @@
   --modal-header-color: #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
   border: none !important;
-  border-radius: 20px !important;
+  border-radius: 32px !important;
+  --modal-radius: 32px !important;
   animation: modal-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
   z-index: var(--z-modal) !important;
@@ -246,44 +258,12 @@
   pointer-events: auto !important;
 }
 
-/* --- Excepción: Modal de detalle más grande para acomodar más contenido --- */
-.modal-content.modal-detalle {
-  max-width: 1200px !important;
-  width: 95% !important;
-  max-height: 95vh !important;
-  --modal-header-bg: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
-  --modal-header-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-  border: none !important;
-  border-radius: 20px !important;
-  animation: modal-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  position: relative;
-  z-index: var(--z-modal) !important;
-  overflow: hidden;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  pointer-events: auto !important;
-}
 
-/* --- Modal de edición con tamaño intermedio --- */
-.modal-content.modal-edicion {
+/* --- Modal de edición (hereda estilos globales, solo sobrescribe si no tiene modal-sm) --- */
+.modal-content.modal-edicion:not(.modal-sm) {
   max-width: 1000px !important;
   width: 90% !important;
   max-height: 92vh !important;
-  --modal-header-bg: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
-  --modal-header-color: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
-  border: none !important;
-  border-radius: 20px !important;
-  animation: modal-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-  position: relative;
-  z-index: var(--z-modal) !important;
-  overflow: hidden;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  pointer-events: auto !important;
 }
 
 @keyframes modal-slide-up {
@@ -304,6 +284,7 @@
 .modal-content.modal-roles .modal-header,
 .modal-content.modal-detalle .modal-header,
 .modal-content.modal-deportistas .modal-header,
+.modal-content.mensualidades-modal .modal-header,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-header {
   background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
   padding: 24px 32px;
@@ -311,6 +292,7 @@
   position: relative;
   z-index: 2;
   flex-shrink: 0;
+  border-radius: 32px 32px 0 0 !important;
 }
 
 .modal-content.modal-registro .modal-title,
@@ -319,6 +301,7 @@
 .modal-content.modal-roles .modal-title,
 .modal-content.modal-detalle .modal-title,
 .modal-content.modal-deportistas .modal-title,
+.modal-content.mensualidades-modal .modal-title,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-title {
   font-size: 1.5rem;
   font-weight: 700;
@@ -351,6 +334,7 @@
 .modal-content.modal-roles .btn-cerrar,
 .modal-content.modal-detalle .btn-cerrar,
 .modal-content.modal-deportistas .btn-cerrar,
+.modal-content.mensualidades-modal .btn-cerrar,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar {
   background: rgba(255, 255, 255, 0.15);
   color: #ffffff;
@@ -374,10 +358,12 @@
 .modal-content.modal-roles .btn-cerrar:hover,
 .modal-content.modal-detalle .btn-cerrar:hover,
 .modal-content.modal-deportistas .btn-cerrar:hover,
+.modal-content.mensualidades-modal .btn-cerrar:hover,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: scale(1.05) rotate(90deg);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(239, 68, 68, 0.9);
+  color: #ffffff;
+  transform: scale(1.05);
+  border-color: rgba(239, 68, 68, 1);
 }
 
 .modal-content.modal-registro .btn-cerrar:active,
@@ -386,15 +372,18 @@
 .modal-content.modal-roles .btn-cerrar:active,
 .modal-content.modal-detalle .btn-cerrar:active,
 .modal-content.modal-deportistas .btn-cerrar:active,
+.modal-content.mensualidades-modal .btn-cerrar:active,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar:active {
-  transform: scale(0.95) rotate(90deg);
+  background: rgba(220, 38, 38, 1);
+  transform: scale(0.95);
 }
 
 .modal-content.modal-registro .modal-body,
 .modal-content.modal-anadir .modal-body,
 .modal-content.modal-editar .modal-body,
 .modal-content.modal-roles .modal-body,
-.modal-content.modal-detalle .modal-body {
+.modal-content.modal-detalle .modal-body,
+.modal-content.mensualidades-modal .modal-body {
   padding: 28px;
   flex: 1 1 auto;
   min-height: 0;
@@ -410,6 +399,15 @@
   max-width: 100%;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Border-radius para body cuando es el último elemento (si no hay footer) */
+.modal-content.modal-registro .modal-body:last-child,
+.modal-content.modal-anadir .modal-body:last-child,
+.modal-content.modal-editar .modal-body:last-child,
+.modal-content.modal-deportistas .modal-body:last-child,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body:last-child {
+  border-radius: 0 0 32px 32px !important;
 }
 
 /* --- Modal body específico para deportistas - Solo padding personalizado para contenido más pequeño --- */
@@ -430,36 +428,36 @@
   justify-content: flex-start;
 }
 
+/* Scrollbar invisible pero funcional para todos los modales estándar */
 .modal-content.modal-registro .modal-body::-webkit-scrollbar,
 .modal-content.modal-anadir .modal-body::-webkit-scrollbar,
 .modal-content.modal-editar .modal-body::-webkit-scrollbar,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body::-webkit-scrollbar {
-  width: 10px;
+  width: 0px;
+  background: transparent;
 }
 
 .modal-content.modal-registro .modal-body::-webkit-scrollbar-track,
 .modal-content.modal-anadir .modal-body::-webkit-scrollbar-track,
 .modal-content.modal-editar .modal-body::-webkit-scrollbar-track,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body::-webkit-scrollbar-track {
-  background: var(--color-gris-100);
-  border-radius: 8px;
-  margin: 8px 0;
+  background: transparent;
 }
 
 .modal-content.modal-registro .modal-body::-webkit-scrollbar-thumb,
 .modal-content.modal-anadir .modal-body::-webkit-scrollbar-thumb,
 .modal-content.modal-editar .modal-body::-webkit-scrollbar-thumb,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, var(--color-gris-400) 0%, var(--color-gris-500) 100%);
-  border-radius: 8px;
-  border: 2px solid var(--color-gris-100);
+  background: transparent;
 }
 
-.modal-content.modal-registro .modal-body::-webkit-scrollbar-thumb:hover,
-.modal-content.modal-anadir .modal-body::-webkit-scrollbar-thumb:hover,
-.modal-content.modal-editar .modal-body::-webkit-scrollbar-thumb:hover,
-.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, var(--color-gris-500) 0%, var(--color-gris-600) 100%);
+/* Estilos para Firefox - scrollbar invisible */
+.modal-content.modal-registro .modal-body,
+.modal-content.modal-anadir .modal-body,
+.modal-content.modal-editar .modal-body,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* Panel del formulario dentro del modal - Estilos compartidos */
@@ -481,13 +479,13 @@
   background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
   color: #ffffff !important;
   padding: 1rem 1.5rem;
-  text-align: left;
+  text-align: center;
   margin: 0 0 1.25rem 0;
-  border-radius: 12px;
   font-size: 1.2rem;
   font-weight: 600;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -501,7 +499,6 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border-radius: 12px;
   margin-bottom: 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid #e9ecef;
@@ -515,9 +512,9 @@
   background: var(--color-blanco);
   border: 1.5px solid var(--color-gris-200);
   border-radius: 8px;
-  padding: 13px 16px;
+  padding: 10px 12px;
   transition: all 0.2s ease;
-  font-size: 15px;
+  font-size: 14px;
   width: 100%;
   box-sizing: border-box;
   font-family: 'Poppins', sans-serif;
@@ -528,7 +525,7 @@
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos select::placeholder,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos textarea::placeholder {
   color: var(--color-gris-400);
-  font-size: 14.5px;
+  font-size: 13px;
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos input:focus,
@@ -549,23 +546,7 @@
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .form-divider {
-  border: none;
-  border-top: 1px solid var(--color-gris-200);
-  margin: 28px 0;
-  opacity: 0.6;
-  position: relative;
-}
-
-.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .form-divider::before {
-  content: '';
-  position: absolute;
-  top: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60px;
-  height: 2px;
-  background: var(--color-primario);
-  opacity: 0.3;
+  display: none;
 }
 
 /* Mensajes de feedback en los modales estándar */
@@ -620,8 +601,8 @@
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .fila-texto {
-  gap: 18px;
-  margin-bottom: 22px;
+  gap: 12px;
+  margin-bottom: 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
@@ -721,10 +702,6 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* Override específico para bloquear sombras grandes conocidas */
-.modal-content[style*="box-shadow"],
-.modal-registro[style*="box-shadow"],
-/* NOTA: Los estilos de box-shadow para modal-detalle ahora se aplican mediante las clases globales */
 
 /* ===== ESTILOS DEL COMPONENTE perfil-modal ===== */
 
@@ -1398,6 +1375,7 @@
   justify-content: flex-end;
   gap: 12px;
   flex-shrink: 0;
+  border-radius: 0 0 32px 32px !important;
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-footer .footer-acciones {
@@ -1594,3 +1572,54 @@
 
 /* ===== ESTILOS ESPECÍFICOS PARA CONTENIDO DEL MODAL DE DEPORTISTAS ===== */
 /* Los estilos del modal de deportistas usan los estilos base globales del modal */
+
+/* ===== OVERRIDE FINAL GLOBAL PARA TODOS LOS MODALES ESTÁNDAR ===== */
+/* Asegurar que todos los modales estándar tengan bordes redondeados */
+.modal-content.modal-registro,
+.modal-content.modal-anadir,
+.modal-content.modal-editar,
+.modal-content.modal-roles,
+.modal-content.modal-deportistas,
+.modal-content.mensualidades-modal,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) {
+  border-radius: 32px !important;
+  --modal-radius: 32px !important;
+}
+
+.modal-content.modal-registro .modal-header,
+.modal-content.modal-anadir .modal-header,
+.modal-content.modal-editar .modal-header,
+.modal-content.modal-roles .modal-header,
+.modal-content.modal-deportistas .modal-header,
+.modal-content.mensualidades-modal .modal-header,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-header {
+  border-radius: 32px 32px 0 0 !important;
+}
+
+.modal-content.modal-registro .modal-footer,
+.modal-content.modal-anadir .modal-footer,
+.modal-content.modal-editar .modal-footer,
+.modal-content.modal-roles .modal-footer,
+.modal-content.modal-deportistas .modal-footer,
+.modal-content.mensualidades-modal .modal-footer,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-footer {
+  border-radius: 0 0 32px 32px !important;
+}
+
+.modal-content.modal-registro .modal-body:last-child,
+.modal-content.modal-anadir .modal-body:last-child,
+.modal-content.modal-editar .modal-body:last-child,
+.modal-content.modal-roles .modal-body:last-child,
+.modal-content.modal-deportistas .modal-body:last-child,
+.modal-content.mensualidades-modal .modal-body:last-child,
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body:last-child {
+  border-radius: 0 0 32px 32px !important;
+}
+
+/* Border-radius para perfil-actions en modal de deportistas (equivalente a footer) */
+.modal-content.modal-deportistas .perfil-actions {
+  border-radius: 0 0 32px 32px !important;
+}
+
+
+

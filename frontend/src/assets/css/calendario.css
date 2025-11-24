@@ -384,8 +384,6 @@
 .eventos-page {
   min-height: 100vh;
   background-color: var(--color-gris-claro);
-  padding: var(--espaciado-xl) var(--espaciado-md);
-  padding-bottom: 0;
   display: flex;
   flex-direction: column;
 }
@@ -393,16 +391,17 @@
 .eventos-container {
   max-width: 1200px;
   margin: 0 auto;
-  margin-bottom: 2rem;
+  padding: var(--espaciado-xl) var(--espaciado-md);
   flex: 1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Hacer que el footer se salga del padding del main y se comporte como footer */
+/* --- Footer en página de eventos --- */
 .eventos-page ::v-deep .footer-enhanced {
-  margin-left: -1rem;
-  margin-right: -1rem;
-  width: calc(100% + 2rem);
   margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .eventos-header {
@@ -728,9 +727,53 @@
 
 /* --- Panel del formulario dentro del modal --- */
 .calendario-modal .form-modal-panel {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 1.35rem 1.5rem 1.6rem;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+
+/* --- Estilos para modal pequeño de calendario (igual que mensualidades) --- */
+.calendario-modal.modal-sm .input-edicion,
+.calendario-modal.modal-sm .select-edicion {
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.calendario-modal.modal-sm .campo-formulario {
+  margin-bottom: 1.25rem;
+  width: 100%;
+}
+
+.calendario-modal.modal-sm .campo-formulario label {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.calendario-modal.modal-sm .campo-formulario label i {
+  font-size: 1rem;
+  width: 18px;
+  text-align: center;
+}
+
+.calendario-modal.modal-sm .campo-formulario small {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
+  line-height: 1.4;
+}
+
+.calendario-modal.modal-sm textarea.input-edicion {
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
 }
 
 /* --- Selector de eventos dentro del modal --- */
@@ -750,5 +793,353 @@
   flex-direction: column;
   gap: 1rem;
   padding: 0;
+}
+
+/* --- Item de evento en el selector --- */
+.calendario-modal.selector-eventos .evento-item {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-200);
+  border-radius: var(--radio-borde);
+  padding: 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--sombra-suave);
+}
+
+.calendario-modal.selector-eventos .evento-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+  border-color: var(--color-primario);
+}
+
+.calendario-modal.selector-eventos .evento-item.evento-item-usuario {
+  cursor: default;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-titulo {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-900-alt);
+  margin: 0;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-tipo {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-semibold);
+  background: var(--color-info);
+  color: var(--color-blanco);
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-categoria,
+.calendario-modal.selector-eventos .evento-item .evento-hora,
+.calendario-modal.selector-eventos .evento-item .evento-lugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-700-alt);
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-categoria i,
+.calendario-modal.selector-eventos .evento-item .evento-hora i,
+.calendario-modal.selector-eventos .evento-item .evento-lugar i {
+  color: var(--color-primario);
+  font-size: var(--tamano-fuente-sm);
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-descripcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-600-alt);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-descripcion i {
+  color: var(--color-gris-500-alt);
+  margin-top: 0.125rem;
+}
+
+.calendario-modal.selector-eventos .evento-item > i {
+  color: var(--color-primario);
+  font-size: var(--tamano-fuente-lg);
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* --- Botón agregar evento en el selector --- */
+.calendario-modal.selector-eventos .botones-selector {
+  margin-top: 0.5rem;
+}
+
+.calendario-modal.selector-eventos .btn-agregar-evento {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-info);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.calendario-modal.selector-eventos .btn-agregar-evento:hover {
+  background: var(--color-info-hover, #0284c7);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Mensaje informativo --- */
+.calendario-modal.selector-eventos .info-multiple-eventos {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-info-alt);
+  color: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-sm);
+  margin-top: 0.5rem;
+}
+
+.calendario-modal.selector-eventos .info-multiple-eventos i {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* --- Estilos para modal pequeño --- */
+.calendario-modal.selector-eventos.modal-sm .modal-header {
+  padding: 1rem 1.25rem;
+}
+
+.calendario-modal.selector-eventos.modal-sm .modal-body {
+  padding: 1.25rem;
+  background: var(--color-blanco);
+}
+
+.calendario-modal.selector-eventos .modal-body {
+  background: var(--color-blanco);
+}
+
+.calendario-modal.selector-eventos.modal-sm .panel-selector-eventos {
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.calendario-modal.selector-eventos.modal-sm .evento-item {
+  padding: 0.875rem;
+}
+
+.calendario-modal.selector-eventos.modal-sm .evento-titulo {
+  font-size: var(--tamano-fuente-base);
+}
+
+.calendario-modal.selector-eventos.modal-sm .evento-detalles {
+  gap: 0.5rem;
+  font-size: var(--tamano-fuente-xs);
+}
+
+
+.calendario-modal.selector-eventos .evento-item {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-200);
+  border-radius: var(--radio-borde);
+  padding: 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--sombra-suave);
+}
+
+.calendario-modal.selector-eventos .evento-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+  border-color: var(--color-primario);
+}
+
+.calendario-modal.selector-eventos .evento-item.evento-item-usuario {
+  cursor: default;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-titulo {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-900-alt);
+  margin: 0;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-tipo {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-semibold);
+  background: var(--color-info);
+  color: var(--color-blanco);
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-categoria,
+.calendario-modal.selector-eventos .evento-item .evento-hora,
+.calendario-modal.selector-eventos .evento-item .evento-lugar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-700-alt);
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-categoria i,
+.calendario-modal.selector-eventos .evento-item .evento-hora i,
+.calendario-modal.selector-eventos .evento-item .evento-lugar i {
+  color: var(--color-primario);
+  font-size: var(--tamano-fuente-sm);
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-descripcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-600-alt);
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}
+
+.calendario-modal.selector-eventos .evento-item .evento-descripcion i {
+  color: var(--color-gris-500-alt);
+  margin-top: 0.125rem;
+}
+
+.calendario-modal.selector-eventos .evento-item > i {
+  color: var(--color-primario);
+  font-size: var(--tamano-fuente-lg);
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+/* --- Botón agregar evento en el selector --- */
+.calendario-modal.selector-eventos .botones-selector {
+  margin-top: 0.5rem;
+}
+
+.calendario-modal.selector-eventos .btn-agregar-evento {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-info);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.calendario-modal.selector-eventos .btn-agregar-evento:hover {
+  background: var(--color-info-hover, #0284c7);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Mensaje informativo --- */
+.calendario-modal.selector-eventos .info-multiple-eventos {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-info-alt);
+  color: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-sm);
+  margin-top: 0.5rem;
+}
+
+.calendario-modal.selector-eventos .info-multiple-eventos i {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* --- Estilos para modal pequeño --- */
+.calendario-modal.selector-eventos.modal-sm .modal-header {
+  padding: 1rem 1.25rem;
+}
+
+.calendario-modal.selector-eventos.modal-sm .modal-body {
+  padding: 1.25rem;
+  background: var(--color-blanco);
+}
+
+.calendario-modal.selector-eventos .modal-body {
+  background: var(--color-blanco);
+}
+
+.calendario-modal.selector-eventos.modal-sm .panel-selector-eventos {
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.calendario-modal.selector-eventos.modal-sm .evento-item {
+  padding: 0.875rem;
+}
+
+.calendario-modal.selector-eventos.modal-sm .evento-titulo {
+  font-size: var(--tamano-fuente-base);
+}
+
+.calendario-modal.selector-eventos.modal-sm .evento-detalles {
+  gap: 0.5rem;
+  font-size: var(--tamano-fuente-xs);
 }
 

@@ -37,33 +37,119 @@ class CalendarioService {
    */
   async cargarEventos() {
     try {
-      const response = await fetch(`${this.baseURL}/calendario?per_page=1000`, {
+      const url = `${this.baseURL}/eventos/calendario?per_page=1000`;
+      console.log('🔄 Intentando cargar eventos desde:', url);
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: this.getAuthHeaders()
       });
 
+      console.log('📡 Respuesta del servidor:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        url: response.url
+      });
+
       if (!response.ok) {
+        // Intentar leer el cuerpo de la respuesta para más detalles
+        let errorMessage = `Error al cargar eventos: ${response.statusText}`;
+        let errorDetails = null;
+        try {
+          const errorData = await response.json();
+          errorDetails = errorData;
+          errorMessage = errorData.error || errorData.message || errorMessage;
+          console.error('❌ Detalles del error del servidor:', errorData);
+          console.error('❌ Stack trace del servidor:', errorData.stack || errorData.traceback || 'No disponible');
+        } catch (e) {
+          try {
+            const errorText = await response.text();
+            console.error('❌ Error del servidor (texto):', errorText);
+            errorMessage = errorText || errorMessage;
+          } catch (e2) {
+            console.error('❌ No se pudo leer el error del servidor');
+          }
+        }
+
         // Manejar diferentes tipos de errores
         if (response.status === 401) {
           throw new Error('Error de autenticación: Token inválido o expirado');
+        } else if (response.status === 404) {
+          throw new Error(`Ruta no encontrada: ${url}. Verifica que el backend esté corriendo y la ruta sea correcta.`);
         } else if (response.status === 500) {
-          throw new Error('Error interno del servidor al cargar eventos');
+          const detailedError = errorDetails
+            ? `Error interno del servidor: ${errorMessage}${errorDetails.stack ? '\n' + errorDetails.stack : ''}`
+            : 'Error interno del servidor al cargar eventos. Revisa los logs del backend.';
+          throw new Error(detailedError);
         } else {
-          throw new Error(`Error al cargar eventos: ${response.statusText}`);
+          throw new Error(errorMessage);
         }
       }
 
       const data = await response.json();
 
+      console.log('📦 Datos recibidos del backend (completo):', JSON.stringify(data, null, 2));
+      console.log('📊 Estructura de respuesta:', {
+        success: data.success,
+        hasData: !!data.data,
+        dataType: Array.isArray(data.data) ? 'array' : typeof data.data,
+        dataLength: Array.isArray(data.data) ? data.data.length : 'N/A',
+        keys: data.data ? Object.keys(data.data) : 'N/A',
+        fullData: data
+      });
+
+      // Extraer eventos de la respuesta
+      // El backend devuelve: { success: true, data: [...eventos...], pagination: {...} }
+      let eventosArray = [];
       if (data.success && data.data) {
+        if (Array.isArray(data.data)) {
+          // data.data es directamente el array de eventos
+          eventosArray = data.data;
+        } else if (typeof data.data === 'object') {
+          // Si data.data es un objeto, podría tener pagination anidado
+          if (Array.isArray(data.data.data)) {
+            eventosArray = data.data.data;
+          } else if (Array.isArray(data.data.items)) {
+            eventosArray = data.data.items;
+          } else if (Array.isArray(data.data.eventos)) {
+            eventosArray = data.data.eventos;
+          } else {
+            console.warn('⚠️ data.data no es un array ni tiene estructura esperada:', data.data);
+            console.warn('⚠️ Estructura completa de data:', data);
+          }
+        }
+      }
+
+      console.log('📋 Eventos extraídos:', eventosArray.length);
+      if (eventosArray.length > 0) {
+        console.log('📋 Primer evento crudo:', eventosArray[0]);
+      }
+
+      if (eventosArray.length > 0) {
         // Mapear eventos del backend al formato del frontend
-        this.eventos = data.data.map(evento => this.mapearEventoBackendAFrontend(evento));
+        console.log('🔄 Mapeando eventos...');
+        this.eventos = eventosArray.map(evento => {
+          const eventoMapeado = this.mapearEventoBackendAFrontend(evento);
+          console.log('📅 Evento mapeado:', {
+            original: evento,
+            mapeado: eventoMapeado
+          });
+          return eventoMapeado;
+        });
+        console.log('✅ Total eventos mapeados:', this.eventos.length);
+        if (this.eventos.length > 0) {
+          console.log('📅 Primer evento mapeado:', this.eventos[0]);
+        }
         return this.eventos;
       }
 
+      console.warn('⚠️ No se encontraron eventos en la respuesta. Estructura completa:', data);
+      this.eventos = [];
       return [];
     } catch (error) {
-      console.error('Error al cargar eventos:', error);
+      console.error('❌ Error al cargar eventos:', error);
+      console.error('❌ Stack trace:', error.stack);
       // Retornar array vacío en lugar de lanzar error para evitar crashes
       this.eventos = [];
       return [];
@@ -76,7 +162,24 @@ class CalendarioService {
   obtenerEventosPorFecha(fecha) {
     try {
       // Filtrar eventos por fecha usando los eventos ya cargados en memoria
-      return this.eventos.filter(evento => evento.fecha === fecha);
+      // Normalizar fechas para comparación (formato YYYY-MM-DD)
+      const fechaNormalizada = fecha instanceof Date
+        ? fecha.toISOString().split('T')[0]
+        : fecha;
+
+      const eventosFiltrados = this.eventos.filter(evento => {
+        if (!evento.fecha) return false;
+        // Normalizar fecha del evento también
+        const fechaEvento = evento.fecha instanceof Date
+          ? evento.fecha.toISOString().split('T')[0]
+          : evento.fecha.split('T')[0]; // Por si viene con hora
+        return fechaEvento === fechaNormalizada;
+      });
+
+      if (eventosFiltrados.length > 0) {
+        console.log(`✅ Encontrados ${eventosFiltrados.length} eventos para fecha ${fecha}:`, eventosFiltrados);
+      }
+      return eventosFiltrados;
     } catch (error) {
       console.error('Error al obtener eventos por fecha:', error);
       return [];
@@ -175,7 +278,7 @@ class CalendarioService {
         categoria: eventoBackend.id_categoria
       });
 
-      const response = await fetch(`${this.baseURL}/calendario`, {
+      const response = await fetch(`${this.baseURL}/eventos/calendario`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(eventoBackend)
@@ -209,7 +312,7 @@ class CalendarioService {
       // Mapear datos de frontend a backend
       const datosBackend = this.mapearEventoFrontendABackend(datosActualizados, true);
 
-      const response = await fetch(`${this.baseURL}/calendario/${id}`, {
+      const response = await fetch(`${this.baseURL}/eventos/calendario/${id}`, {
         method: 'PUT',
         headers: this.getAuthHeaders(),
         body: JSON.stringify(datosBackend)
@@ -243,7 +346,7 @@ class CalendarioService {
    */
   async eliminarEvento(id) {
     try {
-      const response = await fetch(`${this.baseURL}/calendario/${id}`, {
+      const response = await fetch(`${this.baseURL}/eventos/calendario/${id}`, {
         method: 'DELETE',
         headers: this.getAuthHeaders()
       });
@@ -277,7 +380,7 @@ class CalendarioService {
    */
   async cargarTiposEvento() {
     try {
-      const response = await fetch(`${this.baseURL}/tipos-evento?per_page=100`, {
+      const response = await fetch(`${this.baseURL}/catalogos/tipos-evento?per_page=100`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       });
@@ -388,25 +491,72 @@ class CalendarioService {
    * Mapear evento del backend al formato del frontend
    */
   mapearEventoBackendAFrontend(eventoBackend) {
-    return {
-      id: eventoBackend.id_evento,
-      titulo: eventoBackend.nombre,
-      fecha: eventoBackend.fecha_evento,
-      hora: eventoBackend.hora_inicio, // Usar hora de inicio como hora principal
-      horaInicio: eventoBackend.hora_inicio,
-      horaFin: eventoBackend.hora_fin,
-      lugar: eventoBackend.lugar,
-      descripcion: eventoBackend.descripcion || '',
-      // Mapear tipo de evento
-      tipo: eventoBackend.tipo_evento ? eventoBackend.tipo_evento.nombre : 'Evento',
-      idTipoEvento: eventoBackend.id_tipo_evento,
-      idCategoria: eventoBackend.id_categoria,
-      idSesion: eventoBackend.id_sesion,
-      // Información adicional
-      categoria: eventoBackend.categoria,
-      sesion: eventoBackend.sesion,
-      tipoEvento: eventoBackend.tipo_evento
-    };
+    try {
+      // Normalizar fecha - puede venir como string ISO o como objeto Date
+      let fechaNormalizada = eventoBackend.fecha_evento;
+      if (fechaNormalizada && typeof fechaNormalizada === 'string') {
+        // Si viene como string, asegurar formato YYYY-MM-DD
+        fechaNormalizada = fechaNormalizada.split('T')[0];
+      }
+
+      // Normalizar horas - pueden venir como string HH:MM:SS o HH:MM
+      let horaInicio = eventoBackend.hora_inicio;
+      let horaFin = eventoBackend.hora_fin;
+      if (horaInicio && typeof horaInicio === 'string') {
+        horaInicio = horaInicio.substring(0, 5); // Tomar solo HH:MM
+      }
+      if (horaFin && typeof horaFin === 'string') {
+        horaFin = horaFin.substring(0, 5); // Tomar solo HH:MM
+      }
+
+      // Extraer tipo de evento - puede venir como objeto o como string
+      let tipoNombre = 'Evento';
+      if (eventoBackend.tipo_evento) {
+        if (typeof eventoBackend.tipo_evento === 'object') {
+          tipoNombre = eventoBackend.tipo_evento.nombre || eventoBackend.tipo_evento.nombre_tipo_evento || 'Evento';
+        } else {
+          tipoNombre = eventoBackend.tipo_evento;
+        }
+      }
+
+      const eventoMapeado = {
+        id: eventoBackend.id_evento,
+        titulo: eventoBackend.nombre || eventoBackend.titulo || 'Sin título',
+        fecha: fechaNormalizada,
+        hora: horaInicio,
+        horaInicio: horaInicio,
+        horaFin: horaFin,
+        lugar: eventoBackend.lugar || '',
+        descripcion: eventoBackend.descripcion || '',
+        tipo: tipoNombre,
+        idTipoEvento: eventoBackend.id_tipo_evento,
+        idCategoria: eventoBackend.id_categoria,
+        idSesion: eventoBackend.id_sesion,
+        // Información adicional
+        categoria: eventoBackend.categoria,
+        sesion: eventoBackend.sesion,
+        tipoEvento: eventoBackend.tipo_evento
+      };
+
+      return eventoMapeado;
+    } catch (error) {
+      console.error('❌ Error al mapear evento:', error, eventoBackend);
+      // Retornar un evento básico para evitar que falle todo
+      return {
+        id: eventoBackend.id_evento || 0,
+        titulo: eventoBackend.nombre || 'Evento sin mapear',
+        fecha: eventoBackend.fecha_evento || '',
+        hora: eventoBackend.hora_inicio || '',
+        horaInicio: eventoBackend.hora_inicio || '',
+        horaFin: eventoBackend.hora_fin || '',
+        lugar: eventoBackend.lugar || '',
+        descripcion: eventoBackend.descripcion || '',
+        tipo: 'Evento',
+        idTipoEvento: eventoBackend.id_tipo_evento,
+        idCategoria: eventoBackend.id_categoria,
+        idSesion: eventoBackend.id_sesion
+      };
+    }
   }
 
   /**

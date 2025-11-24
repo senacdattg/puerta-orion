@@ -216,8 +216,8 @@
 
           <!-- Paneles por rol -->
           <div class="perfil-grid" v-if="detalle && detalle.persona">
-            <!-- Deportista -->
-            <div class="perfil-card full-width" v-if="detalle?.deportista">
+            <!-- Deportista - Solo mostrar si el rol activo es Deportista -->
+            <div class="perfil-card full-width" v-if="detalle?.deportista && authStore.activeRole === 'Deportista'">
               <div class="card-header">
                 <h3>🏃 Información de Deportista</h3>
               </div>
@@ -270,8 +270,8 @@
               </div>
             </div>
 
-            <!-- Acudientes del Deportista -->
-            <div class="perfil-card full-width" v-if="detalle?.deportista">
+            <!-- Acudientes del Deportista - Solo mostrar si el rol activo es Deportista -->
+            <div class="perfil-card full-width" v-if="detalle?.deportista && authStore.activeRole === 'Deportista'">
               <div class="card-header">
                 <h3>👨‍👩‍👧 Acudientes Asociados</h3>
               </div>
@@ -946,8 +946,8 @@ onMounted(async () => {
   console.log('📊 Estado final - detalle.value:', detalle.value)
   console.log('📊 Estado final - usuario.value:', usuario.value)
 
-  // Cargar acudientes si el usuario es deportista
-  if (detalle.value?.deportista?.id_deportista) {
+  // Cargar acudientes solo si el usuario es deportista Y el rol activo es Deportista
+  if (detalle.value?.deportista?.id_deportista && authStore.activeRole === 'Deportista') {
     await cargarAcudientesDeportista()
   }
 })
@@ -956,12 +956,21 @@ watch(() => authStore.userDetail, (nuevo) => {
   console.log('👀 Watch detectado cambio en userDetail:', nuevo)
   if (nuevo) {
     detalle.value = nuevo
-    // Cargar acudientes cuando el detalle cambie y sea deportista
-    if (nuevo.deportista?.id_deportista) {
+    // Cargar acudientes solo si el rol activo es Deportista
+    if (nuevo.deportista?.id_deportista && authStore.activeRole === 'Deportista') {
       cargarAcudientesDeportista()
     }
   }
 }, { immediate: true, deep: true })
+
+// Observar cambios en el rol activo para cargar/ocultar información según el rol
+watch(() => authStore.activeRole, async (nuevoRol) => {
+  console.log('👀 Watch detectado cambio en activeRole:', nuevoRol)
+  // Si cambia a Deportista y hay información de deportista, cargar acudientes
+  if (nuevoRol === 'Deportista' && detalle.value?.deportista?.id_deportista) {
+    await cargarAcudientesDeportista()
+  }
+})
 
 const editarPerfil = () => {
   router.push('/actualizar-info')

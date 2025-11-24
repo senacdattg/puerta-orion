@@ -66,140 +66,171 @@
 
         <!-- Modal para agregar/editar eventos -->
         <div v-if="modalVisible" class="modal-overlay" @click="cerrarModal">
-            <div class="modal-content mensualidades-modal calendario-modal form-modal" @click.stop>
+            <div class="modal-content mensualidades-modal calendario-modal modal-sm" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}</h3>
+                    <h2 class="modal-title">
+                        <i :class="modoEdicion ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
+                        {{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}
+                    </h2>
                     <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
 
-                <form @submit.prevent="guardarEvento" class="formulario-evento form-modal-panel">
-                    <div class="campo-formulario">
-                        <label for="titulo">
-                            <i class="fas fa-heading"></i>
-                            Título del evento *
-                        </label>
-                        <input id="titulo" v-model="nuevoEvento.titulo" type="text"
-                            placeholder="Ej: Entrenamiento de fuerza" required class="input-evento input-mensualidad"
-                            :disabled="!puedeCrear && !modoEdicion" @input="manejarTitulo" />
-                    </div>
+                <div class="modal-body">
+                <form id="form-evento-calendario" @submit.prevent="guardarEvento" class="formulario-evento">
+                    <!-- Sección: Información básica -->
+                    <div class="seccion-form">
+                        <h6>Información básica</h6>
+                        <p class="descripcion-seccion">Identifica el evento con un título, tipo y categoría.</p>
+                        <div class="grid-detalles">
+                            <div class="campo-formulario">
+                                <label for="titulo">
+                                    <i class="fas fa-heading"></i>
+                                    Título del evento *
+                                </label>
+                                <input id="titulo" v-model="nuevoEvento.titulo" type="text"
+                                    placeholder="Ej: Entrenamiento de fuerza" required class="input-edicion"
+                                    :disabled="!puedeCrear && !modoEdicion" @input="manejarTitulo" />
+                            </div>
 
-                    <div class="campo-formulario">
-                        <label for="tipo">
-                            <i class="fas fa-tag"></i>
-                            Tipo de evento *
-                        </label>
-                        <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-evento select-mensualidad"
-                            :disabled="!puedeCrear && !modoEdicion">
-                            <option value="">Seleccionar tipo</option>
-                            <option v-for="tipo in tiposEvento" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">
-                                {{ tipo.nombre }}
-                            </option>
-                        </select>
-                    </div>
+                            <div class="campo-formulario">
+                                <label for="tipo">
+                                    <i class="fas fa-tag"></i>
+                                    Tipo de evento *
+                                </label>
+                                <select id="tipo" v-model="nuevoEvento.idTipoEvento" required class="select-edicion"
+                                    :disabled="!puedeCrear && !modoEdicion">
+                                    <option disabled value="">Selecciona un tipo</option>
+                                    <option v-for="tipo in tiposEvento" :key="tipo.id_tipo_evento" :value="tipo.id_tipo_evento">
+                                        {{ tipo.nombre }}
+                                    </option>
+                                </select>
+                            </div>
 
-                    <div class="campo-formulario">
-                        <label for="fecha">
-                            <i class="fas fa-calendar"></i>
-                            Fecha *
-                        </label>
-                        <input
-                            id="fecha"
-                            v-model="nuevoEvento.fecha"
-                            type="date"
-                            required
-                            class="input-evento input-mensualidad"
-                            :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
-                            :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
-                        />
-                    </div>
-
-                    <div class="fila-dos-columnas">
-                        <div class="campo-formulario">
-                            <label for="horaInicio">
-                                <i class="fas fa-clock"></i>
-                                Hora Inicio *
-                            </label>
-                            <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-evento input-mensualidad"
-                                :disabled="!puedeCrear && !modoEdicion" />
-                        </div>
-                        <div class="campo-formulario">
-                            <label for="horaFin">
-                                <i class="fas fa-clock"></i>
-                                Hora Fin *
-                            </label>
-                            <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-evento input-mensualidad"
-                                :disabled="!puedeCrear && !modoEdicion" />
+                            <div class="campo-formulario">
+                                <label for="categoria">
+                                    <i class="fas fa-layer-group"></i>
+                                    Categoría *
+                                </label>
+                                <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-edicion"
+                                    :disabled="!puedeCrear && !modoEdicion">
+                                    <option disabled value="">Selecciona una categoría</option>
+                                    <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">
+                                        {{ categoria.nombre_categoria }}
+                                    </option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+                    <div class="linea-abajo" style="margin:12px 0;"></div>
 
-                    <div class="campo-formulario">
-                        <label for="categoria">
-                            <i class="fas fa-layer-group"></i>
-                            Categoría *
-                        </label>
-                        <select id="categoria" v-model="nuevoEvento.idCategoria" required class="select-evento select-mensualidad"
-                            :disabled="!puedeCrear && !modoEdicion">
-                            <option value="">Seleccionar categoría</option>
-                            <option v-for="categoria in categorias" :key="categoria.id_categoria" :value="categoria.id_categoria">
-                                {{ categoria.nombre_categoria }}
-                            </option>
-                        </select>
+                    <!-- Sección: Fecha y hora -->
+                    <div class="seccion-form">
+                        <h6>Fecha y hora</h6>
+                        <p class="descripcion-seccion">Define cuándo y a qué hora se realizará el evento.</p>
+                        <div class="grid-detalles">
+                            <div class="campo-formulario">
+                                <label for="fecha">
+                                    <i class="fas fa-calendar"></i>
+                                    Fecha *
+                                </label>
+                                <input
+                                    id="fecha"
+                                    v-model="nuevoEvento.fecha"
+                                    type="date"
+                                    required
+                                    class="input-edicion"
+                                    :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
+                                    :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
+                                />
+                            </div>
+                        </div>
+                        <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;margin-top:16px;">
+                            <div class="campo-formulario">
+                                <label for="horaInicio">
+                                    <i class="fas fa-clock"></i>
+                                    Hora Inicio *
+                                </label>
+                                <input id="horaInicio" v-model="nuevoEvento.horaInicio" type="time" required class="input-edicion"
+                                    :disabled="!puedeCrear && !modoEdicion" />
+                            </div>
+                            <div class="campo-formulario">
+                                <label for="horaFin">
+                                    <i class="fas fa-clock"></i>
+                                    Hora Fin *
+                                </label>
+                                <input id="horaFin" v-model="nuevoEvento.horaFin" type="time" required class="input-edicion"
+                                    :disabled="!puedeCrear && !modoEdicion" />
+                            </div>
+                        </div>
                     </div>
+                    <div class="linea-abajo" style="margin:12px 0;"></div>
 
-                    <div class="campo-formulario">
-                        <label for="lugar">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Lugar *
-                        </label>
-                        <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
-                            required class="input-evento input-mensualidad" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
-                    </div>
+                    <!-- Sección: Ubicación y detalles -->
+                    <div class="seccion-form">
+                        <h6>Ubicación y detalles</h6>
+                        <p class="descripcion-seccion">Especifica dónde se realizará y añade información adicional.</p>
+                        <div class="grid-detalles">
+                            <div class="campo-formulario">
+                                <label for="lugar">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    Lugar *
+                                </label>
+                                <input id="lugar" v-model="nuevoEvento.lugar" type="text" placeholder="Ej: Gimnasio principal"
+                                    required class="input-edicion" :disabled="!puedeCrear && !modoEdicion" @input="manejarLugar" />
+                            </div>
 
-                    <div class="campo-formulario">
-                        <label for="descripcion">
-                            <i class="fas fa-align-left"></i>
-                            Descripción
-                        </label>
-                        <textarea id="descripcion" v-model="nuevoEvento.descripcion"
-                            placeholder="Detalles adicionales del evento..." rows="3" class="textarea-evento input-mensualidad"
-                            :disabled="!puedeCrear && !modoEdicion" @input="manejarDescripcion"></textarea>
-                    </div>
-
-                    <div class="acciones">
-                        <button
-                            type="button"
-                            @click="cerrarModal"
-                            class="btn btn-secondary"
-                        >
-                            Cerrar
-                        </button>
-                        <button
-                            v-if="puedeEliminar && modoEdicion"
-                            type="button"
-                            @click="eliminarEvento"
-                            class="btn btn-danger"
-                        >
-                            Eliminar
-                        </button>
-                        <button
-                            v-if="puedeCrear || (puedeEditar && modoEdicion)"
-                            type="submit"
-                            class="btn btn-success"
-                        >
-                            {{ modoEdicion ? 'ACTUALIZAR' : 'Guardar' }}
-                        </button>
+                            <div class="campo-formulario">
+                                <label for="descripcion">
+                                    <i class="fas fa-align-left"></i>
+                                    Descripción
+                                </label>
+                                <textarea id="descripcion" v-model="nuevoEvento.descripcion"
+                                    placeholder="Detalles adicionales del evento..." rows="3" class="input-edicion"
+                                    :disabled="!puedeCrear && !modoEdicion" @input="manejarDescripcion"></textarea>
+                            </div>
+                        </div>
                     </div>
                 </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        @click="cerrarModal"
+                        class="btn btn-secondary"
+                    >
+                        Cerrar
+                    </button>
+                    <button
+                        v-if="puedeEliminar && modoEdicion"
+                        type="button"
+                        @click="eliminarEvento"
+                        class="btn btn-danger"
+                    >
+                        Eliminar
+                    </button>
+                    <button
+                        v-if="puedeCrear || (puedeEditar && modoEdicion)"
+                        type="submit"
+                        form="form-evento-calendario"
+                        class="btn btn-primary"
+                    >
+                        {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Modal para seleccionar evento a editar -->
         <div v-if="selectorEventosVisible" class="modal-overlay" @click="cerrarSelectorEventos">
-            <div class="modal-content mensualidades-modal selector-eventos calendario-modal form-modal" @click.stop>
+            <div class="modal-content mensualidades-modal selector-eventos calendario-modal modal-sm" @click.stop>
                 <div class="modal-header">
-                    <h3>{{ puedeEditar ? 'Eventos del Día' : 'Eventos del Día' }}</h3>
+                    <h2 class="modal-title">
+                        <i class="fas fa-calendar-day"></i>
+                        Eventos del Día
+                    </h2>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
                         <i class="fas fa-times"></i>
                     </button>
@@ -266,9 +297,11 @@
 </template>
 
 <script>
+import { computed, watch, onUnmounted } from 'vue';
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
+import { useModalScrollLock } from '@/composables/useModalScrollLock';
 
 const LOCALE_COL = 'es-CO';
 const MAX_TITULO = 120;
@@ -338,6 +371,23 @@ export default {
         puedeVer() {
             return this.authStore.puedeVerEventos || this.authStore.permissions.includes('ver_evento') || this.authStore.permissions.includes('ver_calendario');
         }
+    },
+
+    watch: {
+        modalVisible(newValue) {
+            if (newValue) {
+                document.body.classList.add('modal-open');
+                document.documentElement.classList.add('modal-open');
+            } else {
+                document.body.classList.remove('modal-open');
+                document.documentElement.classList.remove('modal-open');
+            }
+        }
+    },
+
+    beforeUnmount() {
+        document.body.classList.remove('modal-open');
+        document.documentElement.classList.remove('modal-open');
     },
 
     async mounted() {
@@ -418,14 +468,20 @@ export default {
                 // Luego cargar datos del backend en segundo plano
                 try {
                     const catalogos = await calendarioService.cargarCatalogos();
-                    await calendarioService.cargarEventos();
+
+                    // Intentar cargar eventos, pero no fallar si hay error 500
+                    try {
+                        await calendarioService.cargarEventos();
+                    } catch (eventosError) {
+                        console.warn('⚠️ Error cargando eventos del backend:', eventosError.message);
+                        // Continuar sin eventos, el calendario seguirá funcionando
+                    }
 
                     // Guardar catálogos en variables locales
                     this.tiposEvento = catalogos.tiposEvento || [];
                     this.categorias = catalogos.categorias || [];
 
-
-                    // Actualizar el calendario con los eventos cargados
+                    // Actualizar el calendario con los eventos cargados (si los hay)
                     this.actualizarCalendario();
                 } catch (apiError) {
                     console.warn('⚠️ Error cargando datos del backend:', apiError.message);
@@ -739,10 +795,49 @@ export default {
             if (!(await this.validarPermisosEdicion())) {
                 return;
             }
-            await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
-            this.mostrarNotificacion('Evento actualizado exitosamente', 'success');
-            this.actualizarCalendario();
-            this.cerrarModal();
+            try {
+                await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+
+                // El evento ya fue actualizado en la cache local en el servicio
+                // Actualizar el calendario inmediatamente
+                this.actualizarCalendario();
+
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Evento actualizado',
+                    text: 'El evento se ha actualizado exitosamente.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                // Intentar recargar eventos del servidor, pero no fallar si hay error
+                try {
+                    await calendarioService.cargarEventos();
+                    this.actualizarCalendario();
+                } catch (recargaError) {
+                    console.warn('⚠️ Error al recargar eventos, pero el evento ya fue actualizado:', recargaError.message);
+                    // El evento ya está actualizado en la cache local
+                }
+
+                this.cerrarModal();
+            } catch (error) {
+                // Mostrar error específico al usuario
+                let mensajeError = 'Error al actualizar el evento';
+
+                if (error.message && (error.message.includes('horario') || error.message.includes('solapa'))) {
+                    mensajeError = error.message;
+                } else if (error.message) {
+                    mensajeError = error.message;
+                }
+
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error al actualizar evento',
+                    text: mensajeError,
+                    confirmButtonText: 'Entendido'
+                });
+                throw error; // Re-lanzar para que el catch superior lo maneje
+            }
         },
 
         async preguntarAgregarOtroEvento(fechaActual) {
@@ -773,17 +868,53 @@ export default {
                 return;
             }
 
-            await calendarioService.crearEvento(this.nuevoEvento);
-            this.mostrarNotificacion('Evento creado exitosamente', 'success');
+            try {
+                const nuevoEventoCreado = await calendarioService.crearEvento(this.nuevoEvento);
 
-            await calendarioService.cargarEventos();
-            this.actualizarCalendario();
+                // El evento ya fue agregado a la cache local en el servicio
+                // Actualizar el calendario inmediatamente con el evento nuevo
+                this.actualizarCalendario();
 
-            const fechaActual = this.nuevoEvento.fecha;
-            const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Evento creado',
+                    text: 'El evento se ha creado exitosamente.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
 
-            if (!quiereAgregarOtro) {
-                this.cerrarModal();
+                // Intentar recargar eventos del servidor, pero no fallar si hay error
+                try {
+                    await calendarioService.cargarEventos();
+                    this.actualizarCalendario();
+                } catch (recargaError) {
+                    console.warn('⚠️ Error al recargar eventos, pero el evento ya fue creado:', recargaError.message);
+                    // El evento ya está en la cache local, así que el calendario ya se actualizó
+                }
+
+                const fechaActual = this.nuevoEvento.fecha;
+                const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+
+                if (!quiereAgregarOtro) {
+                    this.cerrarModal();
+                }
+            } catch (error) {
+                // Mostrar error específico al usuario
+                let mensajeError = 'Error al crear el evento';
+
+                if (error.message && (error.message.includes('horario') || error.message.includes('solapa'))) {
+                    mensajeError = error.message;
+                } else if (error.message) {
+                    mensajeError = error.message;
+                }
+
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error al crear evento',
+                    text: mensajeError,
+                    confirmButtonText: 'Entendido'
+                });
+                throw error; // Re-lanzar para que el catch superior lo maneje
             }
         },
 
@@ -808,7 +939,16 @@ export default {
                 }
             } catch (error) {
                 console.error('Error al guardar evento:', error);
-                this.mostrarNotificacion(error.message || 'Error al guardar el evento', 'error');
+                // El error ya fue mostrado en crearNuevoEvento o actualizarEventoExistente
+                // Solo mostrar aquí si no se mostró antes
+                if (!error.mostrado) {
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Error al guardar el evento',
+                        confirmButtonText: 'Entendido'
+                    });
+                }
             } finally {
                 this.cargando = false;
             }

@@ -27,11 +27,13 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import FormularioGeneral from '../formularios/formulario-general.vue';
 import Swal from 'sweetalert2';
+import { useModalScrollLock } from '@/composables/useModalScrollLock';
 
 // Props
-defineProps({
+const props = defineProps({
   mostrar: {
     type: Boolean,
     default: false
@@ -40,6 +42,9 @@ defineProps({
 
 // Emits
 const emit = defineEmits(['cerrar', 'usuario-registrado']);
+
+// Bloquear scroll del body cuando el modal está abierto
+useModalScrollLock(computed(() => props.mostrar));
 
 function cerrarModal() {
   emit('cerrar');

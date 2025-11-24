@@ -266,7 +266,7 @@
 
   <!-- Modal de Edición -->
   <div v-if="mostrarModalEdicion" class="modal-overlay modal-edicion-overlay" @click.self="cerrarModalEdicion">
-    <div class="modal-content modal-edicion" @click.stop>
+    <div class="modal-content modal-edicion modal-sm" @click.stop>
       <div class="modal-header">
         <h2 class="modal-title">
           <i class="fas fa-edit"></i>
@@ -526,6 +526,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import usuariosService from '@/services/usuariosService';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
+import { useModalScrollLock } from '@/composables/useModalScrollLock';
 
 const props = defineProps({
   searchTerm: { type: String, default: '' },
@@ -582,6 +583,10 @@ const rolesSeleccionados = ref([]);
 
 // Obtener ID del usuario actual para prevenir auto-desactivación
 const currentUserId = computed(() => authStore.user?.id_usuario);
+
+// Bloquear scroll del body cuando cualquier modal está abierto
+const hayModalAbierto = computed(() => mostrarModalDetalle.value || mostrarModalEdicion.value || mostrarModalRoles.value);
+useModalScrollLock(hayModalAbierto);
 
 const DOC_MIN = 6;
 const DOC_MAX = 20;

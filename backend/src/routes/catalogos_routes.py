@@ -25,8 +25,10 @@ from ..models.catalogos.tipo_documento import TipoDocumento
 from ..models.categorias.categoria import Categoria
 from ..models.categorias.sexo import Sexo
 from ..models.pagos.metodo_pago import MetodoPago
+from ..models.eventos.tipo_evento import TipoEvento
 from ..services.catalogos_service import catalogos_service
 from ..utils.logger import obtener_registrador
+from ..middleware.auth_decorator import token_required
 
 JsonResponse = Tuple[Response, int]
 
@@ -486,6 +488,24 @@ def fix_catalogos_structure() -> JsonResponse:
             status_code=ERROR_STATUS,
             error=ERROR_CORRIGIENDO_ESTRUCTURA.format(detalle=str(error)),
         )
+
+
+@catalogos_bp.route('/tipos-evento', methods=['GET', 'OPTIONS'])
+@cross_origin(origins=CORS_ALLOWED_ORIGINS, methods=('GET', 'OPTIONS'))
+@token_required()
+def obtener_tipos_evento() -> JsonResponse:
+    """Obtiene todos los tipos de evento disponibles."""
+    try:
+        tipos_evento = TipoEvento.query.all()
+        datos_tipos = [tipo.to_dict() for tipo in tipos_evento]
+        return _build_response(
+            True,
+            message='Tipos de evento obtenidos exitosamente',
+            data=datos_tipos,
+            status_code=SUCCESS_STATUS,
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return _handle_unexpected_error('Error inesperado al obtener tipos de evento', error)
 
 
 @catalogos_bp.route('/tipos-enfermedad', methods=['GET', 'OPTIONS'])

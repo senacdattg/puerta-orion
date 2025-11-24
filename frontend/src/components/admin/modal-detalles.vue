@@ -1,11 +1,14 @@
 <template>
   <div class="modal-overlay" @click="$emit('cerrar')">
-    <div class="modal-content mensualidades-modal form-modal" @click.stop>
+    <div class="modal-content mensualidades-modal modal-sm" @click.stop>
       <div class="modal-header">
-        <h3>{{ editando ? 'Editar Mensualidad' : 'Detalles Completos de Mensualidad' }}</h3>
-        <div class="header-actions">
-          <button @click="$emit('cerrar')" class="btn-cerrar">✕</button>
-        </div>
+        <h2 class="modal-title">
+          <i :class="editando ? 'fas fa-edit' : 'fas fa-file-invoice-dollar'"></i>
+          {{ editando ? 'Editar Mensualidad' : 'Detalles mensualidad' }}
+        </h2>
+        <button @click="$emit('cerrar')" class="btn-cerrar">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
 
       <div class="modal-body">

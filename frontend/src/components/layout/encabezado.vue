@@ -142,6 +142,16 @@ const menuOpenedByClick = ref(false) // Track si se abrió por click
 
 // Computed para obtener el rol del usuario desde la sesión
 const userRole = computed(() => {
+  // Si hay un rol activo seleccionado, usarlo directamente
+  if (authStore.activeRole) {
+    const activeRole = authStore.activeRole
+    // Normalizar el nombre del rol para que coincida con las claves del objeto opcionesPorRol
+    if (activeRole === 'SuperAdmin' || activeRole === 'Administrador') {
+      return 'Admin'
+    }
+    return activeRole
+  }
+
   if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
     return 'Usuario'
   }
@@ -152,7 +162,7 @@ const userRole = computed(() => {
     typeof role === 'string' ? role : role.nombre_rol
   )
 
-  // Priorizar roles en orden de importancia
+  // Priorizar roles en orden de importancia (solo si no hay rol activo)
   if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
     return 'Admin'
   } else if (roleNames.includes('Entrenador')) {
@@ -272,12 +282,12 @@ function cargarOpciones() {
     ],
     Acudiente: [
       { texto: "Inicio", link: "/acudiente/dashboard", icono: "fas fa-home" },
+      { texto: "Perfil", link: "/perfil", icono: "fas fa-user" },
       { texto: "Mis Acudidos", link: "/acudiente/ver-acudidos", icono: "fas fa-users" },
       { texto: "Mensualidades", link: "/mensualidades", icono: "fas fa-money-bill-wave" },
       { texto: "Eventos", link: "/eventos", icono: "fas fa-calendar-check" },
       { texto: "Calendario", link: "/calendario", icono: "fas fa-calendar-alt" },
       { texto: "Galería", link: "/galeria", icono: "fas fa-images" },
-      { texto: "Configuración", link: "/perfil", icono: "fas fa-cog" },
     ],
     Deportista: [
       { texto: "Inicio", link: "/home", icono: "fas fa-home" },
