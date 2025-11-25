@@ -684,6 +684,98 @@ def obtener_evento(evento_id: int) -> JsonResponse:
         return handle_exception(exc, logger, "obtener evento")
 
 
+def _validar_campos_requeridos_evento(data: Dict[str, Any]) -> Optional[JsonResponse]:
+    """Valida que todos los campos requeridos estén presentes."""
+    campos_requeridos = [
+        'nombre',
+        'fecha_evento',
+        'hora_inicio',
+        'hora_fin',
+        'lugar',
+        'id_categoria',
+        'id_tipo_evento',
+    ]
+    campos_faltantes = [campo for campo in campos_requeridos if not data.get(campo)]
+    if campos_faltantes:
+        return _build_response(
+            False,
+            error='Campos requeridos faltantes',
+            message=f'Los siguientes campos son obligatorios: {", ".join(campos_faltantes)}',
+            campos_faltantes=campos_faltantes,
+            status_code=400,
+        )
+    return None
+
+
+def _validar_y_sanitizar_nombre(data: Dict[str, Any]) -> Tuple[Optional[str], Optional[JsonResponse]]:
+    """Valida y sanitiza el nombre del evento."""
+    try:
+        nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
+        if len(nombre) < 3:
+            return None, HttpResponseBuilder.bad_request(error=ERROR_NOMBRE_MINIMO_CARACTERES)
+        return nombre, None
+    except ValidationError as exc:
+        return None, _build_response(False, error=str(exc), status_code=400)
+
+
+def _validar_fecha_y_horas(data: Dict[str, Any]) -> Tuple[Optional[date], Optional[time], Optional[time], Optional[JsonResponse]]:
+    """Valida fecha y horas del evento."""
+    fecha_evento = _parse_date(data['fecha_evento'])
+    if not fecha_evento:
+        return None, None, None, _build_response(False, error='Formato de fecha inválido. Use YYYY-MM-DD', status_code=400)
+    
+    hora_inicio = _parse_time(data['hora_inicio'])
+    if not hora_inicio:
+        return None, None, None, _build_response(
+            False,
+            error='Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS',
+            status_code=400,
+        )
+
+    hora_fin = _parse_time(data['hora_fin'])
+    if not hora_fin:
+        return None, None, None, _build_response(
+            False,
+            error='Formato de hora de fin inválido. Use HH:MM o HH:MM:SS',
+            status_code=400,
+        )
+    
+    if hora_fin <= hora_inicio:
+        return None, None, None, _build_response(False, error='La hora de fin debe ser posterior a la hora de inicio', status_code=400)
+    
+    return fecha_evento, hora_inicio, hora_fin, None
+
+
+def _validar_y_sanitizar_lugar(data: Dict[str, Any]) -> Tuple[Optional[str], Optional[JsonResponse]]:
+    """Valida y sanitiza el lugar del evento."""
+    try:
+        lugar = sanitize_address('lugar', data['lugar'], max_length=120)
+        return lugar, None
+    except ValidationError as exc:
+        return None, _build_response(False, error=str(exc), status_code=400)
+
+
+def _validar_entidades_evento(data: Dict[str, Any]) -> Tuple[Optional[Categoria], Optional[TipoEvento], Optional[JsonResponse]]:
+    """Valida que la categoría y tipo de evento existan."""
+    categoria = Categoria.query.get(data['id_categoria'])
+    if not categoria:
+        return None, None, _build_response(
+            False,
+            error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=data['id_categoria']),
+            status_code=404,
+        )
+    
+    tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
+    if not tipo_evento:
+        return None, None, _build_response(
+            False,
+            error=ERROR_TIPO_EVENTO_NO_ENCONTRADO.format(id=data['id_tipo_evento']),
+            status_code=404,
+        )
+    
+    return categoria, tipo_evento, None
+
+
 @eventos_bp.route('/calendario', methods=['POST'])
 @token_required(required_roles=ROLES_ADMIN, required_active_roles=ROLES_ADMIN)
 def crear_evento() -> JsonResponse:
@@ -714,58 +806,21 @@ def crear_evento() -> JsonResponse:
             mensaje_vacio='El cuerpo de la petición debe contener datos JSON',
         )
 
-        campos_requeridos = [
-            'nombre',
-            'fecha_evento',
-            'hora_inicio',
-            'hora_fin',
-            'lugar',
-            'id_categoria',
-            'id_tipo_evento',
-        ]
-        campos_faltantes = [campo for campo in campos_requeridos if not data.get(campo)]
-        if campos_faltantes:
-            return _build_response(
-                False,
-                error='Campos requeridos faltantes',
-                message=f'Los siguientes campos son obligatorios: {", ".join(campos_faltantes)}',
-                campos_faltantes=campos_faltantes,
-                status_code=400,
-            )
+        error_response = _validar_campos_requeridos_evento(data)
+        if error_response:
+            return error_response
 
-        try:
-            nombre = sanitize_free_text('nombre', data['nombre'], max_length=120)
-        except ValidationError as exc:
-            return _build_response(False, error=str(exc), status_code=400)
-        if len(nombre) < 3:
-            return HttpResponseBuilder.bad_request(error=ERROR_NOMBRE_MINIMO_CARACTERES)
-        
-        fecha_evento = _parse_date(data['fecha_evento'])
-        if not fecha_evento:
-            return _build_response(False, error='Formato de fecha inválido. Use YYYY-MM-DD', status_code=400)
-        
-        hora_inicio = _parse_time(data['hora_inicio'])
-        if not hora_inicio:
-            return _build_response(
-                False,
-                error='Formato de hora de inicio inválido. Use HH:MM o HH:MM:SS',
-                status_code=400,
-            )
+        nombre, error_response = _validar_y_sanitizar_nombre(data)
+        if error_response:
+            return error_response
 
-        hora_fin = _parse_time(data['hora_fin'])
-        if not hora_fin:
-            return _build_response(
-                False,
-                error='Formato de hora de fin inválido. Use HH:MM o HH:MM:SS',
-                status_code=400,
-            )
-        if hora_fin <= hora_inicio:
-            return _build_response(False, error='La hora de fin debe ser posterior a la hora de inicio', status_code=400)
+        fecha_evento, hora_inicio, hora_fin, error_response = _validar_fecha_y_horas(data)
+        if error_response:
+            return error_response
 
-        try:
-            lugar = sanitize_address('lugar', data['lugar'], max_length=120)
-        except ValidationError as exc:
-            return _build_response(False, error=str(exc), status_code=400)
+        lugar, error_response = _validar_y_sanitizar_lugar(data)
+        if error_response:
+            return error_response
 
         validacion_horario, mensaje_error = validar_solapamiento_horario(
             fecha_evento,
@@ -775,22 +830,10 @@ def crear_evento() -> JsonResponse:
         )
         if not validacion_horario:
             return _build_response(False, error=mensaje_error, status_code=400)
-        
-        categoria = Categoria.query.get(data['id_categoria'])
-        if not categoria:
-            return _build_response(
-                False,
-                error=ERROR_CATEGORIA_NO_ENCONTRADA.format(id=data['id_categoria']),
-                status_code=404,
-            )
-        
-        tipo_evento = TipoEvento.query.get(data['id_tipo_evento'])
-        if not tipo_evento:
-            return _build_response(
-                False,
-                error=ERROR_TIPO_EVENTO_NO_ENCONTRADO.format(id=data['id_tipo_evento']),
-                status_code=404,
-            )
+
+        categoria, tipo_evento, error_response = _validar_entidades_evento(data)
+        if error_response:
+            return error_response
 
         descripcion = (
             sanitize_free_text('descripcion', data.get('descripcion'), max_length=500)
