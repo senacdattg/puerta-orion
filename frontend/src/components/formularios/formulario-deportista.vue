@@ -782,7 +782,8 @@ async function manejarSubmit(event) {
   }
 
   console.log('🚀 Iniciando manejarSubmit');
-  console.log('📋 Estado del formulario:', structuredClone(form.value));
+  // Log directo del objeto reactivo (Vue maneja esto correctamente)
+  console.log('📋 Estado del formulario:', form.value);
 
   isSubmitting.value = true;
 

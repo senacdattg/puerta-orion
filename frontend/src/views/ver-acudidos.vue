@@ -188,20 +188,21 @@
       </div>
     </div>
 
-    <FooterEnhanced />
+    <Pie />
   </main>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import Encabezado from '@/components/layout/encabezado.vue'
-import FooterEnhanced from '@/components/layout/pie.vue'
+import Pie from '@/components/layout/pie.vue'
 import { useAuthStore } from '@/stores/auth'
 import deportistasService from '@/services/deportistasService'
 import authService from '@/services/authService'
 import catalogosService from '@/services/catalogosService'
 import PerfilDeportistaVista from '@/components/deportistas/perfil-deportista-vista.vue'
 import Swal from 'sweetalert2'
+import { getApiBaseUrl } from '@/config/environment'
 
 const authStore = useAuthStore()
 
@@ -245,10 +246,13 @@ const cargarAcudidos = async () => {
       return
     }
 
-    console.log(`🌐 Llamando al endpoint: http://localhost:5000/api/deportistas/acudiente/${acudienteId}`)
+    const baseURL = getApiBaseUrl()
+    const endpoint = `/deportistas/acudientes/${acudienteId}/deportistas`
+    const url = `${baseURL}${endpoint}`
+    console.log(`🌐 Llamando al endpoint: ${url}`)
 
     // Llamar al backend para obtener los deportistas asociados
-    const response = await fetch(`http://localhost:5000/api/deportistas/acudiente/${acudienteId}`, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -257,7 +261,17 @@ const cargarAcudidos = async () => {
     })
 
     console.log('📡 Estado de la respuesta:', response.status)
-    const result = await response.json()
+
+    // Verificar si la respuesta es JSON válido
+    let result
+    const contentType = response.headers.get('content-type')
+    if (contentType && contentType.includes('application/json')) {
+      result = await response.json()
+    } else {
+      const text = await response.text()
+      console.error('❌ Respuesta no es JSON:', text.substring(0, 200))
+      throw new Error(`Error del servidor: ${response.status} ${response.statusText}`)
+    }
     console.log('📦 Datos recibidos:', result)
 
     if (response.ok && result.success) {
