@@ -47,23 +47,56 @@ class AuthService {
    */
   async register(userData) {
     try {
+      console.log('📤 Enviando registro a:', `${this.baseURL}/api/auth/register`)
+      console.log('📦 Datos enviados:', JSON.stringify(userData, null, 2))
+
+      // Crear un AbortController para timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 segundos timeout
+
       const response = await fetch(`${this.baseURL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(userData)
+        body: JSON.stringify(userData),
+        signal: controller.signal
       })
 
-      const data = await response.json()
+      clearTimeout(timeoutId)
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Error de registro')
+      console.log('📥 Respuesta recibida - Status:', response.status, response.statusText)
+
+      // Verificar si la respuesta es JSON válido
+      let data
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+        console.log('📦 Datos recibidos:', data)
+      } else {
+        const text = await response.text()
+        console.error('❌ Respuesta no es JSON:', text)
+        throw new Error(`Respuesta inválida del servidor: ${text.substring(0, 100)}`)
       }
 
+      if (!response.ok) {
+        const errorMsg = data.error || data.message || 'Error de registro'
+        console.error('❌ Error en registro:', errorMsg)
+        throw new Error(errorMsg)
+      }
+
+      console.log('✅ Registro exitoso')
       return { success: true, data: data.data }
     } catch (error) {
-      console.error('Error en registro:', error)
+      console.error('❌ Error en registro:', error)
+      // Si es un error de abort (timeout)
+      if (error.name === 'AbortError') {
+        return { success: false, error: 'La petición tardó demasiado. El servidor puede estar sobrecargado o hay un problema de conexión.' }
+      }
+      // Si es un error de red, dar un mensaje más claro
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        return { success: false, error: 'Error de conexión. Verifica que el servidor esté funcionando.' }
+      }
       return { success: false, error: error.message || 'Error de conexión' }
     }
   }
