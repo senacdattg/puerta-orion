@@ -34,30 +34,30 @@
   text-shadow: 2px 2px 4px var(--color-negro-transparente-10);
 }
 
-.titulo-principal p {
+        .titulo-principal p {
   font-size: var(--tamano-fuente-lg);
   color: var(--color-gris-700-alt);
-  margin: 0;
+          margin: 0;
   font-weight: var(--peso-fuente-medio);
-}
+        }
 
-.subtitulo-usuario {
+        .subtitulo-usuario {
   background: linear-gradient(135deg, var(--color-info-alt) 0%, var(--color-primario-oscuro) 100%);
   color: var(--color-blanco);
   padding: 0.75rem var(--espaciado-lg);
   border-radius: var(--radio-borde);
   font-size: var(--tamano-fuente-base);
   font-weight: var(--peso-fuente-semibold);
-  display: inline-flex;
-  align-items: center;
+          display: inline-flex;
+          align-items: center;
   gap: var(--espaciado-sm);
   margin-top: var(--espaciado-md);
   box-shadow: 0 4px 15px var(--color-primario-transparente-30);
-}
+        }
 
-.subtitulo-usuario i {
-  font-size: 1.1rem;
-}
+        .subtitulo-usuario i {
+          font-size: 1.1rem;
+        }
 
 /* --- Header del calendario --- */
 .calendar-header {
