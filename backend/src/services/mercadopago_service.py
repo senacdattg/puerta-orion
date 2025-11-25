@@ -231,6 +231,87 @@ class MercadoPagoService:
             logger.error(f"Error en verificar_pago: {str(e)}")
             return {"success": False, "error": str(e)}
     
+    def _extraer_payment_id(self, datos_webhook: Dict[str, Any]) -> Optional[str]:
+        """Extrae el ID del pago desde el webhook."""
+        if datos_webhook.get("type") == "payment":
+            return datos_webhook.get("data", {}).get("id")
+        return None
+
+    def _obtener_fecha_abono(self, payment: Dict[str, Any]) -> date:
+        """Obtiene la fecha del abono desde el pago de Mercado Pago."""
+        fecha_mp = payment.get('date_approved') or payment.get('date_created')
+        if isinstance(fecha_mp, str):
+            try:
+                return datetime.fromisoformat(fecha_mp.replace('Z', '+00:00')).date()
+            except Exception:
+                pass
+        return date.today()
+
+    def _obtener_metadata_pago(self, payment: Dict[str, Any]) -> Dict[str, Any]:
+        """Extrae y normaliza los metadatos del pago."""
+        if isinstance(payment, dict):
+            return payment.get('metadata', {})
+        return {}
+
+    def _crear_abono_mensualidad(self, mensualidad, monto_abonado: float, fecha_abono: date) -> None:
+        """Crea y registra un abono de mensualidad."""
+        from src.models.pagos.abono_mensualidad import AbonoMensualidad
+        
+        metodo_mp = self.obtener_metodo_pago_mercadopago()
+        id_metodo_pago = getattr(metodo_mp, 'id_metodo_pago', None)
+
+        abono = AbonoMensualidad(
+            id_mensualidad=mensualidad.id_mensualidad,
+            monto=monto_abonado,
+            fecha_abono=fecha_abono,
+            id_metodo_pago=id_metodo_pago
+        )
+        db.session.add(abono)
+
+    def _procesar_pago_mensualidad(self, payment: Dict[str, Any], metadata: Dict[str, Any]) -> None:
+        """Procesa un pago de mensualidad aprobado."""
+        from src.models.pagos.mensualidad import Mensualidad
+        
+        mensualidad = Mensualidad.query.get(int(metadata['id_mensualidad']))
+        if not mensualidad:
+            return
+        
+        monto_abonado = float(payment.get('transaction_amount', 0))
+        fecha_abono = self._obtener_fecha_abono(payment)
+        
+        self._crear_abono_mensualidad(mensualidad, monto_abonado, fecha_abono)
+        calculo = self._aplicar_abono_mensualidad(mensualidad, monto_abonado)
+        db.session.commit()
+        logger.info(f"Mensualidad {mensualidad.id_mensualidad} actualizada por webhook MP: {calculo}")
+
+    def _es_pago_mensualidad_aprobado(self, estado: str, metadata: Dict[str, Any]) -> bool:
+        """Verifica si es un pago de mensualidad aprobado."""
+        if estado != 'approved':
+            return False
+        if metadata.get('tipo_pago') != 'mensualidad':
+            return False
+        return bool(metadata.get('id_mensualidad'))
+
+    def _procesar_webhook_pago(self, payment_id: str) -> Dict[str, Any]:
+        """Procesa un webhook de tipo pago."""
+        resultado = self.verificar_pago(payment_id)
+        if not resultado["success"]:
+            return {"success": False, "message": "Error al verificar pago"}
+        
+        payment = resultado.get("payment", {})
+        estado = resultado.get("estado")
+        metadata = self._obtener_metadata_pago(payment)
+
+        if self._es_pago_mensualidad_aprobado(estado, metadata):
+            try:
+                self._procesar_pago_mensualidad(payment, metadata)
+            except Exception as ex:
+                logger.error(f"Error aplicando abono de mensualidad por webhook: {str(ex)}")
+                db.session.rollback()
+        
+        logger.info(f"Webhook procesado exitosamente: {payment_id}")
+        return {"success": True, "message": "Webhook procesado"}
+
     def procesar_webhook(self, datos_webhook: Dict[str, Any]) -> Dict[str, Any]:
         """
         Procesa notificaciones webhook de Mercado Pago.
@@ -242,59 +323,11 @@ class MercadoPagoService:
             dict: Resultado del procesamiento.
         """
         try:
-            # Obtener el ID del pago desde el webhook
-            if datos_webhook.get("type") == "payment":
-                payment_id = datos_webhook.get("data", {}).get("id")
-                
-                if payment_id:
-                    # Verificar el pago
-                    resultado = self.verificar_pago(payment_id)
-                    
-                    if resultado["success"]:
-                        payment = resultado.get("payment", {})
-                        estado = resultado.get("estado")
-                        metadata = payment.get('metadata', {}) if isinstance(payment, dict) else {}
-
-                        # Cuando sea un pago aprobado de mensualidad, registrar abono y aplicar recálculo
-                        if estado == 'approved' and metadata.get('tipo_pago') == 'mensualidad' and metadata.get('id_mensualidad'):
-                            try:
-                                from src.models.pagos.mensualidad import Mensualidad
-                                from src.models.pagos.abono_mensualidad import AbonoMensualidad
-                                mensualidad = Mensualidad.query.get(int(metadata['id_mensualidad']))
-                                if mensualidad:
-                                    monto_abonado = float(payment.get('transaction_amount', 0))
-                                    # Fecha del pago reportada por MP (created_date) o hoy
-                                    fecha_mp = payment.get('date_approved') or payment.get('date_created')
-                                    try:
-                                        fecha_abono = datetime.fromisoformat(fecha_mp.replace('Z','+00:00')).date() if isinstance(fecha_mp, str) else date.today()
-                                    except Exception:
-                                        fecha_abono = date.today()
-
-                                    # Metodo de pago "Mercado Pago"
-                                    metodo_mp = self.obtener_metodo_pago_mercadopago()
-                                    id_metodo_pago = getattr(metodo_mp, 'id_metodo_pago', None)
-
-                                    # Registrar abono para el historial
-                                    abono = AbonoMensualidad(
-                                        id_mensualidad=mensualidad.id_mensualidad,
-                                        monto=monto_abonado,
-                                        fecha_abono=fecha_abono,
-                                        id_metodo_pago=id_metodo_pago
-                                    )
-                                    db.session.add(abono)
-
-                                    # Aplicar recálculo de mensualidad con la misma lógica
-                                    calculo = self._aplicar_abono_mensualidad(mensualidad, monto_abonado)
-                                    db.session.commit()
-                                    logger.info(f"Mensualidad {mensualidad.id_mensualidad} actualizada por webhook MP: {calculo}")
-                            except Exception as ex:
-                                logger.error(f"Error aplicando abono de mensualidad por webhook: {str(ex)}")
-                                db.session.rollback()
-                        
-                        logger.info(f"Webhook procesado exitosamente: {payment_id}")
-                        return {"success": True, "message": "Webhook procesado"}
-                    
-            return {"success": False, "message": "Tipo de webhook no reconocido"}
+            payment_id = self._extraer_payment_id(datos_webhook)
+            if not payment_id:
+                return {"success": False, "message": "Tipo de webhook no reconocido"}
+            
+            return self._procesar_webhook_pago(payment_id)
             
         except Exception as e:
             logger.error(f"Error en procesar_webhook: {str(e)}")
