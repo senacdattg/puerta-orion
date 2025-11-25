@@ -744,7 +744,7 @@ watch(
     formData.value = crearEstadoInicial(nuevo);
     // Si no estamos editando, actualizar también el estado inicial
     if (!isEditing.value) {
-      formDataInicial.value = structuredClone(formData.value);
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value));
     }
   },
   { immediate: true }
@@ -1062,7 +1062,7 @@ function extraerMensajeError(error) {
 function iniciarEdicion() {
   inicializarFormulario()
   // Guardar estado inicial cuando se inicia la edición
-  formDataInicial.value = structuredClone(formData.value)
+  formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
   emit('editar')
 }
 
@@ -1370,7 +1370,7 @@ async function guardarCambios() {
 
     inicializarFormulario();
     // Actualizar estado inicial después de guardar exitosamente
-    formDataInicial.value = structuredClone(formData.value)
+    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
 
     await Swal.fire({
       icon: 'success',

@@ -473,34 +473,11 @@ const yaEsAcudiente = computed(() => {
   return nombresRoles.includes('Acudiente')
 })
 
-// Filtrar roles asignados para ocultar "Usuario" según la lógica
+// Mostrar todos los roles asignados (sin filtrar "Usuario")
+// El backend ya maneja la lógica de visibilidad en rolesSelector
 const rolesAsignadosFiltrados = computed(() => {
   if (!usuario.value?.roles) return []
-
-  // Si el usuario es deportista:
-  // - Si es menor de edad: ocultar "Usuario"
-  // - Si es mayor de edad pero ya es acudiente: ocultar "Usuario"
-  // - Si es mayor de edad y NO es acudiente: mostrar "Usuario" (para que pueda registrarse como acudiente)
-  if (esDeportista.value) {
-    // Si es menor de edad, ocultar "Usuario"
-    if (!esMayorDeEdad.value) {
-      return usuario.value.roles.filter(rol => {
-        const nombreRol = getNombreRol(rol)
-        return nombreRol !== 'Usuario' && nombreRol !== 'usuario'
-      })
-    }
-    // Si es mayor de edad pero ya es acudiente, ocultar "Usuario"
-    if (yaEsAcudiente.value) {
-      return usuario.value.roles.filter(rol => {
-        const nombreRol = getNombreRol(rol)
-        return nombreRol !== 'Usuario' && nombreRol !== 'usuario'
-      })
-    }
-    // Si es mayor de edad y NO es acudiente, mostrar "Usuario"
-    return usuario.value.roles
-  }
-
-  // Si no es deportista, mostrar todos los roles
+  // Mostrar todos los roles que el usuario tiene
   return usuario.value.roles
 })
 const isLoading = computed(() => authStore.isLoading)

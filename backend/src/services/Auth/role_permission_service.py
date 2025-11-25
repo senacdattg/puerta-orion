@@ -177,9 +177,51 @@ def asegurar_rol_activo_valido(usuario: Usuario, commit: bool = False) -> Option
     """
     Garantiza que el rol activo del usuario cumpla las reglas de visibilidad.
     Si el rol activo actual no es válido, selecciona otro según prioridad.
+    
+    IMPORTANTE: Respeta el rol activo seleccionado por el usuario si está en sus roles asignados,
+    incluso si no está en la lista de roles visibles (para permitir que usuarios con múltiples roles
+    mantengan su selección explícita).
     """
     logger = _get_logger()
     roles_visibles = filtrar_roles_visibles(usuario)
+    
+    # Obtener todos los roles asignados al usuario (no solo los visibles)
+    roles_asignados = obtener_roles_usuario(usuario)
+    
+    active_role_name = usuario.rol_activo.nombre_rol if usuario.rol_activo else None
+    
+    # Normalizar el nombre del rol activo para comparación (case-insensitive)
+    # normalizar_nombre_rol solo hace strip(), así que también convertimos a minúsculas
+    active_role_normalized = normalizar_nombre_rol(active_role_name).lower() if active_role_name else None
+    
+    # Normalizar roles asignados a minúsculas para comparación case-insensitive
+    # roles_asignados ya viene normalizado de obtener_roles_usuario, solo necesitamos lower()
+    roles_asignados_lower = {rol.lower() for rol in roles_asignados}
+    
+    logger.info(
+        f"[asegurar_rol_activo_valido] Usuario {usuario.id_usuario}: "
+        f"rol_activo={active_role_name} (normalizado={active_role_normalized}), "
+        f"roles_asignados={list(roles_asignados)} (normalizados={list(roles_asignados_lower)}), "
+        f"roles_visibles={roles_visibles}"
+    )
+    
+    # Si hay un rol activo y está en los roles asignados del usuario, respetarlo
+    # incluso si no está en roles_visibles (esto permite que usuarios con múltiples roles
+    # mantengan su selección explícita, como "Usuario" cuando también tienen "Deportista")
+    if active_role_normalized and active_role_normalized in roles_asignados_lower:
+        # El rol activo está en los roles asignados, mantenerlo
+        logger.info(
+            f"[asegurar_rol_activo_valido] Usuario {usuario.id_usuario}: "
+            f"✅ MANTENIENDO rol activo '{active_role_name}' (está en roles asignados, aunque no esté en roles_visibles)"
+        )
+        return usuario.rol_activo
+    else:
+        logger.warning(
+            f"[asegurar_rol_activo_valido] Usuario {usuario.id_usuario}: "
+            f"⚠️ Rol activo '{active_role_name}' (normalizado={active_role_normalized}) NO está en roles asignados {list(roles_asignados_lower)}"
+        )
+    
+    # Si no hay roles visibles, limpiar el rol activo
     if not roles_visibles:
         usuario.set_rol_activo(None)
         if commit:
@@ -187,22 +229,20 @@ def asegurar_rol_activo_valido(usuario: Usuario, commit: bool = False) -> Option
             db.session.commit()
         return None
 
-    active_role_name = usuario.rol_activo.nombre_rol if usuario.rol_activo else None
-    if active_role_name in roles_visibles:
-        return usuario.rol_activo
-
+    # Si el rol activo no está en los roles asignados, seleccionar el primero de roles_visibles
     target_role_name = roles_visibles[0]
     nuevo_rol = next(
         (rol for rol in usuario.roles if rol.nombre_rol == target_role_name),
         None
     )
-    usuario.set_rol_activo(nuevo_rol)
-    logger.info(
-        f"Rol activo ajustado automáticamente para usuario {usuario.id_usuario}: {target_role_name}"
-    )
-    if commit:
-        from src.models.base import db
-        db.session.commit()
+    if nuevo_rol:
+        usuario.set_rol_activo(nuevo_rol)
+        logger.info(
+            f"Rol activo ajustado automáticamente para usuario {usuario.id_usuario}: {target_role_name}"
+        )
+        if commit:
+            from src.models.base import db
+            db.session.commit()
     return nuevo_rol
 
 

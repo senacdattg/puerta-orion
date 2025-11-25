@@ -448,9 +448,28 @@ async function verificarToken(authStore) {
 }
 
 // Función auxiliar para refrescar opciones de rol si es necesario
+// Solo refrescar si no hay rolesSelector Y no hay rol activo guardado
+// Esto evita sobrescribir el rol activo que el usuario seleccionó explícitamente
 async function refrescarOpcionesRol(authStore, isAuthenticated) {
   if (isAuthenticated && !Object.keys(authStore.rolesSelector || {}).length) {
+    const tieneRolActivo = authStore.activeRole || localStorage.getItem('activeRole')
+    if (tieneRolActivo) {
+      console.log(`🔄 [router] Hay rol activo guardado (${tieneRolActivo}), refrescando opciones pero manteniendo el rol`)
+    }
     await authStore.refreshRoleOptions?.()
+    // Verificar si el refresh cambió el rol y restaurarlo si es necesario
+    if (tieneRolActivo && authStore.activeRole !== tieneRolActivo) {
+      const rolesUsuario = authStore.user?.roles || []
+      const nombresRoles = rolesUsuario.map(r => {
+        if (typeof r === 'string') return r
+        if (r.nombre_rol) return r.nombre_rol
+        return String(r)
+      })
+      if (nombresRoles.some(r => r === tieneRolActivo || r.toLowerCase() === tieneRolActivo.toLowerCase())) {
+        console.log(`🔄 [router] Restaurando rol activo después de refresh: ${tieneRolActivo}`)
+        await authStore.setActiveRole?.(tieneRolActivo)
+      }
+    }
   }
 }
 

@@ -7,6 +7,7 @@ import { watch, onUnmounted } from 'vue';
  */
 export function useModalScrollLock(mostrar) {
   let scrollPosition = 0;
+  let originalScrollBehavior = '';
 
   // Bloquear scroll del body cuando el modal está abierto
   watch(mostrar, (nuevoValor) => {
@@ -14,18 +15,42 @@ export function useModalScrollLock(mostrar) {
       // Guardar la posición actual del scroll
       scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
+      // Guardar el comportamiento de scroll original
+      originalScrollBehavior = document.documentElement.style.scrollBehavior || window.getComputedStyle(document.documentElement).scrollBehavior;
+
       // Aplicar la posición guardada al body antes de fijarlo
       document.body.style.top = `-${scrollPosition}px`;
       document.body.classList.add('modal-open');
       document.documentElement.classList.add('modal-open');
     } else {
+      // Desactivar temporalmente scroll-behavior: smooth para evitar animación
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.scrollBehavior = 'auto';
+
       // Remover las clases y estilos
       document.body.classList.remove('modal-open');
       document.documentElement.classList.remove('modal-open');
       document.body.style.top = '';
 
-      // Restaurar la posición del scroll
-      window.scrollTo(0, scrollPosition);
+      // Restaurar la posición del scroll sin animación usando requestAnimationFrame
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: scrollPosition,
+          left: 0,
+          behavior: 'auto'
+        });
+
+        // Restaurar el comportamiento de scroll original después de restaurar la posición
+        requestAnimationFrame(() => {
+          if (originalScrollBehavior) {
+            document.documentElement.style.scrollBehavior = originalScrollBehavior;
+            document.body.style.scrollBehavior = originalScrollBehavior;
+          } else {
+            document.documentElement.style.scrollBehavior = '';
+            document.body.style.scrollBehavior = '';
+          }
+        });
+      });
     }
   });
 
@@ -34,6 +59,8 @@ export function useModalScrollLock(mostrar) {
     document.body.classList.remove('modal-open');
     document.documentElement.classList.remove('modal-open');
     document.body.style.top = '';
+    document.documentElement.style.scrollBehavior = '';
+    document.body.style.scrollBehavior = '';
   });
 }
 
