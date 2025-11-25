@@ -58,8 +58,9 @@
           <div v-else class="perfil-editar">
             <form @submit.prevent="guardarCambios" class="form-editar">
               <div class="form-group">
-                <label>Correo electrónico:</label>
+                <label for="correo-electronico-modal">Correo electrónico:</label>
                 <input
+                  id="correo-electronico-modal"
                   type="email"
                   v-model="formData.correo_electronico"
                   class="form-control"
@@ -67,16 +68,18 @@
                 />
               </div>
               <div class="form-group">
-                <label>Teléfono:</label>
+                <label for="telefono-modal">Teléfono:</label>
                 <input
+                  id="telefono-modal"
                   type="tel"
                   v-model="formData.telefono"
                   class="form-control"
                 />
               </div>
               <div class="form-group">
-                <label>Dirección:</label>
+                <label for="direccion-modal">Dirección:</label>
                 <textarea
+                  id="direccion-modal"
                   v-model="formData.direccion"
                   class="form-control"
                   rows="3"

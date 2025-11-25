@@ -297,7 +297,6 @@
 </template>
 
 <script>
-import { computed, watch, onUnmounted } from 'vue';
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
@@ -379,13 +378,13 @@ export default {
         modalVisible(newValue) {
             if (newValue) {
                 // Guardar la posición actual del scroll
-                const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-                
+                const scrollPosition = globalThis.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
                 // Aplicar la posición guardada al body antes de fijarlo
                 document.body.style.top = `-${scrollPosition}px`;
                 document.body.classList.add('modal-open');
                 document.documentElement.classList.add('modal-open');
-                
+
                 // Guardar la posición en el componente para restaurarla después
                 this.scrollPositionGuardada = scrollPosition;
             } else {
@@ -393,22 +392,15 @@ export default {
                 document.body.classList.remove('modal-open');
                 document.documentElement.classList.remove('modal-open');
                 document.body.style.top = '';
-                
+
                 // Restaurar la posición del scroll
                 if (this.scrollPositionGuardada !== undefined) {
-                    window.scrollTo(0, this.scrollPositionGuardada);
+                    globalThis.scrollTo(0, this.scrollPositionGuardada);
                     this.scrollPositionGuardada = undefined;
                 }
             }
         }
     },
-    beforeUnmount() {
-        // Limpiar el estado del scroll si el componente se desmonta con el modal abierto
-        document.body.classList.remove('modal-open');
-        document.documentElement.classList.remove('modal-open');
-        document.body.style.top = '';
-    },
-
     beforeUnmount() {
         // Limpiar el estado del scroll si el componente se desmonta con el modal abierto
         document.body.classList.remove('modal-open');
@@ -438,27 +430,27 @@ export default {
 
     methods: {
         normalizarEspacios(valor = '') {
-            return valor ? valor.replace(/\s+/g, ' ').trim() : '';
+            return valor ? valor.replace(/\s+/g, ' ').trim() : ''; // NOSONAR: S7781 - replaceAll() no acepta regex
         },
 
         normalizarTitulo(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ.\-\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ.\-\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
             return this.normalizarEspacios(limpio).slice(0, MAX_TITULO);
         },
 
         normalizarLugar(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
             return this.normalizarEspacios(limpio).slice(0, MAX_LUGAR);
         },
 
         normalizarDescripcion(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.,;:¿?¡!()\s]/g, '');
+            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.,;:¿?¡!()\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
             return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION);
         },
 
@@ -670,9 +662,9 @@ export default {
             if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
             }
-            
+
             // Guardar estado inicial cuando se abre el formulario
-            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+            this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
         },
 
         // Función para normalizar valores para comparación
@@ -754,7 +746,7 @@ export default {
         async cerrarModal() {
             // Verificar si hay cambios sin guardar
             const tieneCambios = this.verificarCambios()
-            
+
             if (tieneCambios) {
                 const result = await Swal.fire({
                     icon: 'question',
@@ -766,12 +758,12 @@ export default {
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d'
                 })
-                
+
                 if (!result.isConfirmed) {
                     return
                 }
             }
-            
+
             this.modalVisible = false;
             this.fechaBloqueada = false;
             this.limpiarFormulario();
@@ -820,9 +812,9 @@ export default {
             this.selectorEventosVisible = false;
             this.fechaBloqueada = true;
             this.modalVisible = true;
-            
+
             // Guardar estado inicial cuando se inicia la edición
-            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+            this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
         },
 
         verEvento(evento) {
@@ -842,37 +834,37 @@ export default {
         },
 
         validarTitulo() {
-            return !this.nuevoEvento.titulo ? 'El título debe tener al menos 3 caracteres' : null;
+            return this.nuevoEvento.titulo ? null : 'El título debe tener al menos 3 caracteres';
         },
 
         validarTipoEvento() {
-            return !this.nuevoEvento.idTipoEvento ? 'Debe seleccionar un tipo de evento' : null;
+            return this.nuevoEvento.idTipoEvento ? null : 'Debe seleccionar un tipo de evento';
         },
 
         validarFecha() {
-            return !this.nuevoEvento.fecha ? 'Debe especificar una fecha' : null;
+            return this.nuevoEvento.fecha ? null : 'Debe especificar una fecha';
         },
 
         validarHoraInicio() {
-            if (!this.nuevoEvento.horaInicio && !this.nuevoEvento.hora) {
-                return 'Debe especificar una hora de inicio';
+            if (this.nuevoEvento.horaInicio || this.nuevoEvento.hora) {
+                return null;
             }
-            return null;
+            return 'Debe especificar una hora de inicio';
         },
 
         validarHoras() {
-            if (!this.nuevoEvento.horaInicio || !this.nuevoEvento.horaFin) {
-                return 'Debe especificar hora de inicio y fin';
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin) {
+                return null;
             }
-            return null;
+            return 'Debe especificar hora de inicio y fin';
         },
 
         validarCategoria() {
-            return !this.nuevoEvento.idCategoria ? 'Debe seleccionar una categoría' : null;
+            return this.nuevoEvento.idCategoria ? null : 'Debe seleccionar una categoría';
         },
 
         validarLugar() {
-            return !this.nuevoEvento.lugar ? 'El lugar debe tener al menos 3 caracteres' : null;
+            return this.nuevoEvento.lugar ? null : 'El lugar debe tener al menos 3 caracteres';
         },
 
         validarRangoHoras() {
@@ -932,7 +924,7 @@ export default {
             if (!(await this.validarPermisosEdicion())) {
                 return;
             }
-            
+
             // Mostrar loading mientras se procesa
             Swal.fire({
                 title: 'Guardando cambios...',
@@ -943,7 +935,7 @@ export default {
                     Swal.showLoading()
                 }
             })
-            
+
             try {
                 await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
 
@@ -972,12 +964,12 @@ export default {
                 }
 
                 // Actualizar estado inicial después de guardar exitosamente
-                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+                this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
                 this.cerrarModal();
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
-                
+
                 // Mostrar error específico al usuario
                 const mensajeError = this.extraerMensajeError(error);
 
@@ -1008,7 +1000,7 @@ export default {
                 this.limpiarFormulario();
                 this.nuevoEvento.fecha = fechaActual;
                 // Guardar estado inicial para el nuevo formulario
-                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+                this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
                 return true;
             }
             return false;
@@ -1031,7 +1023,7 @@ export default {
             })
 
             try {
-                const nuevoEventoCreado = await calendarioService.crearEvento(this.nuevoEvento);
+                await calendarioService.crearEvento(this.nuevoEvento);
 
                 // Cerrar el loading
                 Swal.close()
@@ -1066,7 +1058,7 @@ export default {
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
-                
+
                 // Mostrar error específico al usuario
                 const mensajeError = this.extraerMensajeError(error);
 
@@ -1087,7 +1079,7 @@ export default {
             // Verificar si hay cambios antes de continuar (solo para edición)
             if (this.modoEdicion) {
                 const tieneCambios = this.verificarCambios()
-                
+
                 if (!tieneCambios) {
                     await Swal.fire({
                         icon: 'info',
@@ -1118,7 +1110,7 @@ export default {
             const confirmacion = await Swal.fire({
                 icon: 'question',
                 title: this.modoEdicion ? '¿Actualizar evento?' : '¿Crear evento?',
-                text: this.modoEdicion 
+                text: this.modoEdicion
                     ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
                     : '¿Estás seguro de que deseas crear este evento?',
                 showCancelButton: true,

@@ -136,14 +136,14 @@ const rolesDisponibles = computed(() => {
 })
 
 // Lista de roles válidos para validación
-const ROLES_VALIDOS = ['Deportista', 'Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin', 'Usuario', 'usuario']
+const ROLES_VALIDOS = new Set(['Deportista', 'Acudiente', 'Entrenador', 'Administrador', 'SuperAdmin', 'Usuario', 'usuario'])
 
 // Función para validar y limpiar el rol guardado
 function validarRol(rol) {
   if (!rol || typeof rol !== 'string') return null
   const rolLimpio = rol.trim()
   // Validar que el rol sea uno de los válidos o esté en la lista de roles válidos
-  if (ROLES_VALIDOS.includes(rolLimpio)) {
+  if (ROLES_VALIDOS.has(rolLimpio)) {
     return rolLimpio
   }
   // Si el rol contiene caracteres corruptos o no es válido, retornar null
@@ -237,19 +237,19 @@ async function cambiarRol(event) {
   console.log('📍 Ruta actual:', router.currentRoute.value.path)
 
   // Redirigir siempre al cambiar de rol al panel de inicio
-  if (router.currentRoute.value.path !== ruta) {
-    try {
-      await router.replace(ruta)
-      console.log('✅ Redirección exitosa a:', ruta)
-    } catch (err) {
-      console.error('❌ Error de navegación:', err)
-      // Si hay un error de navegación, forzar navegación
-      window.location.href = ruta
-    }
-  } else {
+  if (router.currentRoute.value.path === ruta) {
     console.log('ℹ️ Ya estamos en /home, recargando la página para actualizar el contexto del rol')
     // Si ya estamos en /home, forzar recarga para actualizar el contexto
-    window.location.reload()
+    globalThis.location.reload()
+    return;
+  }
+  try {
+    await router.replace(ruta)
+    console.log('✅ Redirección exitosa a:', ruta)
+  } catch (err) {
+    console.error('❌ Error de navegación:', err)
+    // Si hay un error de navegación, forzar navegación
+    globalThis.location.href = ruta
   }
 }
 

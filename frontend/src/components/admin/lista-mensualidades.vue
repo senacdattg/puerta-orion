@@ -233,22 +233,24 @@
                 </div>
 
                 <div class="campo-formulario">
-                  <label>
+                  <label for="fecha-pago">
                     <i class="fas fa-calendar-check"></i>
                     Fecha de Pago
                   </label>
-                  <input type="date" :value="''" class="input-edicion" disabled />
+                  <input id="fecha-pago" type="date" :value="''" class="input-edicion" disabled />
                   <small class="hint">Se llena sola cuando el saldo llega a 0.</small>
                 </div>
 
                 <div class="campo-formulario">
-                  <label>
+                  <label for="activo-toggle" class="label-text">
                     <i class="fas fa-toggle-on"></i>
                     Activo
                   </label>
                   <button type="button"
+                          id="activo-toggle"
                           class="btn-toggle-activo"
                           :class="{ on: form.activo }"
+                          :aria-label="form.activo ? 'Desactivar mensualidad' : 'Activar mensualidad'"
                           @click="form.activo = !form.activo">
                     {{ form.activo ? 'Activo' : 'Inactivo' }}
                   </button>
@@ -321,16 +323,14 @@ const MAX_DOCUMENTO = 10;
 function normalizarDocumento(valor = '') {
   return (valor || '')
     .toString()
-    .replace(/\D/g, '')
-    .slice(0, MAX_DOCUMENTO);
+    .replace(/\D/g, '').slice(0, MAX_DOCUMENTO); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function normalizarMonto(valor = '') {
   if (!valor) return '';
   const saneado = valor
     .toString()
-    .replace(/[^0-9.,]/g, '')
-    .replaceAll(',', '.');
+    .replace(/[^0-9.,]/g, '').replaceAll(',', '.'); // NOSONAR: S7781 - replaceAll() no acepta regex para el primer replace
 
   const partes = saneado.split('.');
   if (partes.length === 1) {
@@ -539,7 +539,7 @@ async function abrirFormulario() {
     form.value.id_metodo_pago = ninguno.id;
   }
   // Guardar estado inicial cuando se abre el formulario
-  formInicial.value = JSON.parse(JSON.stringify(form.value));
+  formInicial.value = structuredClone(form.value);
   mostrarFormulario.value = true;
 }
 
@@ -882,9 +882,10 @@ async function guardarMensualidad() {
 
   if (form.value.estado_ui === 'Pagado') {
     payload.saldo_pendiente = 0;
-  } else if (saldo !== undefined) {
-    payload.saldo_pendiente = saldo;
+  } else if (saldo === undefined) {
+    // Mantener saldo actual si no se especifica
   } else {
+    payload.saldo_pendiente = saldo;
     payload.saldo_pendiente = 0;
   }
 

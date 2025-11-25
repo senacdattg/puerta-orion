@@ -160,18 +160,18 @@ const userRole = computed(() => {
 
   // Obtener el primer rol del usuario (o el más relevante)
   const roles = authStore.user.roles
-  const roleNames = roles.map(role =>
+  const roleNames = new Set(roles.map(role =>
     typeof role === 'string' ? role : role.nombre_rol
-  )
+  ))
 
   // Priorizar roles en orden de importancia (solo si no hay rol activo)
-  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) {
+  if (roleNames.has('SuperAdmin') || roleNames.has('Administrador')) {
     return 'Admin'
-  } else if (roleNames.includes('Entrenador')) {
+  } else if (roleNames.has('Entrenador')) {
     return 'Entrenador'
-  } else if (roleNames.includes('Deportista')) {
+  } else if (roleNames.has('Deportista')) {
     return 'Deportista'
-  } else if (roleNames.includes('Acudiente')) {
+  } else if (roleNames.has('Acudiente')) {
     return 'Acudiente'
   } else if (roleNames.includes('usuario')) {
     return 'Usuario'
@@ -373,7 +373,7 @@ function cargarOpciones() {
 
 async function checkMobile() {
   const wasMobile = isMobile.value
-  isMobile.value = window.innerWidth < 768
+  isMobile.value = globalThis.innerWidth < 768
   // En móvil: menú cerrado por defecto. En desktop: abierto por defecto
   if (!props.sinMenu) {
     const shouldBeOpen = !isMobile.value
@@ -483,26 +483,27 @@ async function cerrarSesion() {
 
 // Ciclo de vida
 onMounted(async () => {
-  if (!props.sinMenu) {
-    checkMobile()
-    cargarOpciones()
-    // Asegurar que los offsets se aplican después de que el estado inicial se establezca
-    await nextTick()
-    applyLayoutOffsets()
+  document.addEventListener("click", handleOutsideClick)
 
-    document.addEventListener("click", handleOutsideClick)
-    window.addEventListener("resize", async () => {
-      checkMobile()
-      // Aplicar offsets después de resize también
-      await nextTick()
-      applyLayoutOffsets()
-    })
-  } else {
-    document.addEventListener("click", handleOutsideClick)
+  if (props.sinMenu) {
     // Incluso sin menú, aplicar el offset del header
     await nextTick()
     applyLayoutOffsets()
+    return
   }
+
+  checkMobile()
+  cargarOpciones()
+  // Asegurar que los offsets se aplican después de que el estado inicial se establezca
+  await nextTick()
+  applyLayoutOffsets()
+
+  globalThis.addEventListener("resize", async () => {
+    checkMobile()
+    // Aplicar offsets después de resize también
+    await nextTick()
+    applyLayoutOffsets()
+  })
 })
 
 // Aplicar offsets después de cada actualización del componente
@@ -520,7 +521,7 @@ onBeforeUnmount(() => {
     clearTimeout(hoverTimeout.value)
   }
   if (!props.sinMenu) {
-    window.removeEventListener("resize", checkMobile)
+    globalThis.removeEventListener("resize", checkMobile)
   }
 })
 

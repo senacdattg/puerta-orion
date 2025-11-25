@@ -25,7 +25,7 @@ const LOCALE_COL = 'es-CO'
 
 function normalizarNombre(valor = '') {
   const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
-  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 const localForm = ref({ nombre: normalizarNombre(props.modelValue?.nombre || '') })

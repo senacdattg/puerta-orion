@@ -171,22 +171,22 @@ watch(() => props.dato, async (nuevoDato) => {
   // Agregar campos adicionales según el tipo
   if (props.tema === 'eps') {
     datosIniciales.codigo = nuevoDato.codigo_eps || ''
-    datosIniciales.estado = nuevoDato.estado !== undefined ? Boolean(nuevoDato.estado) : true
+    datosIniciales.estado = nuevoDato.estado === undefined ? true : Boolean(nuevoDato.estado)
   } else if (props.tema === 'metodo-pago') {
-    datosIniciales.estado = nuevoDato.estado !== undefined ? Boolean(nuevoDato.estado) : true
+    datosIniciales.estado = nuevoDato.estado === undefined ? true : Boolean(nuevoDato.estado)
   } else if (props.tema === 'tipo-evento') {
     datosIniciales.descripcion = nuevoDato.descripcion || ''
   }
 
   formData.value = { ...datosIniciales }
-  
+
   // Esperar a que el componente hijo normalice los valores antes de guardar los iniciales
   // Usar nextTick para asegurar que el componente hijo haya procesado los valores
   await nextTick()
   // Esperar un momento adicional para que la normalización del componente hijo se complete
   setTimeout(() => {
     // Guardar los valores normalizados que vienen del componente hijo
-    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+    formDataInicial.value = structuredClone(formData.value)
   }, 150)
 }, { immediate: true, deep: true })
 
@@ -206,12 +206,12 @@ function verificarCambios() {
   if (props.tema === 'eps') {
     const codigoInicial = normalizarValorParaComparacion(formDataInicial.value.codigo)
     const codigoActual = normalizarValorParaComparacion(formData.value.codigo)
-    
+
     // Comparar código normalizado
     if (codigoInicial !== codigoActual) {
       return true
     }
-    
+
     // Comparar estado (convertir a boolean para comparación estricta)
     const estadoInicial = Boolean(formDataInicial.value.estado)
     const estadoActual = Boolean(formData.value.estado)
@@ -238,7 +238,7 @@ function verificarCambios() {
 async function cerrar() {
   // Verificar si hay cambios sin guardar
   const tieneCambios = verificarCambios()
-  
+
   if (tieneCambios) {
     const result = await Swal.fire({
       icon: 'question',
@@ -250,12 +250,12 @@ async function cerrar() {
       confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d'
     })
-    
+
     if (!result.isConfirmed) {
       return
     }
   }
-  
+
   formData.value = {}
   formDataInicial.value = {}
   emit('cerrar')
@@ -263,9 +263,8 @@ async function cerrar() {
 
 // Función para sanitizar datos igual que en crear
 function prepararDatosPorEntidad() {
-  const campoNombre = camposNombre[props.tema]
   const nombre = formData.value.nombre?.trim() || ''
-  
+
   const mapeoCampos = {
     'tipo-documento': { nombre_documento: nombre },
     'sexo': { nombre: nombre },
@@ -279,7 +278,7 @@ function prepararDatosPorEntidad() {
   if (props.tema === 'metodo-pago') {
     return {
       nombre_metodo: nombre,
-      estado: formData.value.estado !== undefined ? formData.value.estado : true
+      estado: formData.value.estado === undefined ? true : formData.value.estado
     }
   }
 
@@ -288,7 +287,7 @@ function prepararDatosPorEntidad() {
     if (formData.value.codigo) {
       datos.codigo_eps = formData.value.codigo.trim()
     }
-    datos.estado = formData.value.estado !== undefined ? formData.value.estado : true
+    datos.estado = formData.value.estado ?? true
     return datos
   }
 
@@ -306,7 +305,7 @@ function prepararDatosPorEntidad() {
 async function guardar() {
   // Verificar si hay cambios antes de continuar
   const tieneCambios = verificarCambios()
-  
+
   if (!tieneCambios) {
     await Swal.fire({
       icon: 'info',
@@ -398,7 +397,7 @@ async function guardar() {
       } catch {
         // Si no es JSON, usar el mensaje por defecto
       }
-      
+
       const mensajeError = extraerMensajeErrorDato(errorMessage)
       await Swal.fire({
         icon: 'error',
@@ -414,8 +413,8 @@ async function guardar() {
 
     if (result.success) {
       // Actualizar datos iniciales con los nuevos datos guardados
-      formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
-      
+      formDataInicial.value = structuredClone(formData.value)
+
       // Éxito: mostrar notificación de confirmación
       await Swal.fire({
         icon: 'success',
@@ -439,10 +438,10 @@ async function guardar() {
   } catch (error) {
     // Cerrar el loading si aún está abierto
     Swal.close()
-    
+
     console.error('Error al guardar:', error)
     const mensajeError = extraerMensajeErrorDato(error)
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al guardar',

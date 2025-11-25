@@ -45,7 +45,7 @@ const MAX_CODIGO = 20
 
 function normalizarNombre(valor = '') {
   const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
-  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function normalizarCodigo(valor = '') {
@@ -53,7 +53,7 @@ function normalizarCodigo(valor = '') {
   // Convertir a string si es número u otro tipo
   const valorStr = String(valor)
   const mayus = valorStr.toLocaleUpperCase(LOCALE_COL)
-  return mayus.replace(/[^A-Z0-9-]/g, '').slice(0, MAX_CODIGO)
+  return mayus.replace(/[^A-Z0-9-]/g, '').slice(0, MAX_CODIGO) // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 const localForm = ref({

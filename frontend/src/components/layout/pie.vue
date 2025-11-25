@@ -136,9 +136,9 @@ const userRole = computed(() => {
   }
 
   const roles = authStore.user.roles
-  const roleNames = roles.map(role => typeof role === 'string' ? role : role.nombre_rol)
+  const roleNames = new Set(roles.map(role => typeof role === 'string' ? role : role.nombre_rol))
 
-  if (roleNames.includes('SuperAdmin') || roleNames.includes('Administrador')) return 'Admin'
+  if (roleNames.has('SuperAdmin') || roleNames.has('Administrador')) return 'Admin'
   if (roleNames.includes('Entrenador')) return 'Entrenador'
   if (roleNames.includes('Deportista')) return 'Deportista'
   if (roleNames.includes('Acudiente')) return 'Acudiente'

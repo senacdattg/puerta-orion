@@ -172,14 +172,16 @@ const totalUsuarios = computed(() => usuariosPanel.value.length);
 // Contar usuarios por cada rol dinámicamente
 const conteosPorRol = computed(() => {
   const conteos = {};
-  usuariosPanel.value.forEach(usuario => {
-    usuario.roles?.forEach(rol => {
-      if (!conteos[rol.nombre_rol]) {
-        conteos[rol.nombre_rol] = 0;
+  for (const usuario of usuariosPanel.value) {
+    if (usuario.roles) {
+      for (const rol of usuario.roles) {
+        if (!conteos[rol.nombre_rol]) {
+          conteos[rol.nombre_rol] = 0;
+        }
+        conteos[rol.nombre_rol]++;
       }
-      conteos[rol.nombre_rol]++;
-    });
-  });
+    }
+  }
   return conteos;
 });
 
@@ -338,7 +340,7 @@ async function mostrarErrorEntidadNoDisponible(entidad) {
 
 function prepararDatosMetodoPago(nombre, payload) {
   const datos = { nombre_metodo: nombre.trim() }
-  datos.estado = payload.estado !== undefined ? payload.estado : true
+  datos.estado = payload.estado ?? true
   return datos
 }
 
@@ -347,7 +349,7 @@ function prepararDatosEPS(nombre, codigo, payload) {
   if (codigo) {
     datos.codigo_eps = codigo.trim()
   }
-  datos.estado = payload.estado !== undefined ? payload.estado : true
+  datos.estado = payload.estado ?? true
   return datos
 }
 

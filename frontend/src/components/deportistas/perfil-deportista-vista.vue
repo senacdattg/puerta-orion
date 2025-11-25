@@ -21,15 +21,16 @@
         <div class="card-content">
           <div class="info-grid">
             <div class="info-row">
-              <label>Nombre completo:</label>
+              <span class="label-text">Nombre completo:</span>
               <span v-if="!isEditing">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
               <span v-else class="readonly-field">{{ obtenerNombreCompleto() || 'No disponible' }}</span>
             </div>
             <div class="info-row">
-              <label>Primer nombre:</label>
+              <label for="perfil-primer-nombre">Primer nombre:</label>
               <span v-if="!isEditing">{{ datos.persona?.primer_nombre || datos.nombre1 || '—' }}</span>
               <input
                 v-else
+                id="perfil-primer-nombre"
                 v-model="formData.primer_nombre"
                 type="text"
                 class="input-editable"
@@ -38,10 +39,11 @@
               />
             </div>
             <div class="info-row">
-              <label>Segundo nombre:</label>
+              <label for="perfil-segundo-nombre">Segundo nombre:</label>
               <span v-if="!isEditing">{{ datos.persona?.segundo_nombre || datos.nombre2 || '—' }}</span>
               <input
                 v-else
+                id="perfil-segundo-nombre"
                 v-model="formData.segundo_nombre"
                 type="text"
                 class="input-editable"
@@ -50,10 +52,11 @@
               />
             </div>
             <div class="info-row">
-              <label>Primer apellido:</label>
+              <label for="perfil-primer-apellido">Primer apellido:</label>
               <span v-if="!isEditing">{{ datos.persona?.primer_apellido || datos.apellido1 || '—' }}</span>
               <input
                 v-else
+                id="perfil-primer-apellido"
                 v-model="formData.primer_apellido"
                 type="text"
                 class="input-editable"
@@ -62,10 +65,11 @@
               />
             </div>
             <div class="info-row">
-              <label>Segundo apellido:</label>
+              <label for="perfil-segundo-apellido">Segundo apellido:</label>
               <span v-if="!isEditing">{{ datos.persona?.segundo_apellido || datos.apellido2 || '—' }}</span>
               <input
                 v-else
+                id="perfil-segundo-apellido"
                 v-model="formData.segundo_apellido"
                 type="text"
                 class="input-editable"
@@ -74,14 +78,15 @@
               />
             </div>
             <div class="info-row">
-              <label>Tipo de documento:</label>
+              <span class="label-text">Tipo de documento:</span>
               <span>{{ obtenerTipoDocumento() || '—' }}</span>
             </div>
             <div class="info-row">
-              <label>Documento:</label>
+              <label for="perfil-documento">Documento:</label>
               <span v-if="!isEditing">{{ datos.persona?.documento || datos.documento || '—' }}</span>
               <input
                 v-else
+                id="perfil-documento"
                 v-model="formData.documento"
                 type="text"
                 class="input-editable"
@@ -90,10 +95,11 @@
               />
             </div>
             <div class="info-row">
-              <label>Correo electrónico:</label>
+              <label for="perfil-correo">Correo electrónico:</label>
               <span v-if="!isEditing">{{ datos.persona?.correo_electronico || datos.correo || '—' }}</span>
               <input
                 v-else
+                id="perfil-correo"
                 v-model="formData.correo_electronico"
                 type="email"
                 class="input-editable"
@@ -102,10 +108,11 @@
               />
             </div>
             <div class="info-row">
-              <label>Teléfono:</label>
+              <label for="perfil-telefono">Teléfono:</label>
               <span v-if="!isEditing">{{ datos.persona?.telefono || datos.telefono || '—' }}</span>
               <input
                 v-else
+                id="perfil-telefono"
                 v-model="formData.telefono"
                 type="tel"
                 class="input-editable"
@@ -114,10 +121,11 @@
               />
             </div>
             <div class="info-row">
-              <label>Dirección:</label>
+              <label for="perfil-direccion">Dirección:</label>
               <span v-if="!isEditing">{{ datos.persona?.direccion || datos.direccion || '—' }}</span>
               <input
                 v-else
+                id="perfil-direccion"
                 v-model="formData.direccion"
                 type="text"
                 class="input-editable"
@@ -137,24 +145,26 @@
         <div class="card-content">
           <div class="info-grid">
             <div class="info-row">
-              <label>Categoría:</label>
+              <span class="label-text">Categoría:</span>
               <span>{{ obtenerCategoria() || '—' }}</span>
             </div>
             <div class="info-row">
-              <label>Fecha de nacimiento:</label>
+              <label for="perfil-fecha-nacimiento">Fecha de nacimiento:</label>
               <span v-if="!isEditing">{{ formatearFechaNacimiento(fechaNacimiento) || '—' }}</span>
               <input
                 v-else
+                id="perfil-fecha-nacimiento"
                 v-model="formData.fecha_nacimiento"
                 type="date"
                 class="input-editable"
               />
             </div>
             <div class="info-row">
-              <label>Peso:</label>
+              <label for="perfil-peso">Peso:</label>
               <span v-if="!isEditing">{{ datosDeportista.peso !== undefined && datosDeportista.peso !== null ? datosDeportista.peso + ' kg' : '—' }}</span>
               <div v-else class="input-with-unit">
                 <input
+                  id="perfil-peso"
                   v-model="formData.peso"
                   type="number"
                   step="0.1"
@@ -166,10 +176,11 @@
               </div>
             </div>
             <div class="info-row">
-              <label>Altura:</label>
+              <label for="perfil-altura">Altura:</label>
               <span v-if="!isEditing">{{ datosDeportista.altura !== undefined && datosDeportista.altura !== null ? datosDeportista.altura + ' m' : '—' }}</span>
               <div v-else class="input-with-unit">
                 <input
+                  id="perfil-altura"
                   v-model="formData.altura"
                   type="number"
                   step="0.01"
@@ -181,10 +192,11 @@
               </div>
             </div>
             <div class="info-row">
-              <label>Tipo sanguíneo:</label>
+              <label for="perfil-tipo-sanguineo">Tipo sanguíneo:</label>
               <span v-if="!isEditing">{{ obtenerTipoSanguineo() || '—' }}</span>
               <select
                 v-else
+                id="perfil-tipo-sanguineo"
                 v-model="formData.id_tipo_sanguineo"
                 class="input-editable"
                 :disabled="!campoEditable('datos', 'id_tipo_sanguineo')"
@@ -200,10 +212,11 @@
               </select>
             </div>
             <div class="info-row">
-              <label>Ciudad de residencia:</label>
+              <label for="perfil-ciudad-residencia">Ciudad de residencia:</label>
               <span v-if="!isEditing">{{ obtenerCiudad() || '—' }}</span>
               <select
                 v-else
+                id="perfil-ciudad-residencia"
                 v-model="formData.id_ciudad_recidencia"
                 class="input-editable"
                 :disabled="!campoEditable('datos', 'id_ciudad_recidencia')"
@@ -219,10 +232,11 @@
               </select>
             </div>
             <div class="info-row">
-              <label>EPS:</label>
+              <label for="perfil-eps">EPS:</label>
               <span v-if="!isEditing">{{ obtenerEPS() || '—' }}</span>
               <select
                 v-else
+                id="perfil-eps"
                 v-model="formData.id_eps"
                 class="input-editable"
                 :disabled="!campoEditable('datos', 'id_eps')"
@@ -247,10 +261,11 @@
             <h4>⚽ Detalles Deportivos</h4>
             <div class="info-grid">
               <div class="info-row">
-                <label>Deporte principal:</label>
+                <label for="perfil-deporte-principal">Deporte principal:</label>
                 <span v-if="!isEditing">{{ obtenerDeporte() || '—' }}</span>
                 <select
                   v-else
+                  id="perfil-deporte-principal"
                   v-model="formData.id_deporte"
                   class="input-editable"
                   :disabled="!campoEditable('informacion', 'id_deporte')"
@@ -266,7 +281,7 @@
                 </select>
               </div>
               <div class="info-row">
-                <label>Practica otro deporte:</label>
+                <span class="label-text">Practica otro deporte:</span>
                 <span v-if="!isEditing">
                   <span class="badge" :class="datos.informacion_deportiva?.practica_otro_deporte ? 'badge-success' : 'badge-muted'">
                     {{ datos.informacion_deportiva?.practica_otro_deporte !== undefined ? (datos.informacion_deportiva.practica_otro_deporte ? 'Sí' : 'No') : '—' }}
@@ -294,7 +309,7 @@
                 </div>
               </div>
               <div class="info-row">
-                <label>Participa en escuela:</label>
+                <span class="label-text">Participa en escuela:</span>
                 <span v-if="!isEditing">
                   <span class="badge" :class="datos.informacion_deportiva?.participa_escuela ? 'badge-success' : 'badge-muted'">
                     {{ datos.informacion_deportiva?.participa_escuela !== undefined ? (datos.informacion_deportiva.participa_escuela ? 'Sí' : 'No') : '—' }}
@@ -322,10 +337,11 @@
               </div>
               </div>
               <div class="info-row" v-if="isEditing || datos.informacion_deportiva?.participa_escuela">
-                <label>Escuela:</label>
+                <label for="perfil-escuela">Escuela:</label>
                 <span v-if="!isEditing">{{ obtenerEscuela() || '—' }}</span>
                 <select
                   v-else
+                  id="perfil-escuela"
                   v-model="formData.id_escuela"
                   class="input-editable"
                   :disabled="!formData.participa_escuela || !campoEditable('informacion', 'id_escuela')"
@@ -341,10 +357,11 @@
                 </select>
               </div>
               <div class="info-row">
-                <label>Institución de registro:</label>
+                <label for="perfil-institucion-registro">Institución de registro:</label>
                 <span v-if="!isEditing">{{ obtenerInstitucion() || '—' }}</span>
                 <select
                   v-else
+                  id="perfil-institucion-registro"
                   v-model="formData.id_institucion_registro"
                   class="input-editable"
                   :disabled="!campoEditable('informacion', 'id_institucion_registro')"
@@ -360,7 +377,7 @@
                 </select>
               </div>
               <div class="info-row">
-                <label>Recomendación médica:</label>
+                <span class="label-text">Recomendación médica:</span>
                 <span v-if="!isEditing">
                   <span class="badge" :class="datos.informacion_deportiva?.recomendacion_medica ? 'badge-warning' : 'badge-success'">
                     {{ datos.informacion_deportiva?.recomendacion_medica !== undefined ? (datos.informacion_deportiva.recomendacion_medica ? 'Sí' : 'No') : '—' }}
@@ -388,10 +405,11 @@
               </div>
               </div>
               <div class="info-row" v-if="(isEditing && formData.recomendacion_medica) || (!isEditing && datos.informacion_deportiva?.descripcion_recomendacion)">
-                <label>Descripción recomendación:</label>
+                <label for="perfil-descripcion-recomendacion">Descripción recomendación:</label>
                 <span v-if="!isEditing">{{ datos.informacion_deportiva.descripcion_recomendacion || '—' }}</span>
                 <textarea
                   v-else
+                  id="perfil-descripcion-recomendacion"
                   v-model="formData.descripcion_recomendacion"
                   class="input-editable"
                   rows="3"
@@ -415,9 +433,10 @@
           <div class="info-grid">
             <!-- Tipos de Enfermedad -->
             <div class="info-row" v-if="isEditing || (datos.salud?.tipos_enfermedad_ids && datos.salud.tipos_enfermedad_ids.length > 0)">
-              <label>Tipo de enfermedad:</label>
+              <label for="perfil-tipo-enfermedad">Tipo de enfermedad:</label>
               <div v-if="isEditing">
                 <select
+                  id="perfil-tipo-enfermedad"
                   v-model="formData.id_tipo_enfermedad"
                   class="input-editable"
                   :disabled="!campoEditable('salud', 'id_tipo_enfermedad')"
@@ -447,7 +466,7 @@
 
             <!-- Diagnósticos -->
             <div class="info-row">
-              <label>Diagnósticos:</label>
+              <span class="label-text">Diagnósticos:</span>
               <template v-if="isEditing">
                 <div class="diagnosticos-editor">
                   <template v-if="diagnosticosDisponibles.length > 0">
@@ -585,7 +604,7 @@ function transformarMayusculas(valor = '') {
 // Función para sanitizar nombres (igual que en formulario-general.vue)
 function sanitizarNombre(valor = '', obligatorio = true) {
   const mayus = transformarMayusculas(valor);
-  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ');
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' '); // NOSONAR: S7781 - replaceAll() no acepta regex
   if (!obligatorio && !limpio.trim()) {
     return '';
   }
@@ -595,7 +614,7 @@ function sanitizarNombre(valor = '', obligatorio = true) {
 // Función para sanitizar dirección (igual que en formulario-general.vue)
 function sanitizarDireccion(valor = '') {
   const mayus = transformarMayusculas(valor);
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart();
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart(); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 // Handlers para validación en tiempo real (igual que en formulario-general.vue)
@@ -614,7 +633,7 @@ function manejarEntradaNombre(campo, event, obligatorio = true) {
 function manejarDocumento(event) {
   if (!event || !event.target) return;
   const valor = event.target.value || '';
-  const digitos = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO);
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO); // NOSONAR: S7781 - replaceAll() no acepta regex
   formData.value.documento = digitos;
   // Asegurar que el input también muestre el valor sanitizado
   if (event.target.value !== digitos) {
@@ -625,7 +644,7 @@ function manejarDocumento(event) {
 function manejarTelefono(event) {
   if (!event || !event.target) return;
   const valor = event.target.value || '';
-  const digitos = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO);
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO); // NOSONAR: S7781 - replaceAll() no acepta regex
   formData.value.telefono = digitos;
   // Asegurar que el input también muestre el valor sanitizado
   if (event.target.value !== digitos) {
@@ -725,7 +744,7 @@ watch(
     formData.value = crearEstadoInicial(nuevo);
     // Si no estamos editando, actualizar también el estado inicial
     if (!isEditing.value) {
-      formDataInicial.value = JSON.parse(JSON.stringify(formData.value));
+      formDataInicial.value = structuredClone(formData.value);
     }
   },
   { immediate: true }
@@ -758,11 +777,7 @@ watch(
     if (!campoEditable('informacion', 'recomendacion_medica')) {
       return;
     }
-    if (!nuevo) {
-      formData.value.descripcion_recomendacion = '';
-      formData.value.id_tipo_enfermedad = null;
-      formData.value.diagnosticos = [];
-    } else {
+    if (nuevo) {
       if (!formData.value.id_tipo_enfermedad && catalogos.value.tiposEnfermedad.length > 0) {
         formData.value.id_tipo_enfermedad = catalogos.value.tiposEnfermedad[0].id_tipo_enfermedad ?? catalogos.value.tiposEnfermedad[0].id ?? null;
       }
@@ -780,8 +795,8 @@ watch(
       formData.value.diagnosticos = [];
       return;
     }
-    const disponibles = diagnosticosDisponibles.value.map(diag => diag.id_diagnostico ?? diag.id);
-    formData.value.diagnosticos = (formData.value.diagnosticos || []).filter(id => disponibles.includes(id));
+    const disponibles = new Set(diagnosticosDisponibles.value.map(diag => diag.id_diagnostico ?? diag.id));
+    formData.value.diagnosticos = (formData.value.diagnosticos || []).filter(id => disponibles.has(id));
   }
 );
 
@@ -804,9 +819,9 @@ function crearEstadoInicial(origen = null) {
     segundo_nombre: sanitizarNombre(persona.segundo_nombre || datos.nombre2 || '', false),
     primer_apellido: sanitizarNombre(persona.primer_apellido || datos.apellido1 || ''),
     segundo_apellido: sanitizarNombre(persona.segundo_apellido || datos.apellido2 || '', false),
-    documento: (persona.documento || datos.documento || '').replace(/\D/g, ''),
+    documento: (persona.documento || datos.documento || '').replace(/\D/g, ''), // NOSONAR: S7781 - replaceAll() no acepta regex
     correo_electronico: (persona.correo_electronico || datos.correo || '').trim().toLowerCase(),
-    telefono: (persona.telefono || datos.telefono || '').replace(/\D/g, ''),
+    telefono: (persona.telefono || datos.telefono || '').replace(/\D/g, ''), // NOSONAR: S7781 - replaceAll() no acepta regex
     direccion: sanitizarDireccion(persona.direccion || datos.direccion || ''),
     fecha_nacimiento: normalizarFechaParaInput(
       persona.fecha_nacimiento ||
@@ -831,7 +846,7 @@ function crearEstadoInicial(origen = null) {
     diagnosticos: diagnosticosSalud
       .map(item => item?.id_diagnostico)
       .filter(id => id !== undefined && id !== null)
-      .map(id => Number(id))
+      .map(Number)
   };
 }
 
@@ -912,28 +927,28 @@ function limpiarTexto(valor) {
 
 function convertirEntero(valor) {
   if (valor === null || valor === undefined || valor === '') return null;
-  const numero = parseInt(valor, 10);
+  const numero = Number.parseInt(valor, 10);
   return Number.isNaN(numero) ? null : numero;
 }
 
 function convertirDecimal(valor) {
   if (valor === null || valor === undefined || valor === '') return null;
-  const numero = parseFloat(String(valor).replace(',', '.'));
+  const numero = Number.parseFloat(String(valor).replace(',', '.'));
   return Number.isNaN(numero) ? null : numero;
 }
 
 function limpiarObjeto(obj, opciones = {}) {
   const resultado = {};
   const mantenerBooleanos = opciones.mantenerBooleanos ?? false;
-  Object.entries(obj).forEach(([clave, valor]) => {
+  for (const [clave, valor] of Object.entries(obj)) {
     if (mantenerBooleanos && typeof valor === 'boolean') {
       resultado[clave] = valor;
-      return;
+      continue;
     }
     if (valor !== null && valor !== undefined && valor !== '') {
       resultado[clave] = valor;
     }
-  });
+  }
   return resultado;
 }
 
@@ -945,11 +960,11 @@ function filtrarCamposPermitidos(payload, tipo, opciones = {}) {
   }
 
   const filtrado = {};
-  permisos.forEach(campo => {
+  for (const campo of permisos) {
     if (campo in payload) {
       filtrado[campo] = payload[campo];
     }
-  });
+  }
 
   return limpiarObjeto(filtrado, opciones);
 }
@@ -1047,14 +1062,14 @@ function extraerMensajeError(error) {
 function iniciarEdicion() {
   inicializarFormulario()
   // Guardar estado inicial cuando se inicia la edición
-  formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+  formDataInicial.value = structuredClone(formData.value)
   emit('editar')
 }
 
 async function cancelarEdicion() {
   // Verificar si hay cambios sin guardar
   const tieneCambios = verificarCambios()
-  
+
   if (tieneCambios) {
     const result = await Swal.fire({
       icon: 'question',
@@ -1066,12 +1081,12 @@ async function cancelarEdicion() {
       confirmButtonColor: '#dc3545',
       cancelButtonColor: '#6c757d'
     })
-    
+
     if (!result.isConfirmed) {
       return
     }
   }
-  
+
   inicializarFormulario()
   formDataInicial.value = null
   emit('cancelar')
@@ -1089,55 +1104,56 @@ async function validarIdentificadores() {
   return true;
 }
 
+// Funciones helper para validaciones
+function validarNombre(campo, etiqueta, errores) {
+  if (!campoEditable('persona', campo) || !formData.value[campo]) {
+    return;
+  }
+  if (!REGEX_NOMBRE.test(formData.value[campo])) {
+    errores.push(`El ${etiqueta} solo debe contener letras y espacios`);
+  }
+}
+
+function validarCorreo(errores) {
+  if (!formData.value.correo_electronico) {
+    return;
+  }
+  if (!REGEX_CORREO.test(formData.value.correo_electronico)) {
+    errores.push('Ingrese un correo electrónico válido');
+  }
+}
+
+function validarTelefono(errores) {
+  if (!campoEditable('persona', 'telefono') || !formData.value.telefono) {
+    return;
+  }
+  const telefonoLimpio = formData.value.telefono.replace(/\D/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
+  if (telefonoLimpio.length < MIN_TELEFONO || telefonoLimpio.length > MAX_TELEFONO) {
+    errores.push(`El teléfono debe tener entre ${MIN_TELEFONO} y ${MAX_TELEFONO} dígitos`);
+  }
+}
+
+function validarDocumento(errores) {
+  if (!campoEditable('persona', 'documento') || !formData.value.documento) {
+    return;
+  }
+  const documentoLimpio = formData.value.documento.replace(/\D/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
+  if (documentoLimpio.length < MIN_DOCUMENTO || documentoLimpio.length > MAX_DOCUMENTO) {
+    errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
+  }
+}
+
 // Función para validar formulario antes de guardar
 function validarFormulario() {
   const errores = [];
 
-  // Validar nombres obligatorios
-  if (campoEditable('persona', 'primer_nombre') && formData.value.primer_nombre) {
-    if (!REGEX_NOMBRE.test(formData.value.primer_nombre)) {
-      errores.push('El primer nombre solo debe contener letras y espacios');
-    }
-  }
-
-  if (campoEditable('persona', 'primer_apellido') && formData.value.primer_apellido) {
-    if (!REGEX_NOMBRE.test(formData.value.primer_apellido)) {
-      errores.push('El primer apellido solo debe contener letras y espacios');
-    }
-  }
-
-  if (campoEditable('persona', 'segundo_nombre') && formData.value.segundo_nombre) {
-    if (formData.value.segundo_nombre && !REGEX_NOMBRE.test(formData.value.segundo_nombre)) {
-      errores.push('El segundo nombre solo debe contener letras y espacios');
-    }
-  }
-
-  if (campoEditable('persona', 'segundo_apellido') && formData.value.segundo_apellido) {
-    if (formData.value.segundo_apellido && !REGEX_NOMBRE.test(formData.value.segundo_apellido)) {
-      errores.push('El segundo apellido solo debe contener letras y espacios');
-    }
-  }
-
-  // Validar correo electrónico
-  if (formData.value.correo_electronico && !REGEX_CORREO.test(formData.value.correo_electronico)) {
-    errores.push('Ingrese un correo electrónico válido');
-  }
-
-  // Validar teléfono (solo números y longitud)
-  if (campoEditable('persona', 'telefono') && formData.value.telefono) {
-    const telefonoLimpio = formData.value.telefono.replace(/\D/g, '');
-    if (telefonoLimpio.length < MIN_TELEFONO || telefonoLimpio.length > MAX_TELEFONO) {
-      errores.push(`El teléfono debe tener entre ${MIN_TELEFONO} y ${MAX_TELEFONO} dígitos`);
-    }
-  }
-
-  // Validar documento (solo números y longitud) - solo si se puede editar
-  if (campoEditable('persona', 'documento') && formData.value.documento) {
-    const documentoLimpio = formData.value.documento.replace(/\D/g, '');
-    if (documentoLimpio.length < MIN_DOCUMENTO || documentoLimpio.length > MAX_DOCUMENTO) {
-      errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`);
-    }
-  }
+  validarNombre('primer_nombre', 'primer nombre', errores);
+  validarNombre('primer_apellido', 'primer apellido', errores);
+  validarNombre('segundo_nombre', 'segundo nombre', errores);
+  validarNombre('segundo_apellido', 'segundo apellido', errores);
+  validarCorreo(errores);
+  validarTelefono(errores);
+  validarDocumento(errores);
 
   return errores;
 }
@@ -1155,7 +1171,7 @@ async function validarCamposObligatorios() {
     const valor = formData.value[campo];
     return !valor || (typeof valor === 'string' && !valor.trim());
   });
-  
+
   if (faltantes.length > 0) {
     const lista = faltantes.map(item => item.etiqueta).join(', ');
     await Swal.fire({
@@ -1165,7 +1181,7 @@ async function validarCamposObligatorios() {
     });
     return false;
   }
-  
+
   // Validar formato de campos
   const erroresValidacion = validarFormulario();
   if (erroresValidacion.length > 0) {
@@ -1178,7 +1194,7 @@ async function validarCamposObligatorios() {
     });
     return false;
   }
-  
+
   return true;
 }
 
@@ -1284,7 +1300,7 @@ async function guardarCambios() {
 
   // Verificar si hay cambios antes de continuar
   const tieneCambios = verificarCambios()
-  
+
   if (!tieneCambios) {
     await Swal.fire({
       icon: 'info',
@@ -1354,7 +1370,7 @@ async function guardarCambios() {
 
     inicializarFormulario();
     // Actualizar estado inicial después de guardar exitosamente
-    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+    formDataInicial.value = structuredClone(formData.value)
 
     await Swal.fire({
       icon: 'success',
@@ -1367,10 +1383,10 @@ async function guardarCambios() {
   } catch (error) {
     // Cerrar el loading si aún está abierto
     Swal.close()
-    
+
     console.error('Error al guardar cambios del deportista:', error);
     const mensajeError = extraerMensajeError(error)
-    
+
     await Swal.fire({
       icon: 'error',
       title: 'Error al actualizar deportista',
@@ -1393,7 +1409,7 @@ function construirPayloadPersona() {
     direccion: 'direccion'
   };
 
-  Object.entries(mapaCampos).forEach(([campoFormulario, campoBackend]) => {
+  for (const [campoFormulario, campoBackend] of Object.entries(mapaCampos)) {
     const valor = formData.value[campoFormulario];
     if (campoFormulario === 'direccion') {
       // Sanitizar dirección
@@ -1409,11 +1425,11 @@ function construirPayloadPersona() {
         payload[campoBackend] = valorSanitizado;
       }
     }
-  });
+  }
 
   const documento = formData.value.documento;
   if (documento) {
-    payload.documento = documento.replace(/\D/g, '');
+    payload.documento = documento.replace(/\D/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
   }
 
   const correo = formData.value.correo_electronico;
@@ -1423,7 +1439,7 @@ function construirPayloadPersona() {
 
   const telefono = formData.value.telefono;
   if (telefono) {
-    payload.telefono = telefono.replace(/\D/g, '');
+    payload.telefono = telefono.replace(/\D/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
   }
 
   return filtrarCamposPermitidos(payload, 'persona');
@@ -1770,7 +1786,7 @@ function formatearNumeroComoFecha(fecha) {
 
 // Función auxiliar para formatear un string que es solo un año
 function formatearStringAno(fecha) {
-  const año = parseInt(fecha);
+  const año = Number.parseInt(fecha);
   if (!esAnoValido(año)) {
     return null;
   }
@@ -1781,7 +1797,7 @@ function formatearStringAno(fecha) {
 function formatearStringFecha(fecha) {
   try {
     const dateObj = new Date(fecha);
-    if (!isNaN(dateObj.getTime())) {
+    if (!Number.isNaN(dateObj.getTime())) {
       return formatearDateADDMYYYY(dateObj);
     }
   } catch (error) {
@@ -1802,7 +1818,7 @@ function formatearFechaNacimiento(fecha) {
     return formatearFechaString(fecha);
   }
 
-  if (fecha instanceof Date && !isNaN(fecha.getTime())) {
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
     return formatearDateADDMYYYY(fecha);
   }
 

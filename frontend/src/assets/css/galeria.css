@@ -386,7 +386,7 @@
 }
 
 .tipo.competencia {
-  background: linear-gradient(135deg, var(--color-peligro), #e83e8c); /* Gradiente específico - mantener hardcodeado */
+  background: linear-gradient(135deg, var(--color-peligro), var(--color-peligro-hover));
   color: var(--color-blanco);
   border-color: var(--color-peligro);
   box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3); /* Sombra específica - mantener hardcodeado */
@@ -400,37 +400,37 @@
 }
 
 .tipo.torneo {
-  background: linear-gradient(135deg, #17a2b8, #6f42c1);
+  background: linear-gradient(135deg, var(--color-info), var(--color-morado));
   color: white;
-  border-color: #17a2b8;
+  border-color: var(--color-info);
   box-shadow: 0 2px 4px rgba(23, 162, 184, 0.3);
 }
 
 .tipo.evaluación-médica {
-  background: linear-gradient(135deg, #6c757d, #495057);
+  background: linear-gradient(135deg, var(--color-gris), var(--color-gris-700-alt));
   color: white;
-  border-color: #6c757d;
+  border-color: var(--color-gris);
   box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
 }
 
 /* --- Colores por categoría (legacy) --- */
 .tipo.entrenamientos {
-	background-color: #4caf50;
+	background-color: var(--color-exito);
 }
 
 .tipo.eventos {
-	background-color: #9c27b0;
+	background-color: var(--color-rol-superadmin);
 }
 
 .tipo.competencias {
-	background-color: #2196f3;
+	background-color: var(--color-info-alt);
 }
 
 /* --- Color por defecto para tipos no definidos --- */
 .tipo:not(.entrenamiento):not(.competencia):not(.exhibición):not(.torneo):not(.evaluación-médica) {
-  background: linear-gradient(135deg, #6c757d, #495057);
+  background: linear-gradient(135deg, var(--color-gris), var(--color-gris-700-alt));
   color: white;
-  border-color: #6c757d;
+  border-color: var(--color-gris);
   box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
 }
 
@@ -447,11 +447,11 @@
   gap: 8px;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-gris-900-alt);
 }
 
 .campo-formulario label i {
-  color: #007bff;
+  color: var(--color-primario);
   width: 16px;
 }
 
@@ -467,19 +467,19 @@
 
 /* --- Estilos para campos de solo lectura --- */
 .input-evento[readonly] {
-  background-color: #f8f9fa;
+  background-color: var(--color-gris-claro);
   color: #6c757d;
   cursor: not-allowed;
 }
 
 .select-evento[disabled] {
-  background-color: #f8f9fa;
+  background-color: var(--color-gris-claro);
   color: #6c757d;
   cursor: not-allowed;
 }
 
 textarea[readonly] {
-  background-color: #f8f9fa;
+  background-color: var(--color-gris-claro);
   color: #6c757d;
   cursor: not-allowed;
 }
@@ -615,14 +615,14 @@ textarea[readonly] {
 
 /* --- Botón cerrar del modal --- */
 .galeria-modal .btn-cerrar {
-  background: rgba(255, 255, 255, 0.18);
-  color: #f8fafc;
-  border-color: rgba(255, 255, 255, 0.35);
+  background: var(--color-blanco-transparente-20);
+  color: var(--color-blanco);
+  border-color: var(--color-blanco-transparente-30);
 }
 
 .galeria-modal .btn-cerrar:hover {
-  background: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: var(--color-blanco-transparente-30);
+  color: var(--color-blanco);
 }
 
 /* ===== ESTADO SIN RESULTADOS ===== */
