@@ -379,12 +379,12 @@ export default {
             if (newValue) {
                 // Guardar la posición actual del scroll
                 const scrollPosition = globalThis.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-                
+
                 // Aplicar la posición guardada al body antes de fijarlo
                 document.body.style.top = `-${scrollPosition}px`;
                 document.body.classList.add('modal-open');
                 document.documentElement.classList.add('modal-open');
-                
+
                 // Guardar la posición en el componente para restaurarla después
                 this.scrollPositionGuardada = scrollPosition;
             } else {
@@ -392,7 +392,7 @@ export default {
                 document.body.classList.remove('modal-open');
                 document.documentElement.classList.remove('modal-open');
                 document.body.style.top = '';
-                
+
                 // Restaurar la posición del scroll
                 if (this.scrollPositionGuardada !== undefined) {
                     globalThis.scrollTo(0, this.scrollPositionGuardada);
@@ -662,7 +662,7 @@ export default {
             if (!this.fechaBloqueada && !this.nuevoEvento.fecha) {
                 this.nuevoEvento.fecha = this.obtenerFechaActual();
             }
-            
+
             // Guardar estado inicial cuando se abre el formulario
             this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
         },
@@ -746,7 +746,7 @@ export default {
         async cerrarModal() {
             // Verificar si hay cambios sin guardar
             const tieneCambios = this.verificarCambios()
-            
+
             if (tieneCambios) {
                 const result = await Swal.fire({
                     icon: 'question',
@@ -758,12 +758,12 @@ export default {
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d'
                 })
-                
+
                 if (!result.isConfirmed) {
                     return
                 }
             }
-            
+
             this.modalVisible = false;
             this.fechaBloqueada = false;
             this.limpiarFormulario();
@@ -812,7 +812,7 @@ export default {
             this.selectorEventosVisible = false;
             this.fechaBloqueada = true;
             this.modalVisible = true;
-            
+
             // Guardar estado inicial cuando se inicia la edición
             this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
         },
@@ -924,7 +924,7 @@ export default {
             if (!(await this.validarPermisosEdicion())) {
                 return;
             }
-            
+
             // Mostrar loading mientras se procesa
             Swal.fire({
                 title: 'Guardando cambios...',
@@ -935,7 +935,7 @@ export default {
                     Swal.showLoading()
                 }
             })
-            
+
             try {
                 await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
 
@@ -969,7 +969,7 @@ export default {
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
-                
+
                 // Mostrar error específico al usuario
                 const mensajeError = this.extraerMensajeError(error);
 
@@ -1058,7 +1058,7 @@ export default {
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
-                
+
                 // Mostrar error específico al usuario
                 const mensajeError = this.extraerMensajeError(error);
 
@@ -1079,7 +1079,7 @@ export default {
             // Verificar si hay cambios antes de continuar (solo para edición)
             if (this.modoEdicion) {
                 const tieneCambios = this.verificarCambios()
-                
+
                 if (!tieneCambios) {
                     await Swal.fire({
                         icon: 'info',
@@ -1110,7 +1110,7 @@ export default {
             const confirmacion = await Swal.fire({
                 icon: 'question',
                 title: this.modoEdicion ? '¿Actualizar evento?' : '¿Crear evento?',
-                text: this.modoEdicion 
+                text: this.modoEdicion
                     ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
                     : '¿Estás seguro de que deseas crear este evento?',
                 showCancelButton: true,
