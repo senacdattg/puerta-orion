@@ -285,7 +285,7 @@
 
 /* --- Botón principal (Ver Detalles) --- */
 .boton-principal {
-  background: linear-gradient(135deg, #138496);
+  background: linear-gradient(135deg, var(--color-info-hover));
   color: var(--color-blanco);
   padding: 0.875rem 2rem;
   font-weight: 600;
@@ -296,7 +296,7 @@
 }
 
 .boton-principal:hover {
-  background: linear-gradient(135deg, #138496, #0f6674);
+  background: linear-gradient(135deg, var(--color-info-hover), var(--color-info));
   transform: translateY(-3px);
   box-shadow: var(--sombra-media);
 }
@@ -495,11 +495,6 @@
 .mensualidades-modal.modal-sm .seccion-historial h5 {
   font-size: 1rem;
   margin-bottom: 0.75rem;
-}
-
-.mensualidades-modal.modal-sm .grid-detalles {
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
 }
 
 .mensualidades-modal.modal-sm .detalle-item {
@@ -977,7 +972,7 @@
 }
 
 .btn-secondary:hover {
-  background: #ed3245 !important;
+  background: var(--color-peligro-hover) !important;
   color: var(--color-gris-oscuro);
 }
 
@@ -994,11 +989,11 @@
 
 /* --- Botón de mensualidad --- */
 .btn-mensualidad {
-  background: #f4d800 !important;
+  background: var(--color-secundario) !important;
 }
 
 .btn-mensualidad:hover {
-  background: #e6c700d5 !important;
+  background: var(--color-secundario-hover) !important;
 }
 
 /* --- Botón de reporte --- */
@@ -1008,7 +1003,7 @@
 }
 
 .btn-reporte:hover {
-  background: #e0a800;
+  background: var(--color-advertencia-hover);
   color: var(--color-gris-oscuro);
 }
 
@@ -1019,7 +1014,7 @@
 }
 
 .btn-gestionar:hover {
-  background: #0047ab !important;
+  background: var(--color-primario) !important;
   color: var(--color-gris-claro);
 }
 
@@ -1122,27 +1117,27 @@
 
 .mensaje-documento.indicacion,
 .mensaje-documento.pendiente {
-  color: #6c757d;
+  color: var(--color-gris);
 }
 
 .mensaje-documento.checking {
-  color: #0d6efd;
+  color: var(--color-primario);
 }
 
 .mensaje-documento.found {
-  color: #198754;
+  color: var(--color-exito);
   font-weight: 600;
 }
 
 .mensaje-documento.warning {
-  color: #ffc107;
+  color: var(--color-advertencia);
   font-weight: 600;
 }
 
 .mensaje-documento.not-found,
 .mensaje-documento.invalid,
 .mensaje-documento.error {
-  color: #dc3545;
+  color: var(--color-peligro);
 }
 
 /* Responsive para formulario */

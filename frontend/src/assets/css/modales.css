@@ -166,12 +166,12 @@ html.modal-open {
 
 /* --- Modal de error --- */
 .error-modal .modal-header {
-  background: linear-gradient(135deg, var(--color-peligro), #c82333);
+  background: linear-gradient(135deg, var(--color-peligro), var(--color-peligro-hover));
 }
 
 /* --- Modal de éxito --- */
 .success-modal .modal-header {
-  background: linear-gradient(135deg, var(--color-exito), #218838);
+  background: linear-gradient(135deg, var(--color-exito), var(--color-exito-hover));
 }
 
 /* ===== ANIMACIONES ===== */
@@ -242,8 +242,8 @@ html.modal-open {
   max-width: 900px !important;
   width: 100% !important;
   max-height: 90vh !important;
-  --modal-header-bg: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
-  --modal-header-color: #ffffff;
+  --modal-header-bg: linear-gradient(135deg, var(--color-primario) 0%, var(--color-primario-oscuro) 100%);
+  --modal-header-color: var(--color-blanco);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
   border: none !important;
   border-radius: 32px !important;
@@ -286,7 +286,7 @@ html.modal-open {
 .modal-content.modal-deportistas .modal-header,
 .modal-content.mensualidades-modal .modal-header,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-header {
-  background: linear-gradient(135deg, #0047ab 0%, #0d47a1 100%);
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-primario-oscuro) 100%);
   padding: 24px 32px;
   border-bottom: none;
   position: relative;
@@ -313,7 +313,7 @@ html.modal-open {
   letter-spacing: -0.01em;
   position: relative;
   z-index: 1;
-  color: #ffffff;
+  color: var(--color-blanco);
 }
 
 .modal-content.modal-registro .modal-title i,
@@ -337,7 +337,7 @@ html.modal-open {
 .modal-content.mensualidades-modal .btn-cerrar,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar {
   background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  color: var(--color-blanco);
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -361,7 +361,7 @@ html.modal-open {
 .modal-content.mensualidades-modal .btn-cerrar:hover,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .btn-cerrar:hover {
   background: rgba(239, 68, 68, 0.9);
-  color: #ffffff;
+  color: var(--color-blanco);
   transform: scale(1.05);
   border-color: rgba(239, 68, 68, 1);
 }
@@ -389,7 +389,7 @@ html.modal-open {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: linear-gradient(135deg, var(--color-gris-claro) 0%, var(--color-blanco) 100%);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -419,7 +419,7 @@ html.modal-open {
   padding: 24px;
   max-height: calc(90vh - 100px);
   overflow-y: auto;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: linear-gradient(135deg, var(--color-gris-claro) 0%, var(--color-blanco) 100%);
   position: relative;
   flex: 1;
   display: flex;
@@ -476,7 +476,7 @@ html.modal-open {
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos h3 {
-  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
+  background: linear-gradient(135deg, var(--color-azul-principal) 0%, var(--color-azul-oscuro) 100%);
   color: #ffffff !important;
   padding: 1rem 1.5rem;
   text-align: center;
@@ -493,7 +493,7 @@ html.modal-open {
 
 .modal-content.modal-registro .modal-body .seccion-formulario,
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .seccion-formulario {
-  background: #ffffff;
+  background: var(--color-blanco);
   padding: 1.25rem 1.5rem;
   flex: 1;
   display: flex;
@@ -501,7 +501,7 @@ html.modal-open {
   gap: 1rem;
   margin-bottom: 1.25rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--color-gris-medio);
   overflow: hidden;
 }
 
@@ -564,19 +564,19 @@ html.modal-open {
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .mensaje-error {
-  background: #fee;
+  background: var(--color-fondo-error-claro);
   color: var(--color-peligro);
   border-left: 4px solid var(--color-peligro);
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .mensaje-exito {
-  background: #efe;
+  background: var(--color-fondo-exito);
   color: var(--color-exito);
   border-left: 4px solid var(--color-exito);
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .mensaje-info {
-  background: #eef;
+  background: var(--color-fondo-info-claro);
   color: var(--color-info);
   border-left: 4px solid var(--color-info);
 }
@@ -783,7 +783,7 @@ html.modal-open {
 }
 
 .perfil-modal .modal-title i {
-  color: #004AAD;
+  color: var(--color-azul-principal);
 }
 
 /* --- Botón cerrar modal de perfil --- */
@@ -842,7 +842,7 @@ html.modal-open {
 /* --- Sección de información --- */
 .perfil-modal .info-section h4 {
   margin: 0 0 var(--espaciado-md) 0;
-  color: #004AAD;
+  color: var(--color-azul-principal);
   font-size: var(--tamano-fuente-lg);
   font-weight: var(--peso-fuente-semibold);
   font-family: 'Poppins', sans-serif;
@@ -896,7 +896,7 @@ html.modal-open {
 
 .perfil-modal .form-control:focus {
   outline: none;
-  border-color: #004AAD;
+  border-color: var(--color-azul-principal);
 }
 
 /* --- Acciones del formulario --- */
@@ -949,7 +949,7 @@ html.modal-open {
 .loading-detalle i {
   font-size: 48px;
   margin-bottom: var(--espaciado-md);
-  color: #667eea; /* Color específico del gradiente - mantener hardcodeado */
+  color: var(--color-morado-claro);
 }
 
 .error-detalle i {
@@ -1389,7 +1389,7 @@ html.modal-open {
 
 /* --- Mejorar el título del formulario en paso 2 --- */
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .seccion-formulario h3 {
-  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
+  background: linear-gradient(135deg, var(--color-azul-principal) 0%, var(--color-azul-oscuro) 100%);
   color: #ffffff !important;
   padding: 1rem 1.5rem;
   text-align: left;

@@ -76,7 +76,7 @@
 
 /* --- Botón nuevo --- */
 .btn-nuevo {
-  background: linear-gradient(135deg, var(--color-secundario-oro) 0%, #f7c948 100%) !important;
+  background: linear-gradient(135deg, var(--color-secundario-oro) 0%, var(--color-secundario-hover) 100%) !important;
   color: var(--color-primario) !important;
   border: 2px solid var(--color-primario) !important;
   box-shadow: 0 4px 12px rgba(255, 214, 0, 0.3) !important;
@@ -103,7 +103,7 @@
 }
 
 .btn-nuevo:hover {
-  background: linear-gradient(135deg, #f7c948 0%, var(--color-advertencia) 100%) !important;
+  background: linear-gradient(135deg, var(--color-secundario-hover) 0%, var(--color-advertencia) 100%) !important;
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 6px 20px rgba(247, 214, 0, 0.5) !important;
   border-color: var(--color-primario-oscuro) !important;
@@ -124,7 +124,7 @@
 
 /* --- Botón datos --- */
 .btn-datos {
-  background: linear-gradient(135deg, var(--color-secundario-oro) 0%, #f7c948 100%) !important;
+  background: linear-gradient(135deg, var(--color-secundario-oro) 0%, var(--color-secundario-hover) 100%) !important;
   color: var(--color-primario) !important;
   border: 2px solid var(--color-primario) !important;
   box-shadow: 0 4px 12px rgba(255, 214, 0, 0.3) !important;
@@ -151,7 +151,7 @@
 }
 
 .btn-datos:hover {
-  background: linear-gradient(135deg, #f7c948 0%, var(--color-advertencia) 100%) !important;
+  background: linear-gradient(135deg, var(--color-secundario-hover) 0%, var(--color-advertencia) 100%) !important;
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 6px 20px rgba(247, 214, 0, 0.5) !important;
   border-color: var(--color-primario-oscuro) !important;
@@ -269,7 +269,7 @@
   justify-content: center;
   gap: var(--espaciado-md);
   padding: var(--espaciado-md) var(--espaciado-xl);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradiente específico - mantener hardcodeado */
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
   color: var(--color-blanco);
   border: none;
   border-radius: var(--radio-borde);
@@ -707,53 +707,53 @@ select:hover {
 /* --- Badge de SuperAdmin --- */
 .badge.badge-admin.badge-superadmin,
 .badge.badge-detalle.badge-admin.badge-superadmin {
-  background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%) !important;
-  color: #ffffff !important;
-  border-color: #6c3483 !important;
+  background: linear-gradient(135deg, var(--color-rol-superadmin) 0%, var(--color-rol-superadmin) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-rol-superadmin) !important;
   box-shadow: 0 2px 6px rgba(142, 68, 173, 0.4) !important;
 }
 
 /* --- Badge de Administrador --- */
 .badge.badge-admin.badge-administrador,
 .badge.badge-detalle.badge-admin.badge-administrador {
-  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-  color: #ffffff !important;
-  border-color: #c82333 !important;
+  background: linear-gradient(135deg, var(--color-peligro) 0%, var(--color-peligro-hover) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-peligro-hover) !important;
   box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4) !important;
 }
 
 /* --- Badge de Entrenador --- */
 .badge.badge-moderator.badge-entrenador,
 .badge.badge-detalle.badge-moderator.badge-entrenador {
-  background: linear-gradient(135deg, #fd7e14 0%, #e66a00 100%) !important;
-  color: #ffffff !important;
-  border-color: #e66a00 !important;
+  background: linear-gradient(135deg, var(--color-rol-entrenador) 0%, var(--color-advertencia-hover) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-advertencia-hover) !important;
   box-shadow: 0 2px 6px rgba(253, 126, 20, 0.4) !important;
 }
 
 /* --- Badge de Deportista (Verde turquesa) --- */
 .badge.badge-user.badge-deportista,
 .badge.badge-detalle.badge-user.badge-deportista {
-  background: linear-gradient(135deg, #20c997 0%, #1aa179 100%) !important;
-  color: #ffffff !important;
-  border-color: #1aa179 !important;
+  background: linear-gradient(135deg, var(--color-rol-deportista) 0%, var(--color-exito-oscuro) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-exito-oscuro) !important;
   box-shadow: 0 2px 6px rgba(32, 201, 151, 0.4) !important;
 }
 
 /* --- Badge de Acudiente (Azul oscuro) --- */
 .badge.badge-user.badge-acudiente,
 .badge.badge-detalle.badge-user.badge-acudiente {
-  background: linear-gradient(135deg, #2614ac 0%, #1d0f7a 100%) !important;
-  color: #ffffff !important;
-  border-color: #1d0f7a !important;
+  background: linear-gradient(135deg, var(--color-rol-acudiente) 0%, var(--color-primario-oscuro) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-primario-oscuro) !important;
   box-shadow: 0 2px 6px rgba(38, 20, 172, 0.4) !important;
 }
 
 /* --- Badge de Usuario (Amarillo - solo para rol genérico "Usuario") --- */
 .badge.badge-user.badge-usuario,
 .badge.badge-detalle.badge-user.badge-usuario {
-  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
-  color: #1f2937 !important;
+  background: linear-gradient(135deg, var(--color-rol-usuario) 0%, var(--color-advertencia-hover) 100%) !important;
+  color: var(--color-gris-800-alt) !important;
   border-color: #e0a800 !important;
   box-shadow: 0 2px 6px rgba(255, 193, 7, 0.4) !important;
 }
@@ -761,8 +761,8 @@ select:hover {
 /* --- Badge sin rol --- */
 .badge-none,
 .badge.badge-detalle.badge-none {
-  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%) !important;
-  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--color-gris-600) 0%, var(--color-gris-700-alt) 100%) !important;
+  color: var(--color-blanco) !important;
   border-color: #6b7280 !important;
   box-shadow: 0 2px 6px rgba(107, 114, 128, 0.35) !important;
 }

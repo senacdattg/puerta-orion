@@ -191,14 +191,14 @@
   border-radius: 50% !important;
   display: grid !important;
   place-items: center !important;
-  background: #f3f4f6 !important;
+  background: var(--color-gris-100) !important;
   border: none !important;
   flex-shrink: 0 !important;
 }
 
 .perfil-hero .avatar i {
   font-size: 56px !important;
-  color: #6b7280 !important;
+  color: var(--color-gris-600) !important;
 }
 
 /* --- Información del hero --- */
@@ -215,7 +215,7 @@
   margin: 0 0 6px 0 !important;
   font-size: 1.75rem !important;
   font-weight: 700 !important;
-  color: #111827 !important;
+  color: var(--color-gris-900-alt) !important;
   display: block !important;
   text-align: center !important;
   align-items: normal !important;
@@ -226,7 +226,7 @@
 
 .perfil-hero .hero-info .perfil-subtitle {
   margin: 0 !important;
-  color: #4b5563 !important;
+  color: var(--color-gris-700-alt) !important;
   font-size: 1rem !important;
   line-height: 1.5 !important;
   text-align: center !important;
@@ -818,10 +818,10 @@
 /* --- Alerta de advertencia --- */
 .alert-warning {
   padding: 15px;
-  background: #fff3cd;
+  background: var(--color-fondo-naranja-claro);
   border: 1px solid var(--color-advertencia);
   border-radius: 8px;
-  color: #856404; /* Color oscuro de advertencia - mantener específico */
+  color: var(--color-texto-admin);
   margin-bottom: 15px;
 }
 
@@ -875,7 +875,7 @@
 .actualizar-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--color-gris-900-alt);
   margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
@@ -911,23 +911,23 @@
 
 /* --- Alerta de error --- */
 .alert-error {
-  background: #fee;
-  border: 1px solid #fcc;
-  color: #c33;
+  background: var(--color-fondo-error-claro);
+  border: 1px solid var(--color-borde-error-claro);
+  color: var(--color-peligro);
 }
 
 /* --- Alerta de éxito --- */
 .alert-success {
-  background: #efe;
-  border: 1px solid #cfc;
-  color: #3c3;
+  background: var(--color-fondo-exito);
+  border: 1px solid var(--color-borde-exito);
+  color: var(--color-exito);
 }
 
 /* --- Alerta informativa --- */
 .alert-info {
-  background: #fff3cd;
+  background: var(--color-fondo-naranja-claro);
   border: 1px solid var(--color-advertencia);
-  color: #856404; /* Color oscuro de advertencia - mantener específico */
+  color: var(--color-texto-admin);
 }
 
 /* ===== ESTILOS DE ESTADOS ===== */
@@ -958,10 +958,10 @@
 .form-section h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-gris-900-alt);
   margin: 0 0 1.5rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--color-gris-medio);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -979,7 +979,7 @@
 .form-textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--color-gris-medio);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
@@ -989,7 +989,7 @@
 .form-input:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--color-primario);
 }
 
 .form-textarea {
@@ -1039,8 +1039,8 @@
   gap: 0.5rem;
   transition: all 0.3s ease;
   font-size: 1rem;
-  background: #28a745;
-  color: white;
+  background: var(--color-exito);
+  color: var(--color-blanco);
 }
 
 .btn-save:hover:not(:disabled) {
@@ -1240,24 +1240,24 @@
 
 /* --- Mensaje de éxito --- */
 .mensaje-exito {
-  background-color: #efe;
-  color: #3c3;
+  background-color: var(--color-fondo-exito);
+  color: var(--color-texto-exito);
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
   text-align: center;
-  border: 1px solid #cfc;
+  border: 1px solid var(--color-borde-exito);
 }
 
 /* --- Mensaje informativo --- */
 .mensaje-info {
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: var(--color-fondo-info);
+  color: var(--color-texto-info);
   padding: 1.5rem;
   border-radius: 8px;
   margin-top: 2rem;
   text-align: center;
-  border: 1px solid #90caf9;
+  border: 1px solid var(--color-borde-info);
   grid-column: 1 / -1;
 }
 
@@ -1278,8 +1278,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 150px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
+  color: var(--color-blanco);
 }
 
 .perfil-content .btn-primary:hover:not(:disabled),
