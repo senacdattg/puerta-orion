@@ -831,7 +831,7 @@ def crear_evento() -> JsonResponse:
         if not validacion_horario:
             return _build_response(False, error=mensaje_error, status_code=400)
 
-        categoria, tipo_evento, error_response = _validar_entidades_evento(data)
+        _, _, error_response = _validar_entidades_evento(data)
         if error_response:
             return error_response
 
