@@ -12,7 +12,7 @@ async function manejarRegistro(datos) {
   console.log("Datos del nuevo usuario:", datos);
 
   // Mostrar loading (no await para que no bloquee)
-  const loadingSwal = Swal.fire({
+  Swal.fire({
     title: 'Registrando usuario...',
     allowOutsideClick: false,
     allowEscapeKey: false,
