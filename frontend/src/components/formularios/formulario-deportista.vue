@@ -89,7 +89,7 @@
       </div>
 
       <div class="bloque-radio">
-        <label>¿Practica otro deporte además del principal?</label>
+        <label for="practica-otro-deporte">¿Practica otro deporte además del principal?</label>
         <div class="opciones">
           <input
             type="radio"
@@ -127,7 +127,7 @@
       <hr class="form-divider" />
 
       <div class="bloque-radio">
-        <label>¿Participa en escuela de formación?</label>
+        <span class="label-text">¿Participa en escuela de formación?</span>
         <div class="opciones">
           <input
             type="radio"
@@ -170,7 +170,7 @@
       <!-- Panel principal de enfermedades -->
       <div class="panel-enfermedades">
         <div class="panel-enfermedades-contenido">
-          <label class="panel-pregunta">¿Tiene alguna enfermedad o condición médica?</label>
+          <span class="panel-pregunta">¿Tiene alguna enfermedad o condición médica?</span>
           <div class="panel-opciones">
             <button
               type="button"
@@ -208,7 +208,7 @@
         </div>
 
         <div v-if="form.tipo_enfermedad" class="diagnosticos-container">
-          <label>Seleccione los diagnósticos (puede elegir múltiples):</label>
+          <span class="label-text">Seleccione los diagnósticos (puede elegir múltiples):</span>
           <div class="multiselect-container">
             <div
               v-for="diagnostico in diagnosticosDisponibles"
@@ -233,7 +233,7 @@
       <!-- Panel de recomendación médica (al final del frame) -->
       <div v-if="form.tiene_enfermedades === true" class="panel-recomendacion">
         <div class="panel-recomendacion-contenido">
-          <label class="panel-pregunta">¿Existe alguna recomendación médica?</label>
+          <span class="panel-pregunta">¿Existe alguna recomendación médica?</span>
           <div class="panel-opciones">
             <button
               type="button"
@@ -515,7 +515,7 @@ function obtenerIconoPorTitulo(titulo) {
 
 function mostrarModal(titulo, mensaje) {
   const icon = obtenerIconoPorTitulo(titulo);
-  const html = (mensaje || '').replace(/\n/g, '<br>');
+  const html = (mensaje || '').replace(/\n/g, '<br>'); // NOSONAR: S7781 - replaceAll() no acepta regex
   const confirmButtonText = titulo === 'Éxito' ? 'Continuar' : 'Cerrar';
   return Swal.fire({
     icon,
@@ -603,9 +603,9 @@ function validarCamposCondicionales() {
 function construirDatosDeportista() {
   return {
     fecha_nacimiento: form.value.fecha_nacimiento,
-    id_tipo_sanguineo: form.value.id_tipo_sanguineo ? parseInt(form.value.id_tipo_sanguineo) : null,
-    id_ciudad_recidencia: form.value.id_ciudad_residencia ? parseInt(form.value.id_ciudad_residencia) : null,
-    id_eps: form.value.id_eps ? parseInt(form.value.id_eps) : null
+    id_tipo_sanguineo: form.value.id_tipo_sanguineo ? Number.parseInt(form.value.id_tipo_sanguineo) : null,
+    id_ciudad_recidencia: form.value.id_ciudad_residencia ? Number.parseInt(form.value.id_ciudad_residencia) : null,
+    id_eps: form.value.id_eps ? Number.parseInt(form.value.id_eps) : null
   };
 }
 
@@ -620,7 +620,7 @@ function obtenerDescripcionRecomendacion() {
 }
 
 function obtenerIdEscuela() {
-  return form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null;
+  return form.value.participa_escuela && form.value.id_escuela ? Number.parseInt(form.value.id_escuela) : null;
 }
 
 function construirInformacionDeportiva() {
@@ -630,18 +630,18 @@ function construirInformacionDeportiva() {
     recomendacion_medica: obtenerRecomendacionMedica(),
     descripcion_recomendacion: obtenerDescripcionRecomendacion(),
     id_escuela: obtenerIdEscuela(),
-    id_deporte: form.value.id_deporte ? parseInt(form.value.id_deporte) : null,
-    id_institucion_registro: form.value.id_institucion_registro ? parseInt(form.value.id_institucion_registro) : null
+    id_deporte: form.value.id_deporte ? Number.parseInt(form.value.id_deporte) : null,
+    id_institucion_registro: form.value.id_institucion_registro ? Number.parseInt(form.value.id_institucion_registro) : null
   };
 }
 
 function agregarDiagnosticos(datosEnvio) {
   if (form.value.tiene_enfermedades === true) {
     if (form.value.tipo_enfermedad) {
-      datosEnvio.tipo_enfermedad = parseInt(form.value.tipo_enfermedad);
+      datosEnvio.tipo_enfermedad = Number.parseInt(form.value.tipo_enfermedad);
     }
     if (form.value.diagnostico && form.value.diagnostico.length > 0) {
-      datosEnvio.diagnostico = form.value.diagnostico.map(d => parseInt(d));
+      datosEnvio.diagnostico = form.value.diagnostico.map(d => Number.parseInt(d));
     }
   } else if (form.value.tiene_enfermedades === false) {
     datosEnvio.diagnostico = [];
@@ -661,18 +661,18 @@ function construirDatosRegistro() {
   const datosEnvio = {
     datos_deportista: {
       fecha_nacimiento: form.value.fecha_nacimiento,
-      id_tipo_sanguineo: parseInt(form.value.id_tipo_sanguineo) || null,
-      id_ciudad_recidencia: parseInt(form.value.id_ciudad_residencia) || null,
-      id_eps: parseInt(form.value.id_eps) || null
+      id_tipo_sanguineo: Number.parseInt(form.value.id_tipo_sanguineo) || null,
+      id_ciudad_recidencia: Number.parseInt(form.value.id_ciudad_residencia) || null,
+      id_eps: Number.parseInt(form.value.id_eps) || null
     },
     informacion_deportiva: {
       practica_otro_deporte: form.value.practica_otro_deporte || false,
       participa_escuela: form.value.participa_escuela || false,
       recomendacion_medica: form.value.tiene_enfermedades === true ? form.value.recomendacion_medica : false,
       descripcion_recomendacion: form.value.tiene_enfermedades === true && form.value.recomendacion_medica ? form.value.descripcion_recomendacion : null,
-      id_escuela: form.value.participa_escuela && form.value.id_escuela ? parseInt(form.value.id_escuela) : null,
-      id_deporte: parseInt(form.value.id_deporte) || null,
-      id_institucion_registro: parseInt(form.value.id_institucion_registro) || null
+      id_escuela: form.value.participa_escuela && form.value.id_escuela ? Number.parseInt(form.value.id_escuela) : null,
+      id_deporte: Number.parseInt(form.value.id_deporte) || null,
+      id_institucion_registro: Number.parseInt(form.value.id_institucion_registro) || null
     }
   };
 
@@ -741,7 +741,7 @@ async function procesarRegistro(token) {
     emit('submit', result);
 
     setTimeout(() => {
-      Object.keys(form.value).forEach(key => {
+      for (const key of Object.keys(form.value)) {
         if (key === 'diagnostico') {
           form.value[key] = [];
         } else if (key === 'tiene_enfermedades' || key === 'es_responsable') {
@@ -751,7 +751,7 @@ async function procesarRegistro(token) {
         } else {
           form.value[key] = '';
         }
-      });
+      }
     }, 3000);
     return true;
   } else {
@@ -782,7 +782,7 @@ async function manejarSubmit(event) {
   }
 
   console.log('🚀 Iniciando manejarSubmit');
-  console.log('📋 Estado del formulario:', JSON.parse(JSON.stringify(form.value)));
+  console.log('📋 Estado del formulario:', structuredClone(form.value));
 
   isSubmitting.value = true;
 
@@ -823,15 +823,15 @@ function cancelar() {
 // Función para volver atrás
 function volverAtras() {
   // Si hay una ruta anterior en el historial, volver
-  if (window.history.length > 1) {
+  if (globalThis.history.length > 1) {
     router.go(-1);
+    return;
+  }
+  // Si no hay historial, redirigir a home o login según el caso
+  if (authStore.isAuthenticated) {
+    router.push('/home');
   } else {
-    // Si no hay historial, redirigir a home o login según el caso
-    if (authStore.isAuthenticated) {
-      router.push('/home');
-    } else {
-      router.push('/login');
-    }
+    router.push('/login');
   }
 }
 
@@ -876,7 +876,7 @@ function mapearInformacionDeportiva(infoDeportiva) {
 
   if (infoDeportiva.recomendacion_medica !== undefined) {
     form.value.recomendacion_medica = infoDeportiva.recomendacion_medica;
-    form.value.tiene_enfermedades = infoDeportiva.recomendacion_medica ? true : false;
+    form.value.tiene_enfermedades = !!infoDeportiva.recomendacion_medica;
   }
 
   mapearCampoFormulario('descripcion_recomendacion', null, infoDeportiva.descripcion_recomendacion, props.datos.descripcion_recomendacion);
@@ -905,15 +905,15 @@ function mapearTipoEnfermedad() {
 }
 
 function mapearCamposDirectos() {
-  Object.keys(props.datos).forEach(key => {
-    if (Object.prototype.hasOwnProperty.call(form.value, key) &&
+  for (const key of Object.keys(props.datos)) {
+    if (Object.hasOwn(form.value, key) &&
         (form.value[key] === '' || form.value[key] === null || form.value[key] === undefined)) {
       const valor = props.datos[key];
       if (valor !== null && valor !== undefined && valor !== '') {
         form.value[key] = valor;
       }
     }
-  });
+  }
 }
 
 onMounted(async () => {

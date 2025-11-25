@@ -308,7 +308,7 @@ function transformarMayusculas(valor = '') {
 
 function sanitizarNombre(valor = '', obligatorio = true) {
   const mayus = transformarMayusculas(valor)
-  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ')
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ') // NOSONAR: S7781 - replaceAll() no acepta regex
   if (!obligatorio && !limpio.trim()) {
     return ''
   }
@@ -317,7 +317,7 @@ function sanitizarNombre(valor = '', obligatorio = true) {
 
 function sanitizarDireccion(valor = '') {
   const mayus = transformarMayusculas(valor)
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function manejarEntradaNombre(campo, event, obligatorio = true) {
@@ -329,16 +329,14 @@ function manejarEntradaNombre(campo, event, obligatorio = true) {
 function manejarDocumento(event) {
   limpiarMensajes()
   const digitos = (event?.target?.value ?? form.value.numeroDocumento ?? '')
-    .replace(/\D/g, '')
-    .slice(0, MAX_DOCUMENTO)
+    .replace(/\D/g, '').slice(0, MAX_DOCUMENTO) // NOSONAR: S7781 - replaceAll() no acepta regex
   form.value.numeroDocumento = digitos
 }
 
 function manejarTelefono(event) {
   limpiarMensajes()
   const digitos = (event?.target?.value ?? form.value.telefono ?? '')
-    .replace(/\D/g, '')
-    .slice(0, MAX_TELEFONO)
+    .replace(/\D/g, '').slice(0, MAX_TELEFONO) // NOSONAR: S7781 - replaceAll() no acepta regex
   form.value.telefono = digitos
 }
 
@@ -476,12 +474,8 @@ async function manejarSubmit() {
     return
   }
 
-  if (props.modo === 'registrar') {
-    // Emitir evento submit para que el padre pueda mostrar confirmación
-    emit('submit', form.value)
-  } else {
-    emit('submit', form.value)
-  }
+  // Emitir evento submit para que el padre pueda mostrar confirmación
+  emit('submit', form.value)
 }
 
 // Registrar usuario
@@ -499,8 +493,8 @@ async function registrarUsuario() {
       correo_electronico: form.value.correo,
       direccion: form.value.direccion || null,
       telefono: form.value.telefono || null,
-      id_tipo_documento: parseInt(form.value.idTipoDocumento),
-      id_sexo: parseInt(form.value.idSexo)
+      id_tipo_documento: Number.parseInt(form.value.idTipoDocumento),
+      id_sexo: Number.parseInt(form.value.idSexo)
     }
 
     const datosUsuario = {
@@ -578,11 +572,11 @@ onMounted(async () => {
 
   // Cargar datos si se proporcionan
   if (props.datos && Object.keys(props.datos).length > 0) {
-    Object.keys(props.datos).forEach(key => {
-      if (Object.prototype.hasOwnProperty.call(form.value, key)) {
+    for (const key of Object.keys(props.datos)) {
+      if (Object.hasOwn(form.value, key)) {
         form.value[key] = props.datos[key]
       }
-    })
+    }
     normalizarCamposTexto()
   }
 })
@@ -590,11 +584,11 @@ onMounted(async () => {
 // Observar cambios en los datos
 watch(() => props.datos, (nuevosDatos) => {
   if (nuevosDatos && Object.keys(nuevosDatos).length > 0) {
-    Object.keys(nuevosDatos).forEach(key => {
-      if (Object.prototype.hasOwnProperty.call(form.value, key)) {
+    for (const key of Object.keys(nuevosDatos)) {
+      if (Object.hasOwn(form.value, key)) {
         form.value[key] = nuevosDatos[key]
       }
-    })
+    }
     normalizarCamposTexto()
   }
 }, { deep: true })

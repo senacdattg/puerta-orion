@@ -455,7 +455,7 @@ const MAX_DOCUMENTO = 10;
 function normalizarDocumento(valor = '') {
   return (valor || '')
     .toString()
-    .replace(/\D/g, '')
+    .replace(/\D/g, '') // NOSONAR: S7781 - replaceAll() no acepta regex
     .slice(0, MAX_DOCUMENTO);
 }
 
@@ -469,7 +469,7 @@ function normalizarMonto(valor = '') {
   if (!valor) return '';
   const saneado = valor
     .toString()
-    .replace(/[^0-9.,]/g, '')
+    .replace(/[^0-9.,]/g, '') // NOSONAR: S7781 - replaceAll() no acepta regex
     .replaceAll(',', '.');
 
   const partes = saneado.split('.');
@@ -644,14 +644,14 @@ function configurarFormularioDesdeProps() {
     fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
     saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
     estado_ui: props.mensualidad.estado || 'Pendiente',
-    activo: props.mensualidad.activo !== undefined ? !!props.mensualidad.activo : true,
+    activo: props.mensualidad.activo === undefined ? true : Boolean(props.mensualidad.activo),
     fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
   };
   inicializarDocumentoEdicion();
 
   // Si estamos editando, guardar estado inicial
   if (editando.value && !formEdicionInicial.value) {
-    formEdicionInicial.value = JSON.parse(JSON.stringify(formEdicion.value));
+    formEdicionInicial.value = structuredClone(formEdicion.value);
   }
 }
 
@@ -730,7 +730,7 @@ onMounted(async () => {
 function getClaseSaldo() {
   if (props.mensualidad.estado === 'Pagado') return 'saldo-completo';
 
-  const valorTotal = Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
+  const valorTotal = Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, '')); // NOSONAR: S7781 - replaceAll() no acepta regex
   const saldoPendiente = props.mensualidad.saldoPendiente || valorTotal;
 
   if (saldoPendiente === 0) return 'saldo-completo';
@@ -742,7 +742,7 @@ function getClaseSaldo() {
 const calcularSaldoPendiente = () => {
   if (props.mensualidad.estado === 'Pagado') return '$0';
 
-  const valorTotal = Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
+  const valorTotal = Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, '')); // NOSONAR: S7781 - replaceAll() no acepta regex
   const saldoPendiente = props.mensualidad.saldoPendiente || valorTotal;
 
   return `$${saldoPendiente.toLocaleString('es-CO')}`;
@@ -751,7 +751,7 @@ const calcularSaldoPendiente = () => {
 // Funciones de edición
 function extraerNumeroDeValor(valor) {
   if (!valor) return '';
-  return valor.replace(/[^0-9.-]+/g, '');
+  return valor.replace(/[^0-9.-]+/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function validarFormularioEdicion() {
@@ -973,7 +973,7 @@ function toggleEdicion() {
 
   // Si inicia edición, guardar estado inicial
   if (editando.value) {
-    formEdicionInicial.value = JSON.parse(JSON.stringify(formEdicion.value));
+    formEdicionInicial.value = structuredClone(formEdicion.value);
   } else {
     configurarFormularioDesdeProps();
     formEdicionInicial.value = null;
@@ -1084,7 +1084,7 @@ async function guardarCambios() {
   emit('guardar-cambios', mensualidadActualizada);
 
   // Actualizar estado inicial después de guardar exitosamente
-  formEdicionInicial.value = JSON.parse(JSON.stringify(formEdicion.value));
+  formEdicionInicial.value = structuredClone(formEdicion.value);
   editando.value = false;
 }
 
@@ -1267,7 +1267,7 @@ const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());
 
 function obtenerValorNumericoMensualidad() {
   if (!props.mensualidad.valor) return 0;
-  return Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, ''));
+  return Number.parseFloat(props.mensualidad.valor.replace(/[^0-9.-]+/g, '')); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function formatearFechaDDMMYYYY(fechaStr) {

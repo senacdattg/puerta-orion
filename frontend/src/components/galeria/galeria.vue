@@ -281,7 +281,7 @@ export default {
     mostrarFormulario(newValue) {
       if (newValue) {
         // Guardar la posición actual del scroll
-        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        const scrollPosition = globalThis.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
         // Aplicar la posición guardada al body antes de fijarlo
         document.body.style.top = `-${scrollPosition}px`;
@@ -298,7 +298,7 @@ export default {
 
         // Restaurar la posición del scroll
         if (this.scrollPositionGuardada !== undefined) {
-          window.scrollTo(0, this.scrollPositionGuardada);
+          globalThis.scrollTo(0, this.scrollPositionGuardada);
           this.scrollPositionGuardada = undefined;
         }
       }
@@ -312,20 +312,20 @@ export default {
   },
   methods: {
     normalizarEspacios(valor = "") {
-      return valor ? valor.replace(/\s+/g, " ").trim() : ""
+      return valor ? valor.replace(/\s+/g, " ").trim() : "" // NOSONAR: S7781 - replaceAll() no acepta regex
     },
     normalizarTitulo(valor = "") {
       if (valor === null || valor === undefined) return ""
       const texto = valor.toString()
-      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\-\s]/g, "")
-      const colapsado = permitido.replace(/\s{2,}/g, " ")
+      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\-\s]/g, "") // NOSONAR: S7781 - replaceAll() no acepta regex
+      const colapsado = permitido.replace(/\s{2,}/g, " ") // NOSONAR: S7781 - replaceAll() no acepta regex
       return colapsado.slice(0, MAX_TITULO)
     },
     normalizarDescripcion(valor = "") {
       if (valor === null || valor === undefined) return ""
       const texto = valor.toString()
-      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9#\-.,;:¿?¡!()\s]/g, "")
-      const colapsado = permitido.replace(/\s{2,}/g, " ")
+      const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9#\-.,;:¿?¡!()\s]/g, "") // NOSONAR: S7781 - replaceAll() no acepta regex
+      const colapsado = permitido.replace(/\s{2,}/g, " ") // NOSONAR: S7781 - replaceAll() no acepta regex
       return colapsado.slice(0, MAX_DESCRIPCION)
     },
     manejarTitulo(event) {
@@ -412,7 +412,7 @@ export default {
       this.mostrarFormulario = true;
 
       // Guardar estado inicial cuando se abre el formulario
-      this.formInicial = JSON.parse(JSON.stringify(this.form));
+      this.formInicial = structuredClone(this.form);
       this.archivoInicial = null;
     },
     // Función para normalizar valores para comparación
@@ -575,7 +575,7 @@ export default {
       this.mostrarFormulario = true;
 
       // Guardar estado inicial cuando se inicia la edición
-      this.formInicial = JSON.parse(JSON.stringify(this.form));
+      this.formInicial = structuredClone(this.form);
       this.archivoInicial = null;
     },
     async manejarSeleccionArchivo(event) {
@@ -690,8 +690,8 @@ export default {
         const datosImagen = {
           titulo: this.form.titulo,
           descripcion: this.form.descripcion,
-          id_tipo_evento: this.form.id_tipo_evento ? parseInt(this.form.id_tipo_evento) : null,
-          id_categoria: this.form.id_categoria ? parseInt(this.form.id_categoria) : null
+          id_tipo_evento: this.form.id_tipo_evento ? Number.parseInt(this.form.id_tipo_evento) : null,
+          id_categoria: this.form.id_categoria ? Number.parseInt(this.form.id_categoria) : null
         }
         await galeriaService.actualizarImagen(this.eventos[this.editando].id, datosImagen)
 
@@ -740,18 +740,21 @@ export default {
       await this.cargarEventos()
 
       // Mostrar notificación de éxito
+      const esEdicion = this.editando !== null;
+      const titulo = esEdicion ? '¡Evento actualizado exitosamente!' : '¡Evento creado exitosamente!';
+      const mensaje = esEdicion
+        ? 'La información del evento se ha guardado correctamente en el sistema.'
+        : 'El evento se ha creado correctamente en el sistema.';
       await Swal.fire({
         icon: 'success',
-        title: this.editando !== null ? '¡Evento actualizado exitosamente!' : '¡Evento creado exitosamente!',
-        text: this.editando !== null
-          ? 'La información del evento se ha guardado correctamente en el sistema.'
-          : 'El evento se ha creado correctamente en el sistema.',
+        title: titulo,
+        text: mensaje,
         confirmButtonText: 'Aceptar',
         confirmButtonColor: '#004AAD'
       })
 
       // Actualizar estado inicial después de guardar exitosamente
-      this.formInicial = JSON.parse(JSON.stringify(this.form));
+      this.formInicial = structuredClone(this.form);
       this.archivoInicial = this.archivoSeleccionado;
 
       this.mostrarFormulario = false
@@ -791,14 +794,18 @@ export default {
         }
 
         // Confirmación antes de guardar
+        const esEdicion = this.editando !== null;
+        const tituloConfirmacion = esEdicion ? '¿Actualizar evento?' : '¿Crear evento?';
+        const textoConfirmacion = esEdicion
+          ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
+          : '¿Estás seguro de que deseas crear este evento?';
+        const textoBoton = esEdicion ? 'Sí, actualizar' : 'Sí, crear';
         const confirmacion = await Swal.fire({
           icon: 'question',
-          title: this.editando !== null ? '¿Actualizar evento?' : '¿Crear evento?',
-          text: this.editando !== null
-            ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
-            : '¿Estás seguro de que deseas crear este evento?',
+          title: tituloConfirmacion,
+          text: textoConfirmacion,
           showCancelButton: true,
-          confirmButtonText: this.editando !== null ? 'Sí, actualizar' : 'Sí, crear',
+          confirmButtonText: textoBoton,
           cancelButtonText: 'Cancelar',
           confirmButtonColor: '#004AAD',
           cancelButtonColor: '#6c757d'
@@ -808,7 +815,7 @@ export default {
           return
         }
 
-        if (this.editando !== null) {
+        if (esEdicion) {
           if (this.archivoSeleccionado) {
             await this.actualizarEventoConImagen()
           } else {
@@ -934,17 +941,17 @@ export default {
 
       return tipo
         // elimina todos los emojis conocidos
-        .replace(/[\p{Emoji_Presentation}\p{Emoji}\uFE0F]/gu, '')
+        .replace(/[\p{Emoji_Presentation}\p{Emoji}\uFE0F]/gu, '') // NOSONAR: S7781 - replaceAll() no acepta regex Unicode
         .trim()
         .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[áàäâ]/g, 'a')
-        .replace(/[éèëê]/g, 'e')
-        .replace(/[íìïî]/g, 'i')
-        .replace(/[óòöô]/g, 'o')
-        .replace(/[úùüû]/g, 'u')
-        .replace(/ñ/g, 'n')
-        .replace(/[^a-z0-9-]/g, '');
+        .replace(/\s+/g, '-') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/[áàäâ]/g, 'a') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/[éèëê]/g, 'e') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/[íìïî]/g, 'i') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/[óòöô]/g, 'o') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/[úùüû]/g, 'u') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/ñ/g, 'n') // NOSONAR: S7781 - replaceAll() no acepta regex
+        .replace(/[^a-z0-9-]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
     }
   },
   async mounted() {

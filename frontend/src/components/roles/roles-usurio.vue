@@ -5,8 +5,8 @@
 
       <!-- Selector de vista actual -->
       <div class="selector-rol">
-        <label class="label">Vista actual:</label>
-        <select v-model="rolActual" @change="cambiarRol" class="select-rol">
+        <label for="selector-vista-actual" class="label">Vista actual:</label>
+        <select id="selector-vista-actual" v-model="rolActual" @change="cambiarRol" class="select-rol">
           <option v-for="r in rolesDisponibles" :key="r" :value="r">{{ r }}</option>
         </select>
       </div>

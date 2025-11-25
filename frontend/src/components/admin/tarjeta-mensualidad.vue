@@ -198,7 +198,7 @@ const diasParaVencimiento = computed(() => {
   const idx = meses.indexOf(props.mensualidad.mes);
   if (idx === -1) return null;
   const fv = new Date(fp.getFullYear(), idx + 1, fp.getDate());
-  const diff = fv.getTime() - new Date().getTime();
+  const diff = fv.getTime() - Date.now();
   return Math.ceil(diff / (1000*60*60*24));
 });
 
@@ -236,7 +236,7 @@ const textoVencimiento = computed(() => {
 
   if (dias === 0) return 'Vence hoy';
   if (dias <= 3) {
-    return `Vence en ${dias} día${dias !== 1 ? 's' : ''}`;
+    return `Vence en ${dias} día${dias === 1 ? '' : 's'}`;
   }
   if (dias <= 7) {
     return `Vence en ${dias} días`;
@@ -343,7 +343,7 @@ async function pagarConMercadoPago() {
     }
     const url = json.init_point || json.preference_url || json.initPoint || json.url;
     if (!url) throw new Error('Preferencia creada sin URL de inicio');
-    window.location.href = url;
+    globalThis.location.href = url;
   } catch (e) {
     try {
       if (typeof e === 'object' && e !== null && e.message) {

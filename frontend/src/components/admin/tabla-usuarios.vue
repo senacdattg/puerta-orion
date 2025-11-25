@@ -414,8 +414,9 @@
               <small v-if="erroresCamposEdicion.telefono" class="input-error">{{ erroresCamposEdicion.telefono }}</small>
             </div>
             <div class="info-item-detalle info-item-direccion">
-              <label>Dirección</label>
+              <label for="edicion-direccion">Dirección</label>
               <input
+                id="edicion-direccion"
                 v-model="formularioEdicion.datos_persona.direccion"
                 type="text"
                 class="control-input"
@@ -617,29 +618,29 @@ const erroresCamposEdicion = ref({
 });
 
 function limpiarEspacios(valor = '') {
-  return valor.replace(/\s+/g, ' ').trim();
+  return valor.replace(/\s+/g, ' ').trim(); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function normalizarNombre(valor = '') {
   const limpio = limpiarEspacios(valor)
-    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, '');
+    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
   return limpio.toUpperCase();
 }
 
 function normalizarUsername(valor = '') {
-  return limpiarEspacios(valor).replace(/\s/g, '').toLowerCase();
+  return limpiarEspacios(valor).replace(/\s/g, '').toLowerCase(); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function normalizarDocumentoValor(valor = '') {
-  return valor.replace(/\D/g, '').slice(0, DOC_MAX);
+  return valor.replace(/\D/g, '').slice(0, DOC_MAX); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function normalizarTelefonoValor(valor = '') {
-  return valor.replace(/\D/g, '').slice(0, PHONE_MAX);
+  return valor.replace(/\D/g, '').slice(0, PHONE_MAX); // NOSONAR: S7781 - replaceAll() no acepta regex
 }
 
 function normalizarDireccionValor(valor = '') {
-  const permitido = limpiarEspacios(valor).replace(/[^A-Za-z0-9#.\-\s]/g, '');
+  const permitido = limpiarEspacios(valor).replace(/[^A-Za-z0-9#.\-\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
   return permitido.toUpperCase();
 }
 

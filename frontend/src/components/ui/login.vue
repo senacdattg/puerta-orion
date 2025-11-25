@@ -25,13 +25,14 @@
         <form class="login-form-volleyball" @submit.prevent="handleLogin">
           <!-- Campo de usuario -->
           <div class="input-group-volleyball" :class="{ 'input-active': username }">
-            <label class="input-label-volleyball">
+            <label for="login-username" class="input-label-volleyball">
               <svg class="input-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
               </svg>
               Usuario
             </label>
             <input
+              id="login-username"
               type="text"
               v-model="username"
               class="form-input-volleyball"
@@ -45,7 +46,7 @@
 
           <!-- Campo de contraseña -->
           <div class="input-group-volleyball" :class="{ 'input-active': password }">
-            <label class="input-label-volleyball">
+            <label for="login-password" class="input-label-volleyball">
               <svg class="input-icon-volleyball" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
               </svg>
@@ -53,6 +54,7 @@
             </label>
             <div class="password-wrapper">
               <input
+                id="login-password"
                 :type="showPassword ? 'text' : 'password'"
                 v-model="password"
                 class="form-input-volleyball"
