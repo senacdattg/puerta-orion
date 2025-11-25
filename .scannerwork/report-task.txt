@@ -1,0 +1,6 @@
+projectKey=puerta_orion
+serverUrl=https://sonarqube.dataguaviare.com.co
+serverVersion=25.11.0.114957
+dashboardUrl=https://sonarqube.dataguaviare.com.co/dashboard?id=puerta_orion
+ceTaskId=5156bdd1-86e8-4581-ab12-ced2b5c5c418
+ceTaskUrl=https://sonarqube.dataguaviare.com.co/api/ce/task?id=5156bdd1-86e8-4581-ab12-ced2b5c5c418
