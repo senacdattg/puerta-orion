@@ -277,35 +277,45 @@ def validar_solapamiento_horario(
 # SERIALIZADORES
 # ============================================================================
 
+def _agregar_categoria_serializada(evento: Evento, evento_dict: Dict[str, Any]) -> None:
+    """Agrega la categoría serializada al diccionario del evento."""
+    if not (hasattr(evento, 'categoria') and evento.categoria):
+        return
+    try:
+        evento_dict['categoria'] = evento.categoria.to_dict()
+    except Exception as e:
+        logger.warning('Error al serializar categoría del evento %s: %s', evento.id_evento, str(e))
+
+
+def _agregar_sesion_serializada(evento: Evento, evento_dict: Dict[str, Any]) -> None:
+    """Agrega la sesión serializada al diccionario del evento."""
+    if not (hasattr(evento, 'sesion') and evento.sesion):
+        return
+    try:
+        evento_dict['sesion'] = evento.sesion.to_dict()
+    except Exception as e:
+        logger.warning('Error al serializar sesión del evento %s: %s', evento.id_evento, str(e))
+
+
+def _agregar_tipo_evento_serializado(evento: Evento, evento_dict: Dict[str, Any]) -> None:
+    """Agrega el tipo de evento serializado al diccionario del evento."""
+    if not evento.id_tipo_evento:
+        return
+    try:
+        tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
+        if tipo_evento:
+            evento_dict['tipo_evento'] = tipo_evento.to_dict()
+    except Exception as e:
+        logger.warning('Error al obtener tipo_evento del evento %s: %s', evento.id_evento, str(e))
+
+
 def _serializar_evento(evento: Evento) -> Dict[str, Any]:
     """Serializa un evento incluyendo relaciones asociadas."""
     try:
         evento_dict = evento.to_dict()
-        
-        # Agregar relaciones de forma segura
-        # Categoría
-        if hasattr(evento, 'categoria') and evento.categoria:
-            try:
-                evento_dict['categoria'] = evento.categoria.to_dict()
-            except Exception as e:
-                logger.warning('Error al serializar categoría del evento %s: %s', evento.id_evento, str(e))
-        
-        # Sesión - verificar si existe el atributo antes de acceder
-        if hasattr(evento, 'sesion') and evento.sesion:
-            try:
-                evento_dict['sesion'] = evento.sesion.to_dict()
-            except Exception as e:
-                logger.warning('Error al serializar sesión del evento %s: %s', evento.id_evento, str(e))
-        
-        # Tipo de evento
-        if evento.id_tipo_evento:
-            try:
-                tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-                if tipo_evento:
-                    evento_dict['tipo_evento'] = tipo_evento.to_dict()
-            except Exception as e:
-                logger.warning('Error al obtener tipo_evento del evento %s: %s', evento.id_evento, str(e))
-        
+        _agregar_categoria_serializada(evento, evento_dict)
+        _agregar_sesion_serializada(evento, evento_dict)
+        _agregar_tipo_evento_serializado(evento, evento_dict)
         return evento_dict
     except Exception as e:
         logger.error('Error al serializar evento %s: %s', evento.id_evento if evento else 'desconocido', str(e))
