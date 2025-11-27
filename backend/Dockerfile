@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Instalar dependencias del sistema como root y crear usuario no privilegiado
 RUN apt-get update \
- && apt-get install -y --no-install-recommends curl \
+ && apt-get install -y --no-install-recommends curl build-essential g++ python3-dev \
  && rm -rf /var/lib/apt/lists/* \
  && groupadd -r appuser && useradd -r -g appuser appuser \
  && mkdir -p /root/.config/pip
