@@ -95,7 +95,11 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     """Configuración para testing"""
     TESTING = True
-    DATABASE_URL = 'sqlite:///:memory:'
+    
+    # Sobrescribir completamente la configuración de base de datos para testing
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_BINDS = {}
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 # Diccionario de configuraciones disponibles

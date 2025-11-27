@@ -8,7 +8,7 @@ sin mocks de servicios. Son más lentos pero más realistas.
 import pytest
 from datetime import date
 
-from tests.test_helpers import (
+from tests.helpers import (
     assert_success_response,
     assert_error_response,
     make_json_request
