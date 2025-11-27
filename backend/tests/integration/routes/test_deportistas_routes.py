@@ -15,7 +15,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from flask import Flask
 
-from tests.test_helpers import (
+from tests.helpers import (
     assert_success_response,
     assert_error_response,
     make_json_request,

@@ -1,13 +1,12 @@
 """
-Utilidades y helpers para tests.
+Assertions personalizadas para tests.
 
-Este módulo contiene funciones auxiliares que se pueden usar en todos los tests
-para mantener el código DRY y seguir el principio AAA (Arrange-Act-Assert).
+Funciones de validación reutilizables que mejoran la legibilidad
+y mantienen consistencia en las aserciones de los tests.
 """
 
 from typing import Dict, Any, Optional
 from flask import Response
-from flask.testing import FlaskClient
 
 
 def assert_success_response(
@@ -78,58 +77,4 @@ def assert_error_response(
             f"Expected error containing '{expected_error}', got '{data.get('error')}'"
     
     return data
-
-
-def make_json_request(
-    client: FlaskClient,
-    method: str,
-    url: str,
-    data: Optional[Dict[str, Any]] = None,
-    headers: Optional[Dict[str, str]] = None
-) -> Response:
-    """
-    Realiza una petición JSON de forma conveniente.
-    
-    Args:
-        client: Cliente de Flask
-        method: Método HTTP (GET, POST, PUT, DELETE, etc.)
-        url: URL del endpoint
-        data: Datos JSON a enviar (opcional)
-        headers: Headers HTTP adicionales (opcional)
-    
-    Returns:
-        Respuesta HTTP
-    """
-    default_headers = {'Content-Type': 'application/json'}
-    if headers:
-        default_headers.update(headers)
-    
-    if method.upper() == 'GET':
-        return client.get(url, headers=default_headers)
-    elif method.upper() == 'POST':
-        return client.post(url, json=data or {}, headers=default_headers)
-    elif method.upper() == 'PUT':
-        return client.put(url, json=data or {}, headers=default_headers)
-    elif method.upper() == 'PATCH':
-        return client.patch(url, json=data or {}, headers=default_headers)
-    elif method.upper() == 'DELETE':
-        return client.delete(url, headers=default_headers)
-    else:
-        raise ValueError(f"Unsupported HTTP method: {method}")
-
-
-def create_auth_headers(token: str) -> Dict[str, str]:
-    """
-    Crea headers de autenticación.
-    
-    Args:
-        token: Token JWT
-    
-    Returns:
-        Diccionario con headers de autenticación
-    """
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {token}'
-    }
 
