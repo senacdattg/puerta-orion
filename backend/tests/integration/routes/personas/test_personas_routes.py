@@ -1,5 +1,9 @@
 """
 Tests para las rutas de personas.
+
+Endpoints:
+- GET /api/personas/personas/<id_persona>
+- POST /api/personas/personas/
 """
 
 import pytest
@@ -7,7 +11,6 @@ from unittest.mock import patch, MagicMock
 
 from tests.helpers import (
     assert_success_response,
-    assert_error_response,
     make_json_request
 )
 

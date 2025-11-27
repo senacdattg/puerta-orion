@@ -3,10 +3,13 @@ Tests de integración para rutas de deportistas.
 
 Estos tests prueban la integración completa con la base de datos,
 sin mocks de servicios. Son más lentos pero más realistas.
+
+Endpoints:
+- POST /api/deportistas/
+- GET /api/deportistas/<id_deportista>
 """
 
 import pytest
-from datetime import date
 
 from tests.helpers import (
     assert_success_response,
