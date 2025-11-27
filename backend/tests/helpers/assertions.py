@@ -70,11 +70,14 @@ def assert_error_response(
     data = response.get_json()
     assert 'success' in data, "Response should have 'success' field"
     assert data['success'] is False, f"Expected success=False, got {data.get('success')}"
-    assert 'error' in data, "Error response should have 'error' field"
+    # Las respuestas de error pueden tener 'error' o 'message'
+    assert 'error' in data or 'message' in data, \
+        "Error response should have 'error' or 'message' field"
     
     if expected_error:
-        assert expected_error in data['error'], \
-            f"Expected error containing '{expected_error}', got '{data.get('error')}'"
+        error_text = data.get('error', '') or data.get('message', '')
+        assert expected_error in error_text, \
+            f"Expected error containing '{expected_error}', got '{error_text}'"
     
     return data
 

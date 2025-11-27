@@ -23,7 +23,7 @@ class TestLogin:
     def test_login_success(self, client):
         """Test: Login exitoso."""
         # Arrange
-        from tests.test_config import TEST_USERNAME, TEST_PASSWORD
+        from tests.helpers.test_config import TEST_USERNAME, TEST_PASSWORD
         
         datos_login = {
             'username': TEST_USERNAME,
@@ -53,7 +53,7 @@ class TestLogin:
     def test_login_credenciales_invalidas(self, client):
         """Test: Error con credenciales inválidas."""
         # Arrange
-        from tests.test_config import TEST_USERNAME, TEST_PASSWORD_INCORRECTA
+        from tests.helpers.test_config import TEST_USERNAME, TEST_PASSWORD_INCORRECTA
         
         datos_login = {
             'username': TEST_USERNAME,

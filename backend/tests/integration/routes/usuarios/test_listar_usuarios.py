@@ -45,7 +45,7 @@ class TestListarUsuarios:
             mock_query.offset.return_value = mock_query
             mock_query.limit.return_value.all.return_value = [mock_usuario]
             
-            response = client.get('/api/usuarios')
+            response = client.get('/api/usuarios/')
         
         # Assert
         data = assert_success_response(response)
@@ -78,7 +78,7 @@ class TestListarUsuarios:
             mock_query.offset.return_value = mock_query
             mock_query.limit.return_value.all.return_value = [mock_usuario]
             
-            response = client.get('/api/usuarios?limit=5&offset=0')
+            response = client.get('/api/usuarios/?limit=5&offset=0')
         
         # Assert
         data = assert_success_response(response)
@@ -109,7 +109,7 @@ class TestListarUsuarios:
             mock_query.offset.return_value = mock_query
             mock_query.limit.return_value.all.return_value = [mock_usuario]
             
-            response = client.get('/api/usuarios?estado=activo')
+            response = client.get('/api/usuarios/?estado=activo')
         
         # Assert
         assert_success_response(response)

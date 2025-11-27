@@ -46,7 +46,7 @@ class TestCrearImagen:
                     mock_db.session.commit = MagicMock()
                     
                     response = make_json_request(
-                        client, 'POST', '/api/galeria',
+                        client, 'POST', '/api/galeria/',
                         data=datos_imagen
                     )
         
@@ -56,7 +56,7 @@ class TestCrearImagen:
     def test_crear_imagen_sin_json(self, client, mock_token_required):
         """Test: Error cuando no se envía JSON."""
         # Act
-        response = client.post('/api/galeria', data='not json')
+        response = client.post('/api/galeria/', data='not json')
         
         # Assert
         assert_error_response(response, expected_status=400)
@@ -70,7 +70,7 @@ class TestCrearImagen:
         
         # Act
         response = make_json_request(
-            client, 'POST', '/api/galeria',
+            client, 'POST', '/api/galeria/',
             data=datos_incompletos
         )
         

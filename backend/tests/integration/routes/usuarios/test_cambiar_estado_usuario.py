@@ -64,7 +64,7 @@ class TestCambiarEstadoUsuario:
         # Act
         with patch('src.routes.usuarios_routes.Usuario.query') as mock_query:
             mock_query.filter_by.return_value.first.return_value = mock_usuario
-            with patch('src.routes.usuarios_routes.get_current_user',
+            with patch('src.middleware.auth_decorator.get_current_user',
                        return_value={'id_usuario': 2}):
                 with patch('src.routes.usuarios_routes.db') as mock_db:
                     mock_db.session.commit = MagicMock()
@@ -131,7 +131,7 @@ class TestCambiarEstadoUsuario:
         # Act
         with patch('src.routes.usuarios_routes.Usuario.query') as mock_query:
             mock_query.filter_by.return_value.first.return_value = mock_usuario
-            with patch('src.routes.usuarios_routes.get_current_user',
+            with patch('src.middleware.auth_decorator.get_current_user',
                        return_value={'id_usuario': 1}):
                 response = make_json_request(
                     client, 'PUT', '/api/usuarios/1/estado',

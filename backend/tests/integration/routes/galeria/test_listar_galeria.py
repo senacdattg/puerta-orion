@@ -40,7 +40,7 @@ class TestListarGaleria:
             mock_query.offset.return_value = mock_query
             mock_query.limit.return_value.all.return_value = [mock_imagen]
             
-            response = client.get('/api/galeria')
+            response = client.get('/api/galeria/')
         
         # Assert
         assert_success_response(response)
@@ -60,7 +60,7 @@ class TestListarGaleria:
             mock_query.offset.return_value = mock_query
             mock_query.limit.return_value.all.return_value = [mock_imagen]
             
-            response = client.get('/api/galeria?id_tipo_evento=1&id_categoria=1')
+            response = client.get('/api/galeria/?id_tipo_evento=1&id_categoria=1')
         
         # Assert
         assert_success_response(response)

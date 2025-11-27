@@ -45,8 +45,8 @@ class TestForgotPassword:
                     with patch('src.routes.auth_reset.db') as mock_db:
                         mock_db.session.add = MagicMock()
                         mock_db.session.commit = MagicMock()
-                        with patch('src.routes.auth_reset._enviar_correo_recuperacion',
-                                   return_value=True):
+                        with patch('src.routes.auth_reset._enviar_correo_reset',
+                                   return_value=None):
                             response = make_json_request(
                                 client, 'POST', '/api/auth/forgot-password',
                                 data=datos_solicitud
