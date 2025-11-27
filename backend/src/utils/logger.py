@@ -136,7 +136,31 @@ class GestorLogs:
     
     def obtener_registrador(self, nombre='aplicacion'):
         """Obtiene un logger específico"""
-        return self.registradores.get(nombre, self.registradores['aplicacion'])
+        # Si el logger solicitado existe, retornarlo
+        if nombre in self.registradores:
+            return self.registradores[nombre]
+        
+        # Si 'aplicacion' existe, usarlo como fallback
+        if 'aplicacion' in self.registradores:
+            return self.registradores['aplicacion']
+        
+        # Si no hay ningún logger inicializado, crear uno básico para evitar errores
+        # Esto puede pasar durante imports de módulos antes de que la app esté completamente inicializada
+        import logging
+        logger_basico = logging.getLogger(nombre)
+        logger_basico.setLevel(logging.WARNING)
+        # Solo agregar handler si no tiene ninguno para evitar duplicados
+        if not logger_basico.handlers:
+            handler = logging.StreamHandler()
+            # Usar un formateador básico si _obtener_formateador no está disponible
+            try:
+                formateador = self._obtener_formateador()
+            except Exception:
+                formateador = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+            handler.setFormatter(formateador)
+            logger_basico.addHandler(handler)
+        self.registradores[nombre] = logger_basico
+        return logger_basico
     
     def _obtener_url_amigable(self, ruta):
         """
