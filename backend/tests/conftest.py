@@ -441,19 +441,75 @@ def mock_get_current_user():
 @pytest.fixture
 def mock_token_required():
     """Mock para el decorador token_required que siempre permite acceso."""
-    def passthrough_decorator(*args, **kwargs):
-        """Decorador que no hace nada, solo pasa la función."""
-        def decorator(f):
-            return f
-        return decorator
+    from unittest.mock import MagicMock
     
-    # Mockear el decorador en todos los lugares donde se usa
-    # Nota: catalogos_routes no usa token_required, así que no lo parcheamos
-    with patch('src.routes.deportistas_routes.token_required', side_effect=passthrough_decorator):
-        with patch('src.routes.eventos_routes.token_required', side_effect=passthrough_decorator):
-            with patch('src.routes.auth_routes.token_required', side_effect=passthrough_decorator):
-                # catalogos_routes no usa token_required, así que no intentamos parchearlo
-                yield
+    # Mock usuario válido para get_current_user
+    mock_usuario_data = {
+        'id_usuario': 1,
+        'username': 'testuser',
+        'usuario': 'testuser',
+        'persona': {
+            'id_persona': 1,
+            'nombre_completo': 'Test User',
+            'documento': 12345678
+        },
+        'roles': [
+            {'nombre_rol': 'SuperAdmin', 'id_rol': 1},
+            {'nombre_rol': 'Administrador', 'id_rol': 2},
+            {'nombre_rol': 'Deportista', 'id_rol': 3},
+            {'nombre_rol': 'Acudiente', 'id_rol': 4},
+            {'nombre_rol': 'usuario', 'id_rol': 5}
+        ],
+        'rol_activo': {'nombre_rol': 'SuperAdmin', 'id_rol': 1},
+        'permisos': []
+    }
+    
+    # Mock de SesionAuth
+    mock_sesion = MagicMock()
+    mock_sesion.activa = True
+    mock_sesion.id_usuario = 1
+    
+    # Mock de Persona
+    mock_persona = MagicMock()
+    mock_persona.id_persona = 1
+    mock_persona.primer_nombre = 'Test'
+    mock_persona.primer_apellido = 'User'
+    
+    # Mock de Usuario
+    mock_usuario = MagicMock()
+    mock_usuario.id_usuario = 1
+    mock_usuario.usuario = 'testuser'
+    mock_usuario.persona = mock_persona
+    mock_usuario.roles = [
+        MagicMock(nombre_rol='SuperAdmin', id_rol=1),
+        MagicMock(nombre_rol='Administrador', id_rol=2),
+        MagicMock(nombre_rol='Deportista', id_rol=3),
+        MagicMock(nombre_rol='Acudiente', id_rol=4),
+        MagicMock(nombre_rol='usuario', id_rol=5)
+    ]
+    mock_usuario.rol_activo = MagicMock(nombre_rol='SuperAdmin', id_rol=1)
+    
+    # Mock del payload del token
+    mock_payload = {
+        'usuario_id': 1,
+        'username': 'testuser',
+        'exp': 9999999999,
+        'iat': 1000000000
+    }
+    
+    # Hacer patch de get_current_user y métodos de validación
+    with patch('src.middleware.auth_decorator.get_current_user', return_value=mock_usuario_data):
+        with patch('src.middleware.auth_decorator.TokenRequired._extraer_token', return_value='mock_token'):
+            with patch('src.middleware.auth_decorator.TokenRequired._validar_token_jwt', return_value=mock_payload):
+                with patch('src.middleware.auth_decorator.TokenRequired._verificar_sesion_activa', return_value=mock_sesion):
+                    with patch('src.middleware.auth_decorator.TokenRequired._obtener_usuario_completo', return_value=mock_usuario):
+                        with patch('src.middleware.auth_decorator.TokenRequired._verificar_roles', return_value=True):
+                            with patch('src.middleware.auth_decorator.TokenRequired._verificar_permisos', return_value=True):
+                                with patch('src.middleware.auth_decorator.TokenRequired._verificar_rol_activo', return_value=True):
+                                    with patch('src.middleware.auth_decorator.asegurar_rol_activo_valido', return_value=mock_usuario.rol_activo):
+                                        with patch('src.middleware.auth_decorator.obtener_paneles_autorizados', return_value=[]):
+                                            with patch('src.middleware.auth_decorator.get_user_permissions', return_value=[]):
+                                                yield
 
 
 @pytest.fixture
