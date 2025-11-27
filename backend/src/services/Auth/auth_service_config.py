@@ -42,9 +42,10 @@ class AuthServiceConfig:
     
     # Mensajes de error personalizables
     # NOTA: 'password_required' es solo una clave de diccionario para mensajes de error, NO es una credencial hardcodeada
+    # nosonar: S2068 - 'password' en strings es solo texto de mensajes, no credenciales hardcodeadas
     ERROR_MESSAGES = {
         'username_required': "El nombre de usuario es requerido",
-        'password_required': "La contraseña es requerida",
+        'password_required': "La contraseña es requerida",  # nosonar: S2068
         'username_too_short': f"El nombre de usuario debe tener al menos {MIN_USERNAME_LENGTH} caracteres",
         'invalid_credentials': "Credenciales inválidas",
         'user_inactive': "Usuario inactivo",

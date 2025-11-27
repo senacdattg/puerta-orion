@@ -19,7 +19,8 @@ class UsuarioServiceConfig:
     MAX_LENGTH_EMAIL = 50
     
     # Configuración de seguridad
-    PASSWORD_HASH_METHOD = 'pbkdf2:sha256'
+    # nosonar: S2068 - 'password' aquí es solo el nombre de configuración, no una credencial hardcodeada
+    PASSWORD_HASH_METHOD = 'pbkdf2:sha256'  # nosonar: S2068
     PASSWORD_SALT_LENGTH = 16
     
     # Configuración de logging
@@ -37,10 +38,11 @@ class UsuarioServiceConfig:
     EXCLUDE_PASSWORD = True
     
     # Mensajes de error personalizables
+    # nosonar: S2068 - 'password' en strings es solo texto de mensajes, no credenciales hardcodeadas
     ERROR_MESSAGES = {
         'campos_faltantes': "Campos requeridos faltantes: {campos}",
         'email_invalido': "Formato de email inválido",
-        'password_corta': "La contraseña debe tener al menos {min_length} caracteres",
+        'password_corta': "La contraseña debe tener al menos {min_length} caracteres",  # nosonar: S2068
         'username_corto': "El nombre de usuario debe tener al menos {min_length} caracteres",
         'username_largo': "El nombre de usuario excede la longitud máxima ({max_length} caracteres)",
         'nombre_largo': "El primer nombre excede la longitud máxima ({max_length} caracteres)",

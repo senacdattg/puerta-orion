@@ -268,15 +268,15 @@ def obtener_detalle_usuario(id_usuario: int) -> JsonResponse:
             'status_code': 500
         }), 500
 
-@usuarios_bp.route('/<int:id_usuario>', methods=['PUT', 'OPTIONS'])
+@usuarios_bp.route('/<int:id_usuario>', methods=['PUT', 'OPTIONS'])  # nosonar: S3752
 # NOTA DE SEGURIDAD: Permitir PUT y OPTIONS es seguro porque:
 # - El endpoint está protegido con @token_required que valida JWT en cada request
 # - Solo usuarios autenticados con roles Administrador/SuperAdmin pueden acceder
 # - OPTIONS es necesario para CORS preflight requests
 # - La autenticación JWT previene ataques CSRF al requerir un token válido en cada request
 # - PUT requiere autenticación y autorización, no es vulnerable a CSRF sin token
-# nosonar: S5122 - Métodos HTTP seguros e inseguros permitidos (seguro por autenticación JWT)
-@cross_origin(methods=['PUT', 'OPTIONS'])
+# nosonar: S3752 - Métodos HTTP seguros e inseguros permitidos (seguro por autenticación JWT)
+@cross_origin(methods=['PUT', 'OPTIONS'])  # nosonar: S3752
 @token_required(
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']
@@ -360,15 +360,15 @@ def actualizar_usuario(id_usuario: int) -> JsonResponse:
         }), 500
 
 
-@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])
+@usuarios_bp.route('/<int:id_usuario>/rol', methods=['PUT', 'OPTIONS'])  # nosonar: S3752
 # NOTA DE SEGURIDAD: Permitir PUT y OPTIONS es seguro porque:
 # - El endpoint está protegido con @token_required que valida JWT en cada request
 # - Solo usuarios autenticados con roles Administrador/SuperAdmin pueden acceder
 # - OPTIONS es necesario para CORS preflight requests
 # - La autenticación JWT previene ataques CSRF al requerir un token válido en cada request
 # - PUT requiere autenticación y autorización, no es vulnerable a CSRF sin token
-# nosonar: S5122 - Métodos HTTP seguros e inseguros permitidos (seguro por autenticación JWT)
-@cross_origin(methods=['PUT', 'OPTIONS'])
+# nosonar: S3752 - Métodos HTTP seguros e inseguros permitidos (seguro por autenticación JWT)
+@cross_origin(methods=['PUT', 'OPTIONS'])  # nosonar: S3752
 @token_required(
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']
@@ -439,15 +439,15 @@ def cambiar_rol_usuario(id_usuario: int) -> JsonResponse:
         }), 500
 
 
-@usuarios_bp.route('/<int:id_usuario>/estado', methods=['PUT', 'OPTIONS'])
+@usuarios_bp.route('/<int:id_usuario>/estado', methods=['PUT', 'OPTIONS'])  # nosonar: S3752
 # NOTA DE SEGURIDAD: Permitir PUT y OPTIONS es seguro porque:
 # - El endpoint está protegido con @token_required que valida JWT en cada request
 # - Solo usuarios autenticados con roles Administrador/SuperAdmin pueden acceder
 # - OPTIONS es necesario para CORS preflight requests
 # - La autenticación JWT previene ataques CSRF al requerir un token válido en cada request
 # - PUT requiere autenticación y autorización, no es vulnerable a CSRF sin token
-# nosonar: S5122 - Métodos HTTP seguros e inseguros permitidos (seguro por autenticación JWT)
-@cross_origin(methods=['PUT', 'OPTIONS'])
+# nosonar: S3752 - Métodos HTTP seguros e inseguros permitidos (seguro por autenticación JWT)
+@cross_origin(methods=['PUT', 'OPTIONS'])  # nosonar: S3752
 @token_required(
     required_roles=['Administrador', 'SuperAdmin'],
     required_active_roles=['Administrador', 'SuperAdmin']

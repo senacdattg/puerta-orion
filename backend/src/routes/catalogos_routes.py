@@ -79,9 +79,9 @@ MAPEO_SEXOS = {
 # SonarQube Security Hotspot: HTTP es intencional solo para desarrollo local
 # En producción, configure CORS_ALLOWED_ORIGINS con URLs HTTPS en variables de entorno
 # nosonar: S5332 - HTTP solo para desarrollo local, seguro en entorno controlado
-CORS_ALLOWED_ORIGINS = tuple(
+CORS_ALLOWED_ORIGINS = tuple(  # nosonar: S5332
     origen.strip()
-    for origen in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:8080').split(',')
+    for origen in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:8080').split(',')  # nosonar: S5332
     if origen.strip()
 )
 
