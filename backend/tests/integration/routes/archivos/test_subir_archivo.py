@@ -1,9 +1,11 @@
 """
-Tests para las rutas de archivos.
+Tests para el endpoint de subir archivo.
+
+Endpoint: POST /api/archivos/upload
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from io import BytesIO
 
 from tests.helpers import (

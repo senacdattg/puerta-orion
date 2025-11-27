@@ -1,21 +1,19 @@
 """
-Tests para las rutas de catálogos.
+Tests para los endpoints de catálogos generales.
 
-Este módulo contiene tests para todos los endpoints de catálogos.
+Endpoints:
+- GET /api/catalogos/tipos-documento
+- GET /api/catalogos/sexos
+- GET /api/catalogos/catalogos-completos
 """
 
 import pytest
 from unittest.mock import patch, MagicMock
 
 from tests.helpers import (
-    assert_success_response,
-    assert_error_response
+    assert_success_response
 )
 
-
-# ============================================================================
-# TESTS PARA CATÁLOGOS GENERALES
-# ============================================================================
 
 @pytest.mark.routes
 @pytest.mark.integration
