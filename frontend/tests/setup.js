@@ -1,4 +1,4 @@
-import { expect, afterEach, vi } from 'vitest'
+import { expect, afterEach, vi, beforeEach } from 'vitest'
 import { cleanup } from '@testing-library/vue'
 import '@testing-library/jest-dom/vitest'
 import { config } from '@vue/test-utils'
@@ -6,10 +6,26 @@ import { config } from '@vue/test-utils'
 // Global test utilities
 global.expect = expect
 
-// Cleanup after each test
+// Suppress console output during tests (except errors)
+const originalConsole = { ...console }
+const suppressedMethods = ['log', 'warn', 'info', 'debug']
+
+beforeEach(() => {
+  // Suppress console methods during tests
+  suppressedMethods.forEach((method) => {
+    console[method] = vi.fn()
+  })
+  // Keep console.error for actual errors
+  console.error = originalConsole.error
+})
+
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  // Restore console methods after tests
+  suppressedMethods.forEach((method) => {
+    console[method] = originalConsole[method]
+  })
 })
 
 // Mock window.matchMedia

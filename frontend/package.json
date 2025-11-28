@@ -12,10 +12,10 @@
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "test": "vitest run",
+    "test": "vitest run --reporter=verbose --reporter=junit --outputFile=./coverage/test-results.xml",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage --reporter=verbose --reporter=junit --outputFile=./coverage/test-results.xml"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",
