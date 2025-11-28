@@ -53,14 +53,6 @@
                         </span>
                     </div>
                 </div>
-
-                <!-- Botón para agregar evento (siempre visible si hay permisos) -->
-                <button v-if="puedeCrear && dia.esMesActual"
-                    @click="agregarEventoADia(dia, $event)"
-                    class="btn-agregar-dia"
-                    title="Agregar evento">
-                    <i class="fas fa-plus"></i>
-                </button>
             </div>
         </div>
 
@@ -69,7 +61,7 @@
             <div class="modal-content mensualidades-modal calendario-modal modal-sm" @click.stop>
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <i :class="modoEdicion ? 'fas fa-edit' : 'fas fa-plus-circle'"></i>
+                        <i :class="modoEdicion ? 'fas fa-edit' : (puedeCrear ? 'fas fa-plus-circle' : 'fas fa-eye')"></i>
                         {{ modoEdicion ? 'Editar Evento' : (puedeCrear ? 'Agregar Evento' : 'Ver Evento') }}
                     </h2>
                     <button @click="cerrarModal" class="btn-cerrar" title="Cerrar">
@@ -78,7 +70,104 @@
                 </div>
 
                 <div class="modal-body">
-                <form id="form-evento-calendario" @submit.prevent="guardarEvento" class="formulario-evento">
+                <!-- Modo vista (solo lectura) -->
+                <template v-if="!puedeCrear && !modoEdicion">
+                    <!-- Información principal del evento -->
+                    <div class="seccion-principal evento-header">
+                        <div class="evento-header-content">
+                            <h4 class="evento-titulo-grande">{{ nuevoEvento.titulo || 'Sin título' }}</h4>
+                            <span class="evento-badge-grande" :class="obtenerClaseTipoEvento(obtenerNombreTipoEvento(nuevoEvento.idTipoEvento))">
+                                {{ obtenerNombreTipoEvento(nuevoEvento.idTipoEvento) || 'Evento' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Información general -->
+                    <div class="seccion-detalles evento-detalles">
+                        <h5 class="evento-titulo-seccion">
+                            <i class="fas fa-info-circle"></i>
+                            Información General
+                        </h5>
+
+                        <div class="grid-detalles evento-grid">
+                            <!-- Primera fila: Tipo y Categoría lado a lado -->
+                            <div class="detalle-item evento-item">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-tag"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Tipo de evento</span>
+                                    <span class="detalle-valor evento-valor-grande">{{ obtenerNombreTipoEvento(nuevoEvento.idTipoEvento) || 'Sin tipo' }}</span>
+                                </div>
+                            </div>
+                            <div class="detalle-item evento-item">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Categoría</span>
+                                    <span class="detalle-valor evento-valor-grande">{{ obtenerNombreCategoria(nuevoEvento.idCategoria) || 'Sin categoría' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Segunda fila: Fecha debajo -->
+                            <div class="detalle-item evento-item evento-fecha-completa" style="grid-column: span 2;">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Fecha</span>
+                                    <span class="detalle-valor evento-valor-grande">{{ formatearFechaCompleta(nuevoEvento.fecha) || 'Sin fecha' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Tercera fila: Horas lado a lado debajo de fecha -->
+                            <div class="detalle-item evento-item">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Hora de inicio</span>
+                                    <span class="detalle-valor evento-valor-grande">{{ formatearHora12h(nuevoEvento.horaInicio) || 'Sin hora' }}</span>
+                                </div>
+                            </div>
+                            <div class="detalle-item evento-item">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Hora de fin</span>
+                                    <span class="detalle-valor evento-valor-grande">{{ formatearHora12h(nuevoEvento.horaFin) || 'Sin hora' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Cuarta fila: Lugar -->
+                            <div class="detalle-item evento-item evento-lugar-completo" style="grid-column: span 2;">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Lugar</span>
+                                    <span class="detalle-valor evento-valor-grande">{{ nuevoEvento.lugar || 'Sin lugar' }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Quinta fila: Descripción (si existe) -->
+                            <div class="detalle-item evento-item evento-descripcion-completa" v-if="nuevoEvento.descripcion" style="grid-column: span 2;">
+                                <div class="detalle-icono">
+                                    <i class="fas fa-align-left"></i>
+                                </div>
+                                <div class="detalle-contenido">
+                                    <span class="detalle-label evento-label-grande">Descripción</span>
+                                    <span class="detalle-valor evento-valor-grande evento-descripcion-texto">{{ nuevoEvento.descripcion }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Modo edición/creación -->
+                <form v-else id="form-evento-calendario" @submit.prevent="guardarEvento" class="formulario-evento">
                     <!-- Sección: Información básica -->
                     <div class="seccion-form">
                         <h6>Información básica</h6>
@@ -196,29 +285,43 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button
-                        type="button"
-                        @click="cerrarModal"
-                        class="btn btn-secondary"
-                    >
-                        Cerrar
-                    </button>
-                    <button
-                        v-if="puedeEliminar && modoEdicion"
-                        type="button"
-                        @click="eliminarEvento"
-                        class="btn btn-danger"
-                    >
-                        Eliminar
-                    </button>
-                    <button
-                        v-if="puedeCrear || (puedeEditar && modoEdicion)"
-                        type="submit"
-                        form="form-evento-calendario"
-                        class="btn btn-primary"
-                    >
-                        {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
-                    </button>
+                    <!-- Botones en modo vista (solo lectura) -->
+                    <template v-if="!puedeCrear && !modoEdicion">
+                        <button
+                            type="button"
+                            @click="cerrarModal"
+                            class="btn btn-secondary"
+                        >
+                            Cerrar
+                        </button>
+                    </template>
+
+                    <!-- Botones en modo edición/creación -->
+                    <template v-else>
+                        <button
+                            type="button"
+                            @click="cerrarModal"
+                            class="btn btn-secondary"
+                        >
+                            Cerrar
+                        </button>
+                        <button
+                            v-if="puedeEliminar && modoEdicion"
+                            type="button"
+                            @click="eliminarEvento"
+                            class="btn btn-danger"
+                        >
+                            Eliminar
+                        </button>
+                        <button
+                            v-if="puedeCrear || (puedeEditar && modoEdicion)"
+                            type="submit"
+                            form="form-evento-calendario"
+                            class="btn btn-primary"
+                        >
+                            {{ modoEdicion ? 'Actualizar' : 'Guardar' }}
+                        </button>
+                    </template>
                 </div>
             </div>
         </div>
@@ -228,7 +331,10 @@
             <div class="modal-content mensualidades-modal selector-eventos calendario-modal modal-sm" @click.stop>
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <i class="fas fa-calendar-day"></i>
+                        <span v-if="fechaDelDiaBadge" class="badge-fecha-dia">
+                            <span class="badge-fecha-dia-numero">{{ fechaDelDiaBadge.dia }}</span>
+                            <span class="badge-fecha-dia-mes">{{ fechaDelDiaBadge.mes }}</span>
+                        </span>
                         Eventos del Día
                     </h2>
                     <button @click="cerrarSelectorEventos" class="btn-cerrar">
@@ -239,35 +345,64 @@
                 <div class="modal-body">
                     <div class="panel-selector-eventos">
                         <div class="lista-eventos">
-                            <div v-for="evento in eventosDelDia" :key="evento.id"
-                                @click="puedeEditar ? editarEvento(evento) : verEvento(evento)" class="evento-item"
-                                :class="{ 'evento-item-usuario': !puedeEditar }">
-                                <div class="evento-info">
-                                    <div class="evento-titulo">{{ evento.titulo }}</div>
+                            <transition name="slide-fade" mode="out-in">
+                                <div v-if="eventoActual"
+                                    :key="indiceEventoActual"
+                                    @click="puedeEditar ? editarEvento(eventoActual) : verEvento(eventoActual)"
+                                    class="evento-item"
+                                    :class="{ 'evento-item-usuario': !puedeEditar }">
+                                    <div class="evento-info">
+                                    <div class="evento-header-titulo">
+                                        <div class="evento-titulo">{{ eventoActual.titulo }}</div>
+                                    </div>
                                     <div class="evento-detalles">
-                                        <span class="evento-tipo tipo-{{ evento.tipo.toLowerCase() }}">
-                                            {{ evento.tipo }}
-                                        </span>
-                                        <span v-if="evento.categoria?.nombre_categoria" class="evento-categoria">
-                                            <i class="fas fa-tag"></i>
-                                            {{ evento.categoria.nombre_categoria }}
-                                        </span>
-                                        <span class="evento-hora">
-                                            <i class="fas fa-clock"></i>
-                                            {{ evento.horaInicio || evento.hora }} - {{ evento.horaFin || '' }}
-                                        </span>
-                                        <span class="evento-lugar">
-                                            <i class="fas fa-map-marker-alt"></i>
-                                            {{ evento.lugar }}
-                                        </span>
+                                        <div class="evento-detalles-superior">
+                                            <span class="evento-tipo" :class="obtenerClaseTipoEvento(eventoActual.tipo)">
+                                                {{ eventoActual.tipo }}
+                                            </span>
+                                            <span v-if="eventoActual.categoria?.nombre_categoria" class="evento-categoria">
+                                                <i class="fas fa-tag"></i>
+                                                {{ eventoActual.categoria.nombre_categoria }}
+                                            </span>
+                                            <span class="evento-hora">
+                                                <i class="fas fa-clock"></i>
+                                                {{ formatearHora12h(eventoActual.horaInicio || eventoActual.hora) }} - {{ formatearHora12h(eventoActual.horaFin) }}
+                                            </span>
+                                        </div>
+                                        <div class="evento-detalles-inferior">
+                                            <span class="evento-lugar">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                {{ eventoActual.lugar }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div v-if="!puedeEditar" class="evento-descripcion">
                                         <i class="fas fa-align-left"></i>
-                                        {{ evento.descripcion || 'Sin descripción' }}
+                                        {{ eventoActual.descripcion || 'Sin descripción' }}
+                                    </div>
                                     </div>
                                 </div>
-                                <i :class="puedeEditar ? 'fas fa-edit' : 'fas fa-eye'"
-                                    :title="puedeEditar ? 'Editar evento' : 'Ver detalles'"></i>
+                            </transition>
+
+                            <!-- Controles de navegación -->
+                            <div v-if="eventosDelDia.length > 1" class="controles-navegacion">
+                                <button
+                                    @click.stop="eventoAnterior"
+                                    class="btn-navegacion btn-navegacion-anterior"
+                                    :disabled="indiceEventoActual === 0"
+                                    title="Evento anterior">
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <span class="indicador-navegacion">
+                                    {{ indiceEventoActual + 1 }} / {{ eventosDelDia.length }}
+                                </span>
+                                <button
+                                    @click.stop="eventoSiguiente"
+                                    class="btn-navegacion btn-navegacion-siguiente"
+                                    :disabled="indiceEventoActual === eventosDelDia.length - 1"
+                                    title="Siguiente evento">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -300,6 +435,8 @@
 import calendarioService from '@/services/calendarioService.js';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
+import { useModalScrollLock } from '@/composables/useModalScrollLock';
+import { ref } from 'vue';
 
 const LOCALE_COL = 'es-CO';
 const MAX_TITULO = 120;
@@ -316,7 +453,18 @@ export default {
     },
     setup() {
         const authStore = useAuthStore();
-        return { authStore };
+        const modalVisibleRef = ref(false);
+        const selectorEventosVisibleRef = ref(false);
+
+        // Aplicar scroll lock a ambos modales
+        useModalScrollLock(modalVisibleRef);
+        useModalScrollLock(selectorEventosVisibleRef);
+
+        return {
+            authStore,
+            modalVisibleRef,
+            selectorEventosVisibleRef
+        };
     },
     data() {
         return {
@@ -347,7 +495,12 @@ export default {
             error: null,
             tiposEvento: [],
             categorias: [],
-            scrollPositionGuardada: undefined // Guardar posición del scroll
+            scrollPositionGuardada: undefined, // Guardar posición del scroll
+            indiceEventoActual: 0, // Índice del evento actual en la navegación
+            intervaloCarrusel: null, // Intervalo para el carrusel automático
+            pausarCarrusel: false, // Flag para pausar el carrusel
+            selectorEventosVisibleAntes: false, // Guardar estado del selector antes de abrir ver evento
+            fechaSelectorGuardada: null // Guardar fecha del selector para restaurarla después
         };
     },
 
@@ -369,43 +522,65 @@ export default {
             return this.authStore.puedeEliminarEventos || this.authStore.permissions.includes('eliminar_evento');
         },
 
-        puedeVer() {
-            return this.authStore.puedeVerEventos || this.authStore.permissions.includes('ver_evento') || this.authStore.permissions.includes('ver_calendario');
-        }
+        eventoActual() {
+            if (this.eventosDelDia.length === 0) return null;
+            return this.eventosDelDia[this.indiceEventoActual] || null;
+        },
+
+        fechaDelDiaBadge() {
+            if (!this.nuevoEvento.fecha) return null;
+            try {
+                const fecha = new Date(this.nuevoEvento.fecha + 'T00:00:00');
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                return {
+                    dia: fecha.getDate(),
+                    mes: meses[fecha.getMonth()]
+                };
+            } catch {
+                return null;
+            }
+        },
     },
 
     watch: {
         modalVisible(newValue) {
-            if (newValue) {
-                // Guardar la posición actual del scroll
-                const scrollPosition = globalThis.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            // Sincronizar con la referencia reactiva para el scroll lock
+            this.modalVisibleRef = newValue;
+        },
 
-                // Aplicar la posición guardada al body antes de fijarlo
-                document.body.style.top = `-${scrollPosition}px`;
-                document.body.classList.add('modal-open');
-                document.documentElement.classList.add('modal-open');
+        selectorEventosVisible(nuevoValor) {
+            // Sincronizar con la referencia reactiva para el scroll lock
+            this.selectorEventosVisibleRef = nuevoValor;
 
-                // Guardar la posición en el componente para restaurarla después
-                this.scrollPositionGuardada = scrollPosition;
+            if (nuevoValor) {
+                // Cuando el modal se abre, esperar a que los eventos estén cargados
+                this.$nextTick(() => {
+                    // Verificar si hay eventos después de que el DOM se actualice
+                    setTimeout(() => {
+                        if (this.eventosDelDia.length > 1 && !this.pausarCarrusel) {
+                            this.iniciarCarrusel();
+                        }
+                    }, 300); // Pequeño delay para asegurar que el modal y los eventos estén completamente renderizados
+                });
             } else {
-                // Remover las clases y estilos
-                document.body.classList.remove('modal-open');
-                document.documentElement.classList.remove('modal-open');
-                document.body.style.top = '';
+                // Cuando el modal se cierra, detener el carrusel
+                this.detenerCarrusel();
+            }
+        },
 
-                // Restaurar la posición del scroll
-                if (this.scrollPositionGuardada !== undefined) {
-                    globalThis.scrollTo(0, this.scrollPositionGuardada);
-                    this.scrollPositionGuardada = undefined;
-                }
+        eventosDelDia(nuevoValor) {
+            // Si hay eventos y el modal está visible, iniciar el carrusel
+            if (nuevoValor && nuevoValor.length > 1 && this.selectorEventosVisible) {
+                this.$nextTick(() => {
+                    this.iniciarCarrusel();
+                });
             }
         }
     },
     beforeUnmount() {
-        // Limpiar el estado del scroll si el componente se desmonta con el modal abierto
-        document.body.classList.remove('modal-open');
-        document.documentElement.classList.remove('modal-open');
-        document.body.style.top = '';
+        // Detener carrusel al desmontar
+        this.detenerCarrusel();
+        // El composable useModalScrollLock se encarga de limpiar el scroll lock automáticamente
     },
 
     async mounted() {
@@ -442,16 +617,23 @@ export default {
 
         normalizarLugar(valor = '') {
             if (!valor) return '';
-            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
-            return this.normalizarEspacios(limpio).slice(0, MAX_LUGAR);
+            // Permitir letras, números, espacios y caracteres comunes para nombres de lugares
+            const limpio = valor.replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ#\-.,()\s]/g, '');
+            // Normalizar espacios múltiples a uno solo, pero mantener espacios al inicio/final temporalmente
+            const normalizado = limpio.replace(/\s+/g, ' ');
+            // Convertir a mayúsculas y limitar longitud
+            return normalizado.toLocaleUpperCase(LOCALE_COL).slice(0, MAX_LUGAR);
         },
 
         normalizarDescripcion(valor = '') {
             if (!valor) return '';
-            const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.,;:¿?¡!()\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
-            return this.normalizarEspacios(limpio).slice(0, MAX_DESCRIPCION);
+            // No convertir a mayúsculas para descripción, mantener el formato original
+            // Permitir letras, números, espacios y caracteres comunes
+            // El regex [^\w\s...] permite espacios porque \s está incluido
+            const limpio = valor.replace(/[^\w\sÁÉÍÓÚÜÑáéíóúüñ#\-.,;:¿?¡!()]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
+            // Solo normalizar espacios múltiples a uno solo al final, no durante la escritura
+            // No hacer trim para permitir espacios al inicio/final si el usuario los quiere
+            return limpio.slice(0, MAX_DESCRIPCION);
         },
 
         manejarTitulo(event) {
@@ -466,13 +648,16 @@ export default {
 
         manejarDescripcion(event) {
             const valor = event?.target?.value ?? this.nuevoEvento.descripcion;
-            this.nuevoEvento.descripcion = this.normalizarDescripcion(valor);
+            // Permitir todos los caracteres normales incluyendo espacios
+            // Solo limitar la longitud, no filtrar caracteres
+            this.nuevoEvento.descripcion = valor.slice(0, MAX_DESCRIPCION);
         },
 
         normalizarCamposEvento() {
             this.nuevoEvento.titulo = this.normalizarTitulo(this.nuevoEvento.titulo);
             this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
-            this.nuevoEvento.descripcion = this.normalizarDescripcion(this.nuevoEvento.descripcion);
+            // No normalizar descripción automáticamente al cargar, solo al escribir
+            // La descripción se normaliza en manejarDescripcion cuando el usuario escribe
         },
 
         async inicializarComponente() {
@@ -664,7 +849,7 @@ export default {
             }
 
             // Guardar estado inicial cuando se abre el formulario
-            this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
+            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
         },
 
         // Función para normalizar valores para comparación
@@ -673,7 +858,8 @@ export default {
                 return ''
             }
             if (typeof valor === 'string') {
-                return valor.trim()
+                // Para descripción, normalizar espacios múltiples pero mantener el contenido
+                return valor.replace(/\s+/g, ' ').trim()
             }
             if (typeof valor === 'number') {
                 return valor
@@ -766,22 +952,46 @@ export default {
 
             this.modalVisible = false;
             this.fechaBloqueada = false;
-            this.limpiarFormulario();
-            this.nuevoEventoInicial = null;
+
+            // Restaurar el modal de "Eventos del Día" si estaba abierto antes
+            if (this.selectorEventosVisibleAntes) {
+                // Restaurar la fecha del selector antes de limpiar el formulario
+                const fechaGuardada = this.fechaSelectorGuardada;
+                this.limpiarFormulario(fechaGuardada); // Pasar la fecha guardada al limpiar
+                this.nuevoEventoInicial = null;
+
+                // Asegurar que la fecha esté establecida para el selector
+                if (fechaGuardada) {
+                    this.nuevoEvento.fecha = fechaGuardada;
+                }
+
+                this.selectorEventosVisible = true;
+                this.selectorEventosVisibleAntes = false;
+                this.fechaSelectorGuardada = null; // Limpiar la fecha guardada
+            } else {
+                // Si no hay selector que restaurar, limpiar normalmente
+                this.limpiarFormulario();
+                this.nuevoEventoInicial = null;
+            }
         },
 
         mostrarSelectorEventos(fecha = null) {
             this.selectorEventosVisible = true;
+            this.indiceEventoActual = 0; // Resetear al primer evento
+            this.pausarCarrusel = false; // Reiniciar el carrusel
             // Guardar la fecha del día seleccionado para poder agregar un nuevo evento
             if (fecha) {
                 this.nuevoEvento.fecha = fecha;
             }
             this.fechaBloqueada = true;
+            // El watcher de selectorEventosVisible iniciará el carrusel automáticamente
         },
 
         cerrarSelectorEventos() {
+            this.detenerCarrusel();
             this.selectorEventosVisible = false;
             this.eventosDelDia = [];
+            this.indiceEventoActual = 0; // Resetear índice
             this.fechaBloqueada = false;
         },
 
@@ -801,6 +1011,9 @@ export default {
                 });
                 return;
             }
+            // Guardar el estado del selector antes de abrir el modal de edición
+            this.selectorEventosVisibleAntes = this.selectorEventosVisible;
+
             this.eventoSeleccionado = evento;
             this.nuevoEvento = {
                 ...evento,
@@ -814,15 +1027,20 @@ export default {
             this.modalVisible = true;
 
             // Guardar estado inicial cuando se inicia la edición
-            this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
+            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
         },
 
         verEvento(evento) {
+            // Guardar el estado del selector antes de abrir el modal de ver evento
+            this.selectorEventosVisibleAntes = this.selectorEventosVisible;
+            // Guardar la fecha del selector para restaurarla después
+            this.fechaSelectorGuardada = this.nuevoEvento.fecha;
+
             this.eventoSeleccionado = evento;
             this.nuevoEvento = { ...evento };
             this.normalizarCamposEvento();
             this.modoEdicion = false;
-            this.selectorEventosVisible = false;
+            this.selectorEventosVisible = false; // Cerrar temporalmente el selector
             this.fechaBloqueada = true;
             this.modalVisible = true;
 
@@ -964,7 +1182,7 @@ export default {
                 }
 
                 // Actualizar estado inicial después de guardar exitosamente
-                this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
+                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
                 this.cerrarModal();
             } catch (error) {
                 // Cerrar el loading si aún está abierto
@@ -1000,7 +1218,7 @@ export default {
                 this.limpiarFormulario();
                 this.nuevoEvento.fecha = fechaActual;
                 // Guardar estado inicial para el nuevo formulario
-                this.nuevoEventoInicial = structuredClone(this.nuevoEvento);
+                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
                 return true;
             }
             return false;
@@ -1207,6 +1425,146 @@ export default {
         mostrarNotificacion(mensaje, tipo) {
             // Implementar sistema de notificaciones
             console.log(`${tipo}: ${mensaje}`);
+        },
+
+        obtenerNombreTipoEvento(idTipoEvento) {
+            if (!idTipoEvento) return null;
+            const tipo = this.tiposEvento.find(t => t.id_tipo_evento === idTipoEvento);
+            return tipo ? tipo.nombre : null;
+        },
+
+        obtenerNombreCategoria(idCategoria) {
+            if (!idCategoria) return null;
+            const categoria = this.categorias.find(c => c.id_categoria === idCategoria);
+            return categoria ? categoria.nombre_categoria : null;
+        },
+
+        formatearFechaCompleta(fechaStr) {
+            if (!fechaStr) return null;
+            try {
+                const fecha = new Date(fechaStr + 'T00:00:00');
+                const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const diaSemana = diasSemana[fecha.getDay()];
+                const dia = fecha.getDate();
+                const mes = meses[fecha.getMonth()];
+                const año = fecha.getFullYear();
+                return `${diaSemana}, ${dia} de ${mes} de ${año}`;
+            } catch {
+                return fechaStr;
+            }
+        },
+
+        formatearHora(horaStr) {
+            if (!horaStr) return null;
+            try {
+                // Si ya está en formato HH:mm, retornarlo
+                if (/^\d{2}:\d{2}$/.test(horaStr)) {
+                    return horaStr;
+                }
+                // Si está en formato HH:mm:ss, tomar solo HH:mm
+                if (/^\d{2}:\d{2}:\d{2}/.test(horaStr)) {
+                    return horaStr.substring(0, 5);
+                }
+                return horaStr;
+            } catch {
+                return horaStr;
+            }
+        },
+
+        formatearHora12h(horaStr) {
+            if (!horaStr) return '';
+            try {
+                // Extraer horas y minutos
+                let horas, minutos;
+                if (/^\d{2}:\d{2}/.test(horaStr)) {
+                    const partes = horaStr.split(':');
+                    horas = parseInt(partes[0], 10);
+                    minutos = partes[1];
+                } else {
+                    return horaStr;
+                }
+
+                // Convertir a formato 12h
+                const periodo = horas >= 12 ? 'PM' : 'AM';
+                const horas12 = horas % 12 || 12; // 0 se convierte en 12
+
+                return `${horas12}:${minutos} ${periodo}`;
+            } catch {
+                return horaStr;
+            }
+        },
+
+        eventoAnterior() {
+            if (this.indiceEventoActual > 0) {
+                this.indiceEventoActual--;
+            } else {
+                // Si está en el primero, ir al último (carrusel circular)
+                this.indiceEventoActual = this.eventosDelDia.length - 1;
+            }
+            // Reiniciar carrusel después de navegación manual
+            this.reiniciarCarrusel();
+        },
+
+        eventoSiguiente(esAutomatico = false) {
+            if (this.indiceEventoActual < this.eventosDelDia.length - 1) {
+                this.indiceEventoActual++;
+            } else {
+                // Si está en el último, volver al primero (carrusel circular)
+                this.indiceEventoActual = 0;
+            }
+            // Solo reiniciar carrusel si fue navegación manual
+            if (!esAutomatico) {
+                this.reiniciarCarrusel();
+            }
+        },
+
+        iniciarCarrusel() {
+            // Solo iniciar si hay más de un evento
+            if (this.eventosDelDia.length <= 1) return;
+
+            this.detenerCarrusel(); // Asegurar que no hay otro intervalo activo
+
+            this.intervaloCarrusel = setInterval(() => {
+                if (!this.pausarCarrusel && this.selectorEventosVisible) {
+                    this.eventoSiguiente(true); // Pasar true para indicar que es automático
+                }
+            }, 3000); // Cambiar cada 5 segundos
+        },
+
+        detenerCarrusel() {
+            if (this.intervaloCarrusel) {
+                clearInterval(this.intervaloCarrusel);
+                this.intervaloCarrusel = null;
+            }
+        },
+
+        reiniciarCarrusel() {
+            this.detenerCarrusel();
+            if (this.selectorEventosVisible && !this.pausarCarrusel) {
+                this.iniciarCarrusel();
+            }
+        },
+
+        obtenerClaseTipoEvento(tipoNombre) {
+            if (!tipoNombre) return 'tipo-evento';
+            // Normalizar el nombre del tipo para que coincida con las clases CSS
+            const tipoNormalizado = tipoNombre.toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+                .trim();
+
+            // Mapear nombres comunes a las clases CSS
+            if (tipoNormalizado.includes('entrenamiento')) {
+                return 'tipo-entrenamiento';
+            } else if (tipoNormalizado.includes('competencia')) {
+                return 'tipo-competencia';
+            } else if (tipoNormalizado.includes('evento')) {
+                return 'tipo-evento';
+            }
+
+            // Por defecto, usar el nombre normalizado
+            return `tipo-${tipoNormalizado}`;
         }
     }
 };

@@ -444,9 +444,11 @@ class TokenRequired:
                 return False
             
             user_roles = [rol.nombre_rol for rol in usuario.roles]
+            user_roles_lower = [str(role).lower() for role in user_roles]
+            required_roles_lower = [str(role).lower() for role in required_roles]
             
-            # Verificar que tenga al menos uno de los roles requeridos
-            return any(role in user_roles for role in required_roles)
+            # Verificar que tenga al menos uno de los roles requeridos (case-insensitive)
+            return any(role_lower in required_roles_lower for role_lower in user_roles_lower)
             
         except Exception as e:
             self.logger.error(f"Error al verificar roles: {str(e)}")
@@ -465,7 +467,12 @@ class TokenRequired:
                 return True
             if not usuario or not usuario.rol_activo:
                 return False
-            return usuario.rol_activo.nombre_rol in required_roles
+            
+            # Comparación case-insensitive para evitar problemas con mayúsculas/minúsculas
+            rol_activo_nombre = usuario.rol_activo.nombre_rol
+            required_roles_lower = [str(r).lower() for r in required_roles]
+            
+            return rol_activo_nombre.lower() in required_roles_lower
         except Exception as e:
             self.logger.error(f"Error al verificar rol activo: {str(e)}")
             return False
