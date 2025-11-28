@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import personasService from '@/services/personasService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock stores
 vi.mock('@/stores/auth', () => ({
@@ -59,7 +59,7 @@ describe('PersonasService', () => {
         correo_electronico: 'juan@example.com'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -67,7 +67,7 @@ describe('PersonasService', () => {
       const result = await personasService.actualizarPersona(1, datosActualizacion)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/personas/1'),
         expect.objectContaining({
           method: 'PUT',
@@ -100,7 +100,7 @@ describe('PersonasService', () => {
     })
 
     it('should handle error response from server', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
         json: async () => ({
@@ -115,7 +115,7 @@ describe('PersonasService', () => {
     })
 
     it('should handle non-JSON error response', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         json: async () => {
