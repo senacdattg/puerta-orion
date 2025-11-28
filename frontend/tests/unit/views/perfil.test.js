@@ -49,7 +49,9 @@ describe('PerfilView', () => {
           correo_electronico: 'test@example.com'
         },
         roles: ['Administrador']
-      }
+      },
+      loadUserProfileDetail: vi.fn().mockResolvedValue({}),
+      userDetail: {}
     }
 
     mockRouter = {
