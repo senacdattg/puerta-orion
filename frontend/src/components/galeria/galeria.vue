@@ -75,7 +75,51 @@
          </div>
 
         <div class="modal-body">
-        <form id="form-galeria" @submit.prevent="guardarEvento" class="formulario-evento">
+        <!-- Modo vista (solo lectura) -->
+        <template v-if="editando !== null && !puedeEditarFoto">
+          <!-- Información principal del evento -->
+          <div class="seccion-principal evento-header">
+            <div class="deportista-info">
+              <!-- Imagen del evento como avatar - más grande -->
+              <div v-if="eventos[editando] && eventos[editando].url_imagen" class="avatar-deportista galeria-avatar-grande" @click="abrirImagenCompleta(eventos[editando].url_imagen)" style="cursor: pointer;">
+                <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre || form.titulo" />
+              </div>
+              <div class="info-basica">
+                <h4 class="nombre-deportista evento-titulo-grande">{{ form.titulo || eventos[editando]?.nombre || 'Sin título' }}</h4>
+                <span class="estado-actual estado-pagado evento-badge-grande">
+                  {{ obtenerNombreTipoEvento(form.id_tipo_evento || eventos[editando]?.id_tipo_evento) || 'Evento' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Información general -->
+          <div class="seccion-detalles evento-detalles">
+            <h5 class="evento-titulo-seccion">📋 Información General</h5>
+            
+            <div class="grid-detalles evento-grid">
+              <div class="detalle-item evento-item">
+                <span class="detalle-label evento-label-grande">Tipo de evento</span>
+                <span class="detalle-valor evento-valor-grande">{{ obtenerNombreTipoEvento(form.id_tipo_evento || eventos[editando]?.id_tipo_evento) || 'Sin tipo' }}</span>
+              </div>
+              <div class="detalle-item evento-item" v-if="form.id_categoria || eventos[editando]?.id_categoria">
+                <span class="detalle-label evento-label-grande">Categoría</span>
+                <span class="detalle-valor evento-valor-grande">{{ obtenerNombreCategoria(form.id_categoria || eventos[editando]?.id_categoria) || 'Sin categoría' }}</span>
+              </div>
+              <div class="detalle-item evento-item evento-fecha-completa" v-if="eventos[editando]?.fecha" style="grid-column: span 2;">
+                <span class="detalle-label evento-label-grande">Fecha</span>
+                <span class="detalle-valor evento-valor-grande">{{ formatearFechaCompleta(eventos[editando].fecha) || eventos[editando].fecha || 'Sin fecha' }}</span>
+              </div>
+              <div class="detalle-item evento-item" v-if="form.descripcion || eventos[editando]?.descripcion" style="grid-column: span 2;">
+                <span class="detalle-label evento-label-grande">Descripción</span>
+                <span class="detalle-valor evento-valor-grande">{{ form.descripcion || eventos[editando]?.descripcion || 'Sin descripción' }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- Modo edición/creación -->
+        <form v-else id="form-galeria" @submit.prevent="guardarEvento" class="formulario-evento">
           <!-- Sección: Información básica -->
           <div class="seccion-form">
             <h6>Información básica</h6>
@@ -171,15 +215,25 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" @click="cerrarFormulario" class="btn btn-secondary">
-            Cerrar
-          </button>
-          <button type="button" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento" class="btn btn-danger">
-            Eliminar
-          </button>
-          <button type="submit" form="form-galeria" v-if="puedeEditarFoto" class="btn btn-primary">
-            {{ editando !== null ? 'Actualizar' : 'Crear' }}
-          </button>
+          <!-- Botones en modo vista (solo lectura) -->
+          <template v-if="editando !== null && !puedeEditarFoto">
+            <button type="button" @click="cerrarFormulario" class="btn btn-secondary">
+              Cerrar
+            </button>
+          </template>
+
+          <!-- Botones en modo edición/creación -->
+          <template v-else>
+            <button type="button" @click="cerrarFormulario" class="btn btn-secondary">
+              Cerrar
+            </button>
+            <button type="button" v-if="editando !== null && puedeEliminarFoto" @click="eliminarEvento" class="btn btn-danger">
+              Eliminar
+            </button>
+            <button type="submit" form="form-galeria" v-if="puedeEditarFoto" class="btn btn-primary">
+              {{ editando !== null ? 'Actualizar' : 'Crear' }}
+            </button>
+          </template>
         </div>
 
       </div>
@@ -914,6 +968,66 @@ export default {
 
     cancelarFormulario() {
       this.mostrarFormulario = false;
+    },
+
+    obtenerNombreTipoEvento(idTipoEvento) {
+      if (!idTipoEvento) return null;
+      const tipo = this.tipos.find(t => t.id_tipo_evento === idTipoEvento);
+      return tipo ? tipo.nombre : null;
+    },
+
+    obtenerNombreCategoria(idCategoria) {
+      if (!idCategoria) return null;
+      const categoria = this.categorias.find(c => c.id_categoria === idCategoria);
+      return categoria ? categoria.nombre_categoria : null;
+    },
+
+    formatearFechaCompleta(fechaStr) {
+      if (!fechaStr) return null;
+      try {
+        // Intentar parsear la fecha
+        const fecha = new Date(fechaStr + 'T00:00:00');
+        if (isNaN(fecha.getTime())) {
+          // Si falla, intentar parsear como string
+          return fechaStr;
+        }
+        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const diaSemana = diasSemana[fecha.getDay()];
+        const dia = fecha.getDate();
+        const mes = meses[fecha.getMonth()];
+        const año = fecha.getFullYear();
+        return `${diaSemana}, ${dia} de ${mes} de ${año}`;
+      } catch (error) {
+        return fechaStr;
+      }
+    },
+
+    abrirImagenCompleta(urlImagen) {
+      if (!urlImagen) return;
+      
+      Swal.fire({
+        html: `<img src="${urlImagen}" alt="Imagen del evento" style="max-width: 100%; max-height: 85vh; width: auto; height: auto; object-fit: contain; border-radius: 8px;" />`,
+        showCloseButton: true,
+        showConfirmButton: false,
+        padding: '1rem',
+        background: 'rgba(0, 0, 0, 0.95)',
+        width: '95%',
+        customClass: {
+          popup: 'swal-imagen-completa',
+          htmlContainer: 'swal-imagen-completa-container'
+        },
+        didOpen: () => {
+          // Permitir cerrar con ESC
+          const handleEscape = (event) => {
+            if (event.key === 'Escape') {
+              Swal.close();
+              document.removeEventListener('keydown', handleEscape);
+            }
+          };
+          document.addEventListener('keydown', handleEscape);
+        }
+      });
     },
     limpiarFormulario() {
       this.form = {

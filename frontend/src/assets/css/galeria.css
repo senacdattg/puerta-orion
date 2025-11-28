@@ -485,6 +485,19 @@ textarea[readonly] {
 }
 
 /* --- Imagen actual/preview --- */
+.imagen-preview-vista {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.imagen-vista {
+  text-align: center;
+}
+
 .imagen-actual {
   margin-top: 0.5rem;
   width: 100%;
@@ -623,6 +636,189 @@ textarea[readonly] {
 .galeria-modal .btn-cerrar:hover {
   background: var(--color-blanco-transparente-30);
   color: var(--color-blanco);
+}
+
+/* ===== ESTILOS PARA MODAL DE VER EVENTO EN GALERÍA (VISTA SOLO LECTURA) ===== */
+
+/* Avatar más grande para la imagen del evento - no redondo, formato horizontal */
+.galeria-modal .galeria-avatar-grande {
+  width: 350px !important;
+  height: 220px !important;
+  border-width: 5px !important;
+  border-radius: 12px !important;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.galeria-modal .galeria-avatar-grande:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.galeria-modal .galeria-avatar-grande img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* Ajustar layout para acomodar imagen más grande */
+.galeria-modal .evento-header .deportista-info {
+  align-items: center;
+  gap: 2rem !important;
+}
+
+/* Sección principal - más espacio */
+.galeria-modal .evento-header {
+  margin-bottom: 2rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+/* Título del evento - tamaño para llenar */
+.galeria-modal .evento-titulo-grande {
+  font-size: 1.75rem !important;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+/* Badge de tipo de evento - tamaño para llenar */
+.galeria-modal .evento-badge-grande {
+  font-size: 1.1rem !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+/* Título de sección "Información General" - tamaño para llenar */
+.galeria-modal .evento-titulo-seccion {
+  font-size: 1.4rem !important;
+  margin-bottom: 1.5rem !important;
+  font-weight: 600;
+}
+
+/* Grid de detalles del evento - más espacio */
+.galeria-modal .evento-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.5rem !important;
+}
+
+/* Items de detalle - más espacio vertical */
+.galeria-modal .evento-item {
+  padding: 0.75rem 0 !important;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Labels - tamaño para llenar */
+.galeria-modal .evento-label-grande {
+  font-size: 1rem !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600;
+}
+
+/* Valores - tamaño para llenar */
+.galeria-modal .evento-valor-grande {
+  font-size: 1.2rem !important;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* Fecha completa - ocupa todo el ancho con más espacio */
+.galeria-modal .evento-fecha-completa {
+  grid-column: span 2 !important;
+  padding: 1rem 0 !important;
+  min-height: 70px;
+}
+
+/* Sección de detalles - más padding */
+.galeria-modal .evento-detalles {
+  padding: 1rem 0 !important;
+}
+
+/* Ajustes para modal pequeño */
+.galeria-modal.modal-sm .galeria-avatar-grande {
+  width: 280px !important;
+  height: 180px !important;
+  border-width: 4px !important;
+}
+
+.galeria-modal.modal-sm .evento-header .deportista-info {
+  gap: 1.5rem !important;
+}
+
+.galeria-modal.modal-sm .evento-header {
+  margin-bottom: 1.5rem !important;
+  padding-bottom: 1.25rem !important;
+}
+
+.galeria-modal.modal-sm .evento-titulo-grande {
+  font-size: 1.5rem !important;
+  margin-bottom: 0.85rem;
+}
+
+.galeria-modal.modal-sm .evento-badge-grande {
+  font-size: 0.95rem !important;
+  padding: 0.65rem 1.3rem !important;
+}
+
+.galeria-modal.modal-sm .evento-titulo-seccion {
+  font-size: 1.25rem !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.galeria-modal.modal-sm .evento-grid {
+  gap: 1.25rem !important;
+}
+
+.galeria-modal.modal-sm .evento-item {
+  padding: 0.65rem 0 !important;
+  min-height: 55px;
+}
+
+.galeria-modal.modal-sm .evento-label-grande {
+  font-size: 0.9rem !important;
+  margin-bottom: 0.45rem !important;
+}
+
+.galeria-modal.modal-sm .evento-valor-grande {
+  font-size: 1.05rem !important;
+}
+
+.galeria-modal.modal-sm .evento-fecha-completa {
+  padding: 0.85rem 0 !important;
+  min-height: 65px;
+}
+
+/* ===== ESTILOS PARA MODAL DE IMAGEN COMPLETA (SWEETALERT) ===== */
+
+.swal-imagen-completa {
+  max-width: 95vw !important;
+  max-height: 95vh !important;
+  background: rgba(0, 0, 0, 0.95) !important;
+  border: none !important;
+}
+
+.swal-imagen-completa-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.swal-imagen-completa-container img {
+  max-width: 100% !important;
+  max-height: 85vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
 }
 
 /* ===== ESTADO SIN RESULTADOS ===== */
