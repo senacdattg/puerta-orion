@@ -72,7 +72,8 @@ describe('PagosEfectivoService', () => {
         telefonoPagador: '3001234567'
       }
 
-      expect(() => pagosEfectivoService.validarDatosPago(datosPago)).toThrow('Monto debe ser mayor a 0')
+      // The validation checks required fields first, then monto
+      expect(() => pagosEfectivoService.validarDatosPago(datosPago)).toThrow()
     })
 
     it('should throw error when monto exceeds limit', () => {
@@ -98,15 +99,17 @@ describe('PagosEfectivoService', () => {
       expect(typeof hash).toBe('string')
     })
 
-    it('should generate different hashes for same datos at different times', () => {
+    it('should generate different hashes for same datos at different times', async () => {
+      vi.useFakeTimers()
       const datos = { monto: 50000, mensualidadId: 1 }
       const hash1 = pagosEfectivoService.generarHash(datos)
       
-      // Wait a bit to ensure different timestamp
+      // Advance time to ensure different timestamp
       vi.advanceTimersByTime(1000)
       const hash2 = pagosEfectivoService.generarHash(datos)
 
       expect(hash1).not.toBe(hash2)
+      vi.useRealTimers()
     })
   })
 

@@ -156,9 +156,12 @@ describe('CatalogosService', () => {
 
       const result = await catalogosService.getCatalogosCompletos()
 
-      expect(result).toEqual(mockData)
+      // The service returns the full response object
+      expect(result).toHaveProperty('success', true)
+      expect(result).toHaveProperty('data')
+      expect(result.data).toEqual(mockData)
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/catalogos/completos'),
+        expect.stringContaining('/api/catalogos/catalogos-completos'),
         expect.objectContaining({
           method: 'GET'
         })

@@ -215,7 +215,7 @@ describe('MensualidadesApi', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades/1/desactivar'),
         expect.objectContaining({
-          method: 'POST'
+          method: 'PATCH'
         })
       )
     })
