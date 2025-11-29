@@ -1,12 +1,27 @@
 """
-Fixtures compartidas para tests del servicio de Mercado Pago.
+Fixtures compartidas para tests de servicios.
 
 Este módulo contiene fixtures que se pueden usar en todos los tests
-del servicio de Mercado Pago.
+de servicios, incluyendo contexto de Flask y mocks para Mercado Pago.
 """
 
 import pytest
 from unittest.mock import patch, MagicMock
+from flask import Flask
+
+
+@pytest.fixture
+def app_context():
+    """Proporciona un contexto de aplicación Flask para los tests."""
+    from app import create_app
+    
+    app = create_app('testing')
+    app.config['TESTING'] = True
+    app.config['JWT_SECRET_KEY'] = 'test_secret_key'
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
+    
+    with app.app_context():
+        yield app
 
 
 @pytest.fixture
