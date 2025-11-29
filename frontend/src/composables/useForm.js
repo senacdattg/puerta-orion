@@ -192,6 +192,19 @@ export function useForm(initialData = {}, validationRules = {}) {
  * Hook especializado para formularios de registro
  */
 export function useRegistrationForm() {
+  // Definir reglas como funciones directamente
+  const required = (value) => !!value || 'Este campo es requerido'
+  const email = (value) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    return !value || emailRegex.test(value) || 'Email inválido'
+  }
+  const minLength3 = (value) => !value || value.length >= 3 || 'Mínimo 3 caracteres'
+  const minLength6 = (value) => !value || value.length >= 6 || 'Mínimo 6 caracteres'
+  const phone = (value) => {
+    const phoneRegex = /^\+?[1-9]\d{0,15}$/
+    return !value || phoneRegex.test(value.replace(/\s/g, '')) || 'Teléfono inválido'
+  }
+
   const { formData, errors, isSubmitting, submit, updateField, validateForm } = useForm({
     username: '',
     password: '',
@@ -205,16 +218,16 @@ export function useRegistrationForm() {
     sexo: '',
     direccion: ''
   }, {
-    username: ['required', 'minLength(3)'],
-    password: ['required', 'minLength(6)'],
-    confirmPassword: ['required'],
-    email: ['required', 'email'],
-    nombre: ['required'],
-    apellido: ['required'],
-    telefono: ['phone'],
-    documento: ['required'],
-    tipoDocumento: ['required'],
-    sexo: ['required']
+    username: [required, minLength3],
+    password: [required, minLength6],
+    confirmPassword: [required],
+    email: [required, email],
+    nombre: [required],
+    apellido: [required],
+    telefono: [phone],
+    documento: [required],
+    tipoDocumento: [required],
+    sexo: [required]
   })
 
   // Validación personalizada para confirmación de contraseña
