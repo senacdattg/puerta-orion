@@ -38,6 +38,9 @@ class TestActualizarMensualidad:
             'id_persona': 1,
             'monto_pago': 60000.0
         }
+        # Asegurar que id_mensualidad sea un valor real (int), no MagicMock
+        # para que pueda usarse en consultas SQL
+        mock_mensualidad.id_mensualidad = 1
         mock_mensualidad.id_persona = 1
         mock_mensualidad.persona = None
         mock_mensualidad.monto_pago = 50000.0
@@ -47,6 +50,7 @@ class TestActualizarMensualidad:
         mock_mensualidad.activo = True
         mock_mensualidad.created_at = None
         mock_mensualidad.estado = False
+        mock_mensualidad.fecha_pago = None
         
         class MockPersona:
             def __init__(self):
@@ -61,18 +65,21 @@ class TestActualizarMensualidad:
             with patch('src.routes.mensualidades_routes.MetodoPago.query') as mock_metodo_query:
                 mock_metodo_query.get.return_value = MagicMock()
                 with patch('src.routes.mensualidades_routes._validar_mensualidad_duplicada'):
-                    with patch('src.routes.mensualidades_routes.db') as mock_db:
-                        mock_db.session.commit = MagicMock()
-                        def mock_get(model, id_value):
-                            if id_value == 1:
-                                return mock_persona
-                            return None
-                        mock_db.session.get = mock_get
-                        
-                        response = make_json_request(
-                            client, 'PUT', '/api/mensualidades/1',
-                            data=datos_actualizacion
-                        )
+                    # Mockear la consulta de AbonoMensualidad para evitar que intente usar id_mensualidad en SQL
+                    with patch('src.routes.mensualidades_routes.AbonoMensualidad.query') as mock_abono_query:
+                        mock_abono_query.filter_by.return_value.order_by.return_value.first.return_value = None
+                        with patch('src.routes.mensualidades_routes.db') as mock_db:
+                            mock_db.session.commit = MagicMock()
+                            def mock_get(model, id_value):
+                                if id_value == 1:
+                                    return mock_persona
+                                return None
+                            mock_db.session.get = mock_get
+                            
+                            response = make_json_request(
+                                client, 'PUT', '/api/mensualidades/1',
+                                data=datos_actualizacion
+                            )
         
         # Assert
         assert_success_response(response)

@@ -130,14 +130,21 @@ class TestObtenerMensualidad:
         mock_mensualidad.id_persona = 999  # Diferente al usuario autenticado
         mock_mensualidad.persona = None
         mock_mensualidad.to_dict.return_value = {'id_mensualidad': 1}
+        mock_mensualidad.created_at = None
+        mock_mensualidad.activo = True
+        mock_mensualidad.saldo_pendiente = 50000.0
+        mock_mensualidad.fecha_vencimiento = date(2024, 12, 31)
+        mock_mensualidad.id_metodo_pago = 1
+        mock_mensualidad.estado = False
         
-        # Act
-        with patch('src.middleware.auth_decorator.get_current_user') as mock_user:
+        # Act - Similar al test que funciona, pero con id_persona diferente
+        # Mockear en el módulo de rutas donde se usan las funciones
+        with patch('src.routes.mensualidades_routes.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id_usuario': 1,
                 'persona': {'id_persona': 1}
             }
-            with patch('src.middleware.auth_decorator.has_role') as mock_has_role:
+            with patch('src.routes.mensualidades_routes.has_role') as mock_has_role:
                 def has_role_side_effect(role):
                     return role == 'Deportista'
                 mock_has_role.side_effect = has_role_side_effect

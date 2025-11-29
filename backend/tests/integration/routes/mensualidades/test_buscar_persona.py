@@ -67,8 +67,10 @@ class TestBuscarPersona:
         response = client.get('/api/mensualidades/buscar-persona')
         
         # Assert
-        assert_success_response(response)
+        # Cuando no se proporciona documento, retorna success=False con status 200
+        assert response.status_code == 200
         assert response.json['success'] is False
+        assert 'error' in response.json
         assert 'documento' in response.json['error'].lower()
     
     def test_buscar_persona_documento_invalido(self, client, mock_token_required):
@@ -81,7 +83,8 @@ class TestBuscarPersona:
             response = client.get('/api/mensualidades/buscar-persona?documento=abc')
         
         # Assert
-        assert_success_response(response)
+        # Cuando el documento es inválido, retorna success=False con status 200
+        assert response.status_code == 200
         assert response.json['success'] is False
         assert 'error' in response.json
     

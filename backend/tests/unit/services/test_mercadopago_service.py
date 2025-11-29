@@ -158,7 +158,7 @@ class TestMercadoPagoService:
             resultado = service.verificar_pago(payment_id)
             assert resultado is None
     
-    def test_procesar_webhook_success(self, service):
+    def test_procesar_webhook_success(self, service, app_context):
         """Test: Procesar webhook exitosamente."""
         webhook_data = {
             'type': 'payment',
@@ -169,14 +169,21 @@ class TestMercadoPagoService:
             'id': '123456789',
             'status': 'approved',
             'transaction_amount': 50000.0,
-            'external_reference': 'ref_123'
+            'external_reference': 'ref_123',
+            'date_approved': '2024-01-01T10:00:00.000-04:00',
+            'metadata': {
+                'tipo_pago': 'mensualidad',
+                'id_mensualidad': '1'
+            }
         }
         
-        with patch.object(service.sdk, 'payment') as mock_payment_sdk:
-            mock_payment_sdk.return_value.get.return_value = mock_payment
-            with patch.object(service, '_procesar_pago_aprobado') as mock_procesar:
-                mock_procesar.return_value = {'success': True}
-                
+        with patch.object(service, 'verificar_pago') as mock_verificar:
+            mock_verificar.return_value = {
+                'success': True,
+                'payment': mock_payment,
+                'estado': 'approved'
+            }
+            with patch.object(service, '_procesar_pago_mensualidad') as mock_procesar:
                 resultado = service.procesar_webhook(webhook_data)
                 
                 assert resultado['success'] is True
@@ -194,7 +201,7 @@ class TestMercadoPagoService:
         assert resultado['success'] is False
         assert 'tipo' in resultado.get('error', '').lower()
     
-    def test_obtener_metodo_pago_mercadopago(self, app_context):
+    def test_obtener_metodo_pago_mercadopago(self, service, app_context):
         """Test: Obtener método de pago MercadoPago."""
         from src.models.pagos.metodo_pago import MetodoPago
         
@@ -205,16 +212,16 @@ class TestMercadoPagoService:
         with patch('src.services.mercadopago_service.MetodoPago.query') as mock_query:
             mock_query.filter_by.return_value.first.return_value = mock_metodo
             
-            resultado = MercadoPagoService.obtener_metodo_pago_mercadopago()
+            resultado = service.obtener_metodo_pago_mercadopago()
             
             assert resultado.id_metodo_pago == 1
     
-    def test_obtener_metodo_pago_mercadopago_no_encontrado(self, app_context):
+    def test_obtener_metodo_pago_mercadopago_no_encontrado(self, service, app_context):
         """Test: Método de pago no encontrado."""
         with patch('src.services.mercadopago_service.MetodoPago.query') as mock_query:
             mock_query.filter_by.return_value.first.return_value = None
             
-            resultado = MercadoPagoService.obtener_metodo_pago_mercadopago()
+            resultado = service.obtener_metodo_pago_mercadopago()
             
             assert resultado is None
 
