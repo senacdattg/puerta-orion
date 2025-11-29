@@ -79,40 +79,73 @@
         <template v-if="editando !== null && !puedeEditarFoto">
           <!-- Información principal del evento -->
           <div class="seccion-principal evento-header">
-            <div class="deportista-info">
-              <!-- Imagen del evento como avatar - más grande -->
-              <div v-if="eventos[editando] && eventos[editando].url_imagen" class="avatar-deportista galeria-avatar-grande" @click="abrirImagenCompleta(eventos[editando].url_imagen)" style="cursor: pointer;">
-                <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre || form.titulo" />
-              </div>
-              <div class="info-basica">
-                <h4 class="nombre-deportista evento-titulo-grande">{{ form.titulo || eventos[editando]?.nombre || 'Sin título' }}</h4>
-                <span class="estado-actual estado-pagado evento-badge-grande">
-                  {{ obtenerNombreTipoEvento(form.id_tipo_evento || eventos[editando]?.id_tipo_evento) || 'Evento' }}
-                </span>
-              </div>
+            <div class="evento-header-content">
+              <h4 class="evento-titulo-grande">{{ form.titulo || 'Sin título' }}</h4>
+              <span class="evento-badge-grande" :class="obtenerClaseTipoEvento(obtenerNombreTipoEvento(form.id_tipo_evento))">
+                {{ obtenerNombreTipoEvento(form.id_tipo_evento) || 'Evento' }}
+              </span>
             </div>
           </div>
 
           <!-- Información general -->
           <div class="seccion-detalles evento-detalles">
-            <h5 class="evento-titulo-seccion">📋 Información General</h5>
+            <h5 class="evento-titulo-seccion">
+              <i class="fas fa-info-circle"></i>
+              Información General
+            </h5>
 
             <div class="grid-detalles evento-grid">
+              <!-- Primera fila: Tipo y Categoría lado a lado -->
               <div class="detalle-item evento-item">
-                <span class="detalle-label evento-label-grande">Tipo de evento</span>
-                <span class="detalle-valor evento-valor-grande">{{ obtenerNombreTipoEvento(form.id_tipo_evento || eventos[editando]?.id_tipo_evento) || 'Sin tipo' }}</span>
+                <div class="detalle-icono">
+                  <i class="fas fa-tag"></i>
+                </div>
+                <div class="detalle-contenido">
+                  <span class="detalle-label evento-label-grande">Tipo de evento</span>
+                  <span class="detalle-valor evento-valor-grande">{{ obtenerNombreTipoEvento(form.id_tipo_evento) || 'Sin tipo' }}</span>
+                </div>
               </div>
-              <div class="detalle-item evento-item" v-if="form.id_categoria || eventos[editando]?.id_categoria">
-                <span class="detalle-label evento-label-grande">Categoría</span>
-                <span class="detalle-valor evento-valor-grande">{{ obtenerNombreCategoria(form.id_categoria || eventos[editando]?.id_categoria) || 'Sin categoría' }}</span>
+              <div class="detalle-item evento-item">
+                <div class="detalle-icono">
+                  <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="detalle-contenido">
+                  <span class="detalle-label evento-label-grande">Categoría</span>
+                  <span class="detalle-valor evento-valor-grande">{{ obtenerNombreCategoria(form.id_categoria) || 'Sin categoría' }}</span>
+                </div>
               </div>
-              <div class="detalle-item evento-item evento-fecha-completa" v-if="eventos[editando]?.fecha" style="grid-column: span 2;">
-                <span class="detalle-label evento-label-grande">Fecha</span>
-                <span class="detalle-valor evento-valor-grande">{{ formatearFechaCompleta(eventos[editando].fecha) || eventos[editando].fecha || 'Sin fecha' }}</span>
+
+              <!-- Segunda fila: Fecha debajo -->
+              <div class="detalle-item evento-item evento-fecha-completa" style="grid-column: span 2;">
+                <div class="detalle-icono">
+                  <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="detalle-contenido">
+                  <span class="detalle-label evento-label-grande">Fecha</span>
+                  <span class="detalle-valor evento-valor-grande">{{ formatearFechaCompleta(form.fecha) || form.fecha || 'Sin fecha' }}</span>
+                </div>
               </div>
-              <div class="detalle-item evento-item" v-if="form.descripcion || eventos[editando]?.descripcion" style="grid-column: span 2;">
-                <span class="detalle-label evento-label-grande">Descripción</span>
-                <span class="detalle-valor evento-valor-grande">{{ form.descripcion || eventos[editando]?.descripcion || 'Sin descripción' }}</span>
+
+              <!-- Tercera fila: Imagen (si existe) -->
+              <div class="detalle-item evento-item evento-imagen-completa" v-if="eventos[editando]?.url_imagen" style="grid-column: span 2;">
+                <div class="detalle-icono">
+                  <i class="fas fa-image"></i>
+                </div>
+                <div class="detalle-contenido">
+                  <span class="detalle-label evento-label-grande">Imagen</span>
+                  <img :src="eventos[editando].url_imagen" :alt="form.titulo" @click="abrirImagenCompleta(eventos[editando].url_imagen)" style="cursor: pointer;" />
+                </div>
+              </div>
+
+              <!-- Cuarta fila: Descripción (si existe) -->
+              <div class="detalle-item evento-item evento-descripcion-completa" v-if="form.descripcion" style="grid-column: span 2;">
+                <div class="detalle-icono">
+                  <i class="fas fa-align-left"></i>
+                </div>
+                <div class="detalle-contenido">
+                  <span class="detalle-label evento-label-grande">Descripción</span>
+                  <span class="detalle-valor evento-valor-grande evento-descripcion-texto">{{ form.descripcion || 'Sin descripción' }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -168,7 +201,7 @@
 
               <!-- Mostrar imagen actual cuando se está editando -->
               <div v-if="editando !== null && !cambiandoImagen && eventos[editando]" class="imagen-actual">
-                <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre" class="imagen-preview" />
+                <img :src="eventos[editando].url_imagen" :alt="eventos[editando].nombre" class="imagen-preview" @click="abrirImagenCompleta(eventos[editando].url_imagen)" style="cursor: pointer;" />
                 <p class="texto-imagen-actual">Imagen actual</p>
                 <button type="button" @click="cambiarImagen" class="btn-cambiar-imagen" v-if="puedeEditarFoto">
                   <i class="fas fa-edit"></i> Cambiar imagen
@@ -428,6 +461,7 @@ export default {
           nombre: imagen.titulo,
           tipo: imagen.tipo_evento ? imagen.tipo_evento.nombre : 'Sin tipo',
           fecha: this.formatearFecha(imagen.fecha_subida),
+          fechaOriginal: imagen.fecha_subida, // Guardar fecha original para formatear correctamente
           descripcion: imagen.descripcion || '',
           url_imagen: imagen.url_imagen,
           categoria: imagen.categoria ? imagen.categoria.nombre_categoria : 'Sin categoría',
@@ -608,9 +642,10 @@ export default {
       this.editando = index;
 
       // Cargar datos en el formulario pero en modo solo lectura
+      // Usar fecha original si está disponible para formatear correctamente
       this.form = {
         titulo: evento.nombre,
-        fecha: evento.fecha,
+        fecha: evento.fechaOriginal || evento.fecha,
         descripcion: evento.descripcion,
         tipo: evento.tipo,
         id_tipo_evento: evento.id_tipo_evento || "",
@@ -626,9 +661,10 @@ export default {
       this.editando = index;
       const evento = this.eventos[index];
 
+      // Usar fecha original si está disponible para formatear correctamente
       this.form = {
         titulo: evento.nombre,
-        fecha: evento.fecha,
+        fecha: evento.fechaOriginal || evento.fecha,
         descripcion: evento.descripcion,
         tipo: evento.tipo,
         id_tipo_evento: evento.id_tipo_evento || "",
@@ -996,20 +1032,38 @@ export default {
     formatearFechaCompleta(fechaStr) {
       if (!fechaStr) return null;
 
-      // Intentar parsear la fecha
-      const fecha = new Date(fechaStr + 'T00:00:00');
-      if (Number.isNaN(fecha.getTime())) {
-        // Si falla, retornar el string original
+      try {
+        // Si viene con timestamp completo, extraer solo la parte de fecha
+        let fechaParaParsear = fechaStr;
+        if (fechaStr.includes('T')) {
+          // Extraer solo la parte de fecha (antes de la T)
+          fechaParaParsear = fechaStr.split('T')[0];
+        }
+
+        // Intentar parsear la fecha
+        const fecha = new Date(fechaParaParsear + 'T00:00:00');
+        if (Number.isNaN(fecha.getTime())) {
+          // Si falla, retornar solo la parte de fecha si tiene formato ISO
+          if (fechaStr.includes('T')) {
+            return fechaStr.split('T')[0];
+          }
+          return fechaStr;
+        }
+
+        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        const diaSemana = diasSemana[fecha.getDay()];
+        const dia = fecha.getDate();
+        const mes = meses[fecha.getMonth()];
+        const año = fecha.getFullYear();
+        return `${diaSemana}, ${dia} de ${mes} de ${año}`;
+      } catch {
+        // Si hay error, retornar solo la parte de fecha si tiene formato ISO
+        if (fechaStr && fechaStr.includes('T')) {
+          return fechaStr.split('T')[0];
+        }
         return fechaStr;
       }
-
-      const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-      const diaSemana = diasSemana[fecha.getDay()];
-      const dia = fecha.getDate();
-      const mes = meses[fecha.getMonth()];
-      const año = fecha.getFullYear();
-      return `${diaSemana}, ${dia} de ${mes} de ${año}`;
     },
 
     abrirImagenCompleta(urlImagen) {
@@ -1059,6 +1113,31 @@ export default {
       this.busqueda = '';
       this.filtroEvento = '';
     },
+    obtenerClaseTipoEvento(tipoNombre) {
+      if (!tipoNombre) return 'tipo-evento';
+      // Normalizar el nombre del tipo para que coincida con las clases CSS
+      const tipoNormalizado = tipoNombre.toLowerCase()
+        .normalize('NFD')
+        .replaceAll(/[\u0300-\u036f]/g, '') // Eliminar acentos
+        .trim();
+
+      // Mapear nombres comunes a las clases CSS
+      if (tipoNormalizado.includes('entrenamiento')) {
+        return 'tipo-entrenamiento';
+      } else if (tipoNormalizado.includes('competencia')) {
+        return 'tipo-competencia';
+      } else if (tipoNormalizado.includes('exhibicion')) {
+        return 'tipo-exhibicion';
+      } else if (tipoNormalizado.includes('torneo')) {
+        return 'tipo-torneo';
+      } else if (tipoNormalizado.includes('evento')) {
+        return 'tipo-evento';
+      }
+
+      // Por defecto, usar el nombre normalizado
+      return `tipo-${tipoNormalizado}`;
+    },
+
     claseTipo(tipo) {
       if (!tipo) return '';
 
