@@ -83,13 +83,14 @@ class TestForgotPassword:
         datos_email = {'email': 'noexiste@example.com'}
         
         # Act
-        with patch('src.routes.auth_reset.Persona.query') as mock_persona_query:
-            mock_persona_query.filter_by.return_value.first.return_value = None
-            
-            response = make_json_request(
-                client, 'POST', '/api/auth/forgot-password',
-                data=datos_email
-            )
+        with patch('src.routes.auth_reset._validar_configuracion_email', return_value=None):
+            with patch('src.routes.auth_reset.Persona.query') as mock_persona_query:
+                mock_persona_query.filter_by.return_value.first.return_value = None
+                
+                response = make_json_request(
+                    client, 'POST', '/api/auth/forgot-password',
+                    data=datos_email
+                )
         
         # Assert
         assert_error_response(response, expected_status=404)

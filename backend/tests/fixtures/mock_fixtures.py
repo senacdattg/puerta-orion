@@ -87,6 +87,20 @@ def mock_token_required():
         'iat': 1000000000
     }
     
+    # Mockear _inyectar_datos_usuario para configurar g con valores serializables
+    def mock_inyectar_datos_usuario(self, usuario, sesion, payload):
+        """Mock que configura g con valores serializables, evitando MagicMock."""
+        from flask import g
+        g.current_user = mock_usuario_data
+        g.current_session = {
+            'id_sesion': 1,
+            'fecha_inicio': '2024-01-01T00:00:00',
+            'fecha_expiracion': '2024-12-31T23:59:59',
+            'ip_origen': '127.0.0.1'
+        }
+        g.token_payload = mock_payload
+        # No establecer g.current_user_obj para evitar MagicMock
+    
     # Hacer patch de get_current_user y métodos de validación
     with patch('src.middleware.auth_decorator.get_current_user', return_value=mock_usuario_data):
         with patch('src.middleware.auth_decorator.TokenRequired._extraer_token', return_value='mock_token'):
@@ -96,10 +110,11 @@ def mock_token_required():
                         with patch('src.middleware.auth_decorator.TokenRequired._verificar_roles', return_value=True):
                             with patch('src.middleware.auth_decorator.TokenRequired._verificar_permisos', return_value=True):
                                 with patch('src.middleware.auth_decorator.TokenRequired._verificar_rol_activo', return_value=True):
-                                    with patch('src.middleware.auth_decorator.asegurar_rol_activo_valido', return_value=mock_usuario.rol_activo):
-                                        with patch('src.middleware.auth_decorator.obtener_paneles_autorizados', return_value=[]):
-                                            with patch('src.middleware.auth_decorator.get_user_permissions', return_value=[]):
-                                                yield
+                                    with patch('src.middleware.auth_decorator.TokenRequired._inyectar_datos_usuario', mock_inyectar_datos_usuario):
+                                        with patch('src.middleware.auth_decorator.asegurar_rol_activo_valido', return_value=mock_usuario.rol_activo):
+                                            with patch('src.middleware.auth_decorator.obtener_paneles_autorizados', return_value=[]):
+                                                with patch('src.middleware.auth_decorator.get_user_permissions', return_value=[]):
+                                                    yield
 
 
 @pytest.fixture

@@ -33,15 +33,16 @@ class TestForgotPasswordCompleto:
         mock_usuario.estado = False  # Usuario inactivo
         
         # Act
-        with patch('src.routes.auth_reset.Persona.query') as mock_persona_query:
-            mock_persona_query.filter_by.return_value.first.return_value = mock_persona
-            with patch('src.routes.auth_reset.Usuario.query') as mock_usuario_query:
-                mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
-                
-                response = make_json_request(
-                    client, 'POST', '/api/auth/forgot-password',
-                    data=datos_solicitud
-                )
+        with patch('src.routes.auth_reset._validar_configuracion_email', return_value=None):
+            with patch('src.routes.auth_reset.Persona.query') as mock_persona_query:
+                mock_persona_query.filter_by.return_value.first.return_value = mock_persona
+                with patch('src.routes.auth_reset.Usuario.query') as mock_usuario_query:
+                    mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
+                    
+                    response = make_json_request(
+                        client, 'POST', '/api/auth/forgot-password',
+                        data=datos_solicitud
+                    )
         
         # Assert
         assert_error_response(response, expected_status=403)
