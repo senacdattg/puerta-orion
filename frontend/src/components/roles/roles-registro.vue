@@ -112,7 +112,8 @@ async function seleccionarRol(rol) {
     rolSeleccionado.value = nombreRol
 
     // Guardar rol activo en el store (esto también cargará los permisos del rol)
-    const result = await authStore.setActiveRole(nombreRol)
+    // Pasar true como segundo parámetro para forzar el cambio cuando el usuario selecciona explícitamente
+    const result = await authStore.setActiveRole(nombreRol, true)
 
     // Verificar si el cambio de rol fue exitoso
     if (!result.success) {
@@ -125,21 +126,29 @@ async function seleccionarRol(rol) {
       return
     }
 
-    // Usar el rol activo actualizado del store después del cambio
+    // Usar el rol que el usuario seleccionó explícitamente, no el que puede haber devuelto el backend
+    // El backend puede devolver un rol diferente si tiene lógica automática, pero debemos respetar la selección del usuario
     const rolActivoFinal = authStore.activeRole || nombreRol
-    console.log(`✅ Rol activo establecido: ${rolActivoFinal} (seleccionado: ${nombreRol})`)
+
+    // Verificar que el rol final coincida con el seleccionado
+    // Si no coincide, usar el seleccionado (el usuario eligió explícitamente)
+    const rolParaUsar = (rolActivoFinal === nombreRol || rolActivoFinal?.toLowerCase() === nombreRol?.toLowerCase())
+      ? rolActivoFinal
+      : nombreRol
+
+    console.log(`✅ Rol activo establecido: ${rolParaUsar} (seleccionado: ${nombreRol}, backend devolvió: ${rolActivoFinal})`)
 
     await Swal.fire({
       icon: 'success',
       title: 'Rol seleccionado',
-      text: `Ingresarás con el rol ${rolActivoFinal}.`,
+      text: `Ingresarás con el rol ${rolParaUsar}.`,
       timer: 1200,
       timerProgressBar: true,
       showConfirmButton: false
     })
 
-    // Redirigir según el rol activo final (no el seleccionado, por si el backend lo cambió)
-    redirigirSegunRol(rolActivoFinal)
+    // Redirigir según el rol que el usuario seleccionó explícitamente
+    redirigirSegunRol(rolParaUsar)
   } else {
     // Modo registro - redirigir al formulario correspondiente
     irFormulario(rol.ruta)

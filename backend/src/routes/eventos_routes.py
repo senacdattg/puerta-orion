@@ -57,6 +57,7 @@ ERROR_EVENTO_NO_ENCONTRADO = 'Evento con ID {id} no encontrado'
 ERROR_CATEGORIA_NO_ENCONTRADA = 'Categoría con ID {id} no encontrada'
 ERROR_TIPO_EVENTO_NO_ENCONTRADO = 'Tipo de evento con ID {id} no encontrado'
 ERROR_SESION_NO_ENCONTRADA = 'Sesión con ID {id} no encontrada'
+ERROR_SIN_ACCESO_CATEGORIA = 'No tienes acceso a eventos de esta categoría'
 
 logger = obtener_registrador('aplicacion')
 eventos_bp = Blueprint('eventos', __name__, url_prefix='/api/eventos')
@@ -591,7 +592,7 @@ def _aplicar_filtro_categoria_especifica(
 
     if not categoria_permitida:
         return query, HttpResponseBuilder.success(
-            message='No tienes acceso a eventos de esta categoría',
+            message=ERROR_SIN_ACCESO_CATEGORIA,
             data=[],
             pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
         )
@@ -624,6 +625,133 @@ def _aplicar_filtros_basicos(
             query = query.filter(Evento.fecha_evento <= fecha_hasta_obj)
     
     return query
+
+
+def _aplicar_filtro_usuario_solo(query: Any, tipo_evento_id: Optional[int]) -> Tuple[Any, Optional[JsonResponse]]:
+    """Aplica filtro para usuarios con solo rol 'Usuario'."""
+    logger.info('🔍 FILTRO: Usuario solo - aplicando filtro de tipos públicos')
+    query = query.filter(Evento.id_tipo_evento.in_(TIPOS_EVENTO_PUBLICOS))
+    if tipo_evento_id and tipo_evento_id not in TIPOS_EVENTO_PUBLICOS:
+        return query, HttpResponseBuilder.success(
+            message='No tienes acceso a este tipo de evento',
+            data=[],
+            pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
+        )
+    return query, None
+
+
+def _aplicar_filtro_admin_entrenador(query: Any, categoria_id: Optional[int]) -> Any:
+    """Aplica filtro para administradores y entrenadores."""
+    logger.info('🔍 FILTRO: Admin/Entrenador - sin filtro de categorías')
+    if categoria_id:
+        query = query.filter_by(id_categoria=categoria_id)
+    return query
+
+
+def _aplicar_filtro_deportista_acudiente(
+    query: Any,
+    categorias_permitidas: List[int],
+    categoria_id: Optional[int]
+) -> Tuple[Any, Optional[JsonResponse]]:
+    """Aplica filtro para deportistas y acudientes."""
+    logger.info('🔍 FILTRO: Deportista/Acudiente - categorías: %s', categorias_permitidas)
+    if not categorias_permitidas:
+        logger.warning('⚠️ FILTRO: No hay categorías permitidas - consulta vacía')
+        return query.filter(Evento.id_evento == -1), None
+    
+    logger.info('🔍 FILTRO: Aplicando filtro estricto por categorías: %s', categorias_permitidas)
+    query = query.filter(
+        Evento.id_categoria.isnot(None),
+        Evento.id_categoria.in_(categorias_permitidas)
+    )
+    
+    if categoria_id:
+        if categoria_id not in categorias_permitidas:
+            logger.warning('⚠️ FILTRO: Categoría solicitada %s no está en permitidas %s', categoria_id, categorias_permitidas)
+            return query, HttpResponseBuilder.success(
+                message=ERROR_SIN_ACCESO_CATEGORIA,
+                data=[],
+                pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
+            )
+        query = query.filter_by(id_categoria=categoria_id)
+    
+    return query, None
+
+
+def _serializar_eventos_paginados(
+    query: Any,
+    page: int,
+    per_page: int,
+    categorias_permitidas: Optional[List[int]]
+) -> Tuple[List[Dict[str, Any]], Any]:
+    """Serializa eventos paginados aplicando validaciones adicionales."""
+    total_antes_paginar = query.count()
+    
+    if total_antes_paginar <= per_page:
+        eventos_items = query.order_by(Evento.fecha_evento.desc()).all()
+        class SimplePagination:
+            def __init__(self, items, total, page, per_page):
+                self.items = items
+                self.total = total
+                self.page = page
+                self.per_page = per_page
+                self.pages = (total + per_page - 1) // per_page if per_page > 0 else 1
+        
+        pagination = SimplePagination(eventos_items, total_antes_paginar, page, per_page)
+    else:
+        pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False,
+        )
+    
+    eventos_data = []
+    logger.info('🔍 FILTRO: Total eventos después de filtros: %s', len(pagination.items))
+    for evento in pagination.items:
+        try:
+            logger.info('🔍 FILTRO: Evento ID %s - Categoría: %s, Nombre: %s', 
+                       evento.id_evento, evento.id_categoria, evento.nombre)
+            
+            if categorias_permitidas is not None and categorias_permitidas:
+                if evento.id_categoria is None or evento.id_categoria not in categorias_permitidas:
+                    logger.warning('⚠️ FILTRO: Evento ID %s con categoría %s NO está en permitidas %s - OMITIENDO', 
+                                  evento.id_evento, evento.id_categoria, categorias_permitidas)
+                    continue
+            
+            evento_serializado = _serializar_evento(evento)
+            eventos_data.append(evento_serializado)
+        except Exception as exc_serializar:
+            logger.error('Error al serializar evento %s: %s', evento.id_evento, str(exc_serializar))
+            logger.error('Traceback: %s', traceback.format_exc())
+            continue
+    
+    return eventos_data, pagination
+
+
+def _aplicar_filtro_deportista_acudiente_proximos(
+    query: Any,
+    categorias_permitidas: List[int],
+    categoria_id: Optional[int]
+) -> Tuple[Any, Optional[JsonResponse]]:
+    """Aplica filtro para deportistas y acudientes en eventos próximos."""
+    if not categorias_permitidas:
+        return query.filter(Evento.id_evento == -1), None
+    
+    query = query.filter(
+        Evento.id_categoria.isnot(None),
+        Evento.id_categoria.in_(categorias_permitidas)
+    )
+    
+    if categoria_id:
+        if categoria_id not in categorias_permitidas:
+            return query, HttpResponseBuilder.success(
+                data=[],
+                total=0,
+                message=ERROR_SIN_ACCESO_CATEGORIA
+            )
+        query = query.filter_by(id_categoria=categoria_id)
+    
+    return query, None
 
 
 # ============================================================================
@@ -672,99 +800,20 @@ def listar_eventos() -> JsonResponse:
 
         query = Evento.query
         
-        # 1. Si el usuario solo tiene rol "Usuario" -> eventos públicos (Competencia, Exhibición, Torneo)
+        # Aplicar filtros según el rol del usuario
         if es_usuario_solo:
-            logger.info('🔍 FILTRO: Usuario solo - aplicando filtro de tipos públicos')
-            query = query.filter(Evento.id_tipo_evento.in_(TIPOS_EVENTO_PUBLICOS))
-            # Si hay filtro por tipo_evento_id, validar que esté en los tipos públicos
-            if tipo_evento_id and tipo_evento_id not in TIPOS_EVENTO_PUBLICOS:
-                return HttpResponseBuilder.success(
-                    message='No tienes acceso a este tipo de evento',
-                    data=[],
-                    pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
-                )
-        # 2. Si es admin/entrenador (categorias_permitidas es None) -> ver todos los eventos
+            query, error_response = _aplicar_filtro_usuario_solo(query, tipo_evento_id)
+            if error_response:
+                return error_response
         elif categorias_permitidas is None:
-            logger.info('🔍 FILTRO: Admin/Entrenador - sin filtro de categorías')
-            # No aplicar filtro de categorías - ver todos los eventos
-            # Si hay filtro por categoría específica, aplicarlo
-            if categoria_id:
-                query = query.filter_by(id_categoria=categoria_id)
-        # 3. Si es deportista/acudiente -> solo eventos de sus categorías (sin "Todos")
+            query = _aplicar_filtro_admin_entrenador(query, categoria_id)
         else:
-            logger.info('🔍 FILTRO: Deportista/Acudiente - categorías: %s', categorias_permitidas)
-            # Para deportistas y acudientes, NUNCA incluir categoría "Todos"
-            # Filtro estricto: SOLO eventos de sus categorías exactas
-            # Validar que haya categorías permitidas, si no, no mostrar ningún evento
-            if not categorias_permitidas:
-                logger.warning('⚠️ FILTRO: No hay categorías permitidas - consulta vacía')
-                query = query.filter(Evento.id_evento == -1)  # Consulta vacía
-            else:
-                logger.info('🔍 FILTRO: Aplicando filtro estricto por categorías: %s', categorias_permitidas)
-                id_categoria_todos = None  # NUNCA incluir "Todos" para deportistas/acudientes
-                # Filtro estricto: solo eventos con categoría no NULL que esté en la lista exacta
-                query = query.filter(
-                    Evento.id_categoria.isnot(None),
-                    Evento.id_categoria.in_(categorias_permitidas)
-                )
-
-                if categoria_id:
-                    # Validar que la categoría solicitada esté en las permitidas
-                    if categoria_id not in categorias_permitidas:
-                        logger.warning('⚠️ FILTRO: Categoría solicitada %s no está en permitidas %s', categoria_id, categorias_permitidas)
-                        return HttpResponseBuilder.success(
-                            message='No tienes acceso a eventos de esta categoría',
-                            data=[],
-                            pagination={'page': 1, 'per_page': 10, 'total': 0, 'pages': 0}
-                        )
-                    query = query.filter_by(id_categoria=categoria_id)
+            query, error_response = _aplicar_filtro_deportista_acudiente(query, categorias_permitidas, categoria_id)
+            if error_response:
+                return error_response
 
         query = _aplicar_filtros_basicos(query, search, tipo_evento_id, fecha_desde, fecha_hasta)
-
-        total_antes_paginar = query.count()
-
-        # Obtener eventos directamente si hay pocos (evitar problema de paginación)
-        if total_antes_paginar <= per_page:
-            eventos_items = query.order_by(Evento.fecha_evento.desc()).all()
-            # Crear objeto similar a pagination para mantener compatibilidad
-            class SimplePagination:
-                def __init__(self, items, total, page, per_page):
-                    self.items = items
-                    self.total = total
-                    self.page = page
-                    self.per_page = per_page
-                    self.pages = (total + per_page - 1) // per_page if per_page > 0 else 1
-            
-            pagination = SimplePagination(eventos_items, total_antes_paginar, page, per_page)
-        else:
-            pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
-                page=page,
-                per_page=per_page,
-                error_out=False,
-            )
-
-        eventos_data = []
-        logger.info('🔍 FILTRO: Total eventos después de filtros: %s', len(pagination.items))
-        for evento in pagination.items:
-            try:
-                # Logging para depurar categorías de eventos devueltos
-                logger.info('🔍 FILTRO: Evento ID %s - Categoría: %s, Nombre: %s', 
-                           evento.id_evento, evento.id_categoria, evento.nombre)
-                
-                # Validación adicional: para deportistas/acudientes, verificar que el evento 
-                # realmente tenga una categoría permitida (doble verificación)
-                if categorias_permitidas is not None and categorias_permitidas:
-                    if evento.id_categoria is None or evento.id_categoria not in categorias_permitidas:
-                        logger.warning('⚠️ FILTRO: Evento ID %s con categoría %s NO está en permitidas %s - OMITIENDO', 
-                                      evento.id_evento, evento.id_categoria, categorias_permitidas)
-                        continue
-                
-                evento_serializado = _serializar_evento(evento)
-                eventos_data.append(evento_serializado)
-            except Exception as exc_serializar:
-                logger.error('Error al serializar evento %s: %s', evento.id_evento, str(exc_serializar))
-                logger.error('Traceback: %s', traceback.format_exc())
-                continue
+        eventos_data, pagination = _serializar_eventos_paginados(query, page, per_page, categorias_permitidas)
         
         return HttpResponseBuilder.success(
             data=eventos_data,
@@ -1334,39 +1383,18 @@ def eventos_proximos() -> JsonResponse:
         
         query = Evento.query.filter(Evento.fecha_evento >= date.today())
         
-        # 1. Si el usuario solo tiene rol "Usuario" -> eventos públicos (Competencia, Exhibición, Torneo)
+        # Aplicar filtros según el rol del usuario
         if es_usuario_solo:
             query = query.filter(Evento.id_tipo_evento.in_(TIPOS_EVENTO_PUBLICOS))
-        # 2. Si es admin/entrenador (categorias_permitidas es None) -> ver todos los eventos
         elif categorias_permitidas is None:
-            # No aplicar filtro de categorías - ver todos los eventos
-            # Si hay filtro por categoría específica, aplicarlo
             if categoria_id:
                 query = query.filter_by(id_categoria=categoria_id)
-        # 3. Si es deportista/acudiente -> solo eventos de sus categorías (sin "Todos")
         else:
-            # Para deportistas y acudientes, NUNCA incluir categoría "Todos"
-            # Filtro estricto: SOLO eventos de sus categorías exactas
-            # Validar que haya categorías permitidas, si no, no mostrar ningún evento
-            if not categorias_permitidas:
-                query = query.filter(Evento.id_evento == -1)  # Consulta vacía
-            else:
-                id_categoria_todos = None  # NUNCA incluir "Todos" para deportistas/acudientes
-                # Filtro estricto: solo eventos con categoría no NULL que esté en la lista exacta
-                query = query.filter(
-                    Evento.id_categoria.isnot(None),
-                    Evento.id_categoria.in_(categorias_permitidas)
-                )
-
-                if categoria_id:
-                    # Validar que la categoría solicitada esté en las permitidas
-                    if categoria_id not in categorias_permitidas:
-                        return HttpResponseBuilder.success(
-                            data=[],
-                            total=0,
-                            message='No tienes acceso a eventos de esta categoría'
-                        )
-                    query = query.filter_by(id_categoria=categoria_id)
+            query, error_response = _aplicar_filtro_deportista_acudiente_proximos(
+                query, categorias_permitidas, categoria_id
+            )
+            if error_response:
+                return error_response
 
         eventos = query.order_by(Evento.fecha_evento.asc()).limit(limit).all()
         eventos_data = []
