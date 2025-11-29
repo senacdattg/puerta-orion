@@ -4,8 +4,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import TarjetaMensualidad from '@/components/admin/tarjeta-mensualidad.vue'
 import Swal from 'sweetalert2'
 
+const mockUseAuthStore = vi.fn()
 vi.mock('@/stores/auth', () => ({
-  useAuthStore: vi.fn()
+  useAuthStore: () => mockUseAuthStore()
 }))
 
 vi.mock('@/config/environment', () => ({
@@ -49,8 +50,8 @@ describe('TarjetaMensualidad Component', () => {
       hasPermission: vi.fn(() => false)
     }
 
-    const authModule = require('@/stores/auth')
-    authModule.useAuthStore.mockReturnValue(mockAuthStore)
+    // Configurar el mock global
+    mockUseAuthStore.mockReturnValue(mockAuthStore)
   })
 
   const createWrapper = (props = {}) => {
