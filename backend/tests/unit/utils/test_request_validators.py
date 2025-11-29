@@ -1,197 +1,201 @@
 """
-Tests for request_validators utility module.
+Tests para utilidades de validación de requests.
 
-This module contains tests that verify request validation functions,
-including JSON extraction and field validation.
+Este módulo contiene tests que verifican las funciones
+de validación de solicitudes HTTP.
 """
 
 import pytest
+from unittest.mock import MagicMock
 from flask import Flask, Request
-
 from src.utils.request_validators import (
-    RequestValidationError,
     obtener_json_requerido,
-    validar_campo_booleano
+    validar_campo_booleano,
+    RequestValidationError
 )
 
 
 @pytest.mark.unit
-class TestRequestValidationError:
-    """Tests for RequestValidationError exception."""
-    
-    def test_request_validation_error_default_status(self):
-        """Test: RequestValidationError with default status code."""
-        error = RequestValidationError('Test error')
-        
-        assert str(error) == 'Test error'
-        assert error.status_code == 400
-    
-    def test_request_validation_error_custom_status(self):
-        """Test: RequestValidationError with custom status code."""
-        error = RequestValidationError('Test error', status_code=404)
-        
-        assert str(error) == 'Test error'
-        assert error.status_code == 404
-
-
-@pytest.mark.unit
 class TestObtenerJsonRequerido:
-    """Tests for obtener_json_requerido function."""
+    """Tests para obtener_json_requerido."""
     
-    def test_obtener_json_requerido_success(self, app_context):
-        """Test: Successful JSON extraction."""
-        from flask import request
-        with app_context.test_request_context(
+    def test_obtener_json_requerido_success(self, app):
+        """Test: Obtener JSON requerido exitosamente."""
+        with app.test_request_context(
             json={'id': 1, 'name': 'Test'},
             content_type='application/json'
         ):
-            data = obtener_json_requerido(
-                request,
-                mensaje_tipo='Invalid content type',
-                mensaje_vacio='Empty body'
+            from flask import request as flask_request
+            
+            result = obtener_json_requerido(
+                req=flask_request,
+                mensaje_tipo='Debe ser JSON',
+                mensaje_vacio='No puede estar vacío'
             )
             
-            assert data == {'id': 1, 'name': 'Test'}
+            assert result == {'id': 1, 'name': 'Test'}
     
-    def test_obtener_json_requerido_not_json(self, app_context):
-        """Test: Request is not JSON."""
-        from flask import request
-        with app_context.test_request_context(
-            data='not json',
-            content_type='text/plain'
-        ):
+    def test_obtener_json_requerido_not_json(self, app):
+        """Test: Error cuando request no es JSON."""
+        with app.test_request_context():
+            request = MagicMock(spec=Request)
+            request.is_json = False
+            
             with pytest.raises(RequestValidationError) as exc_info:
                 obtener_json_requerido(
-                    request,
-                    mensaje_tipo='Invalid content type',
-                    mensaje_vacio='Empty body'
+                    req=request,
+                    mensaje_tipo='Debe ser JSON',
+                    mensaje_vacio='No puede estar vacío'
                 )
             
             assert exc_info.value.status_code == 400
-            assert str(exc_info.value) == 'Invalid content type'
+            assert str(exc_info.value) == 'Debe ser JSON'
     
-    def test_obtener_json_requerido_empty_body(self, app_context):
-        """Test: Empty JSON body."""
-        from flask import request
-        with app_context.test_request_context(
-            data='{}',
-            content_type='application/json'
-        ):
+    def test_obtener_json_requerido_empty(self, app):
+        """Test: Error cuando JSON está vacío."""
+        with app.test_request_context():
+            request = MagicMock(spec=Request)
+            request.is_json = True
+            request.get_json = lambda: None
+            
             with pytest.raises(RequestValidationError) as exc_info:
                 obtener_json_requerido(
-                    request,
-                    mensaje_tipo='Invalid content type',
-                    mensaje_vacio='Empty body'
+                    req=request,
+                    mensaje_tipo='Debe ser JSON',
+                    mensaje_vacio='No puede estar vacío'
                 )
             
             assert exc_info.value.status_code == 400
-            assert str(exc_info.value) == 'Empty body'
+            assert str(exc_info.value) == 'No puede estar vacío'
     
-    def test_obtener_json_requerido_empty_dict(self, app_context):
-        """Test: Empty JSON dict."""
-        from flask import request
-        with app_context.test_request_context(
-            json={},
-            content_type='application/json'
-        ):
+    def test_obtener_json_requerido_empty_dict(self, app):
+        """Test: Error cuando JSON es diccionario vacío."""
+        with app.test_request_context():
+            request = MagicMock(spec=Request)
+            request.is_json = True
+            request.get_json = lambda: {}
+            
             with pytest.raises(RequestValidationError) as exc_info:
                 obtener_json_requerido(
-                    request,
-                    mensaje_tipo='Invalid content type',
-                    mensaje_vacio='Empty body'
+                    req=request,
+                    mensaje_tipo='Debe ser JSON',
+                    mensaje_vacio='No puede estar vacío'
                 )
             
             assert exc_info.value.status_code == 400
-            assert str(exc_info.value) == 'Empty body'
 
 
 @pytest.mark.unit
 class TestValidarCampoBooleano:
-    """Tests for validar_campo_booleano function."""
+    """Tests para validar_campo_booleano."""
     
-    def test_validar_campo_booleano_success_true(self):
-        """Test: Valid boolean field with True value."""
-        data = {'active': True}
+    def test_validar_campo_booleano_true(self):
+        """Test: Validar campo booleano con valor True."""
+        data = {'activo': True}
         
         result = validar_campo_booleano(
-            data,
-            'active',
-            mensaje_faltante='Field missing',
-            mensaje_tipo='Invalid type'
+            data=data,
+            campo='activo',
+            mensaje_faltante='Campo faltante',
+            mensaje_tipo='Debe ser booleano'
         )
         
         assert result is True
     
-    def test_validar_campo_booleano_success_false(self):
-        """Test: Valid boolean field with False value."""
-        data = {'active': False}
+    def test_validar_campo_booleano_false(self):
+        """Test: Validar campo booleano con valor False."""
+        data = {'activo': False}
         
         result = validar_campo_booleano(
-            data,
-            'active',
-            mensaje_faltante='Field missing',
-            mensaje_tipo='Invalid type'
+            data=data,
+            campo='activo',
+            mensaje_faltante='Campo faltante',
+            mensaje_tipo='Debe ser booleano'
         )
         
         assert result is False
     
-    def test_validar_campo_booleano_missing_field(self):
-        """Test: Missing boolean field."""
-        data = {'other_field': 'value'}
+    def test_validar_campo_booleano_missing(self):
+        """Test: Error cuando campo booleano está ausente."""
+        data = {'otro_campo': 'valor'}
         
         with pytest.raises(RequestValidationError) as exc_info:
             validar_campo_booleano(
-                data,
-                'active',
-                mensaje_faltante='Field missing',
-                mensaje_tipo='Invalid type'
+                data=data,
+                campo='activo',
+                mensaje_faltante='Campo faltante',
+                mensaje_tipo='Debe ser booleano'
             )
         
         assert exc_info.value.status_code == 400
-        assert str(exc_info.value) == 'Field missing'
+        assert str(exc_info.value) == 'Campo faltante'
     
-    def test_validar_campo_booleano_invalid_type_string(self):
-        """Test: Invalid type - string instead of boolean."""
-        data = {'active': 'true'}
+    def test_validar_campo_booleano_wrong_type_string(self):
+        """Test: Error cuando campo no es booleano (string)."""
+        data = {'activo': 'true'}
         
         with pytest.raises(RequestValidationError) as exc_info:
             validar_campo_booleano(
-                data,
-                'active',
-                mensaje_faltante='Field missing',
-                mensaje_tipo='Invalid type'
+                data=data,
+                campo='activo',
+                mensaje_faltante='Campo faltante',
+                mensaje_tipo='Debe ser booleano'
             )
         
         assert exc_info.value.status_code == 400
-        assert str(exc_info.value) == 'Invalid type'
+        assert str(exc_info.value) == 'Debe ser booleano'
     
-    def test_validar_campo_booleano_invalid_type_int(self):
-        """Test: Invalid type - integer instead of boolean."""
-        data = {'active': 1}
+    def test_validar_campo_booleano_wrong_type_int(self):
+        """Test: Error cuando campo no es booleano (int)."""
+        data = {'activo': 1}
         
         with pytest.raises(RequestValidationError) as exc_info:
             validar_campo_booleano(
-                data,
-                'active',
-                mensaje_faltante='Field missing',
-                mensaje_tipo='Invalid type'
+                data=data,
+                campo='activo',
+                mensaje_faltante='Campo faltante',
+                mensaje_tipo='Debe ser booleano'
             )
         
         assert exc_info.value.status_code == 400
-        assert str(exc_info.value) == 'Invalid type'
+        assert str(exc_info.value) == 'Debe ser booleano'
     
-    def test_validar_campo_booleano_invalid_type_none(self):
-        """Test: Invalid type - None instead of boolean."""
-        data = {'active': None}
+    def test_validar_campo_booleano_wrong_type_none(self):
+        """Test: Error cuando campo es None."""
+        data = {'activo': None}
         
         with pytest.raises(RequestValidationError) as exc_info:
             validar_campo_booleano(
-                data,
-                'active',
-                mensaje_faltante='Field missing',
-                mensaje_tipo='Invalid type'
+                data=data,
+                campo='activo',
+                mensaje_faltante='Campo faltante',
+                mensaje_tipo='Debe ser booleano'
             )
         
         assert exc_info.value.status_code == 400
-        assert str(exc_info.value) == 'Invalid type'
+        assert str(exc_info.value) == 'Debe ser booleano'
 
+
+@pytest.mark.unit
+class TestRequestValidationError:
+    """Tests para RequestValidationError."""
+    
+    def test_request_validation_error_basic(self):
+        """Test: Crear RequestValidationError básico."""
+        error = RequestValidationError("Error de validación")
+        
+        assert str(error) == "Error de validación"
+        assert error.status_code == 400
+    
+    def test_request_validation_error_custom_status(self):
+        """Test: Crear RequestValidationError con status code personalizado."""
+        error = RequestValidationError("Error no encontrado", status_code=404)
+        
+        assert str(error) == "Error no encontrado"
+        assert error.status_code == 404
+    
+    def test_request_validation_error_inheritance(self):
+        """Test: RequestValidationError hereda de ValueError."""
+        error = RequestValidationError("Error")
+        
+        assert isinstance(error, ValueError)

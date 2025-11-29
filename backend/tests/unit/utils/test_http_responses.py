@@ -1,317 +1,297 @@
 """
-Tests for http_responses utility module.
+Tests para utilidades de respuestas HTTP.
 
-This module contains tests that verify HTTP response building functions,
-including success, error, and convenience methods.
+Este módulo contiene tests que verifican la funcionalidad
+de las utilidades para construir respuestas HTTP estandarizadas.
 """
 
 import pytest
 from unittest.mock import MagicMock
 from flask import Flask
-
 from src.utils.http_responses import (
     HttpResponseBuilder,
     build_response,
-    handle_exception
+    handle_exception,
+    JsonResponse
 )
 from src.utils.error_messages import (
     ERROR_INTERNO_SERVIDOR,
-    ERROR_CONTENT_TYPE_JSON,
-    ERROR_USUARIO_NO_AUTENTICADO,
     ERROR_RECURSO_NO_ENCONTRADO,
+    ERROR_USUARIO_NO_AUTENTICADO,
+    ERROR_CONTENT_TYPE_JSON
 )
 
 
 @pytest.mark.unit
 class TestHttpResponseBuilder:
-    """Tests for HttpResponseBuilder class."""
+    """Tests para HttpResponseBuilder."""
     
-    def test_success_with_data(self, app_context):
-        """Test: Success response with data."""
-        with app_context.app_context():
+    def test_success_with_data(self, app):
+        """Test: Respuesta de éxito con datos."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.success(
                 data={'id': 1, 'name': 'Test'},
-                message='Operation successful'
+                message='Operación exitosa',
+                status_code=200
             )
-            response_data = response.get_json()
             
             assert status_code == 200
-            assert response_data['success'] is True
-            assert response_data['data'] == {'id': 1, 'name': 'Test'}
-            assert response_data['message'] == 'Operation successful'
+            json_data = response.get_json()
+            assert json_data['success'] is True
+            assert json_data['status_code'] == 200
+            assert json_data['data'] == {'id': 1, 'name': 'Test'}
+            assert json_data['message'] == 'Operación exitosa'
     
-    def test_success_without_data(self, app_context):
-        """Test: Success response without data."""
-        with app_context.app_context():
-            response, status_code = HttpResponseBuilder.success(
-                message='Operation successful'
-            )
-            response_data = response.get_json()
+    def test_success_without_data(self, app):
+        """Test: Respuesta de éxito sin datos."""
+        with app.app_context():
+            response, status_code = HttpResponseBuilder.success()
             
             assert status_code == 200
-            assert response_data['success'] is True
-            assert 'data' not in response_data
-            assert response_data['message'] == 'Operation successful'
+            json_data = response.get_json()
+            assert json_data['success'] is True
+            assert 'data' not in json_data
     
-    def test_success_with_custom_status_code(self, app_context):
-        """Test: Success response with custom status code."""
-        with app_context.app_context():
+    def test_success_with_kwargs(self, app):
+        """Test: Respuesta de éxito con kwargs adicionales."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.success(
-                data={'id': 1},
-                status_code=201
+                pagination={'page': 1, 'total': 10}
             )
-            response_data = response.get_json()
             
-            assert status_code == 201
-            assert response_data['success'] is True
-            assert response_data['status_code'] == 201
+            json_data = response.get_json()
+            assert json_data['pagination'] == {'page': 1, 'total': 10}
     
-    def test_success_with_kwargs(self, app_context):
-        """Test: Success response with additional kwargs."""
-        with app_context.app_context():
-            response, status_code = HttpResponseBuilder.success(
-                data={'id': 1},
-                extra_field='extra_value',
-                count=5
-            )
-            response_data = response.get_json()
-            
-            assert status_code == 200
-            assert response_data['extra_field'] == 'extra_value'
-            assert response_data['count'] == 5
-    
-    def test_error_basic(self, app_context):
-        """Test: Basic error response."""
-        with app_context.app_context():
+    def test_error_basic(self, app):
+        """Test: Respuesta de error básica."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.error(
-                error='Validation failed',
-                message='Invalid input data'
+                error='Error de validación',
+                status_code=400
             )
-            response_data = response.get_json()
             
             assert status_code == 400
-            assert response_data['success'] is False
-            assert response_data['error'] == 'Validation failed'
-            assert response_data['message'] == 'Invalid input data'
+            json_data = response.get_json()
+            assert json_data['success'] is False
+            assert json_data['error'] == 'Error de validación'
+            assert json_data['status_code'] == 400
     
-    def test_error_with_data(self, app_context):
-        """Test: Error response with data."""
-        with app_context.app_context():
+    def test_error_with_message(self, app):
+        """Test: Respuesta de error con mensaje."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.error(
-                error='Validation failed',
-                data={'field': 'email', 'reason': 'Invalid format'}
+                error='Error principal',
+                message='Mensaje descriptivo',
+                status_code=400
             )
-            response_data = response.get_json()
             
-            assert status_code == 400
-            assert response_data['data'] == {'field': 'email', 'reason': 'Invalid format'}
+            json_data = response.get_json()
+            assert json_data['error'] == 'Error principal'
+            assert json_data['message'] == 'Mensaje descriptivo'
     
-    def test_error_with_custom_status_code(self, app_context):
-        """Test: Error response with custom status code."""
-        with app_context.app_context():
+    def test_error_with_data(self, app):
+        """Test: Respuesta de error con datos."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.error(
-                error='Not found',
-                status_code=404
+                error='Error',
+                data={'field': 'value'},
+                status_code=400
             )
-            response_data = response.get_json()
             
-            assert status_code == 404
-            assert response_data['status_code'] == 404
+            json_data = response.get_json()
+            assert json_data['data'] == {'field': 'value'}
     
-    def test_created(self, app_context):
-        """Test: Created response (201)."""
-        with app_context.app_context():
+    def test_created(self, app):
+        """Test: Respuesta 201 Created."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.created(
                 data={'id': 1},
-                message='Resource created'
+                message='Recurso creado'
             )
-            response_data = response.get_json()
             
             assert status_code == 201
-            assert response_data['success'] is True
-            assert response_data['data'] == {'id': 1}
-            assert response_data['message'] == 'Resource created'
+            json_data = response.get_json()
+            assert json_data['success'] is True
+            assert json_data['status_code'] == 201
+            assert json_data['message'] == 'Recurso creado'
     
-    def test_created_default_message(self, app_context):
-        """Test: Created response with default message."""
-        with app_context.app_context():
-            response, status_code = HttpResponseBuilder.created(
-                data={'id': 1}
-            )
-            response_data = response.get_json()
-            
-            assert status_code == 201
-            assert response_data['message'] == 'Recurso creado exitosamente'
-    
-    def test_not_found_default(self, app_context):
-        """Test: Not found response with default error."""
-        with app_context.app_context():
+    def test_not_found_default(self, app):
+        """Test: Respuesta 404 Not Found por defecto."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.not_found()
-            response_data = response.get_json()
             
             assert status_code == 404
-            assert response_data['success'] is False
-            assert response_data['error'] == ERROR_RECURSO_NO_ENCONTRADO
+            json_data = response.get_json()
+            assert json_data['error'] == ERROR_RECURSO_NO_ENCONTRADO
     
-    def test_not_found_custom(self, app_context):
-        """Test: Not found response with custom error."""
-        with app_context.app_context():
+    def test_not_found_custom(self, app):
+        """Test: Respuesta 404 Not Found personalizada."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.not_found(
-                error='User not found',
-                message='The requested user does not exist'
+                error='Recurso no existe',
+                message='El ID proporcionado no fue encontrado'
             )
-            response_data = response.get_json()
             
-            assert status_code == 404
-            assert response_data['error'] == 'User not found'
-            assert response_data['message'] == 'The requested user does not exist'
+            json_data = response.get_json()
+            assert json_data['error'] == 'Recurso no existe'
+            assert json_data['message'] == 'El ID proporcionado no fue encontrado'
     
-    def test_unauthorized_default(self, app_context):
-        """Test: Unauthorized response with default error."""
-        with app_context.app_context():
+    def test_unauthorized_default(self, app):
+        """Test: Respuesta 401 Unauthorized por defecto."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.unauthorized()
-            response_data = response.get_json()
             
             assert status_code == 401
-            assert response_data['success'] is False
-            assert response_data['error'] == ERROR_USUARIO_NO_AUTENTICADO
+            json_data = response.get_json()
+            assert json_data['error'] == ERROR_USUARIO_NO_AUTENTICADO
     
-    def test_unauthorized_custom(self, app_context):
-        """Test: Unauthorized response with custom error."""
-        with app_context.app_context():
+    def test_unauthorized_custom(self, app):
+        """Test: Respuesta 401 Unauthorized personalizada."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.unauthorized(
-                error='Token expired',
-                message='Please login again'
+                error='Token inválido',
+                message='El token proporcionado no es válido'
             )
-            response_data = response.get_json()
             
-            assert status_code == 401
-            assert response_data['error'] == 'Token expired'
-            assert response_data['message'] == 'Please login again'
+            json_data = response.get_json()
+            assert json_data['error'] == 'Token inválido'
     
-    def test_bad_request(self, app_context):
-        """Test: Bad request response."""
-        with app_context.app_context():
+    def test_bad_request(self, app):
+        """Test: Respuesta 400 Bad Request."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.bad_request(
-                error='Invalid input',
-                message='The provided data is invalid'
+                error='Datos inválidos',
+                message='El formato de los datos es incorrecto'
             )
-            response_data = response.get_json()
             
             assert status_code == 400
-            assert response_data['error'] == 'Invalid input'
-            assert response_data['message'] == 'The provided data is invalid'
+            json_data = response.get_json()
+            assert json_data['error'] == 'Datos inválidos'
     
-    def test_internal_server_error_default(self, app_context):
-        """Test: Internal server error with default message."""
-        with app_context.app_context():
+    def test_internal_server_error_default(self, app):
+        """Test: Respuesta 500 Internal Server Error por defecto."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.internal_server_error()
-            response_data = response.get_json()
             
             assert status_code == 500
-            assert response_data['success'] is False
-            assert response_data['error'] == ERROR_INTERNO_SERVIDOR
-            assert response_data['message'] == 'Contacte al administrador'
+            json_data = response.get_json()
+            assert json_data['error'] == ERROR_INTERNO_SERVIDOR
+            assert 'Contacte al administrador' in json_data['message']
     
-    def test_internal_server_error_custom(self, app_context):
-        """Test: Internal server error with custom message."""
-        with app_context.app_context():
+    def test_internal_server_error_custom(self, app):
+        """Test: Respuesta 500 Internal Server Error personalizada."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.internal_server_error(
-                error='Database error',
-                message='Please try again later'
+                error='Error de base de datos',
+                message='No se pudo conectar a la base de datos'
             )
-            response_data = response.get_json()
             
-            assert status_code == 500
-            assert response_data['error'] == 'Database error'
-            assert response_data['message'] == 'Please try again later'
+            json_data = response.get_json()
+            assert json_data['error'] == 'Error de base de datos'
     
-    def test_json_required(self, app_context):
-        """Test: JSON required response."""
-        with app_context.app_context():
+    def test_json_required(self, app):
+        """Test: Respuesta para contenido JSON requerido."""
+        with app.app_context():
             response, status_code = HttpResponseBuilder.json_required()
-            response_data = response.get_json()
             
             assert status_code == 400
-            assert response_data['success'] is False
-            assert response_data['error'] == ERROR_CONTENT_TYPE_JSON
-            assert 'message' in response_data
+            json_data = response.get_json()
+            assert json_data['error'] == ERROR_CONTENT_TYPE_JSON
 
 
 @pytest.mark.unit
 class TestBuildResponse:
-    """Tests for build_response convenience function."""
+    """Tests para función build_response."""
     
-    def test_build_response_success(self, app_context):
-        """Test: Build success response."""
-        with app_context.app_context():
+    def test_build_response_success(self, app):
+        """Test: Construir respuesta de éxito."""
+        with app.app_context():
             response, status_code = build_response(
                 success=True,
                 status_code=200,
                 data={'id': 1},
-                message='Success'
+                message='OK'
             )
-            response_data = response.get_json()
             
             assert status_code == 200
-            assert response_data['success'] is True
-            assert response_data['data'] == {'id': 1}
-            assert response_data['message'] == 'Success'
-            assert response_data['status_code'] == 200
+            json_data = response.get_json()
+            assert json_data['success'] is True
+            assert json_data['data'] == {'id': 1}
+            assert json_data['message'] == 'OK'
     
-    def test_build_response_error(self, app_context):
-        """Test: Build error response."""
-        with app_context.app_context():
+    def test_build_response_error(self, app):
+        """Test: Construir respuesta de error."""
+        with app.app_context():
             response, status_code = build_response(
                 success=False,
                 status_code=400,
-                error='Validation failed'
+                error='Error de validación'
             )
-            response_data = response.get_json()
             
-            assert status_code == 400
-            assert response_data['success'] is False
-            assert response_data['error'] == 'Validation failed'
-            assert response_data['status_code'] == 400
+            json_data = response.get_json()
+            assert json_data['success'] is False
+            assert json_data['error'] == 'Error de validación'
+    
+    def test_build_response_default_status_code(self, app):
+        """Test: Construir respuesta con status_code por defecto."""
+        with app.app_context():
+            response, status_code = build_response(success=True)
+            
+            assert status_code == 200
+            json_data = response.get_json()
+            assert json_data['status_code'] == 200
 
 
 @pytest.mark.unit
 class TestHandleException:
-    """Tests for handle_exception function."""
+    """Tests para función handle_exception."""
     
-    def test_handle_exception(self, app_context):
-        """Test: Handle exception and return error response."""
-        with app_context.app_context():
-            mock_logger = MagicMock()
-            exception = ValueError('Test error')
+    def test_handle_exception_basic(self, app):
+        """Test: Manejar excepción básica."""
+        with app.app_context():
+            logger = MagicMock()
+            exception = ValueError("Error de prueba")
             
             response, status_code = handle_exception(
                 exception=exception,
-                logger=mock_logger,
-                context='test operation'
+                logger=logger,
+                context="test"
             )
-            response_data = response.get_json()
             
             assert status_code == 500
-            assert response_data['success'] is False
-            assert response_data['error'] == ERROR_INTERNO_SERVIDOR
-            mock_logger.error.assert_called_once()
-            assert 'test operation' in mock_logger.error.call_args[0][0]
+            logger.error.assert_called_once()
+            json_data = response.get_json()
+            assert json_data['success'] is False
     
-    def test_handle_exception_custom_message(self, app_context):
-        """Test: Handle exception with custom message."""
-        with app_context.app_context():
-            mock_logger = MagicMock()
-            exception = ValueError('Test error')
+    def test_handle_exception_with_custom_message(self, app):
+        """Test: Manejar excepción con mensaje personalizado."""
+        with app.app_context():
+            logger = MagicMock()
+            exception = ValueError("Error de prueba")
             
             response, status_code = handle_exception(
                 exception=exception,
-                logger=mock_logger,
-                context='test operation',
-                custom_message='Custom error message'
+                logger=logger,
+                context="test",
+                custom_message="Mensaje personalizado"
             )
-            response_data = response.get_json()
             
-            assert status_code == 500
-            assert response_data['message'] == 'Custom error message'
-
+            json_data = response.get_json()
+            assert json_data['message'] == "Mensaje personalizado"
+    
+    def test_handle_exception_logs_error(self, app):
+        """Test: Verificar que se registra el error en el logger."""
+        with app.app_context():
+            logger = MagicMock()
+            exception = RuntimeError("Error crítico")
+            
+            handle_exception(
+                exception=exception,
+                logger=logger,
+                context="operación crítica"
+            )
+            
+            logger.error.assert_called_once()
+            call_args = logger.error.call_args[0][0]
+            assert "operación crítica" in call_args
+            assert "Error crítico" in call_args

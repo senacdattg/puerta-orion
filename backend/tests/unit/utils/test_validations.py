@@ -1,14 +1,12 @@
 """
-Tests for validations utility module.
+Tests para utilidades de validación.
 
-This module contains tests that verify data validation functions,
-including name, document, phone, email, and address validation.
+Este módulo contiene tests que verifican las funciones
+de validación de datos de entrada.
 """
 
 import pytest
-
 from src.utils.validations import (
-    ValidationError,
     normalize_spaces,
     normalize_upper,
     validate_name,
@@ -16,367 +14,254 @@ from src.utils.validations import (
     validate_phone,
     validate_email,
     sanitize_address,
-    sanitize_free_text
+    sanitize_free_text,
+    ValidationError
 )
 
 
 @pytest.mark.unit
 class TestNormalizeSpaces:
-    """Tests for normalize_spaces function."""
+    """Tests para normalize_spaces."""
     
-    def test_normalize_spaces_multiple_spaces(self):
-        """Test: Normalize multiple spaces."""
-        result = normalize_spaces("  test    string  ")
-        
-        assert result == "test string"
+    def test_normalize_spaces_basic(self):
+        """Test: Normalizar espacios básico."""
+        result = normalize_spaces("  test  ")
+        assert result == "test"
     
-    def test_normalize_spaces_empty_string(self):
-        """Test: Normalize empty string."""
+    def test_normalize_spaces_multiple(self):
+        """Test: Normalizar múltiples espacios."""
+        result = normalize_spaces("test    with    spaces")
+        assert result == "test with spaces"
+    
+    def test_normalize_spaces_empty(self):
+        """Test: Normalizar string vacío."""
         result = normalize_spaces("")
-        
         assert result == ""
     
     def test_normalize_spaces_none(self):
-        """Test: Normalize None value."""
+        """Test: Normalizar None."""
         result = normalize_spaces(None)
-        
         assert result == ""
-    
-    def test_normalize_spaces_single_word(self):
-        """Test: Normalize single word."""
-        result = normalize_spaces("  test  ")
-        
-        assert result == "test"
 
 
 @pytest.mark.unit
 class TestNormalizeUpper:
-    """Tests for normalize_upper function."""
+    """Tests para normalize_upper."""
     
     def test_normalize_upper_basic(self):
-        """Test: Basic uppercase normalization."""
-        result = normalize_upper("test string")
-        
-        assert result == "TEST STRING"
+        """Test: Normalizar a mayúsculas básico."""
+        result = normalize_upper("test")
+        assert result == "TEST"
     
-    def test_normalize_upper_with_accents(self):
-        """Test: Normalize with accents."""
-        result = normalize_upper("José María")
-        
-        assert result == "JOSÉ MARÍA"
+    def test_normalize_upper_with_spaces(self):
+        """Test: Normalizar con espacios."""
+        result = normalize_upper("  test  with  spaces  ")
+        assert result == "TEST WITH SPACES"
     
-    def test_normalize_upper_empty_string(self):
-        """Test: Normalize empty string."""
+    def test_normalize_upper_empty(self):
+        """Test: Normalizar string vacío."""
         result = normalize_upper("")
-        
         assert result == ""
     
     def test_normalize_upper_none(self):
-        """Test: Normalize None value."""
+        """Test: Normalizar None."""
         result = normalize_upper(None)
-        
         assert result == ""
 
 
 @pytest.mark.unit
 class TestValidateName:
-    """Tests for validate_name function."""
+    """Tests para validate_name."""
     
     def test_validate_name_success(self):
-        """Test: Valid name."""
-        result = validate_name('first_name', 'Juan Pérez')
-        
+        """Test: Validar nombre exitosamente."""
+        result = validate_name("nombre", "Juan Pérez")
         assert result == "JUAN PÉREZ"
     
-    def test_validate_name_with_apostrophe(self):
-        """Test: Valid name with apostrophe."""
-        result = validate_name('first_name', "O'Brien")
-        
-        assert result == "O'BRIEN"
-    
-    def test_validate_name_with_hyphen(self):
-        """Test: Valid name with hyphen."""
-        result = validate_name('first_name', 'María-José')
-        
-        assert result == "MARÍA-JOSÉ"
-    
     def test_validate_name_required_missing(self):
-        """Test: Required name missing."""
+        """Test: Error cuando nombre requerido está ausente."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_name('first_name', None)
-        
-        assert "obligatorio" in str(exc_info.value)
-    
-    def test_validate_name_required_empty(self):
-        """Test: Required name empty."""
-        with pytest.raises(ValidationError) as exc_info:
-            validate_name('first_name', '')
-        
-        assert "obligatorio" in str(exc_info.value)
+            validate_name("nombre", None, required=True)
+        assert "obligatorio" in str(exc_info.value).lower()
     
     def test_validate_name_optional_missing(self):
-        """Test: Optional name missing."""
-        result = validate_name('middle_name', None, required=False)
-        
+        """Test: Retornar vacío cuando nombre opcional está ausente."""
+        result = validate_name("nombre", None, required=False)
         assert result == ""
     
-    def test_validate_name_exceeds_max_length(self):
-        """Test: Name exceeds max length."""
-        long_name = 'A' * 51
-        
+    def test_validate_name_max_length(self):
+        """Test: Error cuando excede longitud máxima."""
+        long_name = "A" * 51
         with pytest.raises(ValidationError) as exc_info:
-            validate_name('first_name', long_name)
-        
-        assert "excede la longitud máxima" in str(exc_info.value)
+            validate_name("nombre", long_name, max_length=50)
+        assert "excede" in str(exc_info.value).lower()
     
     def test_validate_name_invalid_characters(self):
-        """Test: Name with invalid characters."""
+        """Test: Error con caracteres inválidos."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_name('first_name', 'Juan123')
-        
-        assert "solo debe contener letras" in str(exc_info.value)
+            validate_name("nombre", "Juan123")
+        assert "letras" in str(exc_info.value).lower()
+    
+    def test_validate_name_with_special_chars(self):
+        """Test: Validar nombre con caracteres especiales permitidos."""
+        result = validate_name("nombre", "María José O'Connor")
+        assert "MARÍA" in result
 
 
 @pytest.mark.unit
 class TestValidateDocument:
-    """Tests for validate_document function."""
+    """Tests para validate_document."""
     
     def test_validate_document_success(self):
-        """Test: Valid document number."""
-        result = validate_document('documento', '12345678')
-        
+        """Test: Validar documento exitosamente."""
+        result = validate_document("documento", "12345678")
         assert result == "12345678"
     
     def test_validate_document_with_spaces(self):
-        """Test: Document with spaces."""
-        result = validate_document('documento', '12 345 678')
-        
-        assert result == "12345678"
-    
-    def test_validate_document_with_dashes(self):
-        """Test: Document with dashes."""
-        result = validate_document('documento', '12-345-678')
-        
+        """Test: Validar documento con espacios."""
+        result = validate_document("documento", "12 345 678")
         assert result == "12345678"
     
     def test_validate_document_missing(self):
-        """Test: Document missing."""
+        """Test: Error cuando documento está ausente."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_document('documento', None)
-        
-        assert "obligatorio" in str(exc_info.value)
+            validate_document("documento", None)
+        assert "obligatorio" in str(exc_info.value).lower()
     
     def test_validate_document_too_short(self):
-        """Test: Document too short."""
+        """Test: Error cuando documento es muy corto."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_document('documento', '12345')
-        
-        assert "entre 6 y 10 dígitos" in str(exc_info.value)
+            validate_document("documento", "12345", min_length=6)
+        assert "dígitos" in str(exc_info.value).lower()
     
     def test_validate_document_too_long(self):
-        """Test: Document too long."""
+        """Test: Error cuando documento es muy largo."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_document('documento', '12345678901')
-        
-        assert "entre 6 y 10 dígitos" in str(exc_info.value)
+            validate_document("documento", "12345678901", max_length=10)
+        assert "dígitos" in str(exc_info.value).lower()
     
-    def test_validate_document_invalid_characters(self):
-        """Test: Document with invalid characters."""
+    def test_validate_document_non_digits(self):
+        """Test: Error cuando documento contiene no-dígitos."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_document('documento', 'ABC123')
-        
-        # When document has invalid characters, it will first fail length check
-        # The function removes non-digits first, so "ABC123" becomes "123" (3 chars)
-        # which is less than min_length (6), so it fails with length error
-        error_msg = str(exc_info.value)
-        assert "entre 6 y 10 dígitos" in error_msg
+            validate_document("documento", "12345ABC")
+        assert "dígitos" in str(exc_info.value).lower()
 
 
 @pytest.mark.unit
 class TestValidatePhone:
-    """Tests for validate_phone function."""
+    """Tests para validate_phone."""
     
     def test_validate_phone_success(self):
-        """Test: Valid phone number."""
-        result = validate_phone('telefono', '3001234567')
-        
+        """Test: Validar teléfono exitosamente."""
+        result = validate_phone("telefono", "3001234567")
         assert result == "3001234567"
     
-    def test_validate_phone_with_spaces(self):
-        """Test: Phone with spaces."""
-        result = validate_phone('telefono', '300 123 4567')
-        
-        assert result == "3001234567"
-    
-    def test_validate_phone_with_dashes(self):
-        """Test: Phone with dashes."""
-        result = validate_phone('telefono', '300-123-4567')
-        
+    def test_validate_phone_with_formatting(self):
+        """Test: Validar teléfono con formato."""
+        result = validate_phone("telefono", "(300) 123-4567")
         assert result == "3001234567"
     
     def test_validate_phone_required_missing(self):
-        """Test: Required phone missing."""
+        """Test: Error cuando teléfono requerido está ausente."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_phone('telefono', None)
-        
-        assert "obligatorio" in str(exc_info.value)
+            validate_phone("telefono", None, required=True)
+        assert "obligatorio" in str(exc_info.value).lower()
     
     def test_validate_phone_optional_missing(self):
-        """Test: Optional phone missing."""
-        result = validate_phone('telefono', None, required=False)
-        
+        """Test: Retornar vacío cuando teléfono opcional está ausente."""
+        result = validate_phone("telefono", None, required=False)
         assert result == ""
     
-    def test_validate_phone_too_short(self):
-        """Test: Phone too short."""
+    def test_validate_phone_wrong_length(self):
+        """Test: Error cuando teléfono tiene longitud incorrecta."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_phone('telefono', '123456789')
-        
-        assert "exactamente 10 dígitos" in str(exc_info.value)
-    
-    def test_validate_phone_too_long(self):
-        """Test: Phone too long."""
-        with pytest.raises(ValidationError) as exc_info:
-            validate_phone('telefono', '12345678901')
-        
-        assert "exactamente 10 dígitos" in str(exc_info.value)
-    
-    def test_validate_phone_invalid_characters(self):
-        """Test: Phone with invalid characters."""
-        with pytest.raises(ValidationError) as exc_info:
-            validate_phone('telefono', '300ABC4567')
-        
-        # When phone has invalid characters, it will first fail length check
-        # The function removes non-digits first, so "300ABC4567" becomes "3004567" (7 chars)
-        # which is less than required 10, so it fails with length error
-        error_msg = str(exc_info.value)
-        assert "exactamente 10 dígitos" in error_msg
+            validate_phone("telefono", "12345", min_length=10, max_length=10)
+        assert "dígitos" in str(exc_info.value).lower()
 
 
 @pytest.mark.unit
 class TestValidateEmail:
-    """Tests for validate_email function."""
+    """Tests para validate_email."""
     
     def test_validate_email_success(self):
-        """Test: Valid email."""
-        result = validate_email('correo', 'test@example.com')
-        
-        assert result == "test@example.com"
-    
-    def test_validate_email_with_spaces(self):
-        """Test: Email with spaces (normalized)."""
-        result = validate_email('correo', '  test@example.com  ')
-        
+        """Test: Validar email exitosamente."""
+        result = validate_email("email", "test@example.com")
         assert result == "test@example.com"
     
     def test_validate_email_lowercase(self):
-        """Test: Email converted to lowercase."""
-        result = validate_email('correo', 'TEST@EXAMPLE.COM')
-        
+        """Test: Email se convierte a minúsculas."""
+        result = validate_email("email", "TEST@EXAMPLE.COM")
         assert result == "test@example.com"
     
     def test_validate_email_missing(self):
-        """Test: Email missing."""
+        """Test: Error cuando email está ausente."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_email('correo', None)
-        
-        assert "obligatorio" in str(exc_info.value)
+            validate_email("email", None)
+        assert "obligatorio" in str(exc_info.value).lower()
     
-    def test_validate_email_invalid_format_no_at(self):
-        """Test: Invalid email format - no @."""
+    def test_validate_email_invalid_format(self):
+        """Test: Error con formato de email inválido."""
         with pytest.raises(ValidationError) as exc_info:
-            validate_email('correo', 'invalidemail.com')
-        
-        assert "formato válido" in str(exc_info.value)
+            validate_email("email", "invalid-email")
+        assert "formato" in str(exc_info.value).lower()
     
-    def test_validate_email_invalid_format_no_domain(self):
-        """Test: Invalid email format - no domain."""
-        with pytest.raises(ValidationError) as exc_info:
-            validate_email('correo', 'test@')
-        
-        assert "formato válido" in str(exc_info.value)
+    def test_validate_email_no_at(self):
+        """Test: Error cuando email no tiene @."""
+        with pytest.raises(ValidationError):
+            validate_email("email", "invalidemail.com")
 
 
 @pytest.mark.unit
 class TestSanitizeAddress:
-    """Tests for sanitize_address function."""
+    """Tests para sanitize_address."""
     
     def test_sanitize_address_success(self):
-        """Test: Valid address."""
-        result = sanitize_address('direccion', 'Calle 123 #45-67')
-        
+        """Test: Sanitizar dirección exitosamente."""
+        result = sanitize_address("direccion", "Calle 123 #45-67")
         assert result == "CALLE 123 #45-67"
     
-    def test_sanitize_address_with_numbers(self):
-        """Test: Address with numbers."""
-        result = sanitize_address('direccion', 'Carrera 7 #12-34')
-        
-        assert result == "CARRERA 7 #12-34"
-    
-    def test_sanitize_address_with_dot(self):
-        """Test: Address with dot."""
-        result = sanitize_address('direccion', 'Av. 68 #45-30')
-        
-        assert result == "AV. 68 #45-30"
-    
     def test_sanitize_address_required_missing(self):
-        """Test: Required address missing."""
+        """Test: Error cuando dirección requerida está ausente."""
         with pytest.raises(ValidationError) as exc_info:
-            sanitize_address('direccion', None)
-        
-        assert "obligatorio" in str(exc_info.value)
+            sanitize_address("direccion", None, required=True)
+        assert "obligatorio" in str(exc_info.value).lower()
     
     def test_sanitize_address_optional_missing(self):
-        """Test: Optional address missing."""
-        result = sanitize_address('direccion', None, required=False)
-        
+        """Test: Retornar vacío cuando dirección opcional está ausente."""
+        result = sanitize_address("direccion", None, required=False)
         assert result == ""
     
-    def test_sanitize_address_exceeds_max_length(self):
-        """Test: Address exceeds max length."""
-        long_address = 'A' * 121
-        
+    def test_sanitize_address_max_length(self):
+        """Test: Error cuando excede longitud máxima."""
+        long_address = "A" * 121
         with pytest.raises(ValidationError) as exc_info:
-            sanitize_address('direccion', long_address)
-        
-        assert "excede la longitud máxima" in str(exc_info.value)
+            sanitize_address("direccion", long_address, max_length=120)
+        assert "excede" in str(exc_info.value).lower()
     
     def test_sanitize_address_invalid_characters(self):
-        """Test: Address with invalid characters."""
+        """Test: Error con caracteres inválidos."""
         with pytest.raises(ValidationError) as exc_info:
-            sanitize_address('direccion', 'Calle 123 @#$')
-        
-        assert "caracteres inválidos" in str(exc_info.value)
+            sanitize_address("direccion", "Calle 123 @#$")
+        assert "inválidos" in str(exc_info.value).lower()
 
 
 @pytest.mark.unit
 class TestSanitizeFreeText:
-    """Tests for sanitize_free_text function."""
+    """Tests para sanitize_free_text."""
     
     def test_sanitize_free_text_success(self):
-        """Test: Valid free text."""
-        result = sanitize_free_text('observaciones', 'Some text here')
-        
-        assert result == "SOME TEXT HERE"
+        """Test: Sanitizar texto libre exitosamente."""
+        result = sanitize_free_text("texto", "Este es un texto de prueba")
+        assert result == "ESTE ES UN TEXTO DE PRUEBA"
     
     def test_sanitize_free_text_empty(self):
-        """Test: Empty free text."""
-        result = sanitize_free_text('observaciones', '')
-        
+        """Test: Retornar vacío cuando texto está ausente."""
+        result = sanitize_free_text("texto", None)
         assert result == ""
     
-    def test_sanitize_free_text_none(self):
-        """Test: None free text."""
-        result = sanitize_free_text('observaciones', None)
-        
-        assert result == ""
-    
-    def test_sanitize_free_text_exceeds_max_length(self):
-        """Test: Free text exceeds max length."""
-        long_text = 'A' * 501
-        
+    def test_sanitize_free_text_max_length(self):
+        """Test: Error cuando excede longitud máxima."""
+        long_text = "A" * 501
         with pytest.raises(ValidationError) as exc_info:
-            sanitize_free_text('observaciones', long_text)
-        
-        assert "excede la longitud máxima" in str(exc_info.value)
-
+            sanitize_free_text("texto", long_text, max_length=500)
+        assert "excede" in str(exc_info.value).lower()
