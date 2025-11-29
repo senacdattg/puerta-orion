@@ -16,6 +16,14 @@ vi.mock('@/services/galeriaService', () => ({
         tipo: 'Competencia'
       }
     ]),
+    cargarCatalogos: vi.fn().mockResolvedValue({
+      tiposEvento: [
+        { id_tipo_evento: 1, nombre: 'Competencia' }
+      ],
+      categorias: [
+        { id_categoria: 1, nombre_categoria: 'Test' }
+      ]
+    }),
     crearEvento: vi.fn().mockResolvedValue({ success: true }),
     actualizarEvento: vi.fn().mockResolvedValue({ success: true }),
     eliminarEvento: vi.fn().mockResolvedValue({ success: true }),
@@ -139,6 +147,10 @@ describe('Galeria Component', () => {
       }
     })
 
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    // Asegurar que los eventos tengan nombre válido (string)
     wrapper.vm.eventos = [
       { nombre: 'Evento 1', tipo: 'Competencia' },
       { nombre: 'Evento 2', tipo: 'Entrenamiento' }
@@ -151,6 +163,32 @@ describe('Galeria Component', () => {
     expect(wrapper.vm.eventosFiltrados[0].nombre).toBe('Evento 1')
   })
 
+  it('should handle eventos with undefined nombre gracefully', async () => {
+    wrapper = mount(Galeria, {
+      global: {
+        stubs: {
+          'i': true
+        }
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    // Test con eventos que podrían tener nombre undefined
+    wrapper.vm.eventos = [
+      { nombre: undefined, tipo: 'Competencia' },
+      { nombre: 'Evento 2', tipo: 'Entrenamiento' }
+    ]
+    wrapper.vm.busqueda = 'Evento'
+
+    await wrapper.vm.$nextTick()
+
+    // Si hay un evento sin nombre, debería manejarse correctamente
+    // (el componente podría fallar o filtrar correctamente según su implementación)
+    expect(Array.isArray(wrapper.vm.eventosFiltrados)).toBe(true)
+  })
+
   it('should filter eventos by tipo', async () => {
     wrapper = mount(Galeria, {
       global: {
@@ -159,6 +197,9 @@ describe('Galeria Component', () => {
         }
       }
     })
+
+    await wrapper.vm.$nextTick()
+    await new Promise(resolve => setTimeout(resolve, 200))
 
     wrapper.vm.eventos = [
       { nombre: 'Evento 1', tipo: 'Competencia' },

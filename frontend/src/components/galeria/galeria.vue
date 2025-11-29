@@ -329,7 +329,7 @@ export default {
 
         const coincideNombre =
           !this.busqueda ||
-          evento.nombre.toLowerCase().includes(this.busqueda.toLowerCase());
+          (evento.nombre && typeof evento.nombre === 'string' && evento.nombre.toLowerCase().includes(this.busqueda.toLowerCase()));
 
         return coincideTipo && coincideNombre;
       });
