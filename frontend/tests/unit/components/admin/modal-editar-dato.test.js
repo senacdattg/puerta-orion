@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ModalEditarDato from '@/components/admin/modal-editar-dato.vue'
@@ -102,21 +102,76 @@ describe('ModalEditarDato Component', () => {
     if (globalThis.structuredClone) {
       originalStructuredClone = globalThis.structuredClone
     }
-    globalThis.structuredClone = vi.fn((obj) => {
+    
+    // Función de clonación segura que maneja todos los casos
+    const safeClone = (obj) => {
+      if (obj === null || obj === undefined) {
+        return obj
+      }
+      
+      // Para tipos primitivos, retornar directamente
+      if (typeof obj !== 'object') {
+        return obj
+      }
+      
+      // Para arrays
+      if (Array.isArray(obj)) {
+        return obj.map(item => safeClone(item))
+      }
+      
+      // Para objetos, intentar clonación profunda segura
       try {
-        if (originalStructuredClone) {
-          return originalStructuredClone(obj)
-        }
-        // Fallback a JSON si structuredClone no está disponible
-        return JSON.parse(JSON.stringify(obj))
+        // Primero intentar con JSON (más seguro)
+        const jsonString = JSON.stringify(obj, (key, value) => {
+          // Omitir funciones y valores no serializables
+          if (typeof value === 'function') {
+            return undefined
+          }
+          return value
+        })
+        return JSON.parse(jsonString)
       } catch {
-        // Si falla, usar JSON como fallback
-        try {
-          return JSON.parse(JSON.stringify(obj))
-        } catch {
-          // Si también falla JSON, retornar copia superficial
-          return { ...obj }
+        // Si falla JSON, usar copia superficial
+        return { ...obj }
+      }
+    }
+    
+    globalThis.structuredClone = vi.fn((obj) => {
+      // Si el objeto es null o undefined, retornarlo directamente
+      if (obj === null || obj === undefined) {
+        return obj
+      }
+      
+      try {
+        const cloned = safeClone(obj)
+        // Verificar que la clonación produjo un resultado válido
+        if (cloned === undefined) {
+          // Si es undefined, retornar una copia del objeto original
+          if (Array.isArray(obj)) {
+            return []
+          }
+          return {}
         }
+        return cloned
+      } catch (error) {
+        // Si todo falla, retornar copia superficial o valor por defecto
+        if (Array.isArray(obj)) {
+          return []
+        }
+        if (typeof obj === 'object') {
+          try {
+            return JSON.parse(JSON.stringify(obj, (key, value) => {
+              // Omitir funciones, símbolos, y valores no serializables
+              if (typeof value === 'function' || typeof value === 'symbol') {
+                return undefined
+              }
+              return value
+            }))
+          } catch {
+            return {}
+          }
+        }
+        return obj
       }
     })
 
@@ -128,11 +183,34 @@ describe('ModalEditarDato Component', () => {
     })
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Limpiar todos los timers pendientes
+    vi.clearAllTimers()
+    
+    // Esperar a que cualquier operación asíncrona termine
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
+    // Limpiar wrapper si existe
+    if (wrapper) {
+      try {
+        wrapper.unmount()
+      } catch (error) {
+        // Ignorar errores al desmontar
+      }
+      wrapper = null
+    }
+    
     // Restaurar structuredClone original si existía
     if (originalStructuredClone) {
       globalThis.structuredClone = originalStructuredClone
+      originalStructuredClone = null
+    } else if (globalThis.structuredClone) {
+      // Si no había original pero hay un mock, eliminarlo
+      delete globalThis.structuredClone
     }
+    
+    vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   const createWrapper = (props = {}) => {
