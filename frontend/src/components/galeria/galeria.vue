@@ -96,7 +96,7 @@
           <!-- Información general -->
           <div class="seccion-detalles evento-detalles">
             <h5 class="evento-titulo-seccion">📋 Información General</h5>
-            
+
             <div class="grid-detalles evento-grid">
               <div class="detalle-item evento-item">
                 <span class="detalle-label evento-label-grande">Tipo de evento</span>
@@ -365,6 +365,17 @@ export default {
     document.body.style.top = '';
   },
   methods: {
+    // Helper function to safely clone objects
+    clonarObjeto(obj) {
+      try {
+        return structuredClone(obj);
+      } catch {
+        // Fallback to JSON method if structuredClone fails
+        // NOSONAR: S6781 - JSON.parse/stringify is needed as fallback when structuredClone fails
+        return JSON.parse(JSON.stringify(obj));
+      }
+    },
+
     normalizarEspacios(valor = "") {
       return valor ? valor.replace(/\s+/g, " ").trim() : "" // NOSONAR: S7781 - replaceAll() no acepta regex
     },
@@ -466,7 +477,7 @@ export default {
       this.mostrarFormulario = true;
 
       // Guardar estado inicial cuando se abre el formulario
-      this.formInicial = structuredClone(this.form);
+      this.formInicial = this.clonarObjeto(this.form);
       this.archivoInicial = null;
     },
     // Función para normalizar valores para comparación
@@ -629,7 +640,7 @@ export default {
       this.mostrarFormulario = true;
 
       // Guardar estado inicial cuando se inicia la edición
-      this.formInicial = structuredClone(this.form);
+      this.formInicial = this.clonarObjeto(this.form);
       this.archivoInicial = null;
     },
     async manejarSeleccionArchivo(event) {
@@ -808,7 +819,7 @@ export default {
       })
 
       // Actualizar estado inicial después de guardar exitosamente
-      this.formInicial = structuredClone(this.form);
+      this.formInicial = this.clonarObjeto(this.form);
       this.archivoInicial = this.archivoSeleccionado;
 
       this.mostrarFormulario = false
@@ -984,28 +995,26 @@ export default {
 
     formatearFechaCompleta(fechaStr) {
       if (!fechaStr) return null;
-      try {
-        // Intentar parsear la fecha
-        const fecha = new Date(fechaStr + 'T00:00:00');
-        if (isNaN(fecha.getTime())) {
-          // Si falla, intentar parsear como string
-          return fechaStr;
-        }
-        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const diaSemana = diasSemana[fecha.getDay()];
-        const dia = fecha.getDate();
-        const mes = meses[fecha.getMonth()];
-        const año = fecha.getFullYear();
-        return `${diaSemana}, ${dia} de ${mes} de ${año}`;
-      } catch (error) {
+
+      // Intentar parsear la fecha
+      const fecha = new Date(fechaStr + 'T00:00:00');
+      if (Number.isNaN(fecha.getTime())) {
+        // Si falla, retornar el string original
         return fechaStr;
       }
+
+      const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const diaSemana = diasSemana[fecha.getDay()];
+      const dia = fecha.getDate();
+      const mes = meses[fecha.getMonth()];
+      const año = fecha.getFullYear();
+      return `${diaSemana}, ${dia} de ${mes} de ${año}`;
     },
 
     abrirImagenCompleta(urlImagen) {
       if (!urlImagen) return;
-      
+
       Swal.fire({
         html: `<img src="${urlImagen}" alt="Imagen del evento" style="max-width: 100%; max-height: 85vh; width: auto; height: auto; object-fit: contain; border-radius: 8px;" />`,
         showCloseButton: true,

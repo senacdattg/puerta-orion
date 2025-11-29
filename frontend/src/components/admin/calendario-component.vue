@@ -597,30 +597,42 @@ export default {
         console.log('🔍 Permisos del usuario:', {
             puedeCrear: this.puedeCrear,
             puedeEditar: this.puedeEditar,
-            puedeEliminar: this.puedeEliminar,
-            puedeVer: this.puedeVer
+            puedeEliminar: this.puedeEliminar
         });
         await this.inicializarComponente();
     },
 
     methods: {
+        // Helper function to safely clone objects
+        clonarObjeto(obj) {
+            try {
+                return structuredClone(obj);
+            } catch {
+                // Fallback to JSON method if structuredClone fails
+                // NOSONAR: S6781 - JSON.parse/stringify is needed as fallback when structuredClone fails
+                return JSON.parse(JSON.stringify(obj));
+            }
+        },
+
         normalizarEspacios(valor = '') {
-            return valor ? valor.replace(/\s+/g, ' ').trim() : ''; // NOSONAR: S7781 - replaceAll() no acepta regex
+            return valor ? valor.replaceAll(/\s+/g, ' ').trim() : '';
         },
 
         normalizarTitulo(valor = '') {
             if (!valor) return '';
             const mayus = valor.toLocaleUpperCase(LOCALE_COL);
-            const limpio = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ.\-\s]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
-            return this.normalizarEspacios(limpio).slice(0, MAX_TITULO);
+            const limpio = mayus.replaceAll(/[^A-Z0-9ÁÉÍÓÚÜÑ.\-\s]/g, '');
+            // Normalizar espacios múltiples a uno solo, pero mantener espacios al inicio/final durante la escritura
+            const normalizado = limpio.replaceAll(/\s+/g, ' ');
+            return normalizado.slice(0, MAX_TITULO);
         },
 
         normalizarLugar(valor = '') {
             if (!valor) return '';
             // Permitir letras, números, espacios y caracteres comunes para nombres de lugares
-            const limpio = valor.replace(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ#\-.,()\s]/g, '');
+            const limpio = valor.replaceAll(/[^a-zA-Z0-9ÁÉÍÓÚÜÑáéíóúüñ#\-.,()\s]/g, '');
             // Normalizar espacios múltiples a uno solo, pero mantener espacios al inicio/final temporalmente
-            const normalizado = limpio.replace(/\s+/g, ' ');
+            const normalizado = limpio.replaceAll(/\s+/g, ' ');
             // Convertir a mayúsculas y limitar longitud
             return normalizado.toLocaleUpperCase(LOCALE_COL).slice(0, MAX_LUGAR);
         },
@@ -630,7 +642,7 @@ export default {
             // No convertir a mayúsculas para descripción, mantener el formato original
             // Permitir letras, números, espacios y caracteres comunes
             // El regex [^\w\s...] permite espacios porque \s está incluido
-            const limpio = valor.replace(/[^\w\sÁÉÍÓÚÜÑáéíóúüñ#\-.,;:¿?¡!()]/g, ''); // NOSONAR: S7781 - replaceAll() no acepta regex
+            const limpio = valor.replaceAll(/[^\w\sÁÉÍÓÚÜÑáéíóúüñ#\-.,;:¿?¡!()]/g, '');
             // Solo normalizar espacios múltiples a uno solo al final, no durante la escritura
             // No hacer trim para permitir espacios al inicio/final si el usuario los quiere
             return limpio.slice(0, MAX_DESCRIPCION);
@@ -654,7 +666,11 @@ export default {
         },
 
         normalizarCamposEvento() {
-            this.nuevoEvento.titulo = this.normalizarTitulo(this.nuevoEvento.titulo);
+            // Normalizar título: colapsar espacios múltiples y hacer trim solo al final
+            if (this.nuevoEvento.titulo) {
+                const normalizado = this.nuevoEvento.titulo.replaceAll(/\s+/g, ' ').trim();
+                this.nuevoEvento.titulo = normalizado.slice(0, MAX_TITULO);
+            }
             this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
             // No normalizar descripción automáticamente al cargar, solo al escribir
             // La descripción se normaliza en manejarDescripcion cuando el usuario escribe
@@ -849,7 +865,7 @@ export default {
             }
 
             // Guardar estado inicial cuando se abre el formulario
-            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+            this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
         },
 
         // Función para normalizar valores para comparación
@@ -859,7 +875,7 @@ export default {
             }
             if (typeof valor === 'string') {
                 // Para descripción, normalizar espacios múltiples pero mantener el contenido
-                return valor.replace(/\s+/g, ' ').trim()
+                return valor.replaceAll(/\s+/g, ' ').trim()
             }
             if (typeof valor === 'number') {
                 return valor
@@ -1027,7 +1043,7 @@ export default {
             this.modalVisible = true;
 
             // Guardar estado inicial cuando se inicia la edición
-            this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+            this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
         },
 
         verEvento(evento) {
@@ -1155,10 +1171,19 @@ export default {
             })
 
             try {
-                await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
+                const eventoActualizado = await calendarioService.actualizarEvento(this.eventoSeleccionado.id, this.nuevoEvento);
 
                 // Cerrar el loading
                 Swal.close()
+
+                // Actualizar el evento en eventosDelDia si existe
+                if (this.eventosDelDia && this.eventosDelDia.length > 0) {
+                    const indiceEvento = this.eventosDelDia.findIndex(e => e.id === this.eventoSeleccionado.id);
+                    if (indiceEvento !== -1) {
+                        // Actualizar el evento en el array con los datos actualizados del servicio
+                        this.eventosDelDia[indiceEvento] = eventoActualizado;
+                    }
+                }
 
                 // El evento ya fue actualizado en la cache local en el servicio
                 // Actualizar el calendario inmediatamente
@@ -1175,6 +1200,18 @@ export default {
                 // Intentar recargar eventos del servidor, pero no fallar si hay error
                 try {
                     await calendarioService.cargarEventos();
+                    // Recargar eventos del día desde el servicio actualizado
+                    if (this.nuevoEvento.fecha) {
+                        const eventosActualizados = calendarioService.obtenerEventosPorFecha(this.nuevoEvento.fecha);
+                        if (eventosActualizados.length > 0) {
+                            this.eventosDelDia = eventosActualizados;
+                            // Ajustar el índice si es necesario
+                            const nuevoIndice = eventosActualizados.findIndex(e => e.id === this.eventoSeleccionado.id);
+                            if (nuevoIndice !== -1) {
+                                this.indiceEventoActual = nuevoIndice;
+                            }
+                        }
+                    }
                     this.actualizarCalendario();
                 } catch (recargaError) {
                     console.warn('⚠️ Error al recargar eventos, pero el evento ya fue actualizado:', recargaError.message);
@@ -1182,7 +1219,7 @@ export default {
                 }
 
                 // Actualizar estado inicial después de guardar exitosamente
-                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+                this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
                 this.cerrarModal();
             } catch (error) {
                 // Cerrar el loading si aún está abierto
@@ -1218,7 +1255,7 @@ export default {
                 this.limpiarFormulario();
                 this.nuevoEvento.fecha = fechaActual;
                 // Guardar estado inicial para el nuevo formulario
-                this.nuevoEventoInicial = JSON.parse(JSON.stringify(this.nuevoEvento));
+                this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
                 return true;
             }
             return false;
@@ -1310,7 +1347,9 @@ export default {
                 }
             }
 
-            this.normalizarCamposEvento();
+            // Normalizar campos antes de validar (aplicar trim aquí al guardar)
+            this.nuevoEvento.titulo = this.nuevoEvento.titulo ? this.nuevoEvento.titulo.replaceAll(/\s+/g, ' ').trim().slice(0, MAX_TITULO) : '';
+            this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
             const errores = this.validarEvento();
 
             if (errores.length > 0) {
@@ -1479,7 +1518,7 @@ export default {
                 let horas, minutos;
                 if (/^\d{2}:\d{2}/.test(horaStr)) {
                     const partes = horaStr.split(':');
-                    horas = parseInt(partes[0], 10);
+                    horas = Number.parseInt(partes[0], 10);
                     minutos = partes[1];
                 } else {
                     return horaStr;
@@ -1551,7 +1590,7 @@ export default {
             // Normalizar el nombre del tipo para que coincida con las clases CSS
             const tipoNormalizado = tipoNombre.toLowerCase()
                 .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+                .replaceAll(/[\u0300-\u036f]/g, '') // Eliminar acentos
                 .trim();
 
             // Mapear nombres comunes a las clases CSS

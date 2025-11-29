@@ -24,10 +24,10 @@ export function useForm(initialData = {}, validationRules = {}) {
       !value || value.length >= min || `Mínimo ${min} caracteres`,
     maxLength: (max) => (value) =>
       !value || value.length <= max || `Máximo ${max} caracteres`,
-    numeric: (value) => !value || !isNaN(value) || 'Debe ser un número',
+    numeric: (value) => !value || !Number.isNaN(Number(value)) || 'Debe ser un número',
     phone: (value) => {
       const phoneRegex = /^\+?[1-9]\d{0,15}$/
-      return !value || phoneRegex.test(value.replace(/\s/g, '')) || 'Teléfono inválido'
+      return !value || phoneRegex.test(value.replaceAll(/\s/g, '')) || 'Teléfono inválido'
     }
   }
 
