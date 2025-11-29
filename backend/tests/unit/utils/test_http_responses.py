@@ -6,6 +6,7 @@ including success, error, and convenience methods.
 """
 
 import pytest
+from unittest.mock import MagicMock
 from flask import Flask
 
 from src.utils.http_responses import (

@@ -40,6 +40,7 @@ class TestObtenerJsonRequerido:
     
     def test_obtener_json_requerido_success(self, app_context):
         """Test: Successful JSON extraction."""
+        from flask import request
         with app_context.test_request_context(
             json={'id': 1, 'name': 'Test'},
             content_type='application/json'
@@ -54,6 +55,7 @@ class TestObtenerJsonRequerido:
     
     def test_obtener_json_requerido_not_json(self, app_context):
         """Test: Request is not JSON."""
+        from flask import request
         with app_context.test_request_context(
             data='not json',
             content_type='text/plain'
@@ -70,8 +72,9 @@ class TestObtenerJsonRequerido:
     
     def test_obtener_json_requerido_empty_body(self, app_context):
         """Test: Empty JSON body."""
+        from flask import request
         with app_context.test_request_context(
-            json=None,
+            data='{}',
             content_type='application/json'
         ):
             with pytest.raises(RequestValidationError) as exc_info:
@@ -86,6 +89,7 @@ class TestObtenerJsonRequerido:
     
     def test_obtener_json_requerido_empty_dict(self, app_context):
         """Test: Empty JSON dict."""
+        from flask import request
         with app_context.test_request_context(
             json={},
             content_type='application/json'

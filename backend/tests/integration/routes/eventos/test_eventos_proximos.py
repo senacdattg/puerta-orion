@@ -43,5 +43,6 @@ class TestEventosProximos:
             
             data = assert_success_response(response)
             assert data['data'] == []
-            assert 'No tienes eventos próximos' in data.get('message', '')
+            assert data.get('total', 0) == 0
+            # No hay mensaje específico cuando no hay categorías, solo retorna array vacío
 

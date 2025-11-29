@@ -32,52 +32,55 @@ class TestAuthErrorHandler:
         assert result['success'] is True
         assert result['data'] == 'test'
     
-    def test_handle_auth_errors_expired_token(self):
+    def test_handle_auth_errors_expired_token(self, app_context):
         """Test: Handle ExpiredSignatureError."""
         @handle_auth_errors
         def test_function():
             raise jwt.ExpiredSignatureError('Token expired')
         
-        response, status_code = test_function()
-        response_data = response.get_json()
-        
-        assert status_code == 401
-        assert response_data['success'] is False
-        assert response_data['error'] == 'Token expirado'
-        assert response_data['message'] == 'Por favor inicia sesión nuevamente'
+        with app_context.app_context():
+            response, status_code = test_function()
+            response_data = response.get_json()
+            
+            assert status_code == 401
+            assert response_data['success'] is False
+            assert response_data['error'] == 'Token expirado'
+            assert response_data['message'] == 'Por favor inicia sesión nuevamente'
     
-    def test_handle_auth_errors_invalid_token(self):
+    def test_handle_auth_errors_invalid_token(self, app_context):
         """Test: Handle InvalidTokenError."""
         @handle_auth_errors
         def test_function():
             raise jwt.InvalidTokenError('Invalid token')
         
-        response, status_code = test_function()
-        response_data = response.get_json()
-        
-        assert status_code == 401
-        assert response_data['success'] is False
-        assert response_data['error'] == 'Token inválido'
-        assert response_data['message'] == 'Por favor inicia sesión nuevamente'
+        with app_context.app_context():
+            response, status_code = test_function()
+            response_data = response.get_json()
+            
+            assert status_code == 401
+            assert response_data['success'] is False
+            assert response_data['error'] == 'Token inválido'
+            assert response_data['message'] == 'Por favor inicia sesión nuevamente'
     
-    def test_handle_auth_errors_generic_exception(self):
+    def test_handle_auth_errors_generic_exception(self, app_context):
         """Test: Handle generic exceptions."""
         @handle_auth_errors
         def test_function():
             raise ValueError('Generic error')
         
-        with patch('src.middleware.auth_error_handler.obtener_registrador') as mock_logger:
-            mock_log = MagicMock()
-            mock_logger.return_value = mock_log
-            
-            response, status_code = test_function()
-            response_data = response.get_json()
-            
-            assert status_code == 500
-            assert response_data['success'] is False
-            assert response_data['error'] == 'Error interno del servidor'
-            assert response_data['message'] == 'Por favor intenta nuevamente'
-            mock_log.error.assert_called_once()
+        with app_context.app_context():
+            with patch('src.utils.logger.obtener_registrador') as mock_logger:
+                mock_log = MagicMock()
+                mock_logger.return_value = mock_log
+                
+                response, status_code = test_function()
+                response_data = response.get_json()
+                
+                assert status_code == 500
+                assert response_data['success'] is False
+                assert response_data['error'] == 'Error interno del servidor'
+                assert response_data['message'] == 'Por favor intenta nuevamente'
+                mock_log.error.assert_called_once()
     
     def test_validate_token_format_valid(self):
         """Test: Valid token format (3 parts separated by dots)."""

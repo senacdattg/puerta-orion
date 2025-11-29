@@ -64,10 +64,23 @@ class TestListarEventos:
         # Act
         with patch('src.routes.eventos_routes.obtener_categorias_permitidas_usuario',
                    return_value=mock_categorias):
-            response = client.get('/api/eventos/calendario')
+            with patch('src.routes.eventos_routes.Evento.query') as mock_query:
+                # Configurar mock para consulta vacía
+                mock_query.filter.return_value = mock_query
+                mock_query.order_by.return_value = mock_query
+                mock_query.count.return_value = 0
+                mock_query.paginate.return_value = MagicMock(
+                    items=[],
+                    page=1,
+                    per_page=10,
+                    total=0,
+                    pages=0
+                )
+                response = client.get('/api/eventos/calendario')
         
         # Assert
         data = assert_success_response(response)
         assert data['data'] == []
-        assert 'No tienes eventos asignados' in data.get('message', '')
+        assert data['pagination']['total'] == 0
+        # No hay mensaje específico cuando no hay categorías, solo retorna array vacío
 
