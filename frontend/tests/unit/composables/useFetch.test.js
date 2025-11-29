@@ -231,7 +231,7 @@ describe('usePaginatedFetch', () => {
       const mockData = [{ id: 1 }, { id: 2 }]
       const fetchFn = vi.fn().mockResolvedValueOnce(mockData)
 
-      const { fetchPage, currentPage, data } = usePaginatedFetch()
+      const { fetchPage, currentPage } = usePaginatedFetch()
 
       const result = await fetchPage(2, fetchFn)
 
@@ -301,20 +301,24 @@ describe('usePaginatedFetch', () => {
   })
 
   describe('paginatedData', () => {
-    it('should return array when data is array', () => {
-      const fetch = usePaginatedFetch()
-      const { paginatedData, setData } = fetch
+    it('should return array when data is array', async () => {
+      const { paginatedData, fetchPage } = usePaginatedFetch()
 
-      setData([{ id: 1 }, { id: 2 }])
+      // Use fetchPage which uses the correct execute internally
+      const mockData = [{ id: 1 }, { id: 2 }]
+      const fetchFn = vi.fn().mockResolvedValueOnce(mockData)
+      await fetchPage(1, fetchFn)
 
       expect(paginatedData.value).toEqual([{ id: 1 }, { id: 2 }])
     })
 
-    it('should return items when data has items property', () => {
-      const fetch = usePaginatedFetch()
-      const { paginatedData, setData } = fetch
+    it('should return items when data has items property', async () => {
+      const { paginatedData, fetchPage } = usePaginatedFetch()
 
-      setData({ items: [{ id: 1 }], total: 1 })
+      // Use fetchPage which uses the correct execute internally
+      const mockData = { items: [{ id: 1 }], total: 1 }
+      const fetchFn = vi.fn().mockResolvedValueOnce(mockData)
+      await fetchPage(1, fetchFn)
 
       expect(paginatedData.value).toEqual([{ id: 1 }])
     })
@@ -327,11 +331,14 @@ describe('usePaginatedFetch', () => {
   })
 
   describe('resetPagination', () => {
-    it('should reset pagination state', () => {
+    it('should reset pagination state', async () => {
       const fetch = usePaginatedFetch()
-      const { resetPagination, currentPage, totalPages, totalItems, data, setData } = fetch
+      const { resetPagination, currentPage, totalPages, totalItems, fetchPage } = fetch
 
-      setData([{ id: 1 }])
+      // Set data using fetchPage which uses the correct execute
+      const fetchFn = vi.fn().mockResolvedValueOnce([{ id: 1 }])
+      await fetchPage(1, fetchFn)
+
       currentPage.value = 3
       totalPages.value = 5
       totalItems.value = 50
@@ -341,8 +348,8 @@ describe('usePaginatedFetch', () => {
       expect(currentPage.value).toBe(1)
       expect(totalPages.value).toBe(1)
       expect(totalItems.value).toBe(0)
-      // reset() calls setData internally, so data might not be null
-      // Just verify pagination is reset
+      // reset() should clear data - paginatedData should be empty
+      expect(fetch.paginatedData.value).toEqual([])
     })
   })
 })
