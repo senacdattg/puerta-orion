@@ -158,20 +158,7 @@ def registro_deportista_completo() -> JsonResponse:
         )
         
         result = RegistroDeportistaService.registrar_deportista_nuevo(datos)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al registrar deportista"),
-                message=result.get("message"),
-                status_code=status_code
-            )
+        return _build_service_response(result, "Error al registrar deportista")
             
     except RequestValidationError as e:
         return HttpResponseBuilder.bad_request(error=str(e))
@@ -245,20 +232,7 @@ def registrar_deportista() -> JsonResponse:
         datos['datos_deportista']['id_persona'] = id_persona
 
         result = RegistroDeportistaService.registrar_deportista_nuevo(datos)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al registrar deportista"),
-                message=result.get("message"),
-                status_code=status_code
-            )
+        return _build_service_response(result, "Error al registrar deportista")
             
     except RequestValidationError as e:
         return HttpResponseBuilder.bad_request(error=str(e))
@@ -1182,21 +1156,7 @@ def catalogo_diagnosticos_por_tipo(id_tipo_enfermedad: int) -> JsonResponse:
     Returns:
         Lista de diagnósticos del tipo especificado o error.
     """
-    try:
-        result = RegistroDeportistaService.obtener_diagnosticos_por_tipo_enfermedad(id_tipo_enfermedad)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener diagnósticos por tipo"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener diagnósticos por tipo")
+    return _build_catalog_response(
+        lambda: RegistroDeportistaService.obtener_diagnosticos_por_tipo_enfermedad(id_tipo_enfermedad),
+        "Error al obtener diagnósticos por tipo"
+    )

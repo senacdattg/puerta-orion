@@ -56,6 +56,18 @@ class AuthService {
   }
 
   /**
+   * Helper method to handle errors consistently
+   * @param {Error} error - Error object
+   * @param {string} context - Context for logging
+   * @param {string} defaultMessage - Default error message
+   * @returns {Object} Error response object
+   */
+  _handleError(error, context, defaultMessage = 'Error de conexión') {
+    console.error(`Error en ${context}:`, error)
+    return { success: false, error: error.message || defaultMessage }
+  }
+
+  /**
    * Iniciar sesión
    */
   async login(credentials) {
@@ -76,8 +88,7 @@ class AuthService {
 
       return { success: true, ...data.data }
     } catch (error) {
-      console.error('Error en login:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'login')
     }
   }
 
@@ -284,8 +295,7 @@ class AuthService {
 
       return { success: true, ...data.data }
     } catch (error) {
-      console.error('Error obteniendo permisos:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'obtener permisos')
     }
   }
 
@@ -315,7 +325,7 @@ class AuthService {
       if (!error.message.includes('expirado') && !error.message.includes('401')) {
         console.error('Error obteniendo permisos del rol:', error)
       }
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'obtener permisos del rol')
     }
   }
 
@@ -429,8 +439,7 @@ class AuthService {
 
        return { success: true, data: data.data, message: data.message }
      } catch (error) {
-       console.error('Error al completar perfil como deportista:', error)
-       return { success: false, error: error.message || 'Error de conexión' }
+       return this._handleError(error, 'completar perfil como deportista')
      }
    }
 
@@ -473,8 +482,7 @@ class AuthService {
 
       return { success: true, data: data.data, message: data.message }
     } catch (error) {
-      console.error('Error al asociar acudiente con deportista:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'asociar acudiente con deportista')
     }
   }
 
@@ -503,8 +511,7 @@ class AuthService {
 
        return { success: true, data: data.data, message: data.message }
      } catch (error) {
-       console.error('Error al completar perfil como acudiente:', error)
-       return { success: false, error: error.message || 'Error de conexión' }
+       return this._handleError(error, 'completar perfil como acudiente')
      }
    }
 
@@ -529,8 +536,7 @@ class AuthService {
 
       return { success: true, message: data.message || 'Se ha enviado un correo con las instrucciones para restablecer tu contraseña' }
     } catch (error) {
-      console.error('Error en forgotPassword:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'forgotPassword')
     }
   }
 
@@ -559,8 +565,7 @@ class AuthService {
 
       return { success: true, message: data.message || 'Contraseña restablecida exitosamente' }
     } catch (error) {
-      console.error('Error en resetPassword:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'resetPassword')
     }
   }
 
@@ -594,8 +599,7 @@ class AuthService {
 
       return { success: true, data: data.data, message: data.message }
     } catch (error) {
-      console.error('Error al actualizar usuario:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'actualizar usuario')
     }
   }
 
@@ -619,8 +623,7 @@ class AuthService {
 
       return { success: true, data: data.data }
     } catch (error) {
-      console.error('Error al obtener opciones de roles:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'obtener opciones de roles')
     }
   }
 
@@ -645,8 +648,7 @@ class AuthService {
 
       return { success: true, data: data.data }
     } catch (error) {
-      console.error('Error al cambiar rol activo:', error)
-      return { success: false, error: error.message || 'Error de conexión' }
+      return this._handleError(error, 'cambiar rol activo')
     }
   }
 }

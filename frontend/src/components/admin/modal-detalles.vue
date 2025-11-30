@@ -380,6 +380,7 @@ import defaultAvatar from '@/assets/imgs/perfil.png';
 import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import { extraerMensajeError } from '@/utils/error-handling';
 import { normalizarDocumento, normalizarMonto, parseMonto, esFechaValida, normalizarIdMetodoPago, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { formatoCOP } from '@/utils/formatting';
 
 // Props
 const props = defineProps({
@@ -906,10 +907,8 @@ function formatearAInputDate(valor) {
   return '';
 }
 
-function formatCOP(n) {
-  const num = Number(n) || 0;
-  return `$${num.toLocaleString('es-CO')}`;
-}
+// Use shared formatting utility
+const formatCOP = (n) => `$${formatoCOP(Number(n) || 0)}`
 
 function mesDesdeVencimiento() {
   const raw = props.mensualidad.fecha_vencimiento_raw || props.mensualidad.fecha_vencimiento || props.mensualidad.vencimiento;

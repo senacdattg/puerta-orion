@@ -978,16 +978,12 @@ async function cargarCatalogosDeportista() {
 }
 
 // Constantes para validación (igual que en formulario-general.vue)
-const LOCALE_COL = 'es-CO'
 const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ ]+$/
 const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
 const MAX_DOCUMENTO = 20
 const MIN_DOCUMENTO = 6
 const MAX_TELEFONO = 15
 const MIN_TELEFONO = 7
-
-// Use shared sanitization utilities
-import { sanitizarNombre, sanitizarDireccion, sanitizarString } from '@/utils/sanitization'
 
 // Handlers para validación en tiempo real (igual que en formulario-general.vue)
 function manejarEntradaNombre(campo, event, obligatorio = true) {

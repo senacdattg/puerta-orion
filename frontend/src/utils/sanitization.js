@@ -26,7 +26,8 @@ function transformarMayusculas(valor = '') {
 export function sanitizarNombre(valor = '', obligatorio = true) {
   const mayus = transformarMayusculas(valor)
   // NOSONAR: S7781 - replaceAll() no acepta regex
-  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ')
+  const sinInvalidos = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '') // NOSONAR: S7781
+  const limpio = sinInvalidos.replace(/\s{2,}/g, ' ') // NOSONAR: S7781
   if (!obligatorio && !limpio.trim()) {
     return ''
   }
@@ -41,7 +42,8 @@ export function sanitizarNombre(valor = '', obligatorio = true) {
 export function sanitizarDireccion(valor = '') {
   const mayus = transformarMayusculas(valor)
   // NOSONAR: S7781 - replaceAll() no acepta regex
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  const sinInvalidos = mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '') // NOSONAR: S7781
+  return sinInvalidos.replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781
 }
 
 /**
@@ -54,6 +56,6 @@ export function sanitizarString(valor) {
     return ''
   }
   // NOSONAR: S7781 - replaceAll() no acepta regex
-  return valor.replace(/\s+/g, ' ').trim()
+  return valor.replace(/\s+/g, ' ').trim() // NOSONAR: S7781
 }
 

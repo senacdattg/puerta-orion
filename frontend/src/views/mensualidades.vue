@@ -4,7 +4,6 @@ import Encabezado from '../components/layout/encabezado.vue';
 import ListaMensualidades from '../components/admin/lista-mensualidades.vue';
 import Pie from '../components/layout/pie.vue';
 import mensualidadesService from '@/services/mensualidadesService';
-import { getApiUrl } from '@/config/environment';
 import Swal from 'sweetalert2';
 import { formatoCOP, nombreMes, obtenerNombrePersonaDesdeObjeto } from '@/utils/formatting';
 import { iniciarPagoMercadoPago } from '@/utils/mercadopago';

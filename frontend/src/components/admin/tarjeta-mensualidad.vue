@@ -73,7 +73,6 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import Swal from 'sweetalert2';
 import avatarDefault from '@/assets/imgs/perfil.png';
 import { parseISODateLocal } from '@/utils/date-utils';
 import { iniciarPagoMercadoPago } from '@/utils/mercadopago';
@@ -110,7 +109,6 @@ const isSuperOrAdmin = computed(() => {
 });
 
 // Solo Administrador y SuperAdministrador pueden editar y desactivar mensualidades
-const puedeEditarMensualidad = computed(() => isSuperOrAdmin.value);
 const puedeToggleMensualidad = computed(() => isSuperOrAdmin.value);
 
 // Pago: permitir a Deportista/Acudiente iniciar pago
