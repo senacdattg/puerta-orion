@@ -284,6 +284,7 @@ import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
 import Swal from 'sweetalert2';
 import { extraerMensajeError } from '@/utils/error-handling';
+import { normalizarDocumento, normalizarMonto, parseMonto, esFechaValida, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
 
 // Props
 const props = defineProps({
@@ -320,41 +321,7 @@ const esAdmin = computed(() => {
 
 const estados = ['Pagado', 'Pendiente', 'Vencido'];
 
-// Constantes de validación
-const MIN_DOCUMENTO = 6;
-const MAX_DOCUMENTO = 10;
-
-function normalizarDocumento(valor = '') {
-  return (valor || '')
-    .toString()
-    .replace(/\D/g, '').slice(0, MAX_DOCUMENTO); // NOSONAR: S7781 - replaceAll() no acepta regex
-}
-
-function normalizarMonto(valor = '') {
-  if (!valor) return '';
-  const saneado = valor
-    .toString()
-    .replace(/[^0-9.,]/g, '').replaceAll(',', '.'); // NOSONAR: S7781 - replaceAll() no acepta regex para el primer replace
-
-  const partes = saneado.split('.');
-  if (partes.length === 1) {
-    return partes[0];
-  }
-
-  const enteros = partes.shift() || '';
-  const decimales = partes.join('');
-  return decimales ? `${enteros}.${decimales}` : enteros;
-}
-
-function parseMonto(valor = '') {
-  if (valor === '' || valor === null || valor === undefined) return Number.NaN;
-  const numero = Number(valor);
-  return Number.isFinite(numero) ? numero : Number.NaN;
-}
-
-function esFechaValida(fecha) {
-  return !!fecha && !Number.isNaN(Date.parse(fecha));
-}
+// Use shared normalization utilities
 
 function actualizarEstadoDocumento(status, mensaje) {
   estadoDocumento.value = { status, mensaje };

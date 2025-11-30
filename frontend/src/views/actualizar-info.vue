@@ -620,6 +620,7 @@ import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import Swal from 'sweetalert2'
 import { extraerMensajeError } from '@/utils/error-handling'
+import { sanitizarNombre, sanitizarDireccion, sanitizarString } from '@/utils/sanitization'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -985,32 +986,8 @@ const MIN_DOCUMENTO = 6
 const MAX_TELEFONO = 15
 const MIN_TELEFONO = 7
 
-// Función para transformar a mayúsculas (igual que en formulario-general.vue)
-function transformarMayusculas(valor = '') {
-  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
-}
-
-// Función para sanitizar nombres (igual que en formulario-general.vue)
-function sanitizarNombre(valor = '', obligatorio = true) {
-  const mayus = transformarMayusculas(valor)
-  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ') // NOSONAR: S7781 - replaceAll no acepta regex
-  if (!obligatorio && !limpio.trim()) {
-    return ''
-  }
-  return limpio.trimStart()
-}
-
-// Función para sanitizar dirección (igual que en formulario-general.vue)
-function sanitizarDireccion(valor = '') {
-  const mayus = transformarMayusculas(valor)
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781 - replaceAll no acepta regex
-}
-
-// Función para sanitizar strings (normalizar espacios, trim) - mantener para compatibilidad
-function sanitizarString(valor) {
-  if (!valor || typeof valor !== 'string') return ''
-  return valor.replace(/\s+/g, ' ').trim() // NOSONAR: S7781 - replaceAll no acepta regex
-}
+// Use shared sanitization utilities
+import { sanitizarNombre, sanitizarDireccion, sanitizarString } from '@/utils/sanitization'
 
 // Handlers para validación en tiempo real (igual que en formulario-general.vue)
 function manejarEntradaNombre(campo, event, obligatorio = true) {

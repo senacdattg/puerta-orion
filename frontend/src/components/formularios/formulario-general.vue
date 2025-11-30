@@ -240,6 +240,7 @@ import { ref, onMounted, watch } from "vue"
 import { useRouter } from "vue-router"
 import { useAuthStore } from "@/stores/auth"
 import catalogosService from "@/services/catalogosService"
+import { sanitizarNombre, sanitizarDireccion } from "@/utils/sanitization"
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -302,23 +303,7 @@ const MAX_TELEFONO = 10
 const tiposDocumento = ref([])
 const sexos = ref([])
 
-function transformarMayusculas(valor = '') {
-  return valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
-}
-
-function sanitizarNombre(valor = '', obligatorio = true) {
-  const mayus = transformarMayusculas(valor)
-  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ') // NOSONAR: S7781 - replaceAll() no acepta regex
-  if (!obligatorio && !limpio.trim()) {
-    return ''
-  }
-  return limpio.trimStart()
-}
-
-function sanitizarDireccion(valor = '') {
-  const mayus = transformarMayusculas(valor)
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781 - replaceAll() no acepta regex
-}
+// Use shared sanitization utilities
 
 function manejarEntradaNombre(campo, event, obligatorio = true) {
   limpiarMensajes()

@@ -73,9 +73,10 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import { API_CONFIG } from '@/config/environment';
 import Swal from 'sweetalert2';
 import avatarDefault from '@/assets/imgs/perfil.png';
+import { parseISODateLocal } from '@/utils/date-utils';
+import { iniciarPagoMercadoPago } from '@/utils/mercadopago';
 
 // Props
 const props = defineProps({
@@ -126,16 +127,7 @@ const saldoPendientePositivo = computed(() => {
   return props.mensualidad.estado !== 'Pagado';
 });
 
-// Helpers
-function parseISODateLocal(iso) {
-  if (!iso) return null;
-  if (typeof iso === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(iso)) {
-    const [y, m, d] = iso.split('-').map(n => Number.parseInt(n));
-    return new Date(y, m - 1, d);
-  }
-  const d = new Date(iso);
-  return Number.isNaN(d) ? null : d;
-}
+// Use shared date utilities
 
 // Computed properties
 const esVencida = computed(() => {
@@ -285,66 +277,20 @@ function totalPagadoTexto() {
 }
 
 async function pagarConMercadoPago() {
-  try {
-    const base = API_CONFIG.baseURL || '';
-    const nombre_pagador = authStore?.user?.nombres ? `${authStore.user.nombres} ${authStore.user.apellidos || ''}`.trim() : 'Cliente';
-    const email_pagador = authStore?.user?.email || 'sin-email@example.com';
-    const numero_documento = authStore?.user?.documento || undefined;
-    const tipo_documento = authStore?.user?.tipo_documento || undefined;
+  const nombre_pagador = authStore?.user?.nombres
+    ? `${authStore.user.nombres} ${authStore.user.apellidos || ''}`.trim()
+    : 'Cliente'
+  const email_pagador = authStore?.user?.email || 'sin-email@example.com'
+  const numero_documento = authStore?.user?.documento || undefined
+  const tipo_documento = authStore?.user?.tipo_documento || undefined
 
-    const resp = await fetch(`${base}/api/mercadopago/crear-preferencia`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-      },
-      body: JSON.stringify({
-        tipo_pago: 'mensualidad',
-        id_mensualidad: props.mensualidad.id,
-        nombre_pagador,
-        email_pagador,
-        numero_documento,
-        tipo_documento
-      })
-    });
-    const text = await resp.text();
-    let json;
-    try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
-    if (!resp.ok || !json.success) {
-      const msg = json.error || json.message || text || 'No se pudo crear la preferencia';
-      await Swal.fire({
-        icon: 'error',
-        title: 'No se pudo iniciar el pago',
-        text: msg
-      });
-      return;
-    }
-    const url = json.init_point || json.preference_url || json.initPoint || json.url;
-    if (!url) throw new Error('Preferencia creada sin URL de inicio');
-    globalThis.location.href = url;
-  } catch (e) {
-    try {
-      if (typeof e === 'object' && e !== null && e.message) {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error en el pago',
-          text: e.message
-        });
-  } else {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error en el pago',
-          text: typeof e === 'string' ? e : JSON.stringify(e)
-        });
-      }
-    } catch {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error iniciando pago con Mercado Pago'
-      });
-    }
-  }
+  await iniciarPagoMercadoPago({
+    id_mensualidad: props.mensualidad.id,
+    nombre_pagador,
+    email_pagador,
+    numero_documento,
+    tipo_documento
+  })
 }
 
 </script>

@@ -379,6 +379,7 @@ import Swal from 'sweetalert2';
 import defaultAvatar from '@/assets/imgs/perfil.png';
 import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import { extraerMensajeError } from '@/utils/error-handling';
+import { normalizarDocumento, normalizarMonto, parseMonto, esFechaValida, normalizarIdMetodoPago, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
 
 // Props
 const props = defineProps({
@@ -428,48 +429,7 @@ const abonos = ref([]);
 const abonoEditIndex = ref(null);
 const abonoEdit = ref({ fecha: '', monto: undefined, id_metodo_pago: undefined });
 
-const MIN_DOCUMENTO = 6;
-const MAX_DOCUMENTO = 10;
-
-function normalizarDocumento(valor = '') {
-  return (valor || '')
-    .toString()
-    .replace(/\D/g, '') // NOSONAR: S7781 - replaceAll() no acepta regex
-    .slice(0, MAX_DOCUMENTO);
-}
-
-function normalizarIdMetodoPago(valor) {
-  if (valor === undefined || valor === null || valor === '') return undefined;
-  const numero = Number(valor);
-  return Number.isFinite(numero) ? numero : undefined;
-}
-
-function normalizarMonto(valor = '') {
-  if (!valor) return '';
-  const saneado = valor
-    .toString()
-    .replace(/[^0-9.,]/g, '') // NOSONAR: S7781 - replaceAll() no acepta regex
-    .replaceAll(',', '.');
-
-  const partes = saneado.split('.');
-  if (partes.length === 1) {
-    return partes[0];
-  }
-
-  const enteros = partes.shift() || '';
-  const decimales = partes.join('');
-  return decimales ? `${enteros}.${decimales}` : enteros;
-}
-
-function parseMonto(valor = '') {
-  if (valor === '' || valor === null || valor === undefined) return Number.NaN;
-  const numero = Number(valor);
-  return Number.isFinite(numero) ? numero : Number.NaN;
-}
-
-function esFechaValida(fecha) {
-  return !!fecha && !Number.isNaN(Date.parse(fecha));
-}
+// Use shared normalization utilities
 
 function actualizarEstadoDocumentoEdicion(status, mensaje) {
   estadoDocumentoEdicion.value = { status, mensaje };

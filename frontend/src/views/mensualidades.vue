@@ -7,6 +7,7 @@ import mensualidadesService from '@/services/mensualidadesService';
 import { getApiUrl } from '@/config/environment';
 import Swal from 'sweetalert2';
 import { formatoCOP, nombreMes, obtenerNombrePersonaDesdeObjeto } from '@/utils/formatting';
+import { iniciarPagoMercadoPago } from '@/utils/mercadopago';
 
 defineOptions({ name: 'MensualidadesView' });
 
@@ -94,59 +95,13 @@ async function cargarMensualidades() {
 }
 
 async function iniciarPago(m) {
-  try {
-    const resp = await fetch(getApiUrl('/api/mercadopago/crear-preferencia'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')||''}` },
-      body: JSON.stringify({
-      id_mensualidad: m.id,
-      nombre_pagador: 'Tester',
-      email_pagador: 'test_user_xxx@testuser.com',
-      numero_documento: '12345678',
-      tipo_documento: 'CC'
-      })
-    });
-    const text = await resp.text();
-    let json; try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
-    if (!resp.ok || !json.success) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'No se pudo iniciar el pago',
-        text: json.error || json.message || text || 'Error iniciando pago'
-      });
-      return;
-    }
-    const url = json.init_point || json.sandbox_init_point || json.preference_url || json.initPoint;
-    // Prefer globalThis over window for universal global object access
-    if (url) globalThis.location.href = url; else {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Sin enlace de pago',
-        text: 'No se obtuvo link de pago.'
-      });
-    }
-  } catch (e) {
-    try {
-      if (typeof e === 'object' && e !== null && e.message) {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error en el pago',
-          text: e.message
-        });
-      } else {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Error en el pago',
-          text: typeof e === 'string' ? e : JSON.stringify(e)
-        });
-      }
-    } catch {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error iniciando pago'
-      });
-    }
-  }
+  await iniciarPagoMercadoPago({
+    id_mensualidad: m.id,
+    nombre_pagador: 'Tester',
+    email_pagador: 'test_user_xxx@testuser.com',
+    numero_documento: '12345678',
+    tipo_documento: 'CC'
+  })
 }
 
 async function editarMensualidad(mActualizada) {

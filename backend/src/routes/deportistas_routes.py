@@ -69,6 +69,24 @@ def _build_service_response(result: Dict[str, Any], default_error_message: str =
         )
 
 
+def _build_catalog_response(service_method, error_message: str = "Error al obtener catálogo") -> JsonResponse:
+    """
+    Construye una respuesta HTTP para rutas de catálogos.
+    
+    Args:
+        service_method: Método del servicio que retorna un diccionario con 'success', 'data', etc.
+        error_message: Mensaje de error por defecto
+    
+    Returns:
+        JsonResponse con la respuesta HTTP
+    """
+    try:
+        result = service_method()
+        return _build_service_response(result, error_message)
+    except Exception as e:
+        return handle_exception(e, logger, error_message.lower().replace("error al obtener ", ""))
+
+
 # ============================================================================
 # RUTAS PRINCIPALES DE DEPORTISTAS (CRUD)
 # ============================================================================
@@ -1023,29 +1041,12 @@ def catalogo_diagnosticos() -> JsonResponse:
     Returns:
         Lista de diagnósticos o error.
     """
-    try:
-        service = CatalogosService()
-        
-        # Obtener parámetro opcional de filtro
-        id_tipo_enfermedad = request.args.get('id_tipo_enfermedad', type=int)
-        
-        result = service.obtener_diagnosticos(id_tipo_enfermedad=id_tipo_enfermedad)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener diagnósticos"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener diagnósticos")
+    service = CatalogosService()
+    id_tipo_enfermedad = request.args.get('id_tipo_enfermedad', type=int)
+    return _build_catalog_response(
+        lambda: service.obtener_diagnosticos(id_tipo_enfermedad=id_tipo_enfermedad),
+        "Error al obtener diagnósticos"
+    )
 
 @deportistas_bp.route('/catalogos/tipos-enfermedad', methods=['GET'])
 def catalogo_tipos_enfermedad() -> JsonResponse:
@@ -1060,29 +1061,12 @@ def catalogo_tipos_enfermedad() -> JsonResponse:
     Returns:
         Lista de tipos de enfermedad o error.
     """
-    try:
-        service = CatalogosService()
-        
-        # Obtener parámetro opcional para incluir diagnósticos
-        incluir_diagnosticos = request.args.get('incluir_diagnosticos', 'false').lower() == 'true'
-        
-        result = service.obtener_tipos_enfermedad(incluir_diagnosticos=incluir_diagnosticos)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener tipos de enfermedad"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener tipos de enfermedad")
+    service = CatalogosService()
+    incluir_diagnosticos = request.args.get('incluir_diagnosticos', 'false').lower() == 'true'
+    return _build_catalog_response(
+        lambda: service.obtener_tipos_enfermedad(incluir_diagnosticos=incluir_diagnosticos),
+        "Error al obtener tipos de enfermedad"
+    )
 
 @deportistas_bp.route('/catalogos/grupos-sanguineos', methods=['GET'])
 def catalogo_grupos_sanguineos() -> JsonResponse:
@@ -1094,25 +1078,11 @@ def catalogo_grupos_sanguineos() -> JsonResponse:
     Returns:
         Lista de grupos sanguíneos o error.
     """
-    try:
-        service = CatalogosService()
-        result = service.obtener_grupos_sanguineos()
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener grupos sanguíneos"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener grupos sanguíneos")
+    service = CatalogosService()
+    return _build_catalog_response(
+        lambda: service.obtener_grupos_sanguineos(),
+        "Error al obtener grupos sanguíneos"
+    )
 
 @deportistas_bp.route('/catalogos/ciudades-residencia', methods=['GET'])
 def catalogo_ciudades_residencia() -> JsonResponse:
@@ -1124,25 +1094,11 @@ def catalogo_ciudades_residencia() -> JsonResponse:
     Returns:
         Lista de ciudades de residencia o error.
     """
-    try:
-        service = CatalogosService()
-        result = service.obtener_ciudades_residencia()
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener ciudades de residencia"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener ciudades de residencia")
+    service = CatalogosService()
+    return _build_catalog_response(
+        lambda: service.obtener_ciudades_residencia(),
+        "Error al obtener ciudades de residencia"
+    )
 
 @deportistas_bp.route('/catalogos/eps', methods=['GET'])
 def catalogo_eps() -> JsonResponse:
@@ -1154,25 +1110,11 @@ def catalogo_eps() -> JsonResponse:
     Returns:
         Lista de EPS o error.
     """
-    try:
-        service = CatalogosService()
-        result = service.obtener_eps()
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener EPS"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener EPS")
+    service = CatalogosService()
+    return _build_catalog_response(
+        lambda: service.obtener_eps(),
+        "Error al obtener EPS"
+    )
 
 @deportistas_bp.route('/catalogos/deportes', methods=['GET'])
 def catalogo_deportes() -> JsonResponse:
@@ -1184,25 +1126,11 @@ def catalogo_deportes() -> JsonResponse:
     Returns:
         Lista de deportes o error.
     """
-    try:
-        service = CatalogosService()
-        result = service.obtener_deportes()
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener deportes"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener deportes")
+    service = CatalogosService()
+    return _build_catalog_response(
+        lambda: service.obtener_deportes(),
+        "Error al obtener deportes"
+    )
 
 @deportistas_bp.route('/catalogos/escuelas', methods=['GET'])
 def catalogo_escuelas() -> JsonResponse:
@@ -1214,25 +1142,11 @@ def catalogo_escuelas() -> JsonResponse:
     Returns:
         Lista de escuelas o error.
     """
-    try:
-        service = CatalogosService()
-        result = service.obtener_escuelas()
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener escuelas"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener escuelas")
+    service = CatalogosService()
+    return _build_catalog_response(
+        lambda: service.obtener_escuelas(),
+        "Error al obtener escuelas"
+    )
 
 @deportistas_bp.route('/catalogos/instituciones-registro', methods=['GET'])
 def catalogo_instituciones_registro() -> JsonResponse:
@@ -1244,25 +1158,11 @@ def catalogo_instituciones_registro() -> JsonResponse:
     Returns:
         Lista de instituciones de registro o error.
     """
-    try:
-        service = CatalogosService()
-        result = service.obtener_instituciones_registro()
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener instituciones de registro"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-    except Exception as e:
-        return handle_exception(e, logger, "obtener instituciones de registro")
+    service = CatalogosService()
+    return _build_catalog_response(
+        lambda: service.obtener_instituciones_registro(),
+        "Error al obtener instituciones de registro"
+    )
 
 @deportistas_bp.route('/catalogos/diagnosticos-por-tipo/<int:id_tipo_enfermedad>', methods=['GET'])
 def catalogo_diagnosticos_por_tipo(id_tipo_enfermedad: int) -> JsonResponse:

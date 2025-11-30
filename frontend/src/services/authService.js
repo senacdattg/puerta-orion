@@ -17,6 +17,45 @@ class AuthService {
   }
 
   /**
+   * Helper method to get token from localStorage
+   * @returns {string|null} Token or null
+   */
+  _getToken() {
+    return localStorage.getItem('token')
+  }
+
+  /**
+   * Helper method to validate token exists
+   * @throws {Error} If token is missing
+   */
+  _validateToken() {
+    const token = this._getToken()
+    if (!token) {
+      throw new Error('No hay token de autenticación')
+    }
+    return token
+  }
+
+  /**
+   * Helper method to make authenticated fetch request
+   * @param {string} endpoint - API endpoint
+   * @param {Object} options - Fetch options
+   * @returns {Promise<Response>} Fetch response
+   */
+  async _authenticatedFetch(endpoint, options = {}) {
+    const token = this._validateToken()
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...options.headers
+    }
+    return fetch(`${this.baseURL}${endpoint}`, {
+      ...options,
+      headers
+    })
+  }
+
+  /**
    * Iniciar sesión
    */
   async login(credentials) {
@@ -138,18 +177,8 @@ class AuthService {
    */
   async getProfile() {
     try {
-      const token = localStorage.getItem('token')
-
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/perfil`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
+      const response = await this._authenticatedFetch('/api/auth/perfil', {
+        method: 'GET'
       })
 
       const data = await response.json()
@@ -243,17 +272,8 @@ class AuthService {
    */
   async getUserPermissions() {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/user-permissions`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await this._authenticatedFetch('/api/auth/user-permissions', {
+        method: 'GET'
       })
 
       const data = await response.json()
@@ -274,17 +294,8 @@ class AuthService {
    */
   async getRolePermissions(roleName) {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/role-permissions?role_name=${encodeURIComponent(roleName)}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await this._authenticatedFetch(`/api/auth/role-permissions?role_name=${encodeURIComponent(roleName)}`, {
+        method: 'GET'
       })
 
       const data = await response.json()
@@ -313,18 +324,8 @@ class AuthService {
    */
   async verificarEstadoPerfil() {
     try {
-      const token = localStorage.getItem('token')
-
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/perfil/estado`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
+      const response = await this._authenticatedFetch('/api/auth/perfil/estado', {
+        method: 'GET'
       })
 
       const data = await response.json()
@@ -346,18 +347,8 @@ class AuthService {
    */
   async getProfileDetail() {
     try {
-      const token = localStorage.getItem('token')
-
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/perfil/detalle`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
+      const response = await this._authenticatedFetch('/api/auth/perfil/detalle', {
+        method: 'GET'
       })
 
       const data = await response.json()
@@ -408,12 +399,6 @@ class AuthService {
     */
    async completarPerfilDeportista(datosDeportista) {
      try {
-       const token = localStorage.getItem('token')
-
-       if (!token) {
-         throw new Error('No hay token de autenticación')
-       }
-
        // Asegurar que los campos opcionales estén presentes con valores por defecto
        const datosCompletos = {
          id_categoria: datosDeportista.id_categoria || datosDeportista.categoria,
@@ -431,12 +416,8 @@ class AuthService {
          jornada: datosDeportista.jornada || ''
        }
 
-       const response = await fetch(`${this.baseURL}/api/auth/perfil/completar-deportista`, {
+       const response = await this._authenticatedFetch('/api/auth/perfil/completar-deportista', {
          method: 'POST',
-         headers: {
-           'Authorization': `Bearer ${token}`,
-           'Content-Type': 'application/json',
-         },
          body: JSON.stringify(datosCompletos)
        })
 
@@ -458,12 +439,6 @@ class AuthService {
    */
   async asociarAcudienteDeportista(datosAsociacion) {
     try {
-      const token = localStorage.getItem('token')
-
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
       // Extraer id_deportista de los datos y construir la URL correcta
       const idDeportista = datosAsociacion.id_deportista
       if (!idDeportista) {
@@ -476,12 +451,8 @@ class AuthService {
         es_responsable: datosAsociacion.es_responsable
       }
 
-      const response = await fetch(`${this.baseURL}/api/deportistas/${idDeportista}/acudientes`, {
+      const response = await this._authenticatedFetch(`/api/deportistas/${idDeportista}/acudientes`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(body)
       })
 
@@ -512,12 +483,6 @@ class AuthService {
    */
   async completarPerfilAcudiente(datosAcudiente = {}) {
      try {
-       const token = localStorage.getItem('token')
-
-       if (!token) {
-         throw new Error('No hay token de autenticación')
-       }
-
        // Preparar datos del acudiente (ahora solo se requieren: id_deportista, id_parentesco, es_responsable)
        const datosCompletos = {
          id_deportista: datosAcudiente.id_deportista,
@@ -525,12 +490,8 @@ class AuthService {
          es_responsable: datosAcudiente.es_responsable ?? false
        }
 
-       const response = await fetch(`${this.baseURL}/api/auth/perfil/completar-acudiente`, {
+       const response = await this._authenticatedFetch('/api/auth/perfil/completar-acudiente', {
          method: 'POST',
-         headers: {
-           'Authorization': `Bearer ${token}`,
-           'Content-Type': 'application/json',
-         },
          body: JSON.stringify(datosCompletos)
        })
 
@@ -608,12 +569,6 @@ class AuthService {
    */
   async updateUser(idUsuario, datosPersona = {}, datosUsuario = {}) {
     try {
-      const token = localStorage.getItem('token')
-
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
       const body = {}
       if (Object.keys(datosPersona).length > 0) {
         body.datos_persona = datosPersona
@@ -626,12 +581,8 @@ class AuthService {
         throw new Error('Debe proporcionar al menos datos_persona o datos_usuario')
       }
 
-      const response = await fetch(`${this.baseURL}/api/usuarios/${idUsuario}`, {
+      const response = await this._authenticatedFetch(`/api/usuarios/${idUsuario}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(body)
       })
 
@@ -653,17 +604,8 @@ class AuthService {
    */
   async getRoleOptions() {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/roles/opciones`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const response = await this._authenticatedFetch('/api/auth/roles/opciones', {
+        method: 'GET'
       })
 
       const data = await response.json()
@@ -687,17 +629,8 @@ class AuthService {
    */
   async activateRole(roleName) {
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        throw new Error('No hay token de autenticación')
-      }
-
-      const response = await fetch(`${this.baseURL}/api/auth/roles/activar`, {
+      const response = await this._authenticatedFetch('/api/auth/roles/activar', {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({ rol: roleName })
       })
 
