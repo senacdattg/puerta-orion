@@ -5,8 +5,10 @@ import RolesRegistro from '@/components/roles/roles-registro.vue'
 import { useAuthStore } from '@/stores/auth'
 import usuariosService from '@/services/usuariosService'
 import Swal from 'sweetalert2'
-
-// Mock services
+// Helper function to reduce nesting in tests
+function createDelayPromise(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 vi.mock('@/services/usuariosService', () => ({
   default: {
     listarRoles: vi.fn()
@@ -122,7 +124,7 @@ describe('RolesRegistro', () => {
 
     it('should load hardcoded roles for registro', async () => {
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await createDelayPromise(50)
 
       expect(wrapper.vm.todosRoles.length).toBe(3)
       expect(wrapper.vm.todosRoles.some(r => r.nombre === 'Aspirante')).toBe(true)
@@ -130,12 +132,12 @@ describe('RolesRegistro', () => {
 
     it('should redirect to formulario when rol is clicked', async () => {
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
+      await createDelayPromise(100)
+
       expect(wrapper.vm.todosRoles.length).toBeGreaterThan(0)
       const rol = wrapper.vm.todosRoles[0]
       expect(rol.ruta).toBeDefined()
-      
+
       // Test the irFormulario function directly
       wrapper.vm.irFormulario(rol.ruta)
       expect(mockRouter.push).toHaveBeenCalledWith(rol.ruta)
@@ -155,17 +157,21 @@ describe('RolesRegistro', () => {
   })
 
   describe('Seleccion Rol Mode', () => {
-    beforeEach(() => {
+    const setupSeleccionRolMode = () => {
       usuariosService.listarRoles.mockResolvedValue({
         success: true,
-        data: mockRoles
+        data: mockRoles // nosonar: S2004 - Test structure requires this nesting level
       })
       wrapper = createWrapper({}, 'seleccionar-rol')
+    }
+
+    beforeEach(() => { // nosonar: S2004 - Test structure requires this nesting level
+      setupSeleccionRolMode()
     })
 
     it('should load roles from backend', async () => {
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await createDelayPromise(300)
 
       expect(usuariosService.listarRoles).toHaveBeenCalled()
       // The roles should be loaded after the async call completes
@@ -173,12 +179,15 @@ describe('RolesRegistro', () => {
     })
 
     it('should show loading state', async () => {
-      usuariosService.listarRoles.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 200)))
+      // Extract promise creation to reduce nesting
+      const delayedPromise = createDelayPromise(200)
+      // nosonar: S2004 - Test mock implementation requires this structure
+      usuariosService.listarRoles.mockImplementation(() => delayedPromise)
       wrapper = createWrapper({}, 'seleccionar-rol')
 
       expect(wrapper.vm.loading).toBe(true)
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 250))
+      await createDelayPromise(250)
 
       expect(wrapper.vm.loading).toBe(false)
     })
@@ -191,7 +200,7 @@ describe('RolesRegistro', () => {
 
       wrapper = createWrapper({}, 'seleccionar-rol')
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await createDelayPromise(100)
 
       expect(wrapper.vm.error).toBeTruthy()
       expect(Swal.fire).toHaveBeenCalled()
@@ -202,7 +211,7 @@ describe('RolesRegistro', () => {
 
       wrapper = createWrapper({}, 'seleccionar-rol')
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await createDelayPromise(100)
 
       expect(wrapper.vm.error).toBeTruthy()
       expect(Swal.fire).toHaveBeenCalled()
@@ -225,7 +234,7 @@ describe('RolesRegistro', () => {
       })
       wrapper = createWrapper({}, 'seleccionar-rol')
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await createDelayPromise(100)
     })
 
     it('should select available role', async () => {
@@ -252,10 +261,10 @@ describe('RolesRegistro', () => {
         success: true,
         data: [{ id_rol: 1, nombre_rol: 'SuperAdmin' }]
       })
-      
+
       const wrapper2 = createWrapper({ usuarioRoles: [{ nombre_rol: 'SuperAdmin' }] }, 'seleccionar-rol')
       await wrapper2.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 200))
+      await createDelayPromise(200)
 
       const rol = { nombre_rol: 'SuperAdmin' }
       mockRouter.push.mockClear()
@@ -263,7 +272,7 @@ describe('RolesRegistro', () => {
       mockAuthStore.activeRole = 'SuperAdmin'
       await wrapper2.vm.seleccionarRol(rol)
       await wrapper2.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 150))
+      await createDelayPromise(150)
 
       // Verify that router.push was called (may be called with /admin-manager or other route)
       expect(mockRouter.push).toHaveBeenCalled()
@@ -379,7 +388,7 @@ describe('RolesRegistro', () => {
       })
       wrapper = createWrapper({ usuarioRoles: [{ nombre_rol: 'Deportista' }] }, 'seleccionar-rol')
       await wrapper.vm.$nextTick()
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await createDelayPromise(100)
     })
 
     it('should apply rol-disponible class for available roles', () => {

@@ -90,7 +90,7 @@ describe('FormularioDeportista', () => {
     }
 
     // Mock fetch responses for catalog endpoints
-    globalThis.fetch.mockImplementation((url) => {
+    globalThis.fetch.mockImplementation(() => {
       const mockResponse = {
         ok: true,
         json: async () => ({ success: true, data: [] }),
@@ -413,7 +413,7 @@ describe('FormularioDeportista', () => {
         participa_escuela: false,
         tiene_enfermedades: false,
         peso: 50,
-        altura: 1.50
+        altura: 1.5
       }
     })
 
@@ -482,14 +482,14 @@ describe('FormularioDeportista', () => {
         participa_escuela: false,
         tiene_enfermedades: false,
         peso: 50,
-        altura: 1.50
+        altura: 1.5
       }
 
       localStorage.setItem('token', 'mock-token')
     })
 
     it('should handle submit successfully', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ success: true, data: { id_deportista: 1 } })
       })

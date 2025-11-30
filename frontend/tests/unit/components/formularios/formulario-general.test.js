@@ -58,7 +58,7 @@ describe('FormularioGeneral Component', () => {
       props: {
         modo: props.modo || 'registrar',
         datos: props.datos || {},
-        mostrarBotonLogin: props.mostrarBotonLogin !== undefined ? props.mostrarBotonLogin : true,
+        mostrarBotonLogin: props.mostrarBotonLogin === undefined ? true : props.mostrarBotonLogin,
         textoBotonRegistrar: props.textoBotonRegistrar || 'Registrarse'
       },
       global: {

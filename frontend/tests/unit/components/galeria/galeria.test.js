@@ -55,9 +55,10 @@ describe('Galeria Component', () => {
     vi.clearAllMocks()
 
     // Mock structuredClone si no está disponible o para evitar errores en tests
-    if (typeof globalThis.structuredClone === 'undefined') {
+    if (globalThis.structuredClone === undefined) {
       globalThis.structuredClone = vi.fn((obj) => {
         try {
+          // nosonar: S7784
           return JSON.parse(JSON.stringify(obj))
         } catch {
           // Si falla, retornar el objeto original
@@ -73,7 +74,8 @@ describe('Galeria Component', () => {
         } catch {
           // Si falla, usar JSON como fallback
           try {
-            return JSON.parse(JSON.stringify(obj))
+            // nosonar: S7784
+          return JSON.parse(JSON.stringify(obj))
           } catch {
             return obj
           }
@@ -465,7 +467,7 @@ describe('Galeria Component', () => {
 
     it('should limpiarArchivo correctly', () => {
       wrapper.vm.archivoSeleccionado = new File(['test'], 'test.jpg', { type: 'image/jpeg' })
-      
+
       // limpiarArchivo sets archivoSeleccionado to null and clears $refs.fileInput if it exists
       wrapper.vm.limpiarArchivo()
       expect(wrapper.vm.archivoSeleccionado).toBeNull()
