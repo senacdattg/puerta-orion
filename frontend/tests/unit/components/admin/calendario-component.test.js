@@ -125,7 +125,6 @@ describe('CalendarioComponent', () => {
       }
     })
 
-    const currentMonth = wrapper.vm.mesActual
     wrapper.vm.mesAnterior()
     await wrapper.vm.$nextTick()
 

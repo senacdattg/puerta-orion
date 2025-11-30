@@ -3,7 +3,6 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import TablaDatosDinamicos from '@/components/admin/tabla-datos-dinamicos.vue'
 import Swal from 'sweetalert2'
-import { API_CONFIG } from '@/config/environment'
 
 // Mock services
 vi.mock('sweetalert2', () => ({
@@ -19,10 +18,10 @@ vi.mock('@/config/environment', () => ({
 }))
 
 // Mock global fetch
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock localStorage
-global.localStorage = {
+globalThis.localStorage = {
   getItem: vi.fn(() => 'mock-token'),
   setItem: vi.fn(),
   removeItem: vi.fn()
@@ -48,7 +47,7 @@ describe('TablaDatosDinamicos', () => {
     setActivePinia(pinia)
 
     vi.clearAllMocks()
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         success: true,
@@ -99,10 +98,10 @@ describe('TablaDatosDinamicos', () => {
     })
 
     it('should show loading state', async () => {
-      global.fetch.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
+      globalThis.fetch.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
       wrapper = createWrapper()
       wrapper.vm.temaSeleccionado = 'tipo-documento'
-      
+
       wrapper.vm.cargarDatos()
       await wrapper.vm.$nextTick()
 
@@ -115,26 +114,26 @@ describe('TablaDatosDinamicos', () => {
     it('should load datos when tema is selected', async () => {
       wrapper = createWrapper()
       wrapper.vm.temaSeleccionado = 'tipo-documento'
-      
+
       await wrapper.vm.cargarDatos()
       await wrapper.vm.$nextTick()
 
-      expect(global.fetch).toHaveBeenCalled()
-      const fetchCall = global.fetch.mock.calls[0]
+      expect(globalThis.fetch).toHaveBeenCalled()
+      const fetchCall = globalThis.fetch.mock.calls[0]
       expect(fetchCall[0]).toContain('/api/dynamic-data/tipo-documento')
       expect(wrapper.vm.datos.length).toBeGreaterThan(0)
     })
 
     it('should handle loading error', async () => {
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
       })
-      
+
       wrapper = createWrapper()
       wrapper.vm.temaSeleccionado = 'tipo-documento'
-      
+
       await wrapper.vm.cargarDatos()
       await wrapper.vm.$nextTick()
 
@@ -156,7 +155,7 @@ describe('TablaDatosDinamicos', () => {
     })
 
     it('should show empty state when no datos', async () => {
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           success: true,
@@ -166,7 +165,7 @@ describe('TablaDatosDinamicos', () => {
 
       wrapper = createWrapper()
       wrapper.vm.temaSeleccionado = 'tipo-documento'
-      
+
       await wrapper.vm.cargarDatos()
       await wrapper.vm.$nextTick()
 
@@ -184,42 +183,42 @@ describe('TablaDatosDinamicos', () => {
     it('should obtenerId for tipo-documento', () => {
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       const dato = { id_documento: 1 }
-      
+
       expect(wrapper.vm.obtenerId(dato)).toBe(1)
     })
 
     it('should obtenerId with fallback to id', () => {
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       const dato = { id: 99 }
-      
+
       expect(wrapper.vm.obtenerId(dato)).toBe(99)
     })
 
     it('should obtenerNombre correctly', () => {
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       const dato = { nombre_documento: 'Cédula' }
-      
+
       expect(wrapper.vm.obtenerNombre(dato)).toBe('Cédula')
     })
 
     it('should obtenerNombre with fallback', () => {
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       const dato = { nombre: 'Fallback' }
-      
+
       expect(wrapper.vm.obtenerNombre(dato)).toBe('Fallback')
     })
 
     it('should detect inactive estado for eps', () => {
       wrapper.vm.temaSeleccionado = 'eps'
       const dato = { estado: false }
-      
+
       expect(wrapper.vm.esInactivo(dato)).toBe(true)
     })
 
     it('should not mark inactive for tipos without estado', () => {
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       const dato = { estado: false }
-      
+
       expect(wrapper.vm.esInactivo(dato)).toBe(false)
     })
   })
@@ -263,7 +262,7 @@ describe('TablaDatosDinamicos', () => {
 
     it('should confirm before deleting', async () => {
       Swal.fire.mockResolvedValue({ isConfirmed: true })
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           success: true
@@ -280,11 +279,11 @@ describe('TablaDatosDinamicos', () => {
 
     it('should not delete if cancelled', async () => {
       Swal.fire.mockResolvedValue({ isConfirmed: false })
-      
+
       const dato = mockDatos[0]
       await wrapper.vm.confirmarEliminar(dato)
 
-      expect(global.fetch).not.toHaveBeenCalledWith(
+      expect(globalThis.fetch).not.toHaveBeenCalledWith(
         expect.stringContaining('DELETE'),
         expect.any(Object)
       )
@@ -292,7 +291,7 @@ describe('TablaDatosDinamicos', () => {
 
     it('should delete dato successfully', async () => {
       Swal.fire.mockResolvedValue({ isConfirmed: true })
-      global.fetch
+      globalThis.fetch
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({
@@ -312,14 +311,14 @@ describe('TablaDatosDinamicos', () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 50))
 
-      expect(global.fetch).toHaveBeenCalled()
-      const deleteCall = global.fetch.mock.calls.find(call => call[1]?.method === 'DELETE')
+      expect(globalThis.fetch).toHaveBeenCalled()
+      const deleteCall = globalThis.fetch.mock.calls.find(call => call[1]?.method === 'DELETE')
       expect(deleteCall).toBeTruthy()
       expect(wrapper.emitted('dato-eliminado')).toBeTruthy()
     })
 
     it('should handle delete error', async () => {
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -369,8 +368,7 @@ describe('TablaDatosDinamicos', () => {
       wrapper = createWrapper({ recargar: false })
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       await wrapper.vm.$nextTick()
-      
-      const initialCallCount = global.fetch.mock.calls.length
+
       await wrapper.setProps({ recargar: true })
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -384,7 +382,7 @@ describe('TablaDatosDinamicos', () => {
       wrapper = createWrapper({ recargar: false })
       wrapper.vm.temaSeleccionado = ''
       const cargarSpy = vi.spyOn(wrapper.vm, 'cargarDatos')
-      
+
       await wrapper.setProps({ recargar: true })
       await wrapper.vm.$nextTick()
 
@@ -397,8 +395,8 @@ describe('TablaDatosDinamicos', () => {
       wrapper = createWrapper()
       wrapper.vm.temaSeleccionado = 'eps'
       await wrapper.vm.$nextTick()
-      
-      global.fetch.mockResolvedValue({
+
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           success: true,
@@ -407,7 +405,7 @@ describe('TablaDatosDinamicos', () => {
           ]
         })
       })
-      
+
       await wrapper.vm.cargarDatos()
       await wrapper.vm.$nextTick()
     })
@@ -426,7 +424,7 @@ describe('TablaDatosDinamicos', () => {
 
     it('should show descripcion column for tipo-evento', async () => {
       wrapper.vm.temaSeleccionado = 'tipo-evento'
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           success: true,
@@ -435,7 +433,7 @@ describe('TablaDatosDinamicos', () => {
           ]
         })
       })
-      
+
       await wrapper.vm.cargarDatos()
       await wrapper.vm.$nextTick()
 
@@ -447,7 +445,7 @@ describe('TablaDatosDinamicos', () => {
 
   describe('Create New Button', () => {
     it('should emit crear-nuevo event', async () => {
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           success: true,
@@ -473,8 +471,7 @@ describe('TablaDatosDinamicos', () => {
       wrapper = createWrapper()
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       await wrapper.vm.$nextTick()
-      
-      const initialCallCount = global.fetch.mock.calls.length
+
       const refreshButton = wrapper.find('.btn-refresh')
       await refreshButton.trigger('click')
       await wrapper.vm.$nextTick()
@@ -489,11 +486,10 @@ describe('TablaDatosDinamicos', () => {
     it('should load data when tema selection changes', async () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
-      
-      const initialCallCount = global.fetch.mock.calls.length
+
       wrapper.vm.temaSeleccionado = 'tipo-documento'
       await wrapper.vm.$nextTick()
-      
+
       // Simulate @change event
       const select = wrapper.find('.select-tema')
       await select.trigger('change')

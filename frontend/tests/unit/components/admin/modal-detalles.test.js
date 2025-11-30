@@ -58,7 +58,8 @@ describe('ModalDetalles', () => {
     vi.clearAllMocks()
 
     // Mock structuredClone globally
-    global.structuredClone = vi.fn((obj) => JSON.parse(JSON.stringify(obj)))
+    // nosonar: S7784 - Mock implementation for tests, JSON.parse/stringify is intentional fallback
+    globalThis.structuredClone = vi.fn((obj) => JSON.parse(JSON.stringify(obj)))
 
     mockAuthStore = {
       user: {
@@ -408,7 +409,8 @@ describe('ModalDetalles', () => {
 
     it('should save changes successfully', async () => {
       // Mock structuredClone
-      global.structuredClone = vi.fn((obj) => JSON.parse(JSON.stringify(obj)))
+      // nosonar: S7784 - Mock implementation for tests, JSON.parse/stringify is intentional fallback
+      globalThis.structuredClone = vi.fn((obj) => JSON.parse(JSON.stringify(obj)))
 
       const mensualidadesService = await import('@/services/mensualidadesService')
       mensualidadesService.default.actualizar = vi.fn().mockResolvedValue({
@@ -477,7 +479,8 @@ describe('ModalDetalles', () => {
 
     it('should register new abono', async () => {
       // Mock structuredClone
-      global.structuredClone = vi.fn((obj) => JSON.parse(JSON.stringify(obj)))
+      // nosonar: S7784 - Mock implementation for tests, JSON.parse/stringify is intentional fallback
+      globalThis.structuredClone = vi.fn((obj) => JSON.parse(JSON.stringify(obj)))
 
       // Ensure user has permission to abonar
       mockAuthStore.user.roles = [{ nombre_rol: 'Administrador' }]

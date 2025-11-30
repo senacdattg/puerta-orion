@@ -83,8 +83,8 @@ vi.mock('@/config/environment', () => ({
 }))
 
 // Mock fetch global
-global.fetch = vi.fn()
-global.localStorage = {
+globalThis.fetch = vi.fn()
+globalThis.localStorage = {
   getItem: vi.fn(() => 'test-token'),
   setItem: vi.fn(),
   removeItem: vi.fn()
@@ -102,23 +102,23 @@ describe('ModalEditarDato Component', () => {
     if (globalThis.structuredClone) {
       originalStructuredClone = globalThis.structuredClone
     }
-    
+
     // Función de clonación segura que maneja todos los casos
     const safeClone = (obj) => {
       if (obj === null || obj === undefined) {
         return obj
       }
-      
+
       // Para tipos primitivos, retornar directamente
       if (typeof obj !== 'object') {
         return obj
       }
-      
+
       // Para arrays
       if (Array.isArray(obj)) {
         return obj.map(item => safeClone(item))
       }
-      
+
       // Para objetos, intentar clonación profunda segura
       try {
         // Primero intentar con JSON (más seguro)
@@ -135,13 +135,13 @@ describe('ModalEditarDato Component', () => {
         return { ...obj }
       }
     }
-    
+
     globalThis.structuredClone = vi.fn((obj) => {
       // Si el objeto es null o undefined, retornarlo directamente
       if (obj === null || obj === undefined) {
         return obj
       }
-      
+
       try {
         const cloned = safeClone(obj)
         // Verificar que la clonación produjo un resultado válido
@@ -153,7 +153,7 @@ describe('ModalEditarDato Component', () => {
           return {}
         }
         return cloned
-      } catch (error) {
+      } catch {
         // Si todo falla, retornar copia superficial o valor por defecto
         if (Array.isArray(obj)) {
           return []
@@ -175,7 +175,7 @@ describe('ModalEditarDato Component', () => {
       }
     })
 
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: {} }),
       status: 200,
@@ -186,20 +186,20 @@ describe('ModalEditarDato Component', () => {
   afterEach(async () => {
     // Limpiar todos los timers pendientes
     vi.clearAllTimers()
-    
+
     // Esperar a que cualquier operación asíncrona termine
     await new Promise(resolve => setTimeout(resolve, 200))
-    
+
     // Limpiar wrapper si existe
     if (wrapper) {
       try {
         wrapper.unmount()
-      } catch (error) {
+      } catch {
         // Ignorar errores al desmontar
       }
       wrapper = null
     }
-    
+
     // Restaurar structuredClone original si existía
     if (originalStructuredClone) {
       globalThis.structuredClone = originalStructuredClone
@@ -208,7 +208,7 @@ describe('ModalEditarDato Component', () => {
       // Si no había original pero hay un mock, eliminarlo
       delete globalThis.structuredClone
     }
-    
+
     vi.clearAllMocks()
     vi.restoreAllMocks()
   })
@@ -216,7 +216,7 @@ describe('ModalEditarDato Component', () => {
   const createWrapper = (props = {}) => {
     return mount(ModalEditarDato, {
       props: {
-        mostrar: props.mostrar !== undefined ? props.mostrar : true,
+        mostrar: props.mostrar === undefined ? true : props.mostrar,
         tema: props.tema || 'tipo-documento',
         dato: props.dato || {
           id_documento: 1,
@@ -271,7 +271,7 @@ describe('ModalEditarDato Component', () => {
     it('should validate datos correctly', async () => {
       wrapper = createWrapper({ tema: 'tipo-documento' })
       await wrapper.vm.$nextTick()
-      
+
       wrapper.vm.formData.nombre = 'A' // Muy corto
 
       const errores = wrapper.vm.validarDatos()
@@ -280,7 +280,7 @@ describe('ModalEditarDato Component', () => {
 
     it('should validate EPS codigo correctly', () => {
       wrapper = createWrapper({ tema: 'eps' })
-      
+
       Object.assign(wrapper.vm.formData, {
         nombre: 'EPS Test',
         codigo: 'A', // Inválido
@@ -293,7 +293,7 @@ describe('ModalEditarDato Component', () => {
 
     it('should validate tipo-evento descripcion correctly', () => {
       wrapper = createWrapper({ tema: 'tipo-evento' })
-      
+
       Object.assign(wrapper.vm.formData, {
         nombre: 'Evento Test',
         descripcion: '' // Vacío
@@ -305,7 +305,7 @@ describe('ModalEditarDato Component', () => {
 
     it('should pass validation with valid data', () => {
       wrapper = createWrapper({ tema: 'tipo-documento' })
-      
+
       Object.assign(wrapper.vm.formData, {
         nombre: 'Cédula de Ciudadanía'
       })
@@ -336,7 +336,7 @@ describe('ModalEditarDato Component', () => {
       await new Promise(resolve => setTimeout(resolve, 200))
 
       const sameData = 'Cédula'
-      
+
       // Establecer el mismo valor en ambos
       wrapper.vm.formDataInicial.nombre = sameData
       wrapper.vm.formData.nombre = sameData
@@ -428,7 +428,7 @@ describe('ModalEditarDato Component', () => {
   describe('Data preparation', () => {
     it('should prepare datos correctly for tipo-documento', () => {
       wrapper = createWrapper({ tema: 'tipo-documento' })
-      
+
       Object.assign(wrapper.vm.formData, {
         nombre: 'Cédula'
       })
@@ -439,7 +439,7 @@ describe('ModalEditarDato Component', () => {
 
     it('should prepare datos correctly for eps', () => {
       wrapper = createWrapper({ tema: 'eps' })
-      
+
       Object.assign(wrapper.vm.formData, {
         nombre: 'EPS Test',
         codigo: 'EPS001',
@@ -454,7 +454,7 @@ describe('ModalEditarDato Component', () => {
 
     it('should prepare datos correctly for tipo-evento', () => {
       wrapper = createWrapper({ tema: 'tipo-evento' })
-      
+
       Object.assign(wrapper.vm.formData, {
         nombre: 'Competencia',
         descripcion: 'Descripción del evento'
@@ -468,7 +468,7 @@ describe('ModalEditarDato Component', () => {
 
   describe('ID extraction', () => {
     it('should extract id correctly for tipo-documento', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'tipo-documento',
         dato: { id_documento: 1 }
       })
@@ -478,7 +478,7 @@ describe('ModalEditarDato Component', () => {
     })
 
     it('should extract id correctly for eps', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'eps',
         dato: { id_eps: 2 }
       })
@@ -504,7 +504,7 @@ describe('ModalEditarDato Component', () => {
       wrapper.vm.formDataInicial.nombre = 'Cédula'
       wrapper.vm.formData.nombre = 'Pasaporte'
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: 'Bad Request',
@@ -538,7 +538,7 @@ describe('ModalEditarDato Component', () => {
       wrapper.vm.formDataInicial.nombre = 'Cédula'
       wrapper.vm.formData.nombre = 'Pasaporte'
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -560,7 +560,7 @@ describe('ModalEditarDato Component', () => {
       wrapper.vm.formDataInicial.nombre = 'Cédula'
       wrapper.vm.formData.nombre = 'Pasaporte'
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: false, error: 'Error en el servidor' })
       })
@@ -580,7 +580,7 @@ describe('ModalEditarDato Component', () => {
       wrapper.vm.formDataInicial.nombre = 'Cédula'
       wrapper.vm.formData.nombre = 'Pasaporte'
 
-      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+      globalThis.fetch.mockRejectedValueOnce(new Error('Network error'))
 
       vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
       vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
@@ -719,7 +719,7 @@ describe('ModalEditarDato Component', () => {
 
   describe('ID extraction for all themes', () => {
     it('should extract id for sexo', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'sexo',
         dato: { id_sexo: 1 }
       })
@@ -728,7 +728,7 @@ describe('ModalEditarDato Component', () => {
     })
 
     it('should extract id for ciudad-residencia', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'ciudad-residencia',
         dato: { id_ciudad: 1 }
       })
@@ -737,7 +737,7 @@ describe('ModalEditarDato Component', () => {
     })
 
     it('should extract id for metodo-pago', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'metodo-pago',
         dato: { id_metodo_pago: 1 }
       })
@@ -746,7 +746,7 @@ describe('ModalEditarDato Component', () => {
     })
 
     it('should extract id for tipo-evento', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'tipo-evento',
         dato: { id_tipo_evento: 1 }
       })
@@ -755,7 +755,7 @@ describe('ModalEditarDato Component', () => {
     })
 
     it('should fallback to dato.id when specific id not found', () => {
-      wrapper = createWrapper({ 
+      wrapper = createWrapper({
         tema: 'tipo-documento',
         dato: { id: 999 }
       })
@@ -789,10 +789,12 @@ describe('ModalEditarDato Component', () => {
       await wrapper.vm.cerrar()
 
       // Si canceló, no debería emitir cerrar
-      if (!wrapper.vm.verificarCambios()) {
+      if (wrapper.vm.verificarCambios()) {
+        if (Swal.fire.mock.results[0]?.value?.isConfirmed === false) {
+          expect(wrapper.emitted('cerrar')).toBeFalsy()
+        }
+      } else {
         expect(wrapper.emitted('cerrar')).toBeTruthy()
-      } else if (Swal.fire.mock.results[0]?.value?.isConfirmed === false) {
-        expect(wrapper.emitted('cerrar')).toBeFalsy()
       }
     })
   })

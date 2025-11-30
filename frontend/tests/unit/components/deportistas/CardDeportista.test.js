@@ -37,7 +37,7 @@ describe('CardDeportista', () => {
         icon: props.icon || 'fas fa-user',
         value: props.value,
         to: props.to,
-        clickable: props.clickable !== undefined ? props.clickable : true,
+        clickable: props.clickable === undefined ? true : props.clickable,
         iconBgColor: props.iconBgColor
       },
       global: {

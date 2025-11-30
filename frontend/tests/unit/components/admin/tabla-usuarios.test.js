@@ -5,7 +5,6 @@ import TablaUsuarios from '@/components/admin/tabla-usuarios.vue'
 import usuariosService from '@/services/usuariosService'
 import { useAuthStore } from '@/stores/auth'
 import Swal from 'sweetalert2'
-import { useModalScrollLock } from '@/composables/useModalScrollLock'
 
 // Mock services
 vi.mock('@/services/usuariosService', () => ({
@@ -500,7 +499,7 @@ describe('TablaUsuarios', () => {
 
       // Access formularioEdicion directly (it's a ref exposed by script setup)
       const formulario = wrapper.vm.formularioEdicion
-      if (formulario && formulario.value) {
+      if (formulario?.value) {
         formulario.value.datos_usuario.usuario = '  TEST USER  '
         wrapper.vm.onUsuarioInput()
         expect(formulario.value.datos_usuario.usuario).toBe('testuser')
@@ -520,7 +519,7 @@ describe('TablaUsuarios', () => {
       await wrapper.vm.$nextTick()
 
       const formulario = wrapper.vm.formularioEdicion
-      if (formulario && formulario.value) {
+      if (formulario?.value) {
         formulario.value.datos_persona.primer_nombre = '  juan  '
         wrapper.vm.onNombreInput('primer_nombre')
         expect(formulario.value.datos_persona.primer_nombre).toBe('JUAN')
@@ -539,7 +538,7 @@ describe('TablaUsuarios', () => {
       await wrapper.vm.$nextTick()
 
       const formulario = wrapper.vm.formularioEdicion
-      if (formulario && formulario.value) {
+      if (formulario?.value) {
         formulario.value.datos_persona.documento = '123-456-789'
         wrapper.vm.onDocumentoInput()
         expect(formulario.value.datos_persona.documento).toBe('123456789')
@@ -588,7 +587,7 @@ describe('TablaUsuarios', () => {
       await wrapper.vm.$nextTick()
 
       const formulario = wrapper.vm.formularioEdicion
-      if (formulario && formulario.value) {
+      if (formulario?.value) {
         formulario.value.datos_usuario.usuario = 'newusername'
         formulario.value.datos_persona.primer_nombre = 'Pedro'
 
@@ -612,7 +611,7 @@ describe('TablaUsuarios', () => {
       await wrapper.vm.$nextTick()
 
       const formulario = wrapper.vm.formularioEdicion
-      if (formulario && formulario.value) {
+      if (formulario?.value) {
         formulario.value.datos_usuario.usuario = 'changed'
         Swal.fire.mockResolvedValue({ isConfirmed: true })
 
@@ -736,7 +735,7 @@ describe('TablaUsuarios', () => {
       await wrapper.vm.$nextTick()
 
       const formulario = wrapper.vm.formularioEdicion
-      if (formulario && formulario.value) {
+      if (formulario?.value) {
         formulario.value.datos_usuario.usuario = 'newuser'
 
         Swal.fire.mockResolvedValue({ isConfirmed: true })

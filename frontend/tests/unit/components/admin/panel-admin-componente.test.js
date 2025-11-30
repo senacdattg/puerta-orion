@@ -71,8 +71,8 @@ vi.mock('@/config/environment', () => ({
 }))
 
 // Mock fetch and localStorage
-global.fetch = vi.fn()
-global.localStorage = {
+globalThis.fetch = vi.fn()
+globalThis.localStorage = {
   getItem: vi.fn(() => 'test-token'),
   setItem: vi.fn(),
   removeItem: vi.fn()
@@ -95,7 +95,7 @@ describe('PanelAdminComponente', () => {
       ]
     })
 
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: {} }),
       status: 200
@@ -286,7 +286,7 @@ describe('PanelAdminComponente', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       })
@@ -310,7 +310,7 @@ describe('PanelAdminComponente', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ success: false, error: 'Error test' })
       })
@@ -558,7 +558,7 @@ describe('PanelAdminComponente', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         json: async () => ({ error: 'Server error' })

@@ -559,7 +559,7 @@ describe('TarjetaMensualidad Component', () => {
     it('should show pagar button when estado is not Pagado (fallback)', () => {
       wrapper = createWrapper({
         mensualidad: {
-          saldo_pendiente_raw: NaN,
+          saldo_pendiente_raw: Number.NaN,
           estado: 'Pendiente'
         }
       })
@@ -569,7 +569,7 @@ describe('TarjetaMensualidad Component', () => {
     it('should not show pagar button when estado is Pagado (fallback)', () => {
       wrapper = createWrapper({
         mensualidad: {
-          saldo_pendiente_raw: NaN,
+          saldo_pendiente_raw: Number.NaN,
           estado: 'Pagado'
         }
       })

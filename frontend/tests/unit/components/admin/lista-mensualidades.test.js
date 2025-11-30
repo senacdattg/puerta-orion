@@ -52,15 +52,16 @@ vi.mock('@/stores/auth', () => ({
 }))
 
 // Mock fetch and localStorage
-global.fetch = vi.fn()
-global.localStorage = {
+globalThis.fetch = vi.fn()
+globalThis.localStorage = {
   getItem: vi.fn(() => 'test-token'),
   setItem: vi.fn(),
   removeItem: vi.fn()
 }
 
 // Mock structuredClone
-global.structuredClone = vi.fn((obj) => {
+// nosonar: S7784 - Mock implementation for tests, JSON.parse/stringify is intentional fallback
+globalThis.structuredClone = vi.fn((obj) => {
   try {
     return JSON.parse(JSON.stringify(obj))
   } catch {
@@ -86,7 +87,7 @@ describe('ListaMensualidades Component', () => {
     const authModule = await import('@/stores/auth')
     authModule.useAuthStore.mockReturnValue(mockAuthStore)
 
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         data: [
