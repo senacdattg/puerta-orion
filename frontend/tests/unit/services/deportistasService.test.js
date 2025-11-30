@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import deportistasService from '@/services/deportistasService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock stores
 vi.mock('@/stores/auth', () => ({
@@ -41,7 +41,7 @@ describe('DeportistasService', () => {
         pagination: { page: 1, per_page: 100, total: 2 }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -49,7 +49,7 @@ describe('DeportistasService', () => {
       const result = await deportistasService.listarDeportistas()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/deportistas?page=1&per_page=100'),
         expect.objectContaining({
           method: 'GET',
@@ -67,7 +67,7 @@ describe('DeportistasService', () => {
         pagination: { page: 2, per_page: 10, total: 0 }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -75,14 +75,14 @@ describe('DeportistasService', () => {
       const result = await deportistasService.listarDeportistas(2, 10)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/deportistas?page=2&per_page=10'),
         expect.any(Object)
       )
     })
 
     it('should handle error when listing deportistas', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
@@ -103,7 +103,7 @@ describe('DeportistasService', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -112,7 +112,7 @@ describe('DeportistasService', () => {
 
       expect(result.success).toBe(true)
       expect(result.data.id_deportista).toBe(1)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/deportistas/1'),
         expect.objectContaining({
           method: 'GET'
@@ -126,7 +126,7 @@ describe('DeportistasService', () => {
         data: { id_deportista: 1 }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -138,7 +138,7 @@ describe('DeportistasService', () => {
     })
 
     it('should handle error when getting deportista', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found'

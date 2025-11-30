@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import mensualidadesService from '@/services/mensualidadesService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock authService
 vi.mock('@/services/authService', () => ({
@@ -33,7 +33,7 @@ describe('MensualidadesApi', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -41,7 +41,7 @@ describe('MensualidadesApi', () => {
       const result = await mensualidadesService.list()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades'),
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -57,7 +57,7 @@ describe('MensualidadesApi', () => {
         data: [{ id_mensualidad: 1, estado: 'pendiente' }]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -69,14 +69,14 @@ describe('MensualidadesApi', () => {
       })
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades?persona_id=1&estado=pendiente&page=1'),
         expect.any(Object)
       )
     })
 
     it('should handle error when listing mensualidades', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -98,7 +98,7 @@ describe('MensualidadesApi', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -106,7 +106,7 @@ describe('MensualidadesApi', () => {
       const result = await mensualidadesService.get(1)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades/1'),
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -117,7 +117,7 @@ describe('MensualidadesApi', () => {
     })
 
     it('should handle error when getting mensualidad', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -141,7 +141,7 @@ describe('MensualidadesApi', () => {
         fecha_vencimiento: '2024-12-31'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -149,7 +149,7 @@ describe('MensualidadesApi', () => {
       const result = await mensualidadesService.create(payload)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades'),
         expect.objectContaining({
           method: 'POST',
@@ -159,7 +159,7 @@ describe('MensualidadesApi', () => {
     })
 
     it('should handle error when creating mensualidad', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
         statusText: 'Bad Request',
@@ -179,7 +179,7 @@ describe('MensualidadesApi', () => {
 
       const payload = { estado: 'pagado' }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -187,7 +187,7 @@ describe('MensualidadesApi', () => {
       const result = await mensualidadesService.update(1, payload)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades/1'),
         expect.objectContaining({
           method: 'PUT',
@@ -204,7 +204,7 @@ describe('MensualidadesApi', () => {
         message: 'Mensualidad desactivada'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -212,7 +212,7 @@ describe('MensualidadesApi', () => {
       const result = await mensualidadesService.desactivar(1)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/mensualidades/1/desactivar'),
         expect.objectContaining({
           method: 'PATCH'

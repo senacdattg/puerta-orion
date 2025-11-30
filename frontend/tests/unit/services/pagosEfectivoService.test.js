@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import pagosEfectivoService from '@/services/pagosEfectivoService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock localStorage
 const localStorageMock = {
@@ -11,10 +11,10 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn()
 }
-global.localStorage = localStorageMock
+globalThis.localStorage = localStorageMock
 
 // Mock navigator.geolocation
-global.navigator = {
+globalThis.navigator = {
   geolocation: {
     getCurrentPosition: vi.fn((success) => {
       success({
@@ -103,7 +103,7 @@ describe('PagosEfectivoService', () => {
       vi.useFakeTimers()
       const datos = { monto: 50000, mensualidadId: 1 }
       const hash1 = pagosEfectivoService.generarHash(datos)
-      
+
       // Advance time to ensure different timestamp
       vi.advanceTimersByTime(1000)
       const hash2 = pagosEfectivoService.generarHash(datos)
@@ -123,7 +123,7 @@ describe('PagosEfectivoService', () => {
     })
 
     it('should return null when geolocation is not available', async () => {
-      global.navigator.geolocation = undefined
+      globalThis.navigator.geolocation = undefined
 
       const ubicacion = await pagosEfectivoService.obtenerUbicacion()
 
@@ -159,7 +159,7 @@ describe('PagosEfectivoService', () => {
         telefonoPagador: '3001234567'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -170,7 +170,7 @@ describe('PagosEfectivoService', () => {
       expect(result.pago).toHaveProperty('timestamp')
       expect(result.pago).toHaveProperty('hash')
       expect(result.comprobante).toBe('COMP-12345')
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/pagos-efectivo'),
         expect.objectContaining({
           method: 'POST'
@@ -188,7 +188,7 @@ describe('PagosEfectivoService', () => {
         telefonoPagador: '3001234567'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
@@ -227,7 +227,7 @@ describe('PagosEfectivoService', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -240,7 +240,7 @@ describe('PagosEfectivoService', () => {
     })
 
     it('should handle error when pago not found', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found'

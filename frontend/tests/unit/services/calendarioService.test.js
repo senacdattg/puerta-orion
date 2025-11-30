@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import calendarioService from '@/services/calendarioService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock localStorage
 const localStorageMock = {
@@ -11,7 +11,7 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn()
 }
-global.localStorage = localStorageMock
+globalThis.localStorage = localStorageMock
 
 // Mock API_CONFIG
 vi.mock('@/config/environment.js', () => ({
@@ -56,7 +56,7 @@ describe('CalendarioService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -66,7 +66,7 @@ describe('CalendarioService', () => {
       // The service transforms the data, so we check it's an array
       expect(Array.isArray(result)).toBe(true)
       expect(result.length).toBe(2)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/eventos/calendario?per_page=1000'),
         expect.objectContaining({
           method: 'GET'
@@ -75,7 +75,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle 401 authentication error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         statusText: 'Unauthorized',
@@ -93,7 +93,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle 404 not found error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -110,7 +110,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle 500 server error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -137,7 +137,7 @@ describe('CalendarioService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -149,7 +149,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle error when loading tipos evento', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -174,7 +174,7 @@ describe('CalendarioService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -186,7 +186,7 @@ describe('CalendarioService', () => {
     })
 
     it('should use fallback categorias on error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -255,7 +255,7 @@ describe('CalendarioService', () => {
 
     it('should load eventos if cache is empty', async () => {
       calendarioService.eventos = []
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -280,7 +280,7 @@ describe('CalendarioService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -288,7 +288,7 @@ describe('CalendarioService', () => {
       const eventos = await calendarioService.obtenerEventosProximos()
 
       expect(eventos.length).toBeGreaterThan(0)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/eventos/proximos'),
         expect.objectContaining({
           method: 'GET'
@@ -297,7 +297,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle 401 error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         statusText: 'Unauthorized'
@@ -310,7 +310,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle 500 error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
@@ -345,7 +345,7 @@ describe('CalendarioService', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse
       })
@@ -376,7 +376,7 @@ describe('CalendarioService', () => {
         lugar: 'Gimnasio'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Error al crear evento' })
       })
@@ -407,7 +407,7 @@ describe('CalendarioService', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse
       })
@@ -419,7 +419,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle API error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Error al actualizar' })
       })
@@ -441,7 +441,7 @@ describe('CalendarioService', () => {
         success: true
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse
       })
@@ -454,7 +454,7 @@ describe('CalendarioService', () => {
     })
 
     it('should handle API error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Error al eliminar' })
       })
@@ -465,7 +465,7 @@ describe('CalendarioService', () => {
 
   describe('cargarCatalogos', () => {
     it('should load all catalogos successfully', async () => {
-      global.fetch.mockResolvedValue({
+      globalThis.fetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           success: true,
@@ -484,7 +484,7 @@ describe('CalendarioService', () => {
 
     it('should handle error when loading catalogos', async () => {
       // Mock both methods to fail
-      global.fetch
+      globalThis.fetch
         .mockRejectedValueOnce(new Error('Network error')) // for cargarTiposEvento
         .mockRejectedValueOnce(new Error('Network error')) // for cargarCategorias
 

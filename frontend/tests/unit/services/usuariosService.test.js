@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import usuariosService from '@/services/usuariosService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock stores
 vi.mock('@/stores/auth', () => ({
@@ -52,7 +52,7 @@ describe('UsuariosService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -60,7 +60,7 @@ describe('UsuariosService', () => {
       const result = await usuariosService.listarUsuarios()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/usuarios?limit=3&offset=0'),
         expect.objectContaining({
           method: 'GET'
@@ -74,7 +74,7 @@ describe('UsuariosService', () => {
         data: [{ id_usuario: 1, usuario: 'admin', estado: true }]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -82,28 +82,28 @@ describe('UsuariosService', () => {
       const result = await usuariosService.listarUsuarios('activo', 10, 5)
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/usuarios?estado=activo&limit=10&offset=5'),
         expect.any(Object)
       )
     })
 
     it('should not include estado parameter when estado is "todos"', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true, data: [] })
       })
 
       await usuariosService.listarUsuarios('todos', 5, 0)
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.not.stringContaining('estado='),
         expect.any(Object)
       )
     })
 
     it('should handle error when listing usuarios', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
@@ -123,7 +123,7 @@ describe('UsuariosService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -131,7 +131,7 @@ describe('UsuariosService', () => {
       const result = await usuariosService.listarRoles()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/dynamic-data/roles'),
         expect.objectContaining({
           method: 'GET'
@@ -140,7 +140,7 @@ describe('UsuariosService', () => {
     })
 
     it('should handle error when listing roles', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 403,
         statusText: 'Forbidden'

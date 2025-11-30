@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import galeriaService from '@/services/galeriaService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock localStorage
 const localStorageMock = {
@@ -11,7 +11,7 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn()
 }
-global.localStorage = localStorageMock
+globalThis.localStorage = localStorageMock
 
 // Mock API_CONFIG
 vi.mock('@/config/environment.js', () => ({
@@ -56,7 +56,7 @@ describe('GaleriaService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -65,7 +65,7 @@ describe('GaleriaService', () => {
 
       expect(result).toEqual(mockData.data)
       expect(galeriaService.imagenes).toEqual(mockData.data)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/galeria/'),
         expect.objectContaining({
           method: 'GET'
@@ -79,7 +79,7 @@ describe('GaleriaService', () => {
         data: [{ id_galeria: 1, id_tipo_evento: 1 }]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -91,14 +91,14 @@ describe('GaleriaService', () => {
       })
 
       expect(result).toEqual(mockData.data)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/galeria/?id_tipo_evento=1&id_categoria=2&limit=10'),
         expect.any(Object)
       )
     })
 
     it('should handle 401 authentication error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         statusText: 'Unauthorized'
@@ -110,7 +110,7 @@ describe('GaleriaService', () => {
     })
 
     it('should handle 500 server error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error'
@@ -122,7 +122,7 @@ describe('GaleriaService', () => {
     })
 
     it('should return empty array on error', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+      globalThis.fetch.mockRejectedValueOnce(new Error('Network error'))
 
       const result = await galeriaService.cargarImagenes()
 
@@ -142,7 +142,7 @@ describe('GaleriaService', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockData
       })
@@ -150,7 +150,7 @@ describe('GaleriaService', () => {
       const result = await galeriaService.obtenerImagen(1)
 
       expect(result).toEqual(mockData.data)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/galeria/1'),
         expect.objectContaining({
           method: 'GET'
@@ -159,7 +159,7 @@ describe('GaleriaService', () => {
     })
 
     it('should handle error when getting imagen', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found'

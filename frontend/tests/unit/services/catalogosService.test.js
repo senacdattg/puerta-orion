@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import catalogosService from '@/services/catalogosService'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock API_CONFIG
 vi.mock('@/config/environment', () => ({
@@ -23,7 +23,7 @@ describe('CatalogosService', () => {
         { id: 2, nombre: 'Cédula de Extranjería', codigo: 'ce' }
       ]
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true, data: mockData })
       })
@@ -31,7 +31,7 @@ describe('CatalogosService', () => {
       const result = await catalogosService.getTiposDocumento()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/catalogos/tipos-documento'),
         expect.objectContaining({
           method: 'GET',
@@ -43,7 +43,7 @@ describe('CatalogosService', () => {
     })
 
     it('should handle error when fetching tipos documento', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -54,7 +54,7 @@ describe('CatalogosService', () => {
     })
 
     it('should return empty array when data is not present', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       })
@@ -72,7 +72,7 @@ describe('CatalogosService', () => {
         { id: 2, nombre: 'Femenino', valor: 'femenino' }
       ]
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true, data: mockData })
       })
@@ -80,7 +80,7 @@ describe('CatalogosService', () => {
       const result = await catalogosService.getSexos()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/catalogos/sexos'),
         expect.objectContaining({
           method: 'GET'
@@ -89,7 +89,7 @@ describe('CatalogosService', () => {
     })
 
     it('should handle error when fetching sexos', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
         statusText: 'Not Found',
@@ -107,7 +107,7 @@ describe('CatalogosService', () => {
         { id: 2, nombre_categoria: 'Infantil', codigo_categoria: 'INF' }
       ]
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true, data: mockData })
       })
@@ -115,7 +115,7 @@ describe('CatalogosService', () => {
       const result = await catalogosService.getCategorias()
 
       expect(result).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/catalogos/categorias'),
         expect.objectContaining({
           method: 'GET'
@@ -124,7 +124,7 @@ describe('CatalogosService', () => {
     })
 
     it('should handle error when fetching categorias', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -149,7 +149,7 @@ describe('CatalogosService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true, data: mockData })
       })
@@ -160,7 +160,7 @@ describe('CatalogosService', () => {
       expect(result).toHaveProperty('success', true)
       expect(result).toHaveProperty('data')
       expect(result.data).toEqual(mockData)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/catalogos/catalogos-completos'),
         expect.objectContaining({
           method: 'GET'
@@ -169,7 +169,7 @@ describe('CatalogosService', () => {
     })
 
     it('should handle error when fetching catalogos completos', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -191,7 +191,7 @@ describe('CatalogosService', () => {
         ]
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true, data: mockData })
       })
@@ -205,7 +205,7 @@ describe('CatalogosService', () => {
     })
 
     it('should handle error when loading catalogos for form', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+      globalThis.fetch.mockRejectedValueOnce(new Error('Network error'))
 
       await expect(catalogosService.cargarCatalogosFormulario()).rejects.toThrow()
     })
