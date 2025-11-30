@@ -74,16 +74,54 @@ MAPEO_SEXOS = {
     'Otro': 'otro',
 }
 
-# Configuración de CORS: En desarrollo local se permite HTTP (localhost)
-# En producción, la variable de entorno CORS_ALLOWED_ORIGINS debe contener solo URLs HTTPS
-# SonarQube Security Hotspot: HTTP es intencional solo para desarrollo local
-# En producción, configure CORS_ALLOWED_ORIGINS con URLs HTTPS en variables de entorno
-# nosonar: S5332 - HTTP solo para desarrollo local, seguro en entorno controlado
-CORS_ALLOWED_ORIGINS = tuple(  # nosonar: S5332
-    origen.strip()
-    for origen in os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:8080').split(',')  # nosonar: S5332
-    if origen.strip()
-)
+# CORS configuration: HTTP is only allowed in development environment
+# In production, only HTTPS origins are allowed for security
+# Development origins (HTTP) are safe in localhost environment
+CORS_DEV_ORIGINS = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8080'
+]
+
+def _get_cors_allowed_origins() -> tuple:
+    """
+    Get CORS allowed origins based on environment.
+    
+    Returns:
+        tuple: Allowed origins. In production, only HTTPS origins are allowed.
+    """
+    env = os.getenv('FLASK_ENV', 'development')
+    cors_origins_env = os.getenv('CORS_ALLOWED_ORIGINS', '')
+    
+    if env == 'production':
+        # In production, only allow HTTPS origins
+        if cors_origins_env:
+            origins = [
+                origen.strip()
+                for origen in cors_origins_env.split(',')
+                if origen.strip() and origen.strip().startswith('https://')
+            ]
+            if not origins:
+                raise ValueError(
+                    'CORS_ALLOWED_ORIGINS must contain at least one HTTPS origin in production'
+                )
+            return tuple(origins)
+        else:
+            raise ValueError(
+                'CORS_ALLOWED_ORIGINS environment variable is required in production'
+            )
+    else:
+        # In development, allow HTTP origins from environment or use defaults
+        if cors_origins_env:
+            return tuple(
+                origen.strip()
+                for origen in cors_origins_env.split(',')
+                if origen.strip()
+            )
+        else:
+            return tuple(CORS_DEV_ORIGINS)
+
+CORS_ALLOWED_ORIGINS = _get_cors_allowed_origins()
 
 CATEGORIAS_INICIALES = [
     {
