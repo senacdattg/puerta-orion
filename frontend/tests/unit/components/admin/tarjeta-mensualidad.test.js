@@ -294,5 +294,373 @@ describe('TarjetaMensualidad Component', () => {
       expect(event.target.src).toBeTruthy()
     })
   })
+
+  describe('Estado computed properties', () => {
+    it('should return correct icon for Parcial estado', () => {
+      wrapper = createWrapper({ mensualidad: { estado: 'Parcial' } })
+      expect(wrapper.vm.getIconoEstado()).toBe('💰')
+    })
+
+    it('should return correct icon for Vencido estado', () => {
+      wrapper = createWrapper({ mensualidad: { estado: 'Vencido' } })
+      expect(wrapper.vm.getIconoEstado()).toBe('⚠️')
+    })
+
+    it('should return correct icon for unknown estado', () => {
+      wrapper = createWrapper({ mensualidad: { estado: 'Unknown' } })
+      expect(wrapper.vm.getIconoEstado()).toBe('❓')
+    })
+
+    it('should return correct icon for Pendiente estado', () => {
+      wrapper = createWrapper({ mensualidad: { estado: 'Pendiente' } })
+      expect(wrapper.vm.getIconoEstado()).toBe('⏳')
+    })
+  })
+
+  describe('Saldo computed properties', () => {
+    it('should return saldo-completo class when saldo is 0', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: 0,
+          monto_pago_raw: 100000
+        }
+      })
+      expect(wrapper.vm.getClaseSaldo()).toBe('saldo-completo')
+    })
+
+    it('should return saldo-bajo class when ratio <= 0.3', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: 20000,
+          monto_pago_raw: 100000
+        }
+      })
+      expect(wrapper.vm.getClaseSaldo()).toBe('saldo-bajo')
+    })
+
+    it('should return saldo-medio class when ratio <= 0.7', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: 50000,
+          monto_pago_raw: 100000
+        }
+      })
+      expect(wrapper.vm.getClaseSaldo()).toBe('saldo-medio')
+    })
+
+    it('should return saldo-alto class when ratio > 0.7', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: 80000,
+          monto_pago_raw: 100000
+        }
+      })
+      expect(wrapper.vm.getClaseSaldo()).toBe('saldo-alto')
+    })
+
+    it('should return saldo-alto class when monto is 0', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: 50000,
+          monto_pago_raw: 0
+        }
+      })
+      expect(wrapper.vm.getClaseSaldo()).toBe('saldo-alto')
+    })
+
+    it('should format saldo pendiente with fallback', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: undefined,
+          monto_pago_raw: 150000
+        }
+      })
+      const texto = wrapper.vm.saldoPendienteTexto()
+      expect(texto).toContain('$')
+    })
+  })
+
+  describe('Vencimiento edge cases', () => {
+    it('should return null diasParaVencimiento when no fecha and no fechasPago', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: null,
+          fecha_vencimiento: null,
+          fechasPago: null,
+          mes: null
+        }
+      })
+      expect(wrapper.vm.diasParaVencimiento).toBeNull()
+    })
+
+    it('should return sin-fecha class when diasParaVencimiento is null', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: null,
+          fecha_vencimiento: null,
+          fechasPago: null,
+          mes: null
+        }
+      })
+      expect(wrapper.vm.claseVencimiento).toBe('sin-fecha')
+    })
+
+    it('should return "Sin fecha" text when diasParaVencimiento is null', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: null,
+          fecha_vencimiento: null,
+          fechasPago: null,
+          mes: null
+        }
+      })
+      expect(wrapper.vm.textoVencimiento).toBe('Sin fecha')
+    })
+
+    it('should return vencido class when esVencida is true', () => {
+      const fechaVencida = new Date()
+      fechaVencida.setMonth(fechaVencida.getMonth() - 1)
+      const fechaStr = fechaVencida.toISOString().split('T')[0]
+
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: fechaStr
+        }
+      })
+
+      expect(wrapper.vm.claseVencimiento).toBe('vencido')
+      expect(wrapper.vm.textoVencimiento).toBe('Vencido')
+    })
+
+    it('should return proximo-vencer class when dias === 0', () => {
+      const hoy = new Date()
+      const fechaStr = hoy.toISOString().split('T')[0]
+
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: fechaStr
+        }
+      })
+
+      // Puede ser 'proximo-vencer' o 'advertencia' dependiendo del cálculo
+      expect(['proximo-vencer', 'advertencia']).toContain(wrapper.vm.claseVencimiento)
+      // El texto puede variar ligeramente
+      expect(wrapper.vm.textoVencimiento).toMatch(/Vence/)
+    })
+
+    it('should return advertencia class when dias <= 7', () => {
+      const fechaFutura = new Date()
+      fechaFutura.setDate(fechaFutura.getDate() + 5)
+      const fechaStr = fechaFutura.toISOString().split('T')[0]
+
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: fechaStr
+        }
+      })
+
+      expect(wrapper.vm.claseVencimiento).toBe('advertencia')
+    })
+
+    it('should return normal class when dias > 7', () => {
+      const fechaFutura = new Date()
+      fechaFutura.setDate(fechaFutura.getDate() + 10)
+      const fechaStr = fechaFutura.toISOString().split('T')[0]
+
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: fechaStr
+        }
+      })
+
+      expect(wrapper.vm.claseVencimiento).toBe('normal')
+    })
+
+    it('should format textoVencimiento for 1 day', () => {
+      const fechaFutura = new Date()
+      fechaFutura.setDate(fechaFutura.getDate() + 1)
+      const fechaStr = fechaFutura.toISOString().split('T')[0]
+
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: fechaStr
+        }
+      })
+
+      // Permitir variación de 1 día por timing
+      expect(wrapper.vm.textoVencimiento).toMatch(/Vence en \d+ día/)
+    })
+
+    it('should format textoVencimiento for multiple days', () => {
+      const fechaFutura = new Date()
+      fechaFutura.setDate(fechaFutura.getDate() + 5)
+      const fechaStr = fechaFutura.toISOString().split('T')[0]
+
+      wrapper = createWrapper({
+        mensualidad: {
+          fecha_vencimiento_raw: fechaStr
+        }
+      })
+
+      // Permitir variación de 1 día por timing
+      expect(wrapper.vm.textoVencimiento).toMatch(/Vence en \d+ días/)
+      const dias = wrapper.vm.diasParaVencimiento
+      expect(dias).toBeGreaterThanOrEqual(4)
+      expect(dias).toBeLessThanOrEqual(6)
+    })
+  })
+
+  describe('Permissions edge cases', () => {
+    it('should check permission for puedeEditarMensualidad', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
+      mockAuthStore.hasPermission.mockReturnValue(true)
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeEditarMensualidad).toBe(true)
+    })
+
+    it('should handle permission error gracefully for puedeEditarMensualidad', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
+      mockAuthStore.hasPermission.mockImplementation(() => { throw new Error('Permission error') })
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeEditarMensualidad).toBe(false)
+    })
+
+    it('should check permission for puedeToggleMensualidad', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
+      mockAuthStore.hasPermission.mockReturnValue(true)
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeToggleMensualidad).toBe(true)
+    })
+
+    it('should handle permission error gracefully for puedeToggleMensualidad', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
+      mockAuthStore.hasPermission.mockImplementation(() => { throw new Error('Permission error') })
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeToggleMensualidad).toBe(false)
+    })
+
+    it('should allow pago for acudiente', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: 'Acudiente' }]
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeIniciarPago).toBe(true)
+    })
+
+    it('should not allow pago for other roles', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: 'Entrenador' }]
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeIniciarPago).toBe(false)
+    })
+
+    it('should detect saldo pendiente positivo using saldoPendiente fallback', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: undefined,
+          saldoPendiente: 5000,
+          estado: 'Pendiente'
+        }
+      })
+      expect(wrapper.vm.saldoPendientePositivo).toBe(true)
+    })
+
+    it('should detect saldo pendiente negativo', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: -1000
+        }
+      })
+      expect(wrapper.vm.saldoPendientePositivo).toBe(false)
+    })
+
+    it('should show pagar button when estado is not Pagado (fallback)', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: NaN,
+          estado: 'Pendiente'
+        }
+      })
+      expect(wrapper.vm.saldoPendientePositivo).toBe(true)
+    })
+
+    it('should not show pagar button when estado is Pagado (fallback)', () => {
+      wrapper = createWrapper({
+        mensualidad: {
+          saldo_pendiente_raw: NaN,
+          estado: 'Pagado'
+        }
+      })
+      expect(wrapper.vm.saldoPendientePositivo).toBe(false)
+    })
+  })
+
+  describe('Pago con MercadoPago edge cases', () => {
+    it('should handle fetch error', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.pagarConMercadoPago()
+
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle non-OK response', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        text: async () => 'Error'
+      })
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.pagarConMercadoPago()
+
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle response without init_point', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        text: async () => JSON.stringify({
+          success: true,
+          init_point: null
+        })
+      })
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.pagarConMercadoPago()
+
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+  })
+
+  describe('Role names edge cases', () => {
+    it('should handle string roles', () => {
+      mockAuthStore.user.roles = ['Deportista', 'Administrador']
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeIniciarPago).toBe(true)
+    })
+
+    it('should handle mixed roles format', () => {
+      mockAuthStore.user.roles = ['Deportista', { nombre_rol: 'Administrador' }]
+      wrapper = createWrapper()
+      expect(wrapper.vm.isSuperOrAdmin).toBe(true)
+    })
+
+    it('should handle roles with null nombre_rol', () => {
+      mockAuthStore.user.roles = [{ nombre_rol: null }, { nombre_rol: 'Deportista' }]
+      wrapper = createWrapper()
+      expect(wrapper.vm.puedeIniciarPago).toBe(true)
+    })
+  })
 })
 

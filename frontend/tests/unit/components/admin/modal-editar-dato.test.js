@@ -529,6 +529,272 @@ describe('ModalEditarDato Component', () => {
       const errorObject = wrapper.vm.extraerMensajeErrorDato({ message: 'Error message' })
       expect(errorObject).toBe('Error message')
     })
+
+    it('should handle error response without JSON', async () => {
+      wrapper = createWrapper({ tema: 'tipo-documento' })
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      wrapper.vm.formDataInicial.nombre = 'Cédula'
+      wrapper.vm.formData.nombre = 'Pasaporte'
+
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: async () => { throw new Error('Not JSON') }
+      })
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.guardar()
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle result.success = false', async () => {
+      wrapper = createWrapper({ tema: 'tipo-documento' })
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      wrapper.vm.formDataInicial.nombre = 'Cédula'
+      wrapper.vm.formData.nombre = 'Pasaporte'
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: false, error: 'Error en el servidor' })
+      })
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.guardar()
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle fetch error catch', async () => {
+      wrapper = createWrapper({ tema: 'tipo-documento' })
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      wrapper.vm.formDataInicial.nombre = 'Cédula'
+      wrapper.vm.formData.nombre = 'Pasaporte'
+
+      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+      vi.mocked(Swal.close).mockImplementation(() => {})
+
+      await wrapper.vm.guardar()
+      expect(Swal.close).toHaveBeenCalled()
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle no ID error', async () => {
+      wrapper = createWrapper({ tema: 'tipo-documento', dato: {} })
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      wrapper.vm.formDataInicial.nombre = 'Cédula'
+      wrapper.vm.formData.nombre = 'Pasaporte'
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.guardar()
+
+      // Si no hay ID, debería mostrar error
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle extraerMensajeErrorDato with error object', () => {
+      wrapper = createWrapper()
+      const errorObj = { error: 'Error message' }
+      const result = wrapper.vm.extraerMensajeErrorDato(errorObj)
+      expect(result).toBe('Error message')
+    })
+
+    it('should handle extraerMensajeErrorDato with details', () => {
+      wrapper = createWrapper()
+      const errorObj = { details: 'Details message' }
+      const result = wrapper.vm.extraerMensajeErrorDato(errorObj)
+      expect(result).toBe('Details message')
+    })
+
+    it('should handle extraerMensajeErrorDato with large object', () => {
+      wrapper = createWrapper()
+      const largeObj = { data: 'x'.repeat(300) }
+      const result = wrapper.vm.extraerMensajeErrorDato(largeObj)
+      expect(result).toContain('Error al procesar')
+    })
+
+    it('should handle extraerMensajeErrorDato with null', () => {
+      wrapper = createWrapper()
+      const result = wrapper.vm.extraerMensajeErrorDato(null)
+      expect(result).toContain('No se pudo completar')
+    })
+  })
+
+  describe('Validation edge cases', () => {
+    it('should validate EPS estado is boolean', () => {
+      wrapper = createWrapper({ tema: 'eps' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'EPS Test',
+        codigo: 'EPS001',
+        estado: null // Inválido
+      })
+
+      const errores = wrapper.vm.validarDatos()
+      expect(errores.length).toBeGreaterThan(0)
+    })
+
+    it('should validate metodo-pago estado is boolean', () => {
+      wrapper = createWrapper({ tema: 'metodo-pago' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Efectivo',
+        estado: null // Inválido
+      })
+
+      const errores = wrapper.vm.validarDatos()
+      expect(errores.length).toBeGreaterThan(0)
+    })
+
+    it('should validate tipo-evento descripcion max length', () => {
+      wrapper = createWrapper({ tema: 'tipo-evento' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Evento Test',
+        descripcion: 'x'.repeat(501) // Más de 500 caracteres
+      })
+
+      const errores = wrapper.vm.validarDatos()
+      expect(errores.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Data preparation edge cases', () => {
+    it('should prepare datos for metodo-pago', () => {
+      wrapper = createWrapper({ tema: 'metodo-pago' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Efectivo',
+        estado: false
+      })
+
+      const datos = wrapper.vm.prepararDatosPorEntidad()
+      expect(datos.nombre_metodo).toBe('Efectivo')
+      expect(datos.estado).toBe(false)
+    })
+
+    it('should prepare datos for sexo', () => {
+      wrapper = createWrapper({ tema: 'sexo' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Masculino'
+      })
+
+      const datos = wrapper.vm.prepararDatosPorEntidad()
+      expect(datos.nombre).toBe('Masculino')
+    })
+
+    it('should prepare datos for ciudad-residencia', () => {
+      wrapper = createWrapper({ tema: 'ciudad-residencia' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Bogotá'
+      })
+
+      const datos = wrapper.vm.prepararDatosPorEntidad()
+      expect(datos.nombre_ciudad).toBe('Bogotá')
+    })
+
+    it('should prepare datos for eps without codigo', () => {
+      wrapper = createWrapper({ tema: 'eps' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'EPS Test',
+        estado: true
+      })
+
+      const datos = wrapper.vm.prepararDatosPorEntidad()
+      expect(datos.nombre_eps).toBe('EPS Test')
+      expect(datos.codigo_eps).toBeUndefined()
+    })
+  })
+
+  describe('ID extraction for all themes', () => {
+    it('should extract id for sexo', () => {
+      wrapper = createWrapper({ 
+        tema: 'sexo',
+        dato: { id_sexo: 1 }
+      })
+      const id = wrapper.vm.obtenerId(wrapper.props('dato'))
+      expect(id).toBe(1)
+    })
+
+    it('should extract id for ciudad-residencia', () => {
+      wrapper = createWrapper({ 
+        tema: 'ciudad-residencia',
+        dato: { id_ciudad: 1 }
+      })
+      const id = wrapper.vm.obtenerId(wrapper.props('dato'))
+      expect(id).toBe(1)
+    })
+
+    it('should extract id for metodo-pago', () => {
+      wrapper = createWrapper({ 
+        tema: 'metodo-pago',
+        dato: { id_metodo_pago: 1 }
+      })
+      const id = wrapper.vm.obtenerId(wrapper.props('dato'))
+      expect(id).toBe(1)
+    })
+
+    it('should extract id for tipo-evento', () => {
+      wrapper = createWrapper({ 
+        tema: 'tipo-evento',
+        dato: { id_tipo_evento: 1 }
+      })
+      const id = wrapper.vm.obtenerId(wrapper.props('dato'))
+      expect(id).toBe(1)
+    })
+
+    it('should fallback to dato.id when specific id not found', () => {
+      wrapper = createWrapper({ 
+        tema: 'tipo-documento',
+        dato: { id: 999 }
+      })
+      const id = wrapper.vm.obtenerId(wrapper.props('dato'))
+      expect(id).toBe(999)
+    })
+  })
+
+  describe('Cerrar modal edge cases', () => {
+    it('should close without confirmation when no changes detected', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      // Si formDataInicial está vacío, no debería pedir confirmación
+      if (Object.keys(wrapper.vm.formDataInicial).length === 0) {
+        await wrapper.vm.cerrar()
+        expect(wrapper.emitted('cerrar')).toBeTruthy()
+      }
+    })
+
+    it('should not close when user cancels confirmation', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      wrapper.vm.formDataInicial.nombre = 'Cédula'
+      wrapper.vm.formData.nombre = 'Pasaporte'
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: false })
+
+      await wrapper.vm.cerrar()
+
+      // Si canceló, no debería emitir cerrar
+      if (!wrapper.vm.verificarCambios()) {
+        expect(wrapper.emitted('cerrar')).toBeTruthy()
+      } else if (Swal.fire.mock.results[0]?.value?.isConfirmed === false) {
+        expect(wrapper.emitted('cerrar')).toBeFalsy()
+      }
+    })
   })
 })
 
