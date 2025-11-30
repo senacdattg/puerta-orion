@@ -493,7 +493,8 @@ async function guardarCambiosMensualidad(mensualidadActualizada) {
         mensualidadActualizadaClon = structuredClone(mensualidadActualizada);
       } catch {
         // Fallback to JSON method if structuredClone fails (e.g., with circular references)
-        mensualidadActualizadaClon = JSON.parse(JSON.stringify(mensualidadActualizada));
+        // NOSONAR: S6781 - JSON.parse/stringify is needed as fallback when structuredClone fails
+        mensualidadActualizadaClon = JSON.parse(JSON.stringify(mensualidadActualizada)); // NOSONAR
       }
       console.log('✅ [guardarCambiosMensualidad] Actualizando mensualidad seleccionada con saldo_pendiente_raw:', mensualidadActualizadaClon.saldo_pendiente_raw);
       mensualidadSeleccionada.value = mensualidadActualizadaClon;
@@ -596,7 +597,8 @@ async function abrirFormulario() {
     formInicial.value = structuredClone(form.value);
   } catch {
     // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
-    formInicial.value = JSON.parse(JSON.stringify(form.value));
+    // NOSONAR: S6781 - JSON.parse/stringify is needed as fallback when structuredClone fails
+    formInicial.value = JSON.parse(JSON.stringify(form.value)); // NOSONAR
   }
   mostrarFormulario.value = true;
 }

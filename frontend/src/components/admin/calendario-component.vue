@@ -610,7 +610,7 @@ export default {
             } catch {
                 // Fallback to JSON method if structuredClone fails
                 // NOSONAR: S6781 - JSON.parse/stringify is needed as fallback when structuredClone fails
-                return JSON.parse(JSON.stringify(obj));
+                return JSON.parse(JSON.stringify(obj)); // NOSONAR
             }
         },
 
