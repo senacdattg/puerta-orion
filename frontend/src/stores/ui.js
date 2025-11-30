@@ -134,7 +134,7 @@ export const useUIStore = defineStore('ui', () => {
   const setTheme = (newTheme) => {
     theme.value = newTheme
     // Aplicar tema al documento
-    document.documentElement.setAttribute('data-theme', newTheme)
+    document.documentElement.dataset.theme = newTheme // NOSONAR: S7761
   }
 
   const toggleTheme = () => {

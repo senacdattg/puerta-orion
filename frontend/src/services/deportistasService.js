@@ -8,9 +8,7 @@ import { getApiBaseUrl } from '@/config/environment'
 const getBaseUrl = () => getApiBaseUrl()
 
 class DeportistasService {
-  constructor() {
-    // No inicializar el store aquí para evitar problemas de orden
-  }
+  // NOSONAR: S6647
 
   /**
    * Obtiene el token de autenticación

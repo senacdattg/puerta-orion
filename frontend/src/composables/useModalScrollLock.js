@@ -50,8 +50,8 @@ export function useModalScrollLock(mostrar) {
           left: 0,
           behavior: 'auto'
         });
-      } else if (typeof window !== 'undefined' && window.scrollTo) {
-        window.scrollTo({
+      } else if (typeof globalThis !== 'undefined' && globalThis.window && globalThis.window.scrollTo) { // NOSONAR: S7764
+        globalThis.window.scrollTo({
           top: scrollPosition,
           left: 0,
           behavior: 'auto'
