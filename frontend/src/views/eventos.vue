@@ -133,7 +133,8 @@ const cargarEventos = async () => {
       const fecha = new Date(fechaStr)
 
       // Validar que la fecha sea válida
-      if (isNaN(fecha.getTime())) {
+      // Prefer Number.isNaN over isNaN for robust number validation
+      if (Number.isNaN(fecha.getTime())) {
         console.warn('⚠️ Fecha inválida para evento:', evento)
         return null
       }

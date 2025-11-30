@@ -638,7 +638,7 @@ class CalendarioService {
       return eventoMapeado;
     } catch (error) {
       console.error('❌ Error al mapear evento:', error, eventoBackend);
-      // Retornar un evento básico para evitar que falle todo
+      // Return fallback event to prevent application failure
       return this._crearEventoFallback(eventoBackend);
     }
   }
@@ -829,12 +829,13 @@ class CalendarioService {
    * NOSONAR: S3776 - Complexity reduced through helper functions extraction
    */
   validarEvento(evento) {
-    const errores = [];
-    errores.push(...this._validarCamposBasicos(evento));
-    errores.push(...this._validarFormatoFecha(evento));
-    errores.push(...this._validarFormatoHora(evento));
-    errores.push(...this._validarRangoHoras(evento));
-    return errores;
+    // Use concat instead of multiple push() calls for better performance
+    return [
+      ...this._validarCamposBasicos(evento),
+      ...this._validarFormatoFecha(evento),
+      ...this._validarFormatoHora(evento),
+      ...this._validarRangoHoras(evento)
+    ];
   }
 
   // ============================================================================

@@ -144,7 +144,8 @@ async function iniciarPago(m) {
       return;
     }
     const url = json.init_point || json.sandbox_init_point || json.preference_url || json.initPoint;
-    if (url) window.location.href = url; else {
+    // Prefer globalThis over window for universal global object access
+    if (url) globalThis.location.href = url; else {
       await Swal.fire({
         icon: 'error',
         title: 'Sin enlace de pago',
@@ -197,7 +198,7 @@ async function editarMensualidad(mActualizada) {
       return; // No hacer la llamada al backend si ya tenemos los datos actualizados
     }
   }
-  
+
   // Si no tiene los campos crudos, hacer la actualización normal
   const payload = {};
   if (mActualizada.id_metodo_pago !== undefined) payload.id_metodo_pago = mActualizada.id_metodo_pago;

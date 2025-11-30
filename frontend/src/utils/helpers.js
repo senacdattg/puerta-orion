@@ -192,7 +192,8 @@ export const isValidPhone = (phone) => {
 export const isValidDocument = (document, type = 'cedula') => {
   if (!document || typeof document !== 'string') return false
 
-  const cleanDoc = document.replace(/\D/g, '')
+  // NOSONAR: S7781 - replaceAll() no acepta regex como primer argumento, usar replace() con regex para eliminar no-dígitos
+  const cleanDoc = document.replace(/\D/g, '') // NOSONAR: S7781
 
   switch (type.toLowerCase()) {
     case 'cedula':

@@ -201,7 +201,8 @@ async function completarRegistroAcudiente() {
   try {
     const datosAcudiente = {
       id_deportista: deportistaEncontrado.value.id_deportista,
-      id_parentesco: parseInt(idParentesco.value),
+      // Prefer Number.parseInt over parseInt for robust number parsing
+      id_parentesco: Number.parseInt(idParentesco.value),
       es_responsable: esResponsable.value
     };
 

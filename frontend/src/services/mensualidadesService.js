@@ -18,7 +18,7 @@ class MensualidadesApi {
     const url = `${this.baseURL}${path}`
     try {
       console.log(`🔄 ${logLabel}: fetch ->`, url)
-      const token = authService.getToken && authService.getToken()
+      const token = authService.getToken?.()
       const res = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ class MensualidadesApi {
           // Leer el texto de la respuesta primero
           const errorText = await res.text()
           console.error(`❌ ${logLabel}: server error response`, errorText)
-          
+
           // Intentar parsear como JSON
           try {
             const errorData = JSON.parse(errorText)
@@ -46,7 +46,7 @@ class MensualidadesApi {
             }
           } catch {
             // Si no es JSON válido, usar el texto directamente si no está vacío
-            if (errorText && errorText.trim()) {
+            if (errorText?.trim()) {
               errorMessage = errorText
             }
           }
@@ -74,7 +74,9 @@ class MensualidadesApi {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) qs.set(k, String(v))
     })
-    const path = `/api/mensualidades${qs.toString() ? `?${qs}` : ''}`
+    // Extract nested template literal to improve readability
+    const queryString = qs.toString()
+    const path = queryString ? `/api/mensualidades?${queryString}` : '/api/mensualidades'
     return this._request(path, {}, 'MensualidadesApi.list')
   }
 
@@ -117,7 +119,9 @@ class MensualidadesApi {
   async buscarPersonaPorDocumento (documento) {
     const qs = new URLSearchParams()
     if (documento) qs.set('documento', documento)
-    const path = `/api/mensualidades/buscar-persona${qs.toString() ? `?${qs}` : ''}`
+    // Extract nested template literal to improve readability
+    const queryString = qs.toString()
+    const path = queryString ? `/api/mensualidades/buscar-persona?${queryString}` : '/api/mensualidades/buscar-persona'
     return this._request(path, {}, 'MensualidadesApi.buscarPersona')
   }
 

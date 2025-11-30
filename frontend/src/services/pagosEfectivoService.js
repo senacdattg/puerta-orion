@@ -4,8 +4,10 @@
  */
 
 class PagosEfectivoService {
+  // Prefer class field declaration over 'this' assignment in constructor
+  baseURL = '/api/pagos-efectivo';
+
   constructor() {
-    this.baseURL = '/api/pagos-efectivo';
     this.pagos = this.cargarPagosLocales();
   }
 
@@ -209,7 +211,8 @@ class PagosEfectivoService {
     let hash = 0;
 
     for (let i = 0; i < datosString.length; i++) {
-      const char = datosString.charCodeAt(i);
+      // Prefer String#codePointAt() over String#charCodeAt() for better Unicode support
+      const char = datosString.codePointAt(i) || 0;
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convertir a entero de 32 bits
     }

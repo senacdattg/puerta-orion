@@ -8,9 +8,7 @@ import { getApiBaseUrl } from '@/config/environment'
 const buildUrl = (path = '') => `${getApiBaseUrl()}${path}`
 
 class UsuariosService {
-  constructor() {
-    // No inicializar el store aquí para evitar problemas de orden
-  }
+  // NOSONAR: S6647 - Constructor removed as it was empty and unnecessary
 
   /**
    * Obtiene el token de autenticación
