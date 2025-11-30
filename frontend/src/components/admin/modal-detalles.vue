@@ -715,65 +715,43 @@ watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => 
   }
 }, { deep: true, immediate: false });
 
+// Helper functions to reduce cognitive complexity in normalizarFormularioParaGuardar
+function _normalizarSaldoPendiente(valor) {
+  if (valor !== undefined && valor !== null && valor !== '') {
+    return String(valor);
+  }
+  return undefined;
+}
+
+function _normalizarIdMetodoPago(valor) {
+  if (valor !== undefined && valor !== null) {
+    return Number(valor);
+  }
+  return undefined;
+}
+
+function _normalizarString(valor, defaultValue = '') {
+  if (valor !== undefined && valor !== null) {
+    return String(valor).trim();
+  }
+  return defaultValue;
+}
+
 // Función auxiliar para normalizar el formulario antes de guardar estado inicial
+// Refactored to reduce cognitive complexity by extracting normalization helpers
 function normalizarFormularioParaGuardar(form) {
   // Crear un nuevo objeto con solo los campos necesarios (evitar structuredClone que falla con objetos complejos)
   const formNormalizado = {
-    id_metodo_pago: form.id_metodo_pago,
+    id_metodo_pago: _normalizarIdMetodoPago(form.id_metodo_pago),
     valor: form.valor,
-    valorSinSimbolo: form.valorSinSimbolo,
-    numero_documento: form.numero_documento,
-    fecha_vencimiento: form.fecha_vencimiento,
-    saldo_pendiente: form.saldo_pendiente,
-    estado_ui: form.estado_ui,
-    activo: form.activo,
+    valorSinSimbolo: _normalizarString(form.valorSinSimbolo, ''),
+    numero_documento: _normalizarString(form.numero_documento, ''),
+    fecha_vencimiento: _normalizarString(form.fecha_vencimiento, ''),
+    saldo_pendiente: _normalizarSaldoPendiente(form.saldo_pendiente),
+    estado_ui: _normalizarString(form.estado_ui, 'Pendiente'),
+    activo: Boolean(form.activo),
     fecha_pago: form.fecha_pago
   };
-
-  // Normalizar saldo_pendiente
-  if (formNormalizado.saldo_pendiente !== undefined && formNormalizado.saldo_pendiente !== null && formNormalizado.saldo_pendiente !== '') {
-    formNormalizado.saldo_pendiente = String(formNormalizado.saldo_pendiente);
-  } else {
-    formNormalizado.saldo_pendiente = undefined;
-  }
-
-  // Normalizar id_metodo_pago
-  if (formNormalizado.id_metodo_pago !== undefined && formNormalizado.id_metodo_pago !== null) {
-    formNormalizado.id_metodo_pago = Number(formNormalizado.id_metodo_pago);
-  } else {
-    formNormalizado.id_metodo_pago = undefined;
-  }
-
-  // Normalizar valorSinSimbolo
-  if (formNormalizado.valorSinSimbolo !== undefined && formNormalizado.valorSinSimbolo !== null) {
-    formNormalizado.valorSinSimbolo = String(formNormalizado.valorSinSimbolo);
-  } else {
-    formNormalizado.valorSinSimbolo = '';
-  }
-
-  // Normalizar numero_documento
-  if (formNormalizado.numero_documento !== undefined && formNormalizado.numero_documento !== null) {
-    formNormalizado.numero_documento = String(formNormalizado.numero_documento).trim();
-  } else {
-    formNormalizado.numero_documento = '';
-  }
-
-  // Normalizar fecha_vencimiento
-  if (formNormalizado.fecha_vencimiento !== undefined && formNormalizado.fecha_vencimiento !== null) {
-    formNormalizado.fecha_vencimiento = String(formNormalizado.fecha_vencimiento).trim();
-  } else {
-    formNormalizado.fecha_vencimiento = '';
-  }
-
-  // Normalizar estado_ui
-  if (formNormalizado.estado_ui !== undefined && formNormalizado.estado_ui !== null) {
-    formNormalizado.estado_ui = String(formNormalizado.estado_ui).trim();
-  } else {
-    formNormalizado.estado_ui = 'Pendiente';
-  }
-
-  // Normalizar activo (boolean)
-  formNormalizado.activo = Boolean(formNormalizado.activo);
 
   return formNormalizado;
 }
@@ -1095,36 +1073,29 @@ function toggleEdicion() {
   }
 }
 
-async function guardarCambios() {
-  // Verificar si hay cambios antes de continuar
-  const tieneCambios = verificarCambios()
+// Helper functions to reduce cognitive complexity in guardarCambios
+async function _mostrarSinCambiosMensualidad() {
+  await Swal.fire({
+    icon: 'info',
+    title: 'Sin cambios',
+    text: 'No se han realizado modificaciones en la mensualidad. No hay nada que guardar.',
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#004AAD'
+  });
+}
 
-  if (!tieneCambios) {
-    await Swal.fire({
-      icon: 'info',
-      title: 'Sin cambios',
-      text: 'No se han realizado modificaciones en la mensualidad. No hay nada que guardar.',
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#004AAD'
-    })
-    return
-  }
+async function _mostrarErroresMensualidad(errores) {
+  await Swal.fire({
+    icon: 'error',
+    title: 'Corrige los errores',
+    html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#dc3545'
+  });
+}
 
-  const { errores, monto, saldo } = validarFormularioEdicion();
-
-  if (errores.length > 0) {
-    await Swal.fire({
-      icon: 'error',
-      title: 'Corrige los errores',
-      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#dc3545'
-    });
-    return;
-  }
-
-  // Confirmar antes de actualizar
-  const confirmacion = await Swal.fire({
+async function _confirmarActualizacionMensualidad() {
+  return await Swal.fire({
     icon: 'question',
     title: '¿Actualizar mensualidad?',
     text: '¿Estás seguro de que deseas guardar los cambios en esta mensualidad?',
@@ -1134,25 +1105,9 @@ async function guardarCambios() {
     confirmButtonColor: '#004AAD',
     cancelButtonColor: '#6c757d'
   });
+}
 
-  if (!confirmacion.isConfirmed) {
-    return;
-  }
-
-  // Mostrar loading mientras se procesa
-  Swal.fire({
-    title: 'Guardando cambios...',
-    text: 'Por favor espera mientras procesamos tu solicitud.',
-    allowOutsideClick: false,
-    allowEscapeKey: false,
-    didOpen: () => {
-      Swal.showLoading()
-    }
-  })
-
-  const metodoPagoNormalizado = normalizarIdMetodoPago(formEdicion.value.id_metodo_pago);
-  const documentoActual = formEdicion.value.numero_documento;
-
+function _construirPayloadActualizacion(monto, saldo, metodoPagoNormalizado, documentoActual) {
   const payloadUpdate = {
     monto_pago: monto,
     fecha_vencimiento: formEdicion.value.fecha_vencimiento || null,
@@ -1173,15 +1128,83 @@ async function guardarCambios() {
 
   // Siempre enviar el saldo_pendiente del formulario, el backend calculará el estado automáticamente
   // Si saldo es undefined, usar el valor actual de la mensualidad para mantener consistencia
-  if (saldo !== undefined) {
-    payloadUpdate.saldo_pendiente = saldo;
-  } else {
-    // Si no se especifica saldo en el formulario, usar el valor actual de la mensualidad
+  if (saldo === undefined) {
     const saldoActual = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente;
     if (saldoActual !== undefined && saldoActual !== null) {
       payloadUpdate.saldo_pendiente = Number(saldoActual);
     }
+  } else {
+    payloadUpdate.saldo_pendiente = saldo;
   }
+
+  return payloadUpdate;
+}
+
+function _mapearMensualidadActualizada(mensualidadBackend, mensualidadId, monto, documentoActual, nombrePersonaActualizada, idMetodoEnRespuesta) {
+  return {
+    ...props.mensualidad,
+    ...mensualidadBackend,
+    id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || mensualidadId,
+    valor: formatCOP(mensualidadBackend.monto_pago || monto),
+    monto_pago_raw: mensualidadBackend.monto_pago,
+    saldo_pendiente_raw: mensualidadBackend.saldo_pendiente,
+    estado_bool: mensualidadBackend.estado,
+    estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+    estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+    fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
+    numero_documento: documentoActual,
+    persona_nombre: nombrePersonaActualizada,
+    nombre: nombrePersonaActualizada,
+    id_metodo_pago: idMetodoEnRespuesta
+  };
+}
+
+async function _mostrarExitoActualizacion() {
+  Swal.close();
+  await Swal.fire({
+    icon: 'success',
+    title: 'Cambios guardados',
+    text: 'La mensualidad se actualizó correctamente.',
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+
+// Refactored to reduce cognitive complexity by extracting helper functions
+async function guardarCambios() {
+  // Verificar si hay cambios antes de continuar
+  const tieneCambios = verificarCambios();
+  if (!tieneCambios) {
+    await _mostrarSinCambiosMensualidad();
+    return;
+  }
+
+  const { errores, monto, saldo } = validarFormularioEdicion();
+  if (errores.length > 0) {
+    await _mostrarErroresMensualidad(errores);
+    return;
+  }
+
+  // Confirmar antes de actualizar
+  const confirmacion = await _confirmarActualizacionMensualidad();
+  if (!confirmacion.isConfirmed) {
+    return;
+  }
+
+  // Mostrar loading mientras se procesa
+  Swal.fire({
+    title: 'Guardando cambios...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
+
+  const metodoPagoNormalizado = normalizarIdMetodoPago(formEdicion.value.id_metodo_pago);
+  const documentoActual = formEdicion.value.numero_documento;
+  const payloadUpdate = _construirPayloadActualizacion(monto, saldo, metodoPagoNormalizado, documentoActual);
 
   const nombrePersonaActualizada = personaDocumentoEdicion.value?.nombre_completo || props.mensualidad.persona_nombre || props.mensualidad.nombre;
   const idMetodoEnRespuesta = Object.hasOwn(payloadUpdate, 'id_metodo_pago') ? payloadUpdate.id_metodo_pago : props.mensualidad.id_metodo_pago;
@@ -1199,40 +1222,23 @@ async function guardarCambios() {
 
     // Llamar directamente al backend y esperar la respuesta
     const respuesta = await mensualidadesService.update(mensualidadId, payloadUpdate);
-
-    // Obtener los datos actualizados del backend
     const mensualidadBackend = respuesta?.data || respuesta;
 
     // Mapear los datos del backend al formato del modal
-    const mensualidadActualizada = {
-      ...props.mensualidad,
-      ...mensualidadBackend,
-      id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || mensualidadId,
-      valor: formatCOP(mensualidadBackend.monto_pago || monto),
-      monto_pago_raw: mensualidadBackend.monto_pago,
-      saldo_pendiente_raw: mensualidadBackend.saldo_pendiente,
-      estado_bool: mensualidadBackend.estado,
-      estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-      estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-      fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
-      numero_documento: documentoActual,
-      persona_nombre: nombrePersonaActualizada,
-      nombre: nombrePersonaActualizada,
-      id_metodo_pago: idMetodoEnRespuesta
-    };
+    const mensualidadActualizada = _mapearMensualidadActualizada(
+      mensualidadBackend,
+      mensualidadId,
+      monto,
+      documentoActual,
+      nombrePersonaActualizada,
+      idMetodoEnRespuesta
+    );
 
     // Emitir evento con los datos del backend
     emit('guardar-cambios', mensualidadActualizada);
 
     // Cerrar el loading y mostrar éxito
-    Swal.close();
-    await Swal.fire({
-      icon: 'success',
-      title: 'Cambios guardados',
-      text: 'La mensualidad se actualizó correctamente.',
-      timer: 1500,
-      showConfirmButton: false
-    });
+    await _mostrarExitoActualizacion();
 
     // Actualizar estado inicial después de guardar exitosamente
     formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
@@ -1273,13 +1279,96 @@ function cancelarNuevoAbono() {
   nuevoAbono.value = { fecha: '', monto: '', id_metodo_pago: undefined };
 }
 
-async function guardarNuevoAbonoDesdeTabla() {
+// Helper functions to reduce cognitive complexity in guardarNuevoAbonoDesdeTabla
+async function _verificarPermisoAbonar() {
   if (!puedeAbonar.value) {
     await Swal.fire({
       icon: 'warning',
       title: 'Acción no permitida',
       text: 'No tienes permiso para registrar abonos.'
     });
+    return false;
+  }
+  return true;
+}
+
+function _validarMontoAbono(monto) {
+  const errores = [];
+  if (!Number.isFinite(monto) || monto <= 0) {
+    errores.push('El monto debe ser mayor a 0');
+    return errores;
+  }
+
+  const valorTotalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
+  const totalPagadoActual = calcularTotalPagado();
+  const totalConNuevoAbono = totalPagadoActual + monto;
+  const saldoRestante = Number(saldoPendienteHistNum.value || 0);
+
+  // Single validation: check if the new abono would exceed the total or remaining balance
+  if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + 0.00001) {
+    errores.push(`El monto excede el valor total de la mensualidad (${formatCOP(valorTotalMensualidad)})`);
+  } else if (monto > saldoRestante + 0.00001) {
+    errores.push(`El monto excede el saldo pendiente (${formatCOP(saldoRestante)})`);
+  }
+
+  return errores;
+}
+
+function _validarFechaAbono(fechaAbono) {
+  const errores = [];
+  if (!fechaAbono) {
+    errores.push('La fecha del abono es requerida');
+    return errores;
+  }
+
+  if (!esFechaValida(fechaAbono)) {
+    errores.push('La fecha del abono no es válida');
+    return errores;
+  }
+
+  // Date is valid, proceed with validation
+  const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
+  if (!fechaCreacion) {
+    return errores;
+  }
+
+  try {
+    const fechaCreacionDate = new Date(fechaCreacion);
+    const fechaAbonoDate = new Date(fechaAbono);
+
+    // Validate dates are valid
+    if (Number.isNaN(fechaCreacionDate.getTime()) || Number.isNaN(fechaAbonoDate.getTime())) {
+      errores.push('Las fechas no son válidas');
+      return errores;
+    }
+
+    // Normalize dates to YYYY-MM-DD format for comparison
+    const fechaCreacionStr = fechaCreacionDate.toISOString().split('T')[0];
+    const fechaAbonoStr = fechaAbonoDate.toISOString().split('T')[0];
+
+    // Allow same day (>=) - only block if strictly before (<)
+    if (fechaAbonoStr < fechaCreacionStr) {
+      const fechaCreacionFormateada = formatearFecha(fechaCreacion);
+      errores.push(`La fecha no puede ser anterior a la creación (${fechaCreacionFormateada})`);
+    }
+  } catch {
+    errores.push('Error al validar la fecha del abono');
+  }
+
+  return errores;
+}
+
+async function _mostrarErroresAbono(errores) {
+  await Swal.fire({
+    icon: 'error',
+    title: 'Corrige los errores',
+    html: errores.join('<br>')
+  });
+}
+
+// Refactored to reduce cognitive complexity by extracting helper functions
+async function guardarNuevoAbonoDesdeTabla() {
+  if (!(await _verificarPermisoAbonar())) {
     return;
   }
 
@@ -1289,61 +1378,14 @@ async function guardarNuevoAbonoDesdeTabla() {
   const monto = parseMonto(normalizadoMonto);
 
   const errores = [];
-
-  if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto debe ser mayor a 0');
-  } else {
-    const valorTotalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
-    const totalPagadoActual = calcularTotalPagado();
-    const totalConNuevoAbono = totalPagadoActual + monto;
-    const saldoRestante = Number(saldoPendienteHistNum.value || 0);
-
-    // Single validation: check if the new abono would exceed the total or remaining balance
-    if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + 0.00001) {
-      errores.push(`El monto excede el valor total de la mensualidad (${formatCOP(valorTotalMensualidad)})`);
-    } else if (monto > saldoRestante + 0.00001) {
-      errores.push(`El monto excede el saldo pendiente (${formatCOP(saldoRestante)})`);
-    }
-  }
+  errores.push(..._validarMontoAbono(monto));
 
   // Validate date: must not be before the creation date of the monthly payment
-  if (!nuevoAbono.value.fecha || !nuevoAbono.value.fecha.trim()) {
-    errores.push('La fecha del abono es requerida');
-  } else if (!esFechaValida(nuevoAbono.value.fecha)) {
-    errores.push('La fecha del abono no es válida');
-  } else {
-    const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
-    if (fechaCreacion) {
-      try {
-        const fechaCreacionDate = new Date(fechaCreacion);
-        const fechaAbonoDate = new Date(nuevoAbono.value.fecha);
-
-        // Validate dates are valid
-        if (isNaN(fechaCreacionDate.getTime()) || isNaN(fechaAbonoDate.getTime())) {
-          errores.push('Las fechas no son válidas');
-        } else {
-          // Normalize dates to YYYY-MM-DD format for comparison
-          const fechaCreacionStr = fechaCreacionDate.toISOString().split('T')[0];
-          const fechaAbonoStr = fechaAbonoDate.toISOString().split('T')[0];
-
-          // Allow same day (>=) - only block if strictly before (<)
-          if (fechaAbonoStr < fechaCreacionStr) {
-            const fechaCreacionFormateada = formatearFecha(fechaCreacion);
-            errores.push(`La fecha no puede ser anterior a la creación (${fechaCreacionFormateada})`);
-          }
-        }
-      } catch {
-        errores.push('Error al validar la fecha del abono');
-      }
-    }
-  }
+  const fechaAbono = nuevoAbono.value.fecha?.trim();
+  errores.push(..._validarFechaAbono(fechaAbono));
 
   if (errores.length > 0) {
-    await Swal.fire({
-      icon: 'error',
-      title: 'Corrige los errores',
-      html: errores.join('<br>')
-    });
+    await _mostrarErroresAbono(errores);
     return;
   }
 

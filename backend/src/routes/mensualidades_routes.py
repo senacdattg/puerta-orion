@@ -668,15 +668,12 @@ def _calcular_meses_y_sobrante(monto_abonado: float, monto_base: float) -> Tuple
 
 def _actualizar_vencimiento_y_saldo_post_abono(
     mensualidad: Mensualidad,
-    monto_base: float,
     monto_abonado: float,
-    meses_cubiertos: int,
-    sobrante: float,
     saldo_actual: float,
 ) -> None:
     """Actualiza la fecha de vencimiento y saldo después del abono."""
-    # Usar directamente el saldo_actual que ya fue calculado correctamente
-    # Este saldo es más confiable que leer mensualidad.saldo_pendiente directamente
+    # Use saldo_actual directly as it was already calculated correctly
+    # This balance is more reliable than reading mensualidad.saldo_pendiente directly
     saldo_float = float(saldo_actual)
     
     logger.info(
@@ -687,12 +684,12 @@ def _actualizar_vencimiento_y_saldo_post_abono(
         max(0.0, saldo_float - monto_abonado)
     )
     
-    # Calcular el nuevo saldo: saldo actual menos el monto abonado
+    # Calculate new balance: current balance minus amount paid
     nuevo_saldo = max(0.0, saldo_float - monto_abonado)
     mensualidad.saldo_pendiente = nuevo_saldo
     
-    # La fecha de vencimiento NO se actualiza automáticamente al registrar un abono
-    # Se mantiene la fecha de vencimiento original de la mensualidad
+    # The due date is NOT automatically updated when registering a payment
+    # The original due date of the monthly payment is maintained
 
 
 @mensualidades_bp.get('/buscar-persona')
@@ -1026,10 +1023,7 @@ def abonar_mensualidad(mensualidad_id: int) -> JsonResponse:
         meses_cubiertos, sobrante = _calcular_meses_y_sobrante(monto_abonado, monto_base)
         _actualizar_vencimiento_y_saldo_post_abono(
             mensualidad,
-            monto_base,
             monto_abonado,
-            meses_cubiertos,
-            sobrante,
             saldo_actual,
         )
 

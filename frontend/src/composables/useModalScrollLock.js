@@ -11,10 +11,11 @@ export function useModalScrollLock(mostrar) {
 
   function bloquearScroll() {
     // Guardar la posición actual del scroll
-    scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    // Using globalThis instead of window for better cross-platform compatibility
+    scrollPosition = (typeof globalThis !== 'undefined' && globalThis.pageYOffset) || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
     // Guardar el comportamiento de scroll original
-    originalScrollBehavior = document.documentElement.style.scrollBehavior || window.getComputedStyle(document.documentElement).scrollBehavior;
+    originalScrollBehavior = document.documentElement.style.scrollBehavior || (typeof globalThis !== 'undefined' && globalThis.getComputedStyle ? globalThis.getComputedStyle(document.documentElement).scrollBehavior : '');
 
     // Aplicar la posición guardada al body antes de fijarlo
     document.body.style.top = `-${scrollPosition}px`;
@@ -41,12 +42,21 @@ export function useModalScrollLock(mostrar) {
     document.documentElement.style.overflow = '';
 
     // Restaurar la posición del scroll sin animación usando requestAnimationFrame
+    // Using globalThis instead of window for better cross-platform compatibility
     requestAnimationFrame(() => {
-      window.scrollTo({
-        top: scrollPosition,
-        left: 0,
-        behavior: 'auto'
-      });
+      if (typeof globalThis !== 'undefined' && globalThis.scrollTo) {
+        globalThis.scrollTo({
+          top: scrollPosition,
+          left: 0,
+          behavior: 'auto'
+        });
+      } else if (typeof window !== 'undefined' && window.scrollTo) {
+        window.scrollTo({
+          top: scrollPosition,
+          left: 0,
+          behavior: 'auto'
+        });
+      }
 
       // Restaurar el comportamiento de scroll original después de restaurar la posición
       requestAnimationFrame(() => {

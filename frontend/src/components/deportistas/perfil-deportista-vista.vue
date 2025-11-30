@@ -741,11 +741,17 @@ const diagnosticosDisponibles = computed(() => {
 watch(
   () => props.datos,
   (nuevo) => {
-    formData.value = crearEstadoInicial(nuevo);
-    // Si no estamos editando, actualizar también el estado inicial
-    if (!isEditing.value) {
-      formDataInicial.value = JSON.parse(JSON.stringify(formData.value));
-    }
+      formData.value = crearEstadoInicial(nuevo);
+      // Si no estamos editando, actualizar también el estado inicial
+      if (!isEditing.value) {
+        // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
+        try {
+          formDataInicial.value = structuredClone(formData.value);
+        } catch {
+          // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+          formDataInicial.value = JSON.parse(JSON.stringify(formData.value));
+        }
+      }
   },
   { immediate: true }
 );
@@ -1062,7 +1068,13 @@ function extraerMensajeError(error) {
 function iniciarEdicion() {
   inicializarFormulario()
   // Guardar estado inicial cuando se inicia la edición
-  formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+  // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
+  try {
+    formDataInicial.value = structuredClone(formData.value)
+  } catch {
+    // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+  }
   emit('editar')
 }
 
@@ -1370,7 +1382,13 @@ async function guardarCambios() {
 
     inicializarFormulario();
     // Actualizar estado inicial después de guardar exitosamente
-    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+    // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
+    try {
+      formDataInicial.value = structuredClone(formData.value)
+    } catch {
+      // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+    }
 
     await Swal.fire({
       icon: 'success',

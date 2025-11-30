@@ -37,8 +37,8 @@ const MAX_DESCRIPCION = 500
 
 function normalizarNombre(valor = '') {
   const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
-  // NOSONAR: S7781 - replaceAll() no acepta regex, necesitamos replace() para patrones complejos
-  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  // Using replaceAll for simple string replacements (modern replacement for replace with global flag)
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replaceAll(/\s{2,}/g, ' ').trimStart()
 }
 
 function normalizarDescripcion(valor = '') {
