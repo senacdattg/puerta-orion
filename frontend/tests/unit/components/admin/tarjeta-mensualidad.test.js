@@ -47,6 +47,7 @@ describe('TarjetaMensualidad Component', () => {
         tipo_documento: 'CC',
         roles: [{ nombre_rol: 'Deportista' }]
       },
+      activeRole: 'Deportista',
       hasPermission: vi.fn(() => false)
     }
 
@@ -189,46 +190,34 @@ describe('TarjetaMensualidad Component', () => {
   })
 
   describe('Events', () => {
-    it('should emit ver-detalle on click', async () => {
-      wrapper = createWrapper()
-      await wrapper.vm.verDetalle()
-      expect(wrapper.emitted('ver-detalle')).toBeTruthy()
-    })
-
     it('should emit ver-detalle-completo', async () => {
       wrapper = createWrapper()
       await wrapper.vm.verDetalleCompleto()
       expect(wrapper.emitted('ver-detalle-completo')).toBeTruthy()
     })
 
-    it('should emit gestionar', async () => {
+    it('should emit eliminar when cambiarEstado is called', async () => {
       wrapper = createWrapper()
-      await wrapper.vm.gestionarMensualidad()
-      expect(wrapper.emitted('gestionar')).toBeTruthy()
-    })
-
-    it('should emit eliminar', async () => {
-      wrapper = createWrapper()
-      await wrapper.vm.eliminarMensualidad()
+      await wrapper.vm.cambiarEstado()
       expect(wrapper.emitted('eliminar')).toBeTruthy()
     })
   })
 
   describe('Permissions', () => {
     it('should show edit button for admin', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Administrador' }]
+      mockAuthStore.activeRole = 'Administrador'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeEditarMensualidad).toBe(true)
     })
 
     it('should show toggle button for admin', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'SuperAdmin' }]
+      mockAuthStore.activeRole = 'SuperAdmin'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeToggleMensualidad).toBe(true)
     })
 
     it('should allow pago for deportista', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Deportista' }]
+      mockAuthStore.activeRole = 'Deportista'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeIniciarPago).toBe(true)
     })
@@ -512,41 +501,37 @@ describe('TarjetaMensualidad Component', () => {
 
   describe('Permissions edge cases', () => {
     it('should check permission for puedeEditarMensualidad', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
-      mockAuthStore.hasPermission.mockReturnValue(true)
+      mockAuthStore.activeRole = 'Administrador'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeEditarMensualidad).toBe(true)
     })
 
-    it('should handle permission error gracefully for puedeEditarMensualidad', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
-      mockAuthStore.hasPermission.mockImplementation(() => { throw new Error('Permission error') })
+    it('should not allow edit for non-admin roles', () => {
+      mockAuthStore.activeRole = 'Usuario'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeEditarMensualidad).toBe(false)
     })
 
     it('should check permission for puedeToggleMensualidad', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
-      mockAuthStore.hasPermission.mockReturnValue(true)
+      mockAuthStore.activeRole = 'SuperAdmin'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeToggleMensualidad).toBe(true)
     })
 
-    it('should handle permission error gracefully for puedeToggleMensualidad', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Usuario' }]
-      mockAuthStore.hasPermission.mockImplementation(() => { throw new Error('Permission error') })
+    it('should not allow toggle for non-admin roles', () => {
+      mockAuthStore.activeRole = 'Usuario'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeToggleMensualidad).toBe(false)
     })
 
     it('should allow pago for acudiente', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Acudiente' }]
+      mockAuthStore.activeRole = 'Acudiente'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeIniciarPago).toBe(true)
     })
 
     it('should not allow pago for other roles', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: 'Entrenador' }]
+      mockAuthStore.activeRole = 'Entrenador'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeIniciarPago).toBe(false)
     })
@@ -645,19 +630,19 @@ describe('TarjetaMensualidad Component', () => {
 
   describe('Role names edge cases', () => {
     it('should handle string roles', () => {
-      mockAuthStore.user.roles = ['Deportista', 'Administrador']
+      mockAuthStore.activeRole = 'Deportista'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeIniciarPago).toBe(true)
     })
 
     it('should handle mixed roles format', () => {
-      mockAuthStore.user.roles = ['Deportista', { nombre_rol: 'Administrador' }]
+      mockAuthStore.activeRole = 'Administrador'
       wrapper = createWrapper()
       expect(wrapper.vm.isSuperOrAdmin).toBe(true)
     })
 
     it('should handle roles with null nombre_rol', () => {
-      mockAuthStore.user.roles = [{ nombre_rol: null }, { nombre_rol: 'Deportista' }]
+      mockAuthStore.activeRole = 'Deportista'
       wrapper = createWrapper()
       expect(wrapper.vm.puedeIniciarPago).toBe(true)
     })

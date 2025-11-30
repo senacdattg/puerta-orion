@@ -109,9 +109,9 @@ class TestMensualidadesHelpers:
     
     def test_parse_decimal_valid(self):
         """Test: Parse decimal con valor válido."""
-        assert _parse_decimal('100.5') == 100.5
-        assert _parse_decimal(100) == 100.0
-        assert _parse_decimal(100.5) == 100.5
+        assert _parse_decimal('100.5') == pytest.approx(100.5)
+        assert _parse_decimal(100) == pytest.approx(100.0)
+        assert _parse_decimal(100.5) == pytest.approx(100.5)
     
     def test_parse_decimal_none(self):
         """Test: Parse decimal con None."""
@@ -141,25 +141,25 @@ class TestMensualidadesHelpers:
         """Test: Calcular meses cuando el abono cubre exactamente."""
         meses, sobrante = _calcular_meses_y_sobrante(100000.0, 50000.0)
         assert meses == 2
-        assert sobrante == 0.0
+        assert sobrante == pytest.approx(0.0)
     
     def test_calcular_meses_y_sobrante_con_sobrante(self):
         """Test: Calcular meses con sobrante."""
         meses, sobrante = _calcular_meses_y_sobrante(125000.0, 50000.0)
         assert meses == 2
-        assert sobrante == 25000.0
+        assert sobrante == pytest.approx(25000.0)
     
     def test_calcular_meses_y_sobrante_menor_que_monto(self):
         """Test: Calcular cuando abono es menor que un monto."""
         meses, sobrante = _calcular_meses_y_sobrante(30000.0, 50000.0)
         assert meses == 0
-        assert sobrante == 30000.0
+        assert sobrante == pytest.approx(30000.0)
     
     def test_calcular_meses_y_sobrante_cero(self):
         """Test: Calcular con monto base cero."""
         meses, sobrante = _calcular_meses_y_sobrante(10000.0, 0)
         assert meses == 0
-        assert sobrante == 0.0
+        assert sobrante == pytest.approx(0.0)
     
     def test_recalcular_estado_mensualidad_pagada(self):
         """Test: Recalcular estado cuando mensualidad queda pagada."""
@@ -179,7 +179,7 @@ class TestMensualidadesHelpers:
             
             _recalcular_estado_mensualidad(mock_mensualidad)
             
-            assert mock_mensualidad.saldo_pendiente == 0.0
+            assert mock_mensualidad.saldo_pendiente == pytest.approx(0.0)
             assert mock_mensualidad.estado is True
             assert mock_mensualidad.fecha_pago == date.today()
     
@@ -201,7 +201,7 @@ class TestMensualidadesHelpers:
             
             _recalcular_estado_mensualidad(mock_mensualidad)
             
-            assert mock_mensualidad.saldo_pendiente == 30000.0
+            assert mock_mensualidad.saldo_pendiente == pytest.approx(30000.0)
             assert mock_mensualidad.estado is False
             assert mock_mensualidad.fecha_pago is None
     

@@ -224,7 +224,19 @@ def _enviar_correo_reset(email: str, nombre_usuario: str, reset_link: str) -> No
     """Envía el correo de recuperación de contraseña."""
     msg = _construir_mensaje_correo(email, nombre_usuario, reset_link)
 
+    # Create secure SSL context with TLS 1.2+ minimum
     context = ssl.create_default_context()
+    # Ensure minimum TLS version is 1.2 or higher for security
+    if hasattr(ssl, 'TLSVersion'):
+        # Python 3.7+ supports TLSVersion enum
+        context.minimum_version = ssl.TLSVersion.TLSv1_2
+    else:
+        # Fallback for older Python versions: disable insecure protocols
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+        context.options |= ssl.OP_NO_TLSv1
+        context.options |= ssl.OP_NO_TLSv1_1
+    
     logger.info("[FORGOT_PASSWORD] Conectando a SMTP: %s:%s, TLS: %s", SMTP_SERVER, SMTP_PORT, USE_TLS)
     logger.info("[FORGOT_PASSWORD] Autenticando con EMAIL_ADDRESS: %s", EMAIL_ADDRESS)
 

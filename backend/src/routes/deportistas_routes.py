@@ -37,6 +37,38 @@ from sqlalchemy import cast, String, or_
 deportistas_bp = Blueprint('deportistas', __name__, url_prefix='/api/deportistas')
 logger = obtener_registrador('aplicacion')
 
+
+# ============================================================================
+# FUNCIONES AUXILIARES
+# ============================================================================
+
+def _build_service_response(result: Dict[str, Any], default_error_message: str = "Error en la operación") -> JsonResponse:
+    """
+    Construye una respuesta HTTP basada en el resultado de un servicio.
+    
+    Args:
+        result: Diccionario con el resultado del servicio (debe tener 'success', 'status_code', etc.)
+        default_error_message: Mensaje de error por defecto si no se proporciona
+    
+    Returns:
+        Tupla (Response, status_code) con la respuesta HTTP
+    """
+    status_code = result.get("status_code", 200)
+    
+    if result.get("success", False) or result.get("status") == "success":
+        return HttpResponseBuilder.success(
+            data=result.get("data"),
+            message=result.get("message"),
+            status_code=status_code
+        )
+    else:
+        return HttpResponseBuilder.error(
+            error=result.get("error", default_error_message),
+            message=result.get("message"),
+            status_code=status_code
+        )
+
+
 # ============================================================================
 # RUTAS PRINCIPALES DE DEPORTISTAS (CRUD)
 # ============================================================================
@@ -61,20 +93,7 @@ def crear_deportista() -> JsonResponse:
         )
         
         result = DeportistaService.crear_deportista(datos)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al crear deportista"),
-                message=result.get("message"),
-                status_code=status_code
-            )
+        return _build_service_response(result, "Error al crear deportista")
             
     except RequestValidationError as e:
         return HttpResponseBuilder.bad_request(error=str(e))
@@ -258,23 +277,13 @@ def obtener_deportista_por_id(id_deportista: int) -> JsonResponse:
         result = RegistroDeportistaService.obtener_informacion_completa_deportista(id_deportista)
         status_code = result.get("status_code", 200)
         
-        if result.get("success", False) or result.get("status") == "success":
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        elif status_code == 404:
+        if status_code == 404:
             return HttpResponseBuilder.not_found(
                 error=ERROR_DEPORTISTA_NO_ENCONTRADO,
                 message=f'No se encontró un deportista con ID {id_deportista}'
             )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al obtener deportista"),
-                message=result.get("message"),
-                status_code=status_code
-            )
+        
+        return _build_service_response(result, "Error al obtener deportista")
             
     except Exception as e:
         logger.error(f"Error inesperado al obtener deportista: {str(e)}")
@@ -300,20 +309,7 @@ def get_lista_deportistas() -> JsonResponse:
         per_page = request.args.get('per_page', 10, type=int)
         
         result = DeportistaService.listar_deportistas(page, per_page)
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al listar deportistas"),
-                message=result.get("message"),
-                status_code=status_code
-            )
+        return _build_service_response(result, "Error al listar deportistas")
             
     except Exception as e:
         return handle_exception(e, logger, "listar deportistas")
@@ -1000,20 +996,7 @@ def actualizar_deportista(id_deportista: int) -> JsonResponse:
                 diagnosticos=diagnosticos
             )
         
-        status_code = result.get("status_code", 200)
-        
-        if result.get("success", False):
-            return HttpResponseBuilder.success(
-                data=result.get("data"),
-                message=result.get("message"),
-                status_code=status_code
-            )
-        else:
-            return HttpResponseBuilder.error(
-                error=result.get("error", "Error al actualizar deportista"),
-                message=result.get("message"),
-                status_code=status_code
-            )
+        return _build_service_response(result, "Error al actualizar deportista")
         
     except RequestValidationError as e:
         return HttpResponseBuilder.bad_request(error=str(e))

@@ -33,8 +33,8 @@ class TestAuthDecorator:
     def app(self):
         """Fixture para aplicación Flask."""
         app = Flask(__name__)
-        app.config['SECRET_KEY'] = 'test-secret-key'
-        app.config['JWT_SECRET_KEY'] = 'test-jwt-secret'
+        app.config['SECRET_KEY'] = 'test-secret-key'  # nosonar: S2068, S6418
+        app.config['JWT_SECRET_KEY'] = 'test-jwt-secret'  # nosonar: S2068, S6418
         return app
     
     @pytest.fixture

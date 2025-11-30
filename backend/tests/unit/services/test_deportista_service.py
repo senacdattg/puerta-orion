@@ -282,8 +282,8 @@ class TestDeportistaService:
             
             assert result['success'] is True
             assert result['status_code'] == 200
-            assert mock_deportista.peso == 70.0
-            assert mock_deportista.altura == 1.80
+            assert mock_deportista.peso == pytest.approx(70.0)
+            assert mock_deportista.altura == pytest.approx(1.80)
             mock_db.session.commit.assert_called_once()
     
     def test_actualizar_deportista_no_encontrado(self):
@@ -802,8 +802,8 @@ class TestDeportistaService:
             result = DeportistaService._actualizar_campos_deportista(mock_deportista, datos)
             
             assert result is None
-            assert mock_deportista.peso == 70.0
-            assert mock_deportista.altura == 1.80
+            assert mock_deportista.peso == pytest.approx(70.0)
+            assert mock_deportista.altura == pytest.approx(1.80)
     
     def test_actualizar_campos_deportista_fecha_error(self, app_context):
         """Test: Error al procesar fecha."""

@@ -60,6 +60,6 @@ def create_auth_token(user_id: int, username: str) -> str:
         'iat': datetime.now(timezone.utc)
     }
     
-    secret = os.getenv('JWT_SECRET_KEY', 'test_secret_key')
+    secret = os.getenv('JWT_SECRET_KEY', 'test_secret_key')  # nosonar: S2068, S6418 - Test secret fallback only, never used in production
     return jwt.encode(payload, secret, algorithm='HS256')
 

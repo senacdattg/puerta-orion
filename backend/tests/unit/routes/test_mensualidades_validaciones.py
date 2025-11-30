@@ -83,7 +83,7 @@ class TestMensualidadesValidaciones:
         data = {'id_persona': 1}
         
         with patch('src.routes.mensualidades_routes._validar_persona_con_rol_deportista'):
-            id_persona, documento = _resolver_persona_para_creacion(data)
+            id_persona, _ = _resolver_persona_para_creacion(data)
             assert id_persona == 1
     
     def test_resolver_persona_para_creacion_con_documento(self):
@@ -96,7 +96,7 @@ class TestMensualidadesValidaciones:
         with patch('src.routes.mensualidades_routes._buscar_persona_por_documento', return_value=mock_persona):
             with patch('src.routes.mensualidades_routes._obtener_id_persona_por_documento', return_value=1):
                 with patch('src.routes.mensualidades_routes._validar_persona_con_rol_deportista'):
-                    id_persona, documento = _resolver_persona_para_creacion(data)
+                    id_persona, _ = _resolver_persona_para_creacion(data)
                     assert id_persona == 1
     
     def test_resolver_persona_para_creacion_sin_datos(self):
@@ -163,7 +163,7 @@ class TestMensualidadesValidaciones:
         """Test: Obtener monto de pago válido."""
         data = {'monto_pago': 50000.0}
         resultado = _obtener_monto_pago(data)
-        assert resultado == 50000.0
+        assert resultado == pytest.approx(50000.0)
     
     def test_obtener_monto_pago_invalido(self):
         """Test: Monto de pago inválido."""
@@ -193,7 +193,7 @@ class TestMensualidadesValidaciones:
         monto_pago = 50000.0
         
         resultado = _calcular_saldo_inicial(data, monto_pago, True)
-        assert resultado == 0.0
+        assert resultado == pytest.approx(0.0)
     
     def test_calcular_saldo_inicial_pendiente(self):
         """Test: Calcular saldo inicial cuando está pendiente."""
@@ -201,7 +201,7 @@ class TestMensualidadesValidaciones:
         monto_pago = 50000.0
         
         resultado = _calcular_saldo_inicial(data, monto_pago, False)
-        assert resultado == 30000.0
+        assert resultado == pytest.approx(30000.0)
     
     def test_validar_mensualidad_duplicada_no_duplicada(self, app_context):
         """Test: No hay mensualidad duplicada."""

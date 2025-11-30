@@ -12,6 +12,7 @@ from tests.helpers import (
     assert_error_response,
     make_json_request,
 )
+from tests.integration.test_utils import create_mock_persona, create_mock_usuario
 
 
 @pytest.mark.routes
@@ -25,12 +26,8 @@ class TestForgotPasswordCompleto:
         # Arrange
         datos_solicitud = {'email': 'usuario@example.com'}
         
-        mock_persona = MagicMock()
-        mock_persona.id_persona = 1
-        
-        mock_usuario = MagicMock()
-        mock_usuario.id_usuario = 1
-        mock_usuario.estado = False  # Usuario inactivo
+        mock_persona = create_mock_persona()
+        mock_usuario = create_mock_usuario(estado=False)  # Usuario inactivo
         
         # Act
         with patch('src.routes.auth_reset._validar_configuracion_email', return_value=None):
@@ -52,14 +49,13 @@ class TestForgotPasswordCompleto:
         # Arrange
         datos_solicitud = {'email': 'usuario@example.com'}
         
-        mock_persona = MagicMock()
-        mock_persona.id_persona = 1
-        mock_persona.correo_electronico = 'usuario@example.com'
-        
-        mock_usuario = MagicMock()
-        mock_usuario.id_usuario = 1
-        mock_usuario.estado = True
-        mock_usuario.persona = mock_persona
+        mock_persona = create_mock_persona(
+            correo_electronico='usuario@example.com'
+        )
+        mock_usuario = create_mock_usuario(
+            estado=True,
+            persona=mock_persona
+        )
         
         # Act
         with patch('src.routes.auth_reset.Persona.query') as mock_persona_query:

@@ -20,8 +20,8 @@ class TestMercadoPagoService:
     def service(self):
         """Fixture para servicio."""
         with patch.dict('os.environ', {
-            'MERCADOPAGO_ACCESS_TOKEN': 'test_access_token',
-            'MERCADOPAGO_PUBLIC_KEY': 'test_public_key',
+            'MERCADOPAGO_ACCESS_TOKEN': 'test_access_token',  # nosonar: S2068, S6418 - Test token only, never used in production
+            'MERCADOPAGO_PUBLIC_KEY': 'test_public_key',  # nosonar: S2068, S6418 - Test key only, never used in production
             'MERCADOPAGO_ENVIRONMENT': 'sandbox'
         }):
             service = MercadoPagoService()
@@ -70,9 +70,9 @@ class TestMercadoPagoService:
         resultado = MercadoPagoService._aplicar_abono_mensualidad(mock_mensualidad, 100000.0)
         
         assert resultado['meses_cubiertos'] == 2
-        assert resultado['sobrante'] == 0.0
+        assert resultado['sobrante'] == pytest.approx(0.0)
         # Si se cubren meses completos sin sobrante, el saldo_pendiente es 0 y el estado es True
-        assert resultado['nuevo_saldo_pendiente'] == 0.0
+        assert resultado['nuevo_saldo_pendiente'] == pytest.approx(0.0)
         assert resultado['estado'] is True
     
     def test_aplicar_abono_mensualidad_con_sobrante(self):
@@ -87,7 +87,7 @@ class TestMercadoPagoService:
         resultado = MercadoPagoService._aplicar_abono_mensualidad(mock_mensualidad, 75000.0)
         
         assert resultado['meses_cubiertos'] == 1
-        assert resultado['sobrante'] == 25000.0
+        assert resultado['sobrante'] == pytest.approx(25000.0)
     
     def test_aplicar_abono_mensualidad_completa_pago(self):
         """Test: Abono que completa el pago."""
@@ -173,7 +173,7 @@ class TestMercadoPagoService:
                     
                     assert resultado['success'] is True
                     assert resultado['estado'] == 'approved'
-                    assert resultado['monto'] == 50000.0
+                    assert resultado['monto'] == pytest.approx(50000.0)
                     assert 'payment' in resultado
     
     def test_verificar_pago_no_encontrado(self, service):

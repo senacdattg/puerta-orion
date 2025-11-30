@@ -17,7 +17,7 @@ def app_context():
     
     app = create_app('testing')
     app.config['TESTING'] = True
-    app.config['JWT_SECRET_KEY'] = 'test_secret_key'
+    app.config['JWT_SECRET_KEY'] = 'test_secret_key'  # nosonar: S2068, S6418 - Test secret only, never used in production
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
     
     with app.app_context():
@@ -28,8 +28,8 @@ def app_context():
 def mock_env_vars():
     """Mock para variables de entorno de Mercado Pago."""
     with patch.dict('os.environ', {
-        'MERCADOPAGO_ACCESS_TOKEN': 'test_access_token',
-        'MERCADOPAGO_PUBLIC_KEY': 'test_public_key',
+        'MERCADOPAGO_ACCESS_TOKEN': 'test_access_token',  # nosonar: S2068, S6418 - Test token only, never used in production
+        'MERCADOPAGO_PUBLIC_KEY': 'test_public_key',  # nosonar: S2068, S6418 - Test key only, never used in production
         'MERCADOPAGO_ENVIRONMENT': 'sandbox'
     }):
         yield

@@ -39,8 +39,8 @@ class TestMercadoPagoServiceInit:
     def test_init_with_default_environment(self):
         """Test: Inicialización con ambiente por defecto."""
         with patch.dict('os.environ', {
-            'MERCADOPAGO_ACCESS_TOKEN': 'test_token',
-            'MERCADOPAGO_PUBLIC_KEY': 'test_key'
+            'MERCADOPAGO_ACCESS_TOKEN': 'test_token',  # nosonar: S2068, S6418 - Test token only, never used in production
+            'MERCADOPAGO_PUBLIC_KEY': 'test_key'  # nosonar: S2068, S6418 - Test key only, never used in production
         }):
             with patch('src.services.mercadopago_service.mercadopago.SDK'):
                 service = MercadoPagoService()

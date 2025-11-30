@@ -40,7 +40,7 @@ class TestVerificarPago:
                 
                 assert result['success'] is True
                 assert result['estado'] == 'approved'
-                assert result['monto'] == 100.0
+                assert result['monto'] == pytest.approx(100.0)
     
     def test_verificar_pago_sin_sdk(self):
         """Test: Error cuando SDK no está configurado."""

@@ -100,7 +100,7 @@ class TestResetPassword:
         # La ruta puede retornar 400 o 404 dependiendo de la implementación
         assert response.status_code in [400, 404]
     
-    def test_reset_password_contraseñas_no_coinciden(self, client):
+    def test_reset_password_contrasenas_no_coinciden(self, client):
         """Test: Error cuando las contraseñas no coinciden."""
         # Arrange
         datos_reset = {
@@ -123,7 +123,7 @@ class TestResetPassword:
         # Assert
         assert_error_response(response, expected_status=400)
     
-    def test_reset_password_contraseña_corta(self, client):
+    def test_reset_password_contrasena_corta(self, client):
         """Test: Error cuando la contraseña es muy corta."""
         # Arrange
         datos_reset = {
