@@ -21,14 +21,14 @@ vi.mock('sweetalert2', () => ({
   }
 }))
 
-global.fetch = vi.fn()
-global.localStorage = {
+vi.stubGlobal('fetch', vi.fn())
+vi.stubGlobal('localStorage', {
   getItem: vi.fn(() => 'test-token'),
   setItem: vi.fn(),
   removeItem: vi.fn()
-}
+})
 
-global.location = { href: '' }
+vi.stubGlobal('location', { href: '' })
 
 describe('TarjetaMensualidad Component', () => {
   let wrapper
@@ -248,7 +248,7 @@ describe('TarjetaMensualidad Component', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         text: async () => JSON.stringify({
           success: true,
@@ -259,14 +259,14 @@ describe('TarjetaMensualidad Component', () => {
       await wrapper.vm.pagarConMercadoPago()
       await wrapper.vm.$nextTick()
 
-      expect(global.fetch).toHaveBeenCalled()
+      expect(globalThis.fetch).toHaveBeenCalled()
     })
 
     it('should handle error creating preference', async () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         text: async () => JSON.stringify({
           success: false,
@@ -597,7 +597,7 @@ describe('TarjetaMensualidad Component', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+      globalThis.fetch.mockRejectedValueOnce(new Error('Network error'))
 
       vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
 
@@ -610,7 +610,7 @@ describe('TarjetaMensualidad Component', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         text: async () => 'Error'
@@ -627,7 +627,7 @@ describe('TarjetaMensualidad Component', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         text: async () => JSON.stringify({
           success: true,
