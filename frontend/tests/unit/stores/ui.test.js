@@ -75,7 +75,7 @@ describe('UI Store', () => {
 
     it('should auto-remove notification after duration', () => {
       const store = useUIStore()
-      const id = store.addNotification({
+      store.addNotification({
         message: 'Test',
         duration: 1000
       })

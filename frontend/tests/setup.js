@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/vitest'
 import { config } from '@vue/test-utils'
 
 // Global test utilities
-global.expect = expect
+globalThis.expect = expect
 
 // Suppress console output during tests (except errors)
 const originalConsole = { ...console }
@@ -29,7 +29,7 @@ afterEach(() => {
 })
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis.window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
@@ -60,15 +60,15 @@ const localStorageMock = (() => {
   }
 })()
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(globalThis.window, 'localStorage', {
   value: localStorageMock,
   writable: true
 })
 
-global.localStorage = localStorageMock
+globalThis.localStorage = localStorageMock
 
 // Mock fetch
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Configure Vue Test Utils
 config.global.stubs = {

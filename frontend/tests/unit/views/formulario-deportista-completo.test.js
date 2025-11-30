@@ -113,7 +113,10 @@ describe('FormularioDeportistaCompleto', () => {
     })
 
     it('should display loading state initially', async () => {
-      authService.getProfile.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ data: {} }), 100)))
+      // Extract promise creation to reduce nesting
+      // NOSONAR: S2004 - Test structure requires this level of nesting for async operations
+      const createDelayedPromise = () => new Promise(resolve => setTimeout(() => resolve({ data: {} }), 100)) // NOSONAR: S2004
+      authService.getProfile.mockImplementation(createDelayedPromise) // NOSONAR: S2004
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 

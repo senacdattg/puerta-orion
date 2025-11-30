@@ -80,12 +80,11 @@ describe('AdminManager', () => {
 
     it('should render all components in correct order', () => {
       wrapper = createWrapper()
-      const elements = wrapper.findAll('div')
-      
+
       const encabezado = wrapper.findComponent(Encabezado)
       const panelAdmin = wrapper.findComponent(PanelAdminComponente)
       const pie = wrapper.findComponent(Pie)
-      
+
       expect(encabezado.exists()).toBe(true)
       expect(panelAdmin.exists()).toBe(true)
       expect(pie.exists()).toBe(true)
@@ -95,7 +94,7 @@ describe('AdminManager', () => {
   describe('Component Structure', () => {
     it('should have correct component hierarchy', () => {
       wrapper = createWrapper()
-      
+
       // Verify all child components are rendered
       expect(wrapper.findComponent(Encabezado).exists()).toBe(true)
       expect(wrapper.findComponent(PanelAdminComponente).exists()).toBe(true)

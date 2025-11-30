@@ -253,11 +253,11 @@ describe('ActualizarInfo View', () => {
 
     const section = wrapper.find('.form-section')
     // Si no existe, verificar que al menos el componente se montó correctamente
-    if (!section.exists()) {
+    if (section.exists()) {
+      expect(section.exists()).toBe(true)
+    } else {
       expect(wrapper.exists()).toBe(true)
       expect(wrapper.find('.actualizar-info-page').exists()).toBe(true)
-    } else {
-      expect(section.exists()).toBe(true)
     }
   })
 
@@ -631,9 +631,6 @@ describe('ActualizarInfo View', () => {
         primer_nombre: 'Juan',
         correo_electronico: 'test@example.com'
       }
-
-      const usuariosService = await import('@/services/usuariosService')
-      const actualizarSpy = vi.spyOn(usuariosService.default, 'actualizarUsuario')
 
       await wrapper.vm.actualizarInformacion()
       await wrapper.vm.$nextTick()

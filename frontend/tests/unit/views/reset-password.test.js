@@ -47,7 +47,7 @@ describe('ResetPassword', () => {
     vi.clearAllMocks()
     mockRouter.push.mockClear()
     mockRoute.query = {}
-    
+
     authService.resetPassword.mockResolvedValue({
       success: true,
       message: 'Contraseña actualizada correctamente'
@@ -222,7 +222,7 @@ describe('ResetPassword', () => {
 
     it('should toggle password visibility', async () => {
       expect(wrapper.vm.showPassword).toBe(false)
-      
+
       const toggleButton = wrapper.findAll('.password-toggle-volleyball')[0]
       await toggleButton.trigger('click')
       await wrapper.vm.$nextTick()
@@ -232,7 +232,7 @@ describe('ResetPassword', () => {
 
     it('should toggle confirm password visibility', async () => {
       expect(wrapper.vm.showConfirmPassword).toBe(false)
-      
+
       const toggleButton = wrapper.findAll('.password-toggle-volleyball')[1]
       await toggleButton.trigger('click')
       await wrapper.vm.$nextTick()
@@ -284,7 +284,7 @@ describe('ResetPassword', () => {
     it('should validate empty passwords', async () => {
       wrapper.vm.newPassword = ''
       wrapper.vm.confirmPassword = ''
-      
+
       await wrapper.vm.handleResetPassword()
 
       expect(authService.resetPassword).not.toHaveBeenCalled()
@@ -296,7 +296,7 @@ describe('ResetPassword', () => {
     it('should validate password minimum length', async () => {
       wrapper.vm.newPassword = '12345'
       wrapper.vm.confirmPassword = '12345'
-      
+
       await wrapper.vm.handleResetPassword()
 
       expect(authService.resetPassword).not.toHaveBeenCalled()
@@ -308,7 +308,7 @@ describe('ResetPassword', () => {
     it('should validate passwords match before submission', async () => {
       wrapper.vm.newPassword = 'password123'
       wrapper.vm.confirmPassword = 'password456'
-      
+
       await wrapper.vm.handleResetPassword()
 
       expect(authService.resetPassword).not.toHaveBeenCalled()
@@ -367,15 +367,16 @@ describe('ResetPassword', () => {
     })
 
     it('should set loading state during submission', async () => {
-      authService.resetPassword.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
-      
+      // NOSONAR: S2004 - Test structure requires this level of nesting for async operations
+      authService.resetPassword.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100))) // NOSONAR: S2004
+
       wrapper.vm.newPassword = 'newpassword123'
       wrapper.vm.confirmPassword = 'newpassword123'
       await wrapper.vm.$nextTick()
 
       const promise = wrapper.vm.handleResetPassword()
       expect(wrapper.vm.cargando).toBe(true)
-      
+
       await promise
       await wrapper.vm.$nextTick()
 
@@ -424,7 +425,7 @@ describe('ResetPassword', () => {
       await wrapper.vm.$nextTick()
 
       expect(wrapper.vm.countdown).toBe(3)
-      
+
       vi.advanceTimersByTime(1000)
       await wrapper.vm.$nextTick()
       expect(wrapper.vm.countdown).toBe(2)
@@ -459,8 +460,7 @@ describe('ResetPassword', () => {
   describe('Input Focus Handler', () => {
     it('should handle input focus', async () => {
       wrapper = createWrapper({ token: 'valid-token' })
-      
-      const input = wrapper.find('input[placeholder*="nueva contraseña"]')
+
       const mockEvent = {
         target: {
           parentElement: {
@@ -472,7 +472,7 @@ describe('ResetPassword', () => {
       }
 
       wrapper.vm.handleInputFocus(mockEvent)
-      
+
       expect(mockEvent.target.parentElement.classList.add).toHaveBeenCalledWith('input-focused')
     })
   })
@@ -493,7 +493,6 @@ describe('ResetPassword', () => {
       wrapper.vm.exito = true
       await wrapper.vm.$nextTick()
 
-      const form = wrapper.find('form.login-form-volleyball')
       // Form might still exist but be disabled/hidden
       expect(wrapper.vm.exito).toBe(true)
     })

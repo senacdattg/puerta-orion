@@ -139,23 +139,19 @@ describe('Eventos View', () => {
     expect(wrapper.vm.eventos.length).toBe(0)
   })
 
-  it('should format evento date correctly', () => {
-    const wrapper = mount(Eventos, {
-      global: {
-        stubs: {
-          Encabezado: true,
-          FooterEnhanced: true
+    it('should format evento date correctly', () => {
+      const wrapper = mount(Eventos, {
+        global: {
+          stubs: {
+            Encabezado: true,
+            FooterEnhanced: true
+          }
         }
-      }
+      })
+
+      // Check if getEventoClass method exists
+      expect(wrapper.vm.getEventoClass).toBeDefined()
     })
-
-    const evento = {
-      fecha_evento: '2024-12-31'
-    }
-
-    // Check if getEventoClass method exists
-    expect(wrapper.vm.getEventoClass).toBeDefined()
-  })
 
   it('should get estado class correctly', () => {
     const wrapper = mount(Eventos, {

@@ -66,8 +66,8 @@ vi.mock('@/config/environment', () => ({
 }))
 
 // Mock fetch and localStorage
-global.fetch = vi.fn()
-global.localStorage = {
+globalThis.fetch = vi.fn()
+globalThis.localStorage = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn()
@@ -101,7 +101,7 @@ describe('VerAcudidos View', () => {
     // Configurar el mock global
     mockUseAuthStore.mockReturnValue(mockAuthStore)
 
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         success: true,
@@ -144,7 +144,7 @@ describe('VerAcudidos View', () => {
 
   describe('Cargar acudidos', () => {
     it('should load acudidos on mount', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -168,11 +168,11 @@ describe('VerAcudidos View', () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 600))
 
-      expect(global.fetch).toHaveBeenCalled()
+      expect(globalThis.fetch).toHaveBeenCalled()
     })
 
     it('should handle error loading acudidos', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({
           success: false,

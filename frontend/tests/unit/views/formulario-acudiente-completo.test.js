@@ -31,8 +31,8 @@ vi.mock('@/config/environment', () => ({
   }
 }))
 
-global.fetch = vi.fn()
-global.localStorage = {
+globalThis.fetch = vi.fn()
+globalThis.localStorage = {
   getItem: vi.fn(),
   setItem: vi.fn(),
   removeItem: vi.fn()
@@ -84,8 +84,8 @@ describe('FormularioAcudienteCompleto View', () => {
       }
     })
 
-    global.fetch.mockClear()
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockClear()
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({
         success: true,
@@ -128,11 +128,11 @@ describe('FormularioAcudienteCompleto View', () => {
       await wrapper.vm.$nextTick()
 
       // Verificar que fetch fue llamado (para cargar parentescos y datos del usuario)
-      expect(global.fetch).toHaveBeenCalled()
+      expect(globalThis.fetch).toHaveBeenCalled()
     })
 
     it('should handle error loading parentescos', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Error test' })
       })
@@ -152,7 +152,7 @@ describe('FormularioAcudienteCompleto View', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -194,7 +194,7 @@ describe('FormularioAcudienteCompleto View', () => {
       wrapper = createWrapper()
       await wrapper.vm.$nextTick()
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: false,

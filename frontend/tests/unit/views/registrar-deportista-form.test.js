@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { createRouter, createWebHistory } from 'vue-router'
 import RegistrarDeportistaForm from '@/views/registrar-deportista-form.vue'
 import { useAuthStore } from '@/stores/auth'
 import Swal from 'sweetalert2'
@@ -436,7 +435,6 @@ describe('RegistrarDeportistaForm', () => {
       mockAuthStore.loadUserProfile.mockResolvedValue(true)
       mockAuthStore.userRoles = ['Deportista']
 
-      const manejarSpy = vi.spyOn(wrapper.vm, 'manejarRegistroDeportista')
       const datos = { data: {} }
 
       // Call the handler directly since we can't easily test event propagation with stubs

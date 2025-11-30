@@ -5,7 +5,6 @@ import VistaDeportistas from '@/views/vista-deportistas.vue'
 import deportistasService from '@/services/deportistasService'
 import usuariosService from '@/services/usuariosService'
 import Swal from 'sweetalert2'
-import { useModalScrollLock } from '@/composables/useModalScrollLock'
 
 // Mock services
 vi.mock('@/services/deportistasService', () => ({
@@ -358,7 +357,7 @@ describe('VistaDeportistas', () => {
 
     it('should not change estado if no id_usuario', async () => {
       const deportista = { ...wrapper.vm.deportistas[0], id_usuario: null }
-      
+
       await wrapper.vm.cambiarEstadoDeportista(deportista)
       await wrapper.vm.$nextTick()
 
@@ -399,7 +398,6 @@ describe('VistaDeportistas', () => {
       Swal.fire.mockResolvedValue({ isConfirmed: true })
       usuariosService.cambiarEstadoUsuario.mockRejectedValue(new Error('Network error'))
       const deportista = { ...wrapper.vm.deportistas[0], id: 1 }
-      const estadoAnterior = deportista.estado
 
       await wrapper.vm.cambiarEstadoDeportista(deportista)
       await wrapper.vm.$nextTick()

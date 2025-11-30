@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
 import AsignarAcudido from '@/views/asignar-acudido.vue'
@@ -245,7 +245,7 @@ describe('AsignarAcudido', () => {
 
       const deportista = wrapper.vm.deportistas[0]
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      
+
       // Simular que Swal.fire lanza un error
       Swal.fire.mockRejectedValueOnce(new Error('Network error'))
       Swal.fire.mockResolvedValueOnce({})
