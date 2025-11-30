@@ -90,11 +90,11 @@ class TestUsuarioService:
     
     def test_validar_datos_persona_success(self, usuario_service, datos_persona_validos):
         """Test: Successful person data validation."""
-        with patch('src.services.Auth.usuario_service.validate_name', return_value='Juan') as mock_name, \
-             patch('src.services.Auth.usuario_service.validate_document', return_value='12345678') as mock_doc, \
-             patch('src.services.Auth.usuario_service.validate_email', return_value='juan@example.com') as mock_email, \
-             patch('src.services.Auth.usuario_service.validate_phone', return_value='3001234567') as mock_phone, \
-             patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle 123') as mock_addr:
+        with patch('src.services.Auth.usuario_service.validate_name', return_value='Juan'), \
+             patch('src.services.Auth.usuario_service.validate_document', return_value='12345678'), \
+             patch('src.services.Auth.usuario_service.validate_email', return_value='juan@example.com'), \
+             patch('src.services.Auth.usuario_service.validate_phone', return_value='3001234567'), \
+             patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle 123'):
             
             usuario_service._validar_datos_persona(datos_persona_validos)
             
@@ -203,8 +203,8 @@ class TestUsuarioService:
         with patch.object(usuario_service, '_crear_persona') as mock_crear_persona, \
              patch.object(usuario_service, '_crear_usuario') as mock_crear_usuario, \
              patch.object(usuario_service, '_asignar_rol_por_defecto') as mock_rol, \
-             patch.object(usuario_service, '_procesar_rol_opcional') as mock_procesar_rol, \
-             patch.object(usuario_service, '_serializar_usuario') as mock_serializar, \
+             patch.object(usuario_service, '_procesar_rol_opcional'), \
+             patch.object(usuario_service, '_serializar_usuario', return_value={'id_usuario': 1, 'usuario': 'juanperez'}), \
              patch('src.services.Auth.usuario_service.db') as mock_db:
             
             mock_persona = MagicMock()
@@ -217,8 +217,6 @@ class TestUsuarioService:
             
             mock_rol_obj = MagicMock()
             mock_rol.return_value = mock_rol_obj
-            
-            mock_serializar.return_value = {'id_usuario': 1, 'usuario': 'juanperez'}
             
             mock_db.session.flush = MagicMock()
             mock_db.session.commit = MagicMock()
@@ -237,7 +235,7 @@ class TestUsuarioService:
         """Test: Person and user creation with integrity error."""
         with patch.object(usuario_service, '_crear_persona') as mock_crear_persona, \
              patch.object(usuario_service, '_crear_usuario') as mock_crear_usuario, \
-             patch.object(usuario_service, '_asignar_rol_por_defecto') as mock_rol, \
+             patch.object(usuario_service, '_asignar_rol_por_defecto'), \
              patch('src.services.Auth.usuario_service.db') as mock_db:
             
             mock_persona = MagicMock()
@@ -413,7 +411,7 @@ class TestUsuarioService:
              patch('src.models.personas.persona.Persona') as mock_persona_import, \
              patch.object(usuario_service, '_validar_y_actualizar_persona') as mock_validar_persona, \
              patch.object(usuario_service, '_validar_y_actualizar_usuario') as mock_validar_usuario, \
-             patch.object(usuario_service, '_serializar_usuario', return_value={'id_usuario': 1}) as mock_serializar, \
+             patch.object(usuario_service, '_serializar_usuario', return_value={'id_usuario': 1}), \
              patch('src.services.Auth.usuario_service.db') as mock_db:
             
             mock_usuario_query = MagicMock()

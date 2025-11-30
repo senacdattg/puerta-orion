@@ -49,8 +49,8 @@ class TestAuthService:
             with patch.object(auth_service, '_validar_datos_login') as mock_validar, \
                  patch.object(auth_service, '_verificar_credenciales', return_value=usuario_mock) as mock_verificar, \
                  patch.object(auth_service, '_generar_token_jwt', return_value='mock_token') as mock_token, \
-                 patch.object(auth_service, '_registrar_sesion', return_value=MagicMock()) as mock_sesion, \
-                 patch.object(auth_service, '_preparar_respuesta_login', return_value={'token': 'mock_token', 'usuario': {}}) as mock_preparar, \
+                 patch.object(auth_service, '_registrar_sesion', return_value=MagicMock()), \
+                 patch.object(auth_service, '_preparar_respuesta_login', return_value={'token': 'mock_token', 'usuario': {}}), \
                  patch('src.services.Auth.auth_service.asegurar_rol_activo_valido'):
                 
                 result = auth_service.autenticar_usuario('testuser', 'password123')

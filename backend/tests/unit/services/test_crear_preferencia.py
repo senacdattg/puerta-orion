@@ -42,7 +42,7 @@ class TestCrearPreferencia:
         mock_preference.create.return_value = mock_response
         
         with patch('src.services.mercadopago_service.TransaccionMercadoPago') as mock_transaccion:
-            with patch('src.services.mercadopago_service.db') as mock_db:
+            with patch('src.services.mercadopago_service.db'):
                 mock_transaccion.crear_transaccion.return_value = MagicMock()
                 
                 result = mercado_pago_service.crear_preferencia(datos_pago)

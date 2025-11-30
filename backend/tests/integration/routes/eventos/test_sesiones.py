@@ -133,7 +133,7 @@ class TestSesiones:
             mock_query.get.return_value = mock_sesion
             mock_query.filter.return_value.first.return_value = None
             
-            with patch('src.routes.eventos_routes.db') as mock_db:
+            with patch('src.routes.eventos_routes.db'):
                 response = make_json_request(
                     client, 'PUT', '/api/eventos/sesiones/1',
                     data=datos_actualizacion
@@ -150,7 +150,7 @@ class TestSesiones:
                 mock_query.get.return_value = mock_sesion
                 mock_evento_query.filter_by.return_value.count.return_value = 0
                 
-                with patch('src.routes.eventos_routes.db') as mock_db:
+                with patch('src.routes.eventos_routes.db'):
                     response = client.delete('/api/eventos/sesiones/1')
                     
                     assert response.status_code in [200, 204, 500]

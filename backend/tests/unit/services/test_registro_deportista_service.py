@@ -158,7 +158,7 @@ class TestRegistroDeportistaService:
     
     def test_registrar_deportista_nuevo_persona_no_existe(self, datos_registro_completo):
         """Test: Error cuando persona no existe."""
-        with patch('src.services.registro_deportista_service.Persona') as mock_persona_class, \
+        with patch('src.services.registro_deportista_service.Persona'), \
              patch('src.services.registro_deportista_service.RegistroDeportistaService._validar_estructura_datos', return_value=(datos_registro_completo['datos_deportista'], datos_registro_completo.get('informacion_deportiva', {}))), \
              patch('src.services.registro_deportista_service.RegistroDeportistaService._validar_campos_requeridos', return_value=None), \
              patch('src.services.registro_deportista_service.RegistroDeportistaService._validar_ids', return_value=(True, None)), \

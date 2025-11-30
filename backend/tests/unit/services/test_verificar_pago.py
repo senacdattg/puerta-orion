@@ -32,7 +32,7 @@ class TestVerificarPago:
         mock_payment.get.return_value = mock_response
         
         with patch('src.services.mercadopago_service.TransaccionMercadoPago') as mock_transaccion:
-            with patch('src.services.mercadopago_service.db') as mock_db:
+            with patch('src.services.mercadopago_service.db'):
                 mock_transaccion_obj = MagicMock()
                 mock_transaccion.query.filter_by.return_value.first.return_value = mock_transaccion_obj
                 

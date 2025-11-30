@@ -290,7 +290,7 @@ class TestValidateConfig:
     def test_validate_config_non_production_no_errors(self):
         """Test: Validación en entornos no producción no requiere variables críticas."""
         with patch.dict(os.environ, {'FLASK_ENV': 'development'}, clear=True):
-            is_valid, errors = validate_config()
+            is_valid, _ = validate_config()
             assert is_valid is True
     
     def test_validate_config_returns_tuple(self):

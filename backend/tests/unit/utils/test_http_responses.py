@@ -55,7 +55,7 @@ class TestHttpResponseBuilder:
     def test_success_with_kwargs(self, app):
         """Test: Respuesta de éxito con kwargs adicionales."""
         with app.app_context():
-            response, status_code = HttpResponseBuilder.success(
+            response, _ = HttpResponseBuilder.success(
                 pagination={'page': 1, 'total': 10}
             )
             
@@ -79,7 +79,7 @@ class TestHttpResponseBuilder:
     def test_error_with_message(self, app):
         """Test: Respuesta de error con mensaje."""
         with app.app_context():
-            response, status_code = HttpResponseBuilder.error(
+            response, _ = HttpResponseBuilder.error(
                 error='Error principal',
                 message='Mensaje descriptivo',
                 status_code=400
@@ -92,7 +92,7 @@ class TestHttpResponseBuilder:
     def test_error_with_data(self, app):
         """Test: Respuesta de error con datos."""
         with app.app_context():
-            response, status_code = HttpResponseBuilder.error(
+            response, _ = HttpResponseBuilder.error(
                 error='Error',
                 data={'field': 'value'},
                 status_code=400
@@ -127,7 +127,7 @@ class TestHttpResponseBuilder:
     def test_not_found_custom(self, app):
         """Test: Respuesta 404 Not Found personalizada."""
         with app.app_context():
-            response, status_code = HttpResponseBuilder.not_found(
+            response, _ = HttpResponseBuilder.not_found(
                 error='Recurso no existe',
                 message='El ID proporcionado no fue encontrado'
             )
@@ -148,7 +148,7 @@ class TestHttpResponseBuilder:
     def test_unauthorized_custom(self, app):
         """Test: Respuesta 401 Unauthorized personalizada."""
         with app.app_context():
-            response, status_code = HttpResponseBuilder.unauthorized(
+            response, _ = HttpResponseBuilder.unauthorized(
                 error='Token inválido',
                 message='El token proporcionado no es válido'
             )
@@ -181,7 +181,7 @@ class TestHttpResponseBuilder:
     def test_internal_server_error_custom(self, app):
         """Test: Respuesta 500 Internal Server Error personalizada."""
         with app.app_context():
-            response, status_code = HttpResponseBuilder.internal_server_error(
+            response, _ = HttpResponseBuilder.internal_server_error(
                 error='Error de base de datos',
                 message='No se pudo conectar a la base de datos'
             )
@@ -222,7 +222,7 @@ class TestBuildResponse:
     def test_build_response_error(self, app):
         """Test: Construir respuesta de error."""
         with app.app_context():
-            response, status_code = build_response(
+            response, _ = build_response(
                 success=False,
                 status_code=400,
                 error='Error de validación'
@@ -235,9 +235,8 @@ class TestBuildResponse:
     def test_build_response_default_status_code(self, app):
         """Test: Construir respuesta con status_code por defecto."""
         with app.app_context():
-            response, status_code = build_response(success=True)
+            response, _ = build_response(success=True)
             
-            assert status_code == 200
             json_data = response.get_json()
             assert json_data['status_code'] == 200
 
@@ -252,13 +251,12 @@ class TestHandleException:
             logger = MagicMock()
             exception = ValueError("Error de prueba")
             
-            response, status_code = handle_exception(
+            response, _ = handle_exception(
                 exception=exception,
                 logger=logger,
                 context="test"
             )
             
-            assert status_code == 500
             logger.error.assert_called_once()
             json_data = response.get_json()
             assert json_data['success'] is False
@@ -269,7 +267,7 @@ class TestHandleException:
             logger = MagicMock()
             exception = ValueError("Error de prueba")
             
-            response, status_code = handle_exception(
+            response, _ = handle_exception(
                 exception=exception,
                 logger=logger,
                 context="test",

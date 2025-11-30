@@ -98,11 +98,12 @@ class TestMercadoPagoService:
         mock_mensualidad.estado = False
         mock_mensualidad.fecha_pago = None
         
-        resultado = MercadoPagoService._aplicar_abono_mensualidad(mock_mensualidad, 50000.0)
+        MercadoPagoService._aplicar_abono_mensualidad(mock_mensualidad, 50000.0)
         
         assert mock_mensualidad.estado is True
         assert mock_mensualidad.fecha_pago == date.today()
-        assert mock_mensualidad.saldo_pendiente == 0.0
+        # Use pytest.approx for floating point comparison
+        assert mock_mensualidad.saldo_pendiente == pytest.approx(0.0)
     
     def test_crear_preferencia_success(self, service, app_context):
         """Test: Crear preferencia exitosamente."""

@@ -23,14 +23,6 @@ class TestEstadisticasPagos:
     
     def test_obtener_estadisticas_success(self, client):
         """Test: Obtener estadísticas de pagos exitosamente."""
-        # Arrange
-        mock_estadisticas = {
-            'total_pagos': 100,
-            'pagos_aprobados': 80,
-            'pagos_pendientes': 15,
-            'pagos_rechazados': 5
-        }
-        
         # Act
         with patch('src.routes.pagos_routes.TransaccionMercadoPago.query') as mock_query:
             mock_query.count.return_value = 100
