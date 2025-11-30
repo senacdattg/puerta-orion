@@ -1173,14 +1173,15 @@ async function guardarCambios() {
 
   // Siempre enviar el saldo_pendiente del formulario, el backend calculará el estado automáticamente
   // Si saldo es undefined, usar el valor actual de la mensualidad para mantener consistencia
-  if (saldo !== undefined) {
-    payloadUpdate.saldo_pendiente = saldo;
-  } else {
+  // Converted negated condition to positive form for better readability
+  if (saldo === undefined) {
     // Si no se especifica saldo en el formulario, usar el valor actual de la mensualidad
     const saldoActual = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente;
     if (saldoActual !== undefined && saldoActual !== null) {
       payloadUpdate.saldo_pendiente = Number(saldoActual);
     }
+  } else {
+    payloadUpdate.saldo_pendiente = saldo;
   }
 
   const nombrePersonaActualizada = personaDocumentoEdicion.value?.nombre_completo || props.mensualidad.persona_nombre || props.mensualidad.nombre;
@@ -1307,19 +1308,21 @@ async function guardarNuevoAbonoDesdeTabla() {
   }
 
   // Validate date: must not be before the creation date of the monthly payment
-  if (!nuevoAbono.value.fecha || !nuevoAbono.value.fecha.trim()) {
+  // Converted negated conditions to positive forms for better readability
+  const fechaAbono = nuevoAbono.value.fecha?.trim();
+  if (!fechaAbono) {
     errores.push('La fecha del abono es requerida');
-  } else if (!esFechaValida(nuevoAbono.value.fecha)) {
-    errores.push('La fecha del abono no es válida');
-  } else {
+  } else if (esFechaValida(fechaAbono)) {
+    // Date is valid, proceed with validation
     const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
     if (fechaCreacion) {
       try {
         const fechaCreacionDate = new Date(fechaCreacion);
-        const fechaAbonoDate = new Date(nuevoAbono.value.fecha);
+        const fechaAbonoDate = new Date(fechaAbono);
 
         // Validate dates are valid
-        if (isNaN(fechaCreacionDate.getTime()) || isNaN(fechaAbonoDate.getTime())) {
+        // Using Number.isNaN instead of isNaN for stricter type checking
+        if (Number.isNaN(fechaCreacionDate.getTime()) || Number.isNaN(fechaAbonoDate.getTime())) {
           errores.push('Las fechas no son válidas');
         } else {
           // Normalize dates to YYYY-MM-DD format for comparison
@@ -1336,6 +1339,9 @@ async function guardarNuevoAbonoDesdeTabla() {
         errores.push('Error al validar la fecha del abono');
       }
     }
+  } else {
+    // Date is invalid
+    errores.push('La fecha del abono no es válida');
   }
 
   if (errores.length > 0) {

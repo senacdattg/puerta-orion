@@ -117,11 +117,12 @@ export function useUserRole() {
   const allowedPanels = computed(() => {
     const result = {}
     const panelList = authStore.panels || []
-    panelList.forEach(panel => {
+    // Using for...of instead of forEach for better performance and readability
+    for (const panel of panelList) {
       if (panel && panel.module) {
         result[panel.module] = panel.allowed !== false
       }
-    })
+    }
     return result
   })
 

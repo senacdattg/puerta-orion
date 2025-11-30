@@ -277,15 +277,18 @@ watch(() => [rolesDisponibles.value, authStore.userDetail], () => {
     
     if (rolGuardadoEsValido) {
       // El rol guardado es válido, mantenerlo SIEMPRE
-      if (rolActivoActual !== rolActivoGuardado) {
+      // Converted negated condition to positive form for better readability
+      const rolesSonIguales = rolActivoActual === rolActivoGuardado;
+      if (rolesSonIguales) {
+        console.log(`✅ [selector-roles] Rol activo "${rolActivoGuardado}" fue seleccionado explícitamente, NO cambiando automáticamente`)
+      } else {
         console.log(`✅ [selector-roles] Restaurando rol activo guardado: ${rolActivoGuardado} (fue seleccionado explícitamente, NO cambiando)`)
         rolActivo.value = rolActivoGuardado
-        if (authStore.activeRole !== rolActivoGuardado) {
+        const rolStoreEsDiferente = authStore.activeRole !== rolActivoGuardado;
+        if (rolStoreEsDiferente) {
           // Pasar true para forzar el cambio cuando se restaura un rol guardado explícitamente
           authStore.setActiveRole?.(rolActivoGuardado, true)
         }
-      } else {
-        console.log(`✅ [selector-roles] Rol activo "${rolActivoGuardado}" fue seleccionado explícitamente, NO cambiando automáticamente`)
       }
       return // NO cambiar el rol si fue seleccionado explícitamente
     }

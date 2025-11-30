@@ -687,6 +687,161 @@ def obtener_deportistas_por_acudiente(id_acudiente: int) -> JsonResponse:
         logger.error(traceback.format_exc())
         return handle_exception(exc, logger, "obtener deportistas por acudiente")
 
+def _validar_documento_busqueda(documento_raw: str) -> Tuple[Optional[str], Optional[JsonResponse]]:
+    """Valida el formato del documento de búsqueda.
+    
+    Returns:
+        Tuple con (documento_validado, error_response) o (None, None) si hay error
+    """
+    if not documento_raw:
+        return None, HttpResponseBuilder.bad_request(
+            error='Debes proporcionar un número de documento',
+            message='El documento es requerido para buscar un deportista'
+        )
+    
+    try:
+        from ..utils.validations import ValidationError, validate_document
+        documento = validate_document('numero_documento', documento_raw)
+        return documento, None
+    except ValidationError as error:
+        return None, HttpResponseBuilder.bad_request(
+            error=str(error),
+            message='El documento proporcionado no es válido'
+        )
+
+
+def _obtener_acudiente_desde_usuario(usuario_actual: Dict[str, Any]) -> Tuple[Optional[int], Optional[JsonResponse]]:
+    """Obtiene el ID del acudiente desde el usuario autenticado.
+    
+    Returns:
+        Tuple con (id_acudiente, error_response) o (None, None) si hay error
+    """
+    if not usuario_actual or not usuario_actual.get('persona'):
+        return None, HttpResponseBuilder.unauthorized(
+            error='Usuario no autenticado',
+            message='Debes estar autenticado para realizar esta búsqueda'
+        )
+    
+    id_persona_usuario = usuario_actual.get('persona', {}).get('id_persona')
+    if not id_persona_usuario:
+        return None, HttpResponseBuilder.bad_request(
+            error='No se encontró información del usuario',
+            message='El usuario no tiene una persona asociada'
+        )
+    
+    from ..models.acudientes.acudiente import Acudiente
+    acudiente = Acudiente.query.filter_by(id_persona=id_persona_usuario).first()
+    if not acudiente:
+        return None, HttpResponseBuilder.bad_request(
+            error='Usuario no es acudiente',
+            message='Solo los acudientes pueden buscar y asociar deportistas'
+        )
+    
+    return acudiente.id_acudiente, None
+
+
+def _buscar_persona_por_documento_multiple(documento: str) -> Tuple[Optional[Any], Optional[JsonResponse]]:
+    """Busca una persona por documento usando múltiples columnas posibles.
+    
+    Returns:
+        Tuple con (persona, error_response) o (None, None) si no se encuentra
+    """
+    from ..models.personas.persona import Persona
+    
+    doc_str = str(documento).strip()
+    columnas = []
+    for nombre in ('numero_documento', 'documento', 'num_documento', 'dni', 'cedula'):
+        try:
+            col = getattr(Persona, nombre, None)
+            if col is not None:
+                columnas.append(col)
+        except Exception:
+            continue
+    
+    if not columnas:
+        return None, HttpResponseBuilder.success(
+            data=None,
+            encontrado=False,
+            message='No encontramos una persona registrada con ese número de documento.'
+        )
+    
+    condiciones = [cast(columna, String) == doc_str for columna in columnas]
+    persona = db.session.query(Persona).filter(or_(*condiciones)).first()
+    
+    if not persona:
+        return None, HttpResponseBuilder.success(
+            data=None,
+            encontrado=False,
+            message='No encontramos una persona registrada con ese número de documento.'
+        )
+    
+    return persona, None
+
+
+def _verificar_rol_deportista(persona: Any) -> Tuple[bool, Optional[JsonResponse]]:
+    """Verifica si una persona tiene el rol de deportista.
+    
+    Returns:
+        Tuple con (tiene_rol, error_response) o (False, None) si no tiene el rol
+    """
+    from ..models.usuarios.usuario import Usuario
+    
+    usuario_deportista = Usuario.query.filter_by(id_persona=persona.id_persona).first()
+    tiene_rol_deportista = False
+    
+    if usuario_deportista and getattr(usuario_deportista, 'estado', True):
+        for rol in getattr(usuario_deportista, 'roles', []) or []:
+            nombre = getattr(rol, 'nombre_rol', None) or getattr(rol, 'nombre', None)
+            if nombre and nombre.lower() == 'deportista':
+                tiene_rol_deportista = True
+                break
+    
+    if not tiene_rol_deportista:
+        return False, HttpResponseBuilder.success(
+            data=None,
+            encontrado=False,
+            message='La persona encontrada no tiene el rol de Deportista.'
+        )
+    
+    return True, None
+
+
+def _obtener_deportista_con_categoria(id_persona: int) -> Tuple[Optional[Any], Optional[JsonResponse]]:
+    """Obtiene el deportista asociado a una persona con su categoría cargada.
+    
+    Returns:
+        Tuple con (deportista, error_response) o (None, None) si no se encuentra
+    """
+    from ..models.deportistas.deportista import Deportista
+    from sqlalchemy.orm import joinedload
+    
+    deportista = Deportista.query.options(joinedload(Deportista.categoria)).filter_by(id_persona=id_persona).first()
+    if not deportista:
+        return None, HttpResponseBuilder.success(
+            data=None,
+            encontrado=False,
+            message='No encontramos un deportista asociado a esta persona.'
+        )
+    
+    return deportista, None
+
+
+def _construir_datos_deportista(deportista: Any, persona: Any, documento: str) -> Dict[str, Any]:
+    """Construye el diccionario con los datos del deportista para la respuesta."""
+    nombre_deportista = getattr(persona, 'nombre_completo', None) or \
+                      getattr(persona, 'nombre', None) or \
+                      f"{getattr(persona, 'primer_nombre', '')} {getattr(persona, 'primer_apellido', '')}".strip()
+    
+    return {
+        'id_deportista': deportista.id_deportista,
+        'id_persona': persona.id_persona,
+        'documento': getattr(persona, 'documento', None) or documento,
+        'nombre_completo': nombre_deportista,
+        'categoria': deportista.categoria.nombre_categoria if deportista.categoria else None,
+        'estado': bool(getattr(persona, 'estado', True))
+    }
+
+
 @deportistas_bp.route('/acudientes/buscar-deportista', methods=['GET'])
 @token_required()
 def buscar_deportista_por_documento_para_acudiente() -> JsonResponse:
@@ -699,152 +854,52 @@ def buscar_deportista_por_documento_para_acudiente() -> JsonResponse:
     Returns:
         Información del deportista encontrado o error.
     """
-    from ..models.personas.persona import Persona
-    from ..models.acudientes.acudiente import Acudiente
     from ..models.acudientes.deportista_acudiente import DeportistaAcudiente
-    from ..models.deportistas.deportista import Deportista
-    from ..utils.validations import ValidationError, validate_document
     
     try:
         documento_raw = (request.args.get('documento') or '').strip()
         
-        if not documento_raw:
-            return HttpResponseBuilder.bad_request(
-                error='Debes proporcionar un número de documento',
-                message='El documento es requerido para buscar un deportista'
-            )
+        # Validate document format
+        documento, error_response = _validar_documento_busqueda(documento_raw)
+        if error_response:
+            return error_response
         
-        # Validar formato del documento
-        try:
-            documento = validate_document('numero_documento', documento_raw)
-        except ValidationError as error:
-            return HttpResponseBuilder.bad_request(
-                error=str(error),
-                message='El documento proporcionado no es válido'
-            )
-        
-        # Obtener el usuario actual
+        # Get current user and acudiente
         usuario_actual = get_current_user()
-        if not usuario_actual or not usuario_actual.get('persona'):
-            return HttpResponseBuilder.unauthorized(
-                error='Usuario no autenticado',
-                message='Debes estar autenticado para realizar esta búsqueda'
-            )
+        id_acudiente, error_response = _obtener_acudiente_desde_usuario(usuario_actual)
+        if error_response:
+            return error_response
         
-        # Obtener el acudiente del usuario actual
-        id_persona_usuario = usuario_actual.get('persona', {}).get('id_persona')
-        if not id_persona_usuario:
-            return HttpResponseBuilder.bad_request(
-                error='No se encontró información del usuario',
-                message='El usuario no tiene una persona asociada'
-            )
+        # Search person by document
+        persona, error_response = _buscar_persona_por_documento_multiple(documento)
+        if error_response:
+            return error_response
         
-        acudiente = Acudiente.query.filter_by(id_persona=id_persona_usuario).first()
-        if not acudiente:
-            return HttpResponseBuilder.bad_request(
-                error='Usuario no es acudiente',
-                message='Solo los acudientes pueden buscar y asociar deportistas'
-            )
+        # Verify person has deportista role
+        tiene_rol, error_response = _verificar_rol_deportista(persona)
+        if error_response:
+            return error_response
         
-        id_acudiente = acudiente.id_acudiente
+        # Get deportista with category
+        deportista, error_response = _obtener_deportista_con_categoria(persona.id_persona)
+        if error_response:
+            return error_response
         
-        # Buscar persona por documento
-        doc_str = str(documento).strip()
-        columnas = []
-        for nombre in ('numero_documento', 'documento', 'num_documento', 'dni', 'cedula'):
-            try:
-                col = getattr(Persona, nombre, None)
-                if col is not None:
-                    columnas.append(col)
-            except Exception:
-                continue
-        
-        if not columnas:
-            return HttpResponseBuilder.success(
-                data=None,
-                encontrado=False,
-                message='No encontramos una persona registrada con ese número de documento.'
-            )
-        
-        condiciones = [cast(columna, String) == doc_str for columna in columnas]
-        persona = db.session.query(Persona).filter(or_(*condiciones)).first()
-        
-        if not persona:
-            return HttpResponseBuilder.success(
-                data=None,
-                encontrado=False,
-                message='No encontramos una persona registrada con ese número de documento.'
-            )
-        
-        # Verificar que la persona tenga rol de deportista
-        from ..models.usuarios.usuario import Usuario
-        usuario_deportista = Usuario.query.filter_by(id_persona=persona.id_persona).first()
-        tiene_rol_deportista = False
-        
-        if usuario_deportista and getattr(usuario_deportista, 'estado', True):
-            for rol in getattr(usuario_deportista, 'roles', []) or []:
-                nombre = getattr(rol, 'nombre_rol', None) or getattr(rol, 'nombre', None)
-                if nombre and nombre.lower() == 'deportista':
-                    tiene_rol_deportista = True
-                    break
-        
-        if not tiene_rol_deportista:
-            return HttpResponseBuilder.success(
-                data=None,
-                encontrado=False,
-                message='La persona encontrada no tiene el rol de Deportista.'
-            )
-        
-        # Buscar el deportista asociado a esta persona con la categoría cargada
-        from sqlalchemy.orm import joinedload
-        deportista = Deportista.query.options(joinedload(Deportista.categoria)).filter_by(id_persona=persona.id_persona).first()
-        if not deportista:
-            return HttpResponseBuilder.success(
-                data=None,
-                encontrado=False,
-                message='No encontramos un deportista asociado a esta persona.'
-            )
-        
-        # Verificar si el deportista ya es acudido por este acudiente
+        # Check if deportista is already associated with this acudiente
         relacion_existente = DeportistaAcudiente.query.filter_by(
             id_acudiente=id_acudiente,
             id_deportista=deportista.id_deportista
         ).first()
         
+        deportista_data = _construir_datos_deportista(deportista, persona, documento)
+        
         if relacion_existente:
-            # Obtener información del deportista para el mensaje
-            nombre_deportista = getattr(persona, 'nombre_completo', None) or \
-                              getattr(persona, 'nombre', None) or \
-                              f"{getattr(persona, 'primer_nombre', '')} {getattr(persona, 'primer_apellido', '')}".strip()
-            categoria_deportista = deportista.categoria.nombre_categoria if deportista.categoria else None
-            
-            deportista_info = {
-                'id_deportista': deportista.id_deportista,
-                'id_persona': persona.id_persona,
-                'documento': getattr(persona, 'documento', None) or documento,
-                'nombre_completo': nombre_deportista,
-                'categoria': categoria_deportista,
-                'estado': bool(getattr(persona, 'estado', True))
-            }
-            
             return HttpResponseBuilder.success(
-                data=deportista_info,
+                data=deportista_data,
                 encontrado=False,
                 ya_acudido=True,
-                message=f'{nombre_deportista} ya es acudido por ti.'
+                message=f'{deportista_data["nombre_completo"]} ya es acudido por ti.'
             )
-        
-        # Construir respuesta con datos del deportista
-        deportista_data = {
-            'id_deportista': deportista.id_deportista,
-            'id_persona': persona.id_persona,
-            'documento': getattr(persona, 'documento', None) or documento,
-            'nombre_completo': getattr(persona, 'nombre_completo', None) or 
-                             getattr(persona, 'nombre', None) or 
-                             f"{getattr(persona, 'primer_nombre', '')} {getattr(persona, 'primer_apellido', '')}".strip(),
-            'categoria': deportista.categoria.nombre_categoria if deportista.categoria else None,
-            'estado': bool(getattr(persona, 'estado', True))
-        }
         
         return HttpResponseBuilder.success(
             data=deportista_data,

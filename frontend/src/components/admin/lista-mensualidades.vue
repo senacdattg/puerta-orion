@@ -461,35 +461,42 @@ function abrirModalEnModoEdicion(mensualidad) {
 async function guardarCambiosMensualidad(mensualidadActualizada) {
   console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
 
-  // El array de mensualidades se actualizará en el componente padre a través del emit 'editar'
-  // Por ahora, solo actualizamos mensualidadSeleccionada para el modal
+    // El array de mensualidades se actualizará en el componente padre a través del emit 'editar'
+    // Por ahora, solo actualizamos mensualidadSeleccionada para el modal
 
-  // Verificar si la mensualidad actualizada corresponde a la seleccionada usando múltiples criterios
-  const idActualizada = mensualidadActualizada.id || mensualidadActualizada.id_mensualidad;
-  const idSeleccionada = mensualidadSeleccionada.value?.id || mensualidadSeleccionada.value?.id_mensualidad;
+    // Verificar si la mensualidad actualizada corresponde a la seleccionada usando múltiples criterios
+    const idActualizada = mensualidadActualizada.id || mensualidadActualizada.id_mensualidad;
+    const idSeleccionada = mensualidadSeleccionada.value?.id || mensualidadSeleccionada.value?.id_mensualidad;
 
-  console.log('🔄 [guardarCambiosMensualidad] Comparando IDs:', {
-    idActualizada,
-    idSeleccionada,
-    modalAbierto: modalDetalleCompletoVisible.value,
-    saldoPendienteRaw: mensualidadActualizada.saldo_pendiente_raw,
-    saldoPendiente: mensualidadActualizada.saldo_pendiente
-  });
+    console.log('🔄 [guardarCambiosMensualidad] Comparando IDs:', {
+      idActualizada,
+      idSeleccionada,
+      modalAbierto: modalDetalleCompletoVisible.value,
+      saldoPendienteRaw: mensualidadActualizada.saldo_pendiente_raw,
+      saldoPendiente: mensualidadActualizada.saldo_pendiente
+    });
 
-  // Actualizar la mensualidad seleccionada en el modal si el modal está abierto
-  // Comparar IDs de forma más flexible
-  const idsCoinciden = (
-    idActualizada === idSeleccionada ||
-    (idActualizada && idSeleccionada && String(idActualizada) === String(idSeleccionada)) ||
-    (!mensualidadSeleccionada.value?.id && !mensualidadSeleccionada.value?.id_mensualidad)
-  );
+    // Actualizar la mensualidad seleccionada en el modal si el modal está abierto
+    // Comparar IDs de forma más flexible
+    const idsCoinciden = (
+      idActualizada === idSeleccionada ||
+      (idActualizada && idSeleccionada && String(idActualizada) === String(idSeleccionada)) ||
+      (!mensualidadSeleccionada.value?.id && !mensualidadSeleccionada.value?.id_mensualidad)
+    );
 
-  if (modalDetalleCompletoVisible.value && idsCoinciden) {
-    // Crear un objeto completamente nuevo con todos los campos actualizados del backend
-    // Esto fuerza la reactividad de Vue y dispara el watch en el modal
-    const mensualidadActualizadaClon = JSON.parse(JSON.stringify(mensualidadActualizada));
-    console.log('✅ [guardarCambiosMensualidad] Actualizando mensualidad seleccionada con saldo_pendiente_raw:', mensualidadActualizadaClon.saldo_pendiente_raw);
-    mensualidadSeleccionada.value = mensualidadActualizadaClon;
+    if (modalDetalleCompletoVisible.value && idsCoinciden) {
+      // Create a completely new object with all updated fields from backend
+      // This forces Vue reactivity and triggers the watch in the modal
+      // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
+      let mensualidadActualizadaClon;
+      try {
+        mensualidadActualizadaClon = structuredClone(mensualidadActualizada);
+      } catch {
+        // Fallback to JSON method if structuredClone fails (e.g., with circular references)
+        mensualidadActualizadaClon = JSON.parse(JSON.stringify(mensualidadActualizada));
+      }
+      console.log('✅ [guardarCambiosMensualidad] Actualizando mensualidad seleccionada con saldo_pendiente_raw:', mensualidadActualizadaClon.saldo_pendiente_raw);
+      mensualidadSeleccionada.value = mensualidadActualizadaClon;
   } else {
     console.warn('⚠️ [guardarCambiosMensualidad] No se actualizó mensualidad seleccionada', {
       idActualizada,
@@ -584,8 +591,13 @@ async function abrirFormulario() {
     form.value.id_metodo_pago = ninguno.id;
   }
   // Guardar estado inicial cuando se abre el formulario
-  // Evitar structuredClone con objetos reactivos de Vue
-  formInicial.value = JSON.parse(JSON.stringify(form.value));
+  // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
+  try {
+    formInicial.value = structuredClone(form.value);
+  } catch {
+    // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+    formInicial.value = JSON.parse(JSON.stringify(form.value));
+  }
   mostrarFormulario.value = true;
 }
 

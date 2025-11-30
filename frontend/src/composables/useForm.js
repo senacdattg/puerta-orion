@@ -27,7 +27,8 @@ export function useForm(initialData = {}, validationRules = {}) {
     numeric: (value) => !value || !Number.isNaN(Number(value)) || 'Debe ser un número',
     phone: (value) => {
       const phoneRegex = /^\+?[1-9]\d{0,15}$/
-      return !value || phoneRegex.test(value.replaceAll(/\s/g, '')) || 'Teléfono inválido'
+      // Using replaceAll for simple string replacement (spaces)
+      return !value || phoneRegex.test(value.replaceAll(' ', '')) || 'Teléfono inválido'
     }
   }
 
@@ -104,7 +105,10 @@ export function useForm(initialData = {}, validationRules = {}) {
    * Limpia todos los errores
    */
   const clearErrors = () => {
-    Object.keys(errors).forEach(key => delete errors[key])
+    // Using for...of instead of forEach for better performance and readability
+    for (const key of Object.keys(errors)) {
+      delete errors[key]
+    }
     isValid.value = true
   }
 
@@ -202,7 +206,8 @@ export function useRegistrationForm() {
   const minLength6 = (value) => !value || value.length >= 6 || 'Mínimo 6 caracteres'
   const phone = (value) => {
     const phoneRegex = /^\+?[1-9]\d{0,15}$/
-    return !value || phoneRegex.test(value.replace(/\s/g, '')) || 'Teléfono inválido'
+    // Using replaceAll for simple string replacement (spaces)
+    return !value || phoneRegex.test(value.replaceAll(' ', '')) || 'Teléfono inválido'
   }
 
   const { formData, errors, isSubmitting, submit, updateField, validateForm } = useForm({

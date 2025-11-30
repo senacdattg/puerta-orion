@@ -33,15 +33,17 @@ const sanitizeValue = (value) => {
   return trimmed;
 };
 
-const readRuntimeConfig = () => (typeof window !== 'undefined' && window.RUNTIME_CONFIG ? window.RUNTIME_CONFIG : {});
+// Using globalThis instead of window for better cross-platform compatibility
+const readRuntimeConfig = () => (typeof globalThis !== 'undefined' && globalThis.RUNTIME_CONFIG ? globalThis.RUNTIME_CONFIG : {});
 
 const computeDefaultApiUrl = () => {
-  if (typeof window === 'undefined') {
+  // Using globalThis instead of window for better cross-platform compatibility
+  if (typeof globalThis === 'undefined' || !globalThis.location) {
     return LOCAL_API_FALLBACK;
   }
 
-  const hostname = window.location.hostname || '';
-  const protocol = window.location.protocol || 'http:';
+  const hostname = globalThis.location.hostname || '';
+  const protocol = globalThis.location.protocol || 'http:';
   const isLocalhost =
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||

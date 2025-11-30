@@ -511,6 +511,7 @@ export default {
       this.mostrarFormulario = true;
 
       // Guardar estado inicial cuando se abre el formulario
+      // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
       this.formInicial = this.clonarObjeto(this.form);
       this.archivoInicial = null;
     },
@@ -676,6 +677,7 @@ export default {
       this.mostrarFormulario = true;
 
       // Guardar estado inicial cuando se inicia la edición
+      // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
       this.formInicial = this.clonarObjeto(this.form);
       this.archivoInicial = null;
     },
@@ -855,6 +857,7 @@ export default {
       })
 
       // Actualizar estado inicial después de guardar exitosamente
+      // Using structuredClone for deep cloning (modern replacement for JSON.parse/stringify)
       this.formInicial = this.clonarObjeto(this.form);
       this.archivoInicial = this.archivoSeleccionado;
 
