@@ -139,10 +139,10 @@ const userRole = computed(() => {
   const roleNames = new Set(roles.map(role => typeof role === 'string' ? role : role.nombre_rol))
 
   if (roleNames.has('SuperAdmin') || roleNames.has('Administrador')) return 'Admin'
-  if (roleNames.includes('Entrenador')) return 'Entrenador'
-  if (roleNames.includes('Deportista')) return 'Deportista'
-  if (roleNames.includes('Acudiente')) return 'Acudiente'
-  if (roleNames.includes('usuario')) return 'Usuario'
+  if (roleNames.has('Entrenador')) return 'Entrenador'
+  if (roleNames.has('Deportista')) return 'Deportista'
+  if (roleNames.has('Acudiente')) return 'Acudiente'
+  if (roleNames.has('usuario')) return 'Usuario'
   return 'UsuarioSinAuth'
 })
 

@@ -64,8 +64,14 @@ const rolesDisponibles = computed(() => {
   return usuarioRoles.value
 })
 
-// Rol actual tomado del store
-const rolActual = ref(authStore.activeRole || rolesDisponibles.value[0] || 'Usuario')
+// Rol actual tomado del store (solo si está en rolesDisponibles)
+const getRolInicial = () => {
+  if (authStore.activeRole && rolesDisponibles.value.includes(authStore.activeRole)) {
+    return authStore.activeRole
+  }
+  return rolesDisponibles.value[0] || 'Usuario'
+}
+const rolActual = ref(getRolInicial())
 
 async function cambiarRol() {
   const nombreRol = rolActual.value

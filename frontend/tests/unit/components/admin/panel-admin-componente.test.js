@@ -438,6 +438,248 @@ describe('PanelAdminComponente', () => {
       expect(mockUsuariosService.default.listarRoles).toHaveBeenCalled()
       expect(wrapper.vm.rolesOptions.length).toBeGreaterThan(1) // Debe tener 'Todos' + roles
     })
+
+    it('should handle error loading roles', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      mockUsuariosService.default.listarRoles.mockRejectedValueOnce(new Error('Network error'))
+
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      expect(consoleSpy).toHaveBeenCalled()
+      consoleSpy.mockRestore()
+    })
+
+    it('should handle roles response without success', async () => {
+      mockUsuariosService.default.listarRoles.mockResolvedValueOnce({
+        success: false,
+        data: null
+      })
+
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // rolesOptions should still have 'Todos'
+      expect(wrapper.vm.rolesOptions.length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('should handle roles response with non-array data', async () => {
+      mockUsuariosService.default.listarRoles.mockResolvedValueOnce({
+        success: true,
+        data: null
+      })
+
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      expect(wrapper.vm.rolesOptions.length).toBeGreaterThanOrEqual(1)
+    })
+  })
+
+  describe('Modal datos con tema', () => {
+    it('should open datos modal with tema', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.abrirModalDatosConTema('eps')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.mostrarModalDatos).toBe(true)
+      expect(wrapper.vm.temaParaCrear).toBe('eps')
+    })
+
+    it('should close datos modal and clear tema', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.mostrarModalDatos = true
+      wrapper.vm.temaParaCrear = 'eps'
+      wrapper.vm.cerrarModalDatos()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.mostrarModalDatos).toBe(false)
+      expect(wrapper.vm.temaParaCrear).toBe('')
+    })
+  })
+
+  describe('Statistics edge cases', () => {
+    it('should handle usuarios without roles', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.usuariosPanel = [
+        { id: 1, roles: null },
+        { id: 2, roles: [] },
+        { id: 3 }
+      ]
+
+      const tarjetas = wrapper.vm.tarjetasStats
+      const pendientesCard = tarjetas.find(t => t.key === 'pendientes')
+      expect(pendientesCard).toBeDefined()
+      expect(pendientesCard.count).toBe(3)
+    })
+
+    it('should generate stat cards for all roles', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.usuariosPanel = [
+        { id: 1, roles: [{ nombre_rol: 'SuperAdmin' }] },
+        { id: 2, roles: [{ nombre_rol: 'Administrador' }] },
+        { id: 3, roles: [{ nombre_rol: 'Entrenador' }] },
+        { id: 4, roles: [{ nombre_rol: 'Deportista' }] },
+        { id: 5, roles: [{ nombre_rol: 'Acudiente' }] },
+        { id: 6, roles: [{ nombre_rol: 'Usuario' }] }
+      ]
+
+      const tarjetas = wrapper.vm.tarjetasStats
+      expect(tarjetas.length).toBeGreaterThan(6)
+    })
+
+    it('should handle usuarios with multiple roles', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.usuariosPanel = [
+        { id: 1, roles: [{ nombre_rol: 'Administrador' }, { nombre_rol: 'Deportista' }] }
+      ]
+
+      const conteos = wrapper.vm.conteosPorRol
+      expect(conteos['Administrador']).toBe(1)
+      expect(conteos['Deportista']).toBe(1)
+    })
+  })
+
+  describe('onGuardarDato edge cases', () => {
+    it('should handle error response from API', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      global.fetch.mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ error: 'Server error' })
+      })
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      const payload = {
+        entidad: 'tipo_documento',
+        nombre: 'Cédula'
+      }
+
+      await wrapper.vm.onGuardarDato(payload)
+      expect(Swal.fire).toHaveBeenCalled()
+    })
+
+    it('should handle mostrarErrorEntidadNoDisponible', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      vi.mocked(Swal.fire).mockResolvedValueOnce({ isConfirmed: true })
+
+      await wrapper.vm.mostrarErrorEntidadNoDisponible('test_entidad')
+
+      expect(Swal.fire).toHaveBeenCalledWith({
+        icon: 'warning',
+        title: 'Función no disponible',
+        text: 'La creación de "test_entidad" aún no está disponible desde esta interfaz.'
+      })
+    })
+
+    it('should prepare datos for tipo-evento with descripcion', () => {
+      wrapper = createWrapper()
+
+      const datos = wrapper.vm.prepararDatosTipoEvento('Competencia', { descripcion: 'Descripción test' })
+      expect(datos.nombre).toBe('Competencia')
+      expect(datos.descripcion).toBe('Descripción test')
+    })
+
+    it('should prepare datos for EPS without codigo', () => {
+      wrapper = createWrapper()
+
+      const datos = wrapper.vm.prepararDatosEPS('EPS Test', null, { estado: false })
+      expect(datos.nombre_eps).toBe('EPS Test')
+      expect(datos.codigo_eps).toBeUndefined()
+      expect(datos.estado).toBe(false)
+    })
+
+    it('should prepare datos for metodo pago without estado', () => {
+      wrapper = createWrapper()
+
+      const datos = wrapper.vm.prepararDatosMetodoPago('Efectivo', {})
+      expect(datos.nombre_metodo).toBe('Efectivo')
+      expect(datos.estado).toBe(true) // Default
+    })
+  })
+
+  describe('Extraer mensaje error casos adicionales', () => {
+    it('should handle error with details object', () => {
+      wrapper = createWrapper()
+
+      const error = { details: { message: 'Nested error' } }
+      const result = wrapper.vm.extraerMensajeErrorDato(error)
+      expect(result).toContain('Nested error')
+    })
+
+    it('should handle large error object', () => {
+      wrapper = createWrapper()
+
+      const largeError = { data: 'x'.repeat(300) }
+      const result = wrapper.vm.extraerMensajeErrorDato(largeError)
+      expect(result).toContain('Error al procesar')
+    })
+
+    it('should handle null error', () => {
+      wrapper = createWrapper()
+
+      const result = wrapper.vm.extraerMensajeErrorDato(null)
+      expect(result).toContain('No se pudo completar')
+    })
+  })
+
+  describe('Event handlers from child components', () => {
+    it('should handle crear-nuevo event from TablaDatosDinamicos', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      const tabla = wrapper.findComponent({ name: 'TablaDatosDinamicos' })
+      await tabla.vm.$emit('crear-nuevo', 'eps')
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.mostrarModalDatos).toBe(true)
+      expect(wrapper.vm.temaParaCrear).toBe('eps')
+    })
+
+    it('should handle editar-dato event from TablaDatosDinamicos', async () => {
+      wrapper = createWrapper()
+      await wrapper.vm.$nextTick()
+
+      const tema = 'eps'
+      const dato = { id_eps: 1, nombre_eps: 'EPS Test' }
+      const tabla = wrapper.findComponent({ name: 'TablaDatosDinamicos' })
+      await tabla.vm.$emit('editar-dato', { tema, dato })
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.vm.mostrarModalEdicion).toBe(true)
+      expect(wrapper.vm.temaEdicion).toBe(tema)
+    })
+  })
+
+  describe('obtenerNombreEntidadLegible all cases', () => {
+    it('should return correct names for all entities', () => {
+      wrapper = createWrapper()
+
+      expect(wrapper.vm.obtenerNombreEntidadLegible('tipo_documento')).toBe('tipo de documento')
+      expect(wrapper.vm.obtenerNombreEntidadLegible('sexo')).toBe('sexo')
+      expect(wrapper.vm.obtenerNombreEntidadLegible('ciudad')).toBe('ciudad')
+      expect(wrapper.vm.obtenerNombreEntidadLegible('eps')).toBe('EPS')
+      expect(wrapper.vm.obtenerNombreEntidadLegible('metodo_pago')).toBe('método de pago')
+      expect(wrapper.vm.obtenerNombreEntidadLegible('tipo-evento')).toBe('tipo de evento')
+    })
   })
 })
 
