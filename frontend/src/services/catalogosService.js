@@ -17,111 +17,72 @@ class CatalogosService {
   }
 
   /**
-   * Obtener tipos de documento
+   * Generic method to fetch catalog data from an endpoint
+   * @param {string} endpoint - API endpoint path
+   * @param {string} catalogName - Name of the catalog for logging
+   * @returns {Promise<Array>} Catalog data array
    */
-  async getTiposDocumento() {
+  async _fetchCatalog(endpoint, catalogName) {
     try {
-      console.log('🔄 Obteniendo tipos de documento desde:', `${this.baseURL}/api/catalogos/tipos-documento`);
+      const url = `${this.baseURL}${endpoint}`
+      console.log(`🔄 Obteniendo ${catalogName} desde:`, url)
 
-      const response = await fetch(`${this.baseURL}/api/catalogos/tipos-documento`, {
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         }
-      });
+      })
 
-      console.log('📡 Respuesta tipos documento:', response.status, response.statusText);
+      console.log(`📡 Respuesta ${catalogName}:`, response.status, response.statusText)
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor tipos documento:', errorText);
-        throw new Error(`Error al obtener tipos de documento: ${response.status} ${response.statusText}`)
+        const errorText = await response.text()
+        console.error(`❌ Error del servidor ${catalogName}:`, errorText)
+        throw new Error(`Error al obtener ${catalogName}: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json();
-      console.log('📦 Datos tipos documento recibidos:', data);
+      const data = await response.json()
+      console.log(`📦 Datos ${catalogName} recibidos:`, data)
+
+      // Handle different response formats
+      if (data.success && Array.isArray(data.data)) {
+        return data.data
+      }
+      if (Array.isArray(data.data)) {
+        return data.data
+      }
+      if (Array.isArray(data)) {
+        return data
+      }
 
       return data.data || []
     } catch (error) {
-      console.error('❌ Error al obtener tipos de documento:', error)
+      console.error(`❌ Error al obtener ${catalogName}:`, error)
       throw error
     }
+  }
+
+  /**
+   * Obtener tipos de documento
+   */
+  async getTiposDocumento() {
+    return this._fetchCatalog('/api/catalogos/tipos-documento', 'tipos de documento')
   }
 
   /**
    * Obtener sexos/géneros
    */
   async getSexos() {
-    try {
-      console.log('🔄 Obteniendo sexos desde:', `${this.baseURL}/api/catalogos/sexos`);
-
-      const response = await fetch(`${this.baseURL}/api/catalogos/sexos`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('📡 Respuesta sexos:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor sexos:', errorText);
-        throw new Error(`Error al obtener sexos: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json();
-      console.log('📦 Datos sexos recibidos:', data);
-
-      return data.data || []
-    } catch (error) {
-      console.error('❌ Error al obtener sexos:', error)
-      throw error
-    }
+    return this._fetchCatalog('/api/catalogos/sexos', 'sexos')
   }
 
   /**
    * Obtener categorías
    */
   async getCategorias() {
-    try {
-      console.log('🔄 Obteniendo categorías desde:', `${this.baseURL}/api/catalogos/categorias`);
-
-      const response = await fetch(`${this.baseURL}/api/catalogos/categorias`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('📡 Respuesta categorías:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor categorías:', errorText);
-        throw new Error(`Error al obtener categorías: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json();
-      console.log('📦 Datos categorías recibidos:', data);
-
-      // El backend puede retornar { success: true, data: [...] } o directamente el array
-      if (data.success && Array.isArray(data.data)) {
-        return data.data;
-      } else if (Array.isArray(data.data)) {
-        return data.data;
-      } else if (Array.isArray(data)) {
-        return data;
-      }
-
-      return [];
-    } catch (error) {
-      console.error('❌ Error al obtener categorías:', error)
-      throw error
-    }
+    return this._fetchCatalog('/api/catalogos/categorias', 'categorías')
   }
 
   /**
@@ -163,33 +124,7 @@ class CatalogosService {
    * Obtener parentescos
    */
   async getParentescos() {
-    try {
-      console.log('🔄 Obteniendo parentescos desde:', `${this.baseURL}/api/catalogos/parentescos`);
-
-      const response = await fetch(`${this.baseURL}/api/catalogos/parentescos`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      console.log('📡 Respuesta parentescos:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor parentescos:', errorText);
-        throw new Error(`Error al obtener parentescos: ${response.status} ${response.statusText}`)
-      }
-
-      const data = await response.json();
-      console.log('📦 Datos parentescos recibidos:', data);
-
-      return data.data || []
-    } catch (error) {
-      console.error('❌ Error al obtener parentescos:', error)
-      throw error
-    }
+    return this._fetchCatalog('/api/catalogos/parentescos', 'parentescos')
   }
 
   /**

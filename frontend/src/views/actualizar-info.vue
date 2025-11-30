@@ -619,6 +619,7 @@ import { API_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import Swal from 'sweetalert2'
+import { extraerMensajeError } from '@/utils/error-handling'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -1707,50 +1708,6 @@ const actualizarInformacion = async () => {
   }
 }
 
-/**
- * Extrae y formatea el mensaje de error de manera más legible
- */
-function extraerMensajeError(error) {
-  if (!error) {
-    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.'
-  }
-
-  // Si es un string, devolverlo directamente
-  if (typeof error === 'string') {
-    return error
-  }
-
-  // Si es un objeto con mensaje
-  if (error.message) {
-    return error.message
-  }
-
-  // Si es un objeto con error
-  if (error.error) {
-    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
-  }
-
-  // Si es un objeto con detalles
-  if (error.details) {
-    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
-  }
-
-  // Si es un objeto, intentar convertirlo a string legible
-  if (typeof error === 'object') {
-    try {
-      const errorStr = JSON.stringify(error)
-      // Si el JSON es muy largo, devolver un mensaje genérico
-      if (errorStr.length > 200) {
-        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
-      }
-      return errorStr
-    } catch {
-      return 'Error desconocido. Por favor, intenta nuevamente.'
-    }
-  }
-
-  return 'Error desconocido. Por favor, intenta nuevamente.'
-}
 
 const cancelar = async () => {
   // Verificar si hay cambios sin guardar
