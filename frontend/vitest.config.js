@@ -14,10 +14,7 @@ export default defineConfig({
     silent: false,
     onConsoleLog: (log, type) => {
       // Suppress console.log and console.warn during tests
-      if (type === 'log' || type === 'warn') {
-        return false
-      }
-      return true
+      return type !== 'log' && type !== 'warn'
     },
     coverage: {
       provider: 'v8',

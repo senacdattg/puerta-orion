@@ -1474,11 +1474,11 @@ const prepararDatosInformacionDeportiva = () => {
 }
 
 const limpiarObjetosVacios = (obj) => {
-  Object.keys(obj).forEach(key => {
+  for (const key of Object.keys(obj)) {
     if (obj[key] === undefined) {
       delete obj[key]
     }
-  })
+  }
 }
 
 const agregarDatosDiagnostico = (datosDeportistaActualizar) => {

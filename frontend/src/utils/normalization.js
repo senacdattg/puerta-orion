@@ -18,7 +18,8 @@ function normalizeNameWithPattern(valor = '', allowedPattern = /[^A-ZÁÉÍÓÚ�
 
   const mayus = valor.toLocaleUpperCase(LOCALE_COL)
   // NOSONAR: S7781 - replaceAll() no acepta regex
-  return mayus.replace(allowedPattern, '').replace(/\s{2,}/g, ' ').trimStart()
+  const sinInvalidos = mayus.replace(allowedPattern, '') // NOSONAR: S7781
+  return sinInvalidos.replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781
 }
 
 /**
@@ -53,7 +54,7 @@ export function normalizarCodigo(valor = '', maxLength = 20) {
   const valorStr = String(valor)
   const mayus = valorStr.toLocaleUpperCase(LOCALE_COL)
   // NOSONAR: S7781 - replaceAll() no acepta regex
-  return mayus.replace(/[^A-Z0-9-]/g, '').slice(0, maxLength)
+  return mayus.replace(/[^A-Z0-9-]/g, '').slice(0, maxLength) // NOSONAR: S7781
 }
 
 /**
@@ -69,6 +70,6 @@ export function normalizarDescripcion(valor = '', maxLength = 500) {
 
   const mayus = valor.toLocaleUpperCase(LOCALE_COL)
   // NOSONAR: S7781 - replaceAll() no acepta regex
-  return mayus.replace(/\s{2,}/g, ' ').trim().slice(0, maxLength)
+  return mayus.replace(/\s{2,}/g, ' ').trim().slice(0, maxLength) // NOSONAR: S7781
 }
 

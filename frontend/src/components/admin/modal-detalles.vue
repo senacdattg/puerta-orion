@@ -595,6 +595,45 @@ function obtenerIdMensualidad() {
   return props.mensualidad?.id || props.mensualidad?.id_mensualidad || null;
 }
 
+// Helper para mapear abonos del backend al formato del componente
+function mapearAbonosDelBackend(abonosData) {
+  return (abonosData || [])
+    .filter(a => a.id_abono !== null && a.id_abono !== undefined)
+    .map(a => ({
+      id_abono: a.id_abono,
+      monto: Number(a.monto) || 0,
+      fecha_abono: a.fecha_abono,
+      id_metodo_pago: a.id_metodo_pago,
+      es_pago_final: !!a.es_pago_final
+    }))
+}
+
+// Helper para mapear mensualidad del backend al formato del componente
+function mapearMensualidadDelBackend(mensualidadBackend, overrides = {}) {
+  const mensualidadId = obtenerIdMensualidad()
+  const saldoPendienteBackend = mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente ?? null
+  const montoPagoBackend = mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago ?? null
+  const nombrePersona = mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
+
+  return {
+    ...props.mensualidad,
+    ...mensualidadBackend,
+    id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || mensualidadId,
+    saldo_pendiente_raw: saldoPendienteBackend,
+    saldo_pendiente: saldoPendienteBackend,
+    saldoPendiente: saldoPendienteBackend,
+    monto_pago_raw: montoPagoBackend,
+    monto_pago: montoPagoBackend,
+    estado_bool: mensualidadBackend.estado,
+    estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+    estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+    fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
+    persona_nombre: nombrePersona,
+    nombre: nombrePersona,
+    ...overrides
+  }
+}
+
 function configurarFormularioDesdeProps() {
   documentoOriginal.value = normalizarDocumento(props.mensualidad.numero_documento || '');
   formEdicion.value = {
@@ -668,15 +707,7 @@ watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => 
       const respAb = await mensualidadesService.listarAbonos(mensualidadId);
       // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
       // Solo incluir abonos reales con id_abono
-      abonos.value = (respAb.data || [])
-        .filter(a => a.id_abono !== null && a.id_abono !== undefined)
-        .map(a => ({
-        id_abono: a.id_abono,
-        monto: Number(a.monto) || 0,
-        fecha_abono: a.fecha_abono,
-        id_metodo_pago: a.id_metodo_pago,
-        es_pago_final: !!a.es_pago_final
-      }));
+      abonos.value = mapearAbonosDelBackend(respAb.data);
     } catch {
       abonos.value = [];
     }
@@ -803,9 +834,7 @@ onMounted(async () => {
     const respAb = await mensualidadesService.listarAbonos(mensualidadId);
     // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
     // Solo incluir abonos reales con id_abono
-    abonos.value = (respAb.data || [])
-      .filter(a => a.id_abono !== null && a.id_abono !== undefined)
-      .map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+    abonos.value = mapearAbonosDelBackend(respAb.data);
   } catch {
     abonos.value = [];
   }
@@ -1107,22 +1136,13 @@ function _construirPayloadActualizacion(monto, saldo, metodoPagoNormalizado, doc
 }
 
 function _mapearMensualidadActualizada(mensualidadBackend, mensualidadId, monto, documentoActual, nombrePersonaActualizada, idMetodoEnRespuesta) {
-  return {
-    ...props.mensualidad,
-    ...mensualidadBackend,
-    id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || mensualidadId,
+  return mapearMensualidadDelBackend(mensualidadBackend, {
     valor: formatCOP(mensualidadBackend.monto_pago || monto),
-    monto_pago_raw: mensualidadBackend.monto_pago,
-    saldo_pendiente_raw: mensualidadBackend.saldo_pendiente,
-    estado_bool: mensualidadBackend.estado,
-    estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-    estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-    fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
     numero_documento: documentoActual,
     persona_nombre: nombrePersonaActualizada,
     nombre: nombrePersonaActualizada,
     id_metodo_pago: idMetodoEnRespuesta
-  };
+  });
 }
 
 async function _mostrarExitoActualizacion() {
@@ -1380,27 +1400,7 @@ async function guardarNuevoAbonoDesdeTabla() {
 
     // Use updated data from backend
     const mensualidadBackend = respuestaAbono?.data || props.mensualidad;
-
-    // Ensure the object has all necessary fields mapped correctly
-    const saldoPendienteBackend = mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente ?? null;
-    const montoPagoBackend = mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago ?? null;
-
-    const mensualidadActualizada = {
-      ...props.mensualidad,
-      ...mensualidadBackend,
-      id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || obtenerIdMensualidad(),
-      saldo_pendiente_raw: saldoPendienteBackend,
-      saldo_pendiente: saldoPendienteBackend,
-      saldoPendiente: saldoPendienteBackend,
-      monto_pago_raw: montoPagoBackend,
-      monto_pago: montoPagoBackend,
-      estado_bool: mensualidadBackend.estado,
-      estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-      estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-      fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
-      persona_nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre,
-      nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
-    };
+    const mensualidadActualizada = mapearMensualidadDelBackend(mensualidadBackend);
 
     // Emit updated data to parent
     emit('guardar-cambios', mensualidadActualizada);
@@ -1410,9 +1410,7 @@ async function guardarNuevoAbonoDesdeTabla() {
       const mensualidadId = obtenerIdMensualidad();
       if (mensualidadId) {
         const respAb = await mensualidadesService.listarAbonos(mensualidadId);
-        abonos.value = (respAb.data || [])
-          .filter(a => a.id_abono !== null && a.id_abono !== undefined)
-          .map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+        abonos.value = mapearAbonosDelBackend(respAb.data);
       }
     } catch {
       // Ignore error refreshing abonos in UI
@@ -1469,9 +1467,7 @@ async function guardarEdicionAbono() {
     const respAb = await mensualidadesService.listarAbonos(mensualidadId);
     // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
     // Solo incluir abonos reales con id_abono
-    abonos.value = (respAb.data || [])
-      .filter(a => a.id_abono !== null && a.id_abono !== undefined)
-      .map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+    abonos.value = mapearAbonosDelBackend(respAb.data);
     abonoEditIndex.value = null;
 
     // Actualizar la mensualidad en el componente padre si el backend devolvió la mensualidad actualizada
@@ -1479,27 +1475,7 @@ async function guardarEdicionAbono() {
     // El backend devuelve: { success: true, data: {...}, mensualidad: {...} }
     const mensualidadBackend = respuesta?.mensualidad || respuesta?.data?.mensualidad;
     if (mensualidadBackend) {
-      // Asegurar que el objeto tenga todos los campos necesarios mapeados correctamente
-      const mensualidadActualizada = {
-        ...props.mensualidad,
-        ...mensualidadBackend,
-        id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || obtenerIdMensualidad(),
-        // Asegurar que saldo_pendiente_raw esté disponible (puede venir como saldo_pendiente del backend)
-        saldo_pendiente_raw: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
-        saldo_pendiente: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
-        // Asegurar que monto_pago_raw esté disponible
-        monto_pago_raw: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
-        monto_pago: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
-        // Asegurar campos de estado
-        estado_bool: mensualidadBackend.estado,
-        estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-        estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-        // Asegurar fecha de vencimiento
-        fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
-        // Asegurar campos de persona
-        persona_nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre,
-        nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
-      };
+      const mensualidadActualizada = mapearMensualidadDelBackend(mensualidadBackend);
       emit('guardar-cambios', mensualidadActualizada);
     }
   } catch (e) {
@@ -1542,36 +1518,14 @@ async function eliminarAbono(index) {
     const respAb = await mensualidadesService.listarAbonos(mensualidadId);
     // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
     // Solo incluir abonos reales con id_abono
-    abonos.value = (respAb.data || [])
-      .filter(a => a.id_abono !== null && a.id_abono !== undefined)
-      .map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+    abonos.value = mapearAbonosDelBackend(respAb.data);
 
     // Actualizar la mensualidad en el componente padre si el backend devolvió la mensualidad actualizada
     // La respuesta del servicio viene directamente como respuesta.data (el servicio ya parsea el JSON)
     // El backend devuelve: { success: true, mensualidad: {...} }
     const mensualidadBackend = respuesta?.mensualidad || respuesta?.data?.mensualidad;
     if (mensualidadBackend) {
-      // Asegurar que el objeto tenga todos los campos necesarios mapeados correctamente
-      const mensualidadActualizada = {
-        ...props.mensualidad,
-        ...mensualidadBackend,
-        id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || obtenerIdMensualidad(),
-        // Asegurar que saldo_pendiente_raw esté disponible (puede venir como saldo_pendiente del backend)
-        saldo_pendiente_raw: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
-        saldo_pendiente: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
-        // Asegurar que monto_pago_raw esté disponible
-        monto_pago_raw: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
-        monto_pago: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
-        // Asegurar campos de estado
-        estado_bool: mensualidadBackend.estado,
-        estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-        estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
-        // Asegurar fecha de vencimiento
-        fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
-        // Asegurar campos de persona
-        persona_nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre,
-        nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
-      };
+      const mensualidadActualizada = mapearMensualidadDelBackend(mensualidadBackend);
       emit('guardar-cambios', mensualidadActualizada);
     }
 
