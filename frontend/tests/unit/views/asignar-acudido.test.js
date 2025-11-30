@@ -246,22 +246,19 @@ describe('AsignarAcudido', () => {
       const deportista = wrapper.vm.deportistas[0]
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       
-      // Simular error
-      const asignarPromise = wrapper.vm.asignarDeportista(deportista)
-      // Forzar error
-      await new Promise(resolve => setTimeout(resolve, 500))
-      // Simular que la promesa falla
-      try {
-        throw new Error('Network error')
-      } catch (error) {
-        // El componente maneja el error internamente
-      }
+      // Simular que Swal.fire lanza un error
+      Swal.fire.mockRejectedValueOnce(new Error('Network error'))
+      Swal.fire.mockResolvedValueOnce({})
 
-      Swal.fire.mockResolvedValue({})
+      const asignarPromise = wrapper.vm.asignarDeportista(deportista)
+      vi.advanceTimersByTime(1000)
+      await asignarPromise
       await wrapper.vm.$nextTick()
 
+      expect(Swal.fire).toHaveBeenCalled()
+      expect(consoleSpy).toHaveBeenCalled()
       consoleSpy.mockRestore()
-    })
+    }, 10000)
   })
 
   describe('Desasignar deportista', () => {
@@ -270,9 +267,11 @@ describe('AsignarAcudido', () => {
       await wrapper.vm.$nextTick()
 
       const deportista = { ...wrapper.vm.deportistas[0], asignado: true }
-      Swal.fire.mockResolvedValue({ isConfirmed: true })
+      Swal.fire.mockResolvedValueOnce({ isConfirmed: true })
+      Swal.fire.mockResolvedValueOnce({})
 
       const desasignarPromise = wrapper.vm.desasignarDeportista(deportista)
+      await wrapper.vm.$nextTick()
       vi.advanceTimersByTime(500)
       await desasignarPromise
       await wrapper.vm.$nextTick()
@@ -299,14 +298,11 @@ describe('AsignarAcudido', () => {
 
       const deportista = { ...wrapper.vm.deportistas[0], asignado: true }
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      Swal.fire.mockResolvedValue({ isConfirmed: true })
-
-      // Simular error después de confirmación
-      const desasignarPromise = wrapper.vm.desasignarDeportista(deportista)
-      
-      // El componente maneja errores internamente
+      Swal.fire.mockResolvedValueOnce({ isConfirmed: true })
       Swal.fire.mockResolvedValueOnce({})
-      
+
+      const desasignarPromise = wrapper.vm.desasignarDeportista(deportista)
+      await wrapper.vm.$nextTick()
       vi.advanceTimersByTime(500)
       await desasignarPromise
       await wrapper.vm.$nextTick()
