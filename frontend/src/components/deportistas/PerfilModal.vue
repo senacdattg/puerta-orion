@@ -207,6 +207,9 @@ const formatearFecha = (fecha) => {
   if (!fecha) return null
   try {
     const date = new Date(fecha)
+    if (isNaN(date.getTime())) {
+      return fecha
+    }
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',

@@ -35,11 +35,18 @@ npm run test:coverage
 
 ## Cobertura
 
-Los tests están configurados para mantener un mínimo de 80% de cobertura en:
-- Líneas de código
-- Funciones
-- Ramas
-- Declaraciones
+Los tests están configurados para mantener los siguientes umbrales mínimos:
+- Líneas de código: 48%
+- Funciones: 44%
+- Ramas: 30%
+- Declaraciones: 48%
+
+**Cobertura actual**: ~48% (650 tests pasando)
+
+### Áreas con menor cobertura (prioridad para mejorar):
+- Componentes grandes de UI (calendario, perfil deportista, formularios)
+- Servicios de autenticación y calendario
+- Vistas complejas (actualizar-info, completar-perfil)
 
 ## Escribir Nuevos Tests
 

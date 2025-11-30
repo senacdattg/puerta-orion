@@ -351,5 +351,411 @@ describe('Auth Store', () => {
       expect(store.error).toBeNull()
     })
   })
+
+  describe('Load User Profile Detail', () => {
+    it('should load user profile detail successfully', async () => {
+      authService.getProfileDetail.mockResolvedValue({
+        success: true,
+        data: {
+          id_usuario: 1,
+          deportista: { id_deportista: 1 }
+        }
+      })
+
+      const store = useAuthStore()
+      store.token = mockToken
+      const result = await store.loadUserProfileDetail()
+
+      expect(result).toBe(true)
+      expect(store.userDetail).toBeTruthy()
+    })
+
+    it('should handle profile detail error', async () => {
+      authService.getProfileDetail.mockResolvedValue({
+        success: false,
+        error: 'Error loading detail'
+      })
+
+      const store = useAuthStore()
+      store.token = mockToken
+      const result = await store.loadUserProfileDetail()
+
+      expect(result).toBe(false)
+      expect(store.userDetail).toBeNull()
+    })
+
+    it('should return false when no token', async () => {
+      const store = useAuthStore()
+      const result = await store.loadUserProfileDetail()
+
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('Refresh Role Options', () => {
+    it('should refresh role options successfully', async () => {
+      authService.getRoleOptions.mockResolvedValue({
+        success: true,
+        data: {
+          roles_selector: { Deportista: true },
+          rol_activo: 'Deportista',
+          paneles: ['deportista']
+        }
+      })
+      authService.getRolePermissions.mockResolvedValue({
+        success: true,
+        permisos: mockPermissions
+      })
+
+      const store = useAuthStore()
+      store.user = mockUser
+      const result = await store.refreshRoleOptions()
+
+      expect(result.success).toBe(true)
+      expect(store.rolesSelector).toEqual({ Deportista: true })
+    })
+
+    it('should handle refresh role options error', async () => {
+      authService.getRoleOptions.mockResolvedValue({
+        success: false,
+        error: 'Error loading options'
+      })
+
+      const store = useAuthStore()
+      const result = await store.refreshRoleOptions()
+
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('Set Permissions By Role', () => {
+    it('should set permissions for SuperAdmin', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['SuperAdmin']
+      }
+
+      store.setPermissionsByRole()
+
+      expect(store.permissions.length).toBeGreaterThan(0)
+      expect(store.permissions).toContain('crear_evento')
+      expect(store.permissions).toContain('gestionar_usuarios')
+    })
+
+    it('should set permissions for Administrador', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['Administrador']
+      }
+
+      store.setPermissionsByRole()
+
+      expect(store.permissions.length).toBeGreaterThan(0)
+      expect(store.permissions).toContain('crear_evento')
+    })
+
+    it('should set permissions for Entrenador', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['Entrenador']
+      }
+
+      store.setPermissionsByRole()
+
+      expect(store.permissions).toContain('crear_evento')
+      expect(store.permissions).toContain('editar_evento')
+      expect(store.permissions).toContain('ver_evento')
+    })
+
+    it('should set permissions for other roles', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['Deportista']
+      }
+
+      store.setPermissionsByRole()
+
+      expect(store.permissions).toContain('ver_evento')
+      expect(store.permissions).not.toContain('crear_evento')
+    })
+
+    it('should set empty permissions when no user', () => {
+      const store = useAuthStore()
+      store.user = null
+
+      store.setPermissionsByRole()
+
+      expect(store.permissions).toEqual([])
+    })
+  })
+
+  describe('Load User Permissions', () => {
+    it('should load user permissions for active role', async () => {
+      authService.getRolePermissions.mockResolvedValue({
+        success: true,
+        permisos: mockPermissions
+      })
+
+      const store = useAuthStore()
+      store.activeRole = 'Deportista'
+      await store.loadUserPermissions()
+
+      expect(store.permissions).toEqual(mockPermissions)
+    })
+
+    it('should load user permissions from getUserPermissions', async () => {
+      authService.getUserPermissions.mockResolvedValue({
+        success: true,
+        permisos: mockPermissions
+      })
+
+      const store = useAuthStore()
+      store.activeRole = null
+      await store.loadUserPermissions()
+
+      expect(store.permissions).toEqual(mockPermissions)
+    })
+
+    it('should fallback to setPermissionsByRole on error', async () => {
+      authService.getUserPermissions.mockResolvedValue({
+        success: false,
+        error: 'Error loading permissions'
+      })
+
+      const store = useAuthStore()
+      store.user = { roles: ['Deportista'] }
+      store.activeRole = null
+
+      await store.loadUserPermissions()
+
+      // Should fallback to role-based permissions
+      expect(store.permissions.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('Computed Permission Properties', () => {
+    it('should check puedeCrearEventos correctly', () => {
+      const store = useAuthStore()
+      store.permissions = ['crear_evento']
+
+      expect(store.puedeCrearEventos).toBe(true)
+    })
+
+    it('should check puedeEditarEventos correctly', () => {
+      const store = useAuthStore()
+      store.permissions = ['editar_evento']
+
+      expect(store.puedeEditarEventos).toBe(true)
+    })
+
+    it('should check puedeEliminarEventos correctly', () => {
+      const store = useAuthStore()
+      store.permissions = ['eliminar_evento']
+
+      expect(store.puedeEliminarEventos).toBe(true)
+    })
+
+    it('should check puedeVerEventos correctly', () => {
+      const store = useAuthStore()
+      store.permissions = ['ver_evento']
+
+      expect(store.puedeVerEventos).toBe(true)
+    })
+
+    it('should check puedeGestionarUsuarios correctly', () => {
+      const store = useAuthStore()
+      store.permissions = ['gestionar_usuarios']
+
+      expect(store.puedeGestionarUsuarios).toBe(true)
+    })
+
+    it('should check puedeAccederPanelAdmin correctly', () => {
+      const store = useAuthStore()
+      store.permissions = ['acceso_panel_admin']
+
+      expect(store.puedeAccederPanelAdmin).toBe(true)
+    })
+  })
+
+  describe('Helper Functions', () => {
+    it('should clearActiveRole correctly', () => {
+      const store = useAuthStore()
+      store.activeRole = 'Deportista'
+      localStorage.setItem('activeRole', 'Deportista')
+
+      store.clearActiveRole()
+
+      expect(store.activeRole).toBeNull()
+      expect(localStorage.getItem('activeRole')).toBeFalsy()
+    })
+
+    it('should updateUser correctly', () => {
+      const store = useAuthStore()
+      store.user = { id_usuario: 1, nombre: 'Original' }
+
+      store.updateUser({ nombre: 'Updated' })
+
+      expect(store.user.nombre).toBe('Updated')
+      expect(localStorage.getItem('user')).toBeTruthy()
+    })
+
+    it('should loadUserProfileDetail return false when no token', async () => {
+      const store = useAuthStore()
+      store.token = null
+
+      const result = await store.loadUserProfileDetail()
+
+      // loadUserProfileDetail calls validarTokenParaCarga internally
+      expect(result).toBe(false)
+    })
+  })
+
+  describe('Initialization', () => {
+    it('should initialize store correctly', async () => {
+      authService.verifyToken.mockResolvedValue({
+        success: true
+      })
+      authService.getProfile.mockResolvedValue({
+        success: true,
+        data: mockUser
+      })
+
+      localStorage.setItem('token', mockToken)
+      localStorage.setItem('user', JSON.stringify(mockUser))
+
+      const store = useAuthStore()
+      await store.inicializar()
+
+      expect(store.token).toBeTruthy()
+    })
+
+    it('should handle initialization with invalid token', async () => {
+      authService.verifyToken.mockResolvedValue({
+        success: false
+      })
+
+      localStorage.setItem('token', 'invalid-token')
+
+      const store = useAuthStore()
+      await store.inicializar()
+
+      // Invalid token should be cleared
+      expect(store.token).toBeFalsy()
+    })
+  })
+
+  describe('User Roles Computed', () => {
+    it('should compute userRoles with string roles', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['Deportista', 'Acudiente']
+      }
+
+      expect(store.userRoles).toEqual(['Deportista', 'Acudiente'])
+    })
+
+    it('should compute userRoles with object roles', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: [
+          { nombre_rol: 'Deportista' },
+          { rol: 'Acudiente' }
+        ]
+      }
+
+      expect(store.userRoles).toEqual(['Deportista', 'Acudiente'])
+    })
+
+    it('should compute role checks correctly', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['Deportista', 'Acudiente', 'Entrenador']
+      }
+
+      expect(store.isDeportista).toBe(true)
+      expect(store.isAcudiente).toBe(true)
+      expect(store.isEntrenador).toBe(true)
+      expect(store.isAdmin).toBe(false)
+    })
+
+    it('should check hasRole correctly', () => {
+      const store = useAuthStore()
+      store.user = {
+        roles: ['Deportista']
+      }
+
+      expect(store.hasRole('Deportista')).toBe(true)
+      expect(store.hasRole('Administrador')).toBe(false)
+    })
+  })
+
+  describe('Esta Autenticado Alias', () => {
+    it('should compute estaAutenticado correctly', () => {
+      const store = useAuthStore()
+      expect(store.estaAutenticado).toBe(false)
+
+      store.token = mockToken
+      expect(store.estaAutenticado).toBe(true)
+    })
+  })
+
+  describe('Load Permissions For Role Edge Cases', () => {
+    it('should handle empty role name', async () => {
+      const store = useAuthStore()
+      await store.loadPermissionsForRole('')
+
+      expect(store.permissions).toEqual([])
+    })
+
+    it('should handle null role name', async () => {
+      const store = useAuthStore()
+      await store.loadPermissionsForRole(null)
+
+      expect(store.permissions).toEqual([])
+    })
+
+    it('should handle undefined role name', async () => {
+      const store = useAuthStore()
+      await store.loadPermissionsForRole(undefined)
+
+      expect(store.permissions).toEqual([])
+    })
+  })
+
+  describe('Set Active Role Edge Cases', () => {
+    it('should handle setActiveRole with forzarCambio', async () => {
+      authService.activateRole.mockResolvedValue({
+        success: true,
+        data: {
+          rol_activo: 'Deportista',
+          roles_selector: { Deportista: true },
+          paneles: ['deportista']
+        }
+      })
+      authService.getRolePermissions.mockResolvedValue({
+        success: true,
+        permisos: mockPermissions
+      })
+
+      const store = useAuthStore()
+      store.user = mockUser
+      store.activeRole = 'Acudiente'
+
+      const result = await store.setActiveRole('Deportista', true)
+
+      expect(result.success).toBe(true)
+    })
+
+    it('should not change role when forzarCambio is false and role is same', async () => {
+      const store = useAuthStore()
+      store.user = mockUser
+      store.activeRole = 'Deportista'
+
+      const result = await store.setActiveRole('Deportista', false)
+
+      // Should return success without calling activateRole if role is already active
+      expect(result.success).toBe(true)
+    })
+  })
 })
 

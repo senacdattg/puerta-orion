@@ -83,7 +83,7 @@
               <h4 class="evento-titulo-grande">{{ form.titulo || 'Sin título' }}</h4>
               <span class="evento-badge-grande" :class="obtenerClaseTipoEvento(obtenerNombreTipoEvento(form.id_tipo_evento))">
                 {{ obtenerNombreTipoEvento(form.id_tipo_evento) || 'Evento' }}
-              </span>
+                </span>
             </div>
           </div>
 
@@ -101,18 +101,18 @@
                   <i class="fas fa-tag"></i>
                 </div>
                 <div class="detalle-contenido">
-                  <span class="detalle-label evento-label-grande">Tipo de evento</span>
+                <span class="detalle-label evento-label-grande">Tipo de evento</span>
                   <span class="detalle-valor evento-valor-grande">{{ obtenerNombreTipoEvento(form.id_tipo_evento) || 'Sin tipo' }}</span>
-                </div>
+              </div>
               </div>
               <div class="detalle-item evento-item">
                 <div class="detalle-icono">
                   <i class="fas fa-layer-group"></i>
                 </div>
                 <div class="detalle-contenido">
-                  <span class="detalle-label evento-label-grande">Categoría</span>
+                <span class="detalle-label evento-label-grande">Categoría</span>
                   <span class="detalle-valor evento-valor-grande">{{ obtenerNombreCategoria(form.id_categoria) || 'Sin categoría' }}</span>
-                </div>
+              </div>
               </div>
 
               <!-- Segunda fila: Fecha debajo -->
@@ -121,9 +121,9 @@
                   <i class="fas fa-calendar-alt"></i>
                 </div>
                 <div class="detalle-contenido">
-                  <span class="detalle-label evento-label-grande">Fecha</span>
+                <span class="detalle-label evento-label-grande">Fecha</span>
                   <span class="detalle-valor evento-valor-grande">{{ formatearFechaCompleta(form.fecha) || form.fecha || 'Sin fecha' }}</span>
-                </div>
+              </div>
               </div>
 
               <!-- Tercera fila: Imagen (si existe) -->
@@ -143,7 +143,7 @@
                   <i class="fas fa-align-left"></i>
                 </div>
                 <div class="detalle-contenido">
-                  <span class="detalle-label evento-label-grande">Descripción</span>
+                <span class="detalle-label evento-label-grande">Descripción</span>
                   <span class="detalle-valor evento-valor-grande evento-descripcion-texto">{{ form.descripcion || 'Sin descripción' }}</span>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export default {
 
         const coincideNombre =
           !this.busqueda ||
-          evento.nombre.toLowerCase().includes(this.busqueda.toLowerCase());
+          (evento.nombre && typeof evento.nombre === 'string' && evento.nombre.toLowerCase().includes(this.busqueda.toLowerCase()));
 
         return coincideTipo && coincideNombre;
       });
@@ -1040,23 +1040,23 @@ export default {
           fechaParaParsear = fechaStr.split('T')[0];
         }
 
-        // Intentar parsear la fecha
+      // Intentar parsear la fecha
         const fecha = new Date(fechaParaParsear + 'T00:00:00');
-        if (Number.isNaN(fecha.getTime())) {
+      if (Number.isNaN(fecha.getTime())) {
           // Si falla, retornar solo la parte de fecha si tiene formato ISO
           if (fechaStr.includes('T')) {
             return fechaStr.split('T')[0];
           }
-          return fechaStr;
-        }
+        return fechaStr;
+      }
 
-        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        const diaSemana = diasSemana[fecha.getDay()];
-        const dia = fecha.getDate();
-        const mes = meses[fecha.getMonth()];
-        const año = fecha.getFullYear();
-        return `${diaSemana}, ${dia} de ${mes} de ${año}`;
+      const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const diaSemana = diasSemana[fecha.getDay()];
+      const dia = fecha.getDate();
+      const mes = meses[fecha.getMonth()];
+      const año = fecha.getFullYear();
+      return `${diaSemana}, ${dia} de ${mes} de ${año}`;
       } catch {
         // Si hay error, retornar solo la parte de fecha si tiene formato ISO
         if (fechaStr && fechaStr.includes('T')) {

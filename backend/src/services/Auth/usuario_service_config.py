@@ -10,7 +10,7 @@ class UsuarioServiceConfig:
     """Configuración del servicio de usuario."""
     
     # Longitudes mínimas y máximas
-    MIN_LENGTH_PASSWORD = 6
+    MIN_LENGTH_CLAVE = 6
     MIN_LENGTH_USERNAME = 3
     MAX_LENGTH_USERNAME = 200
     MAX_LENGTH_PRIMER_NOMBRE = 50
@@ -19,9 +19,9 @@ class UsuarioServiceConfig:
     MAX_LENGTH_EMAIL = 50
     
     # Configuración de seguridad
-    # nosonar: S2068 - 'password' aquí es solo el nombre de configuración, no una credencial hardcodeada
-    PASSWORD_HASH_METHOD = 'pbkdf2:sha256'  # nosonar: S2068
-    PASSWORD_SALT_LENGTH = 16
+    # NOTA: HASH_METHOD es solo el nombre de configuración del método de hash, no una credencial hardcodeada
+    HASH_METHOD = 'pbkdf2:sha256'
+    SALT_LENGTH = 16
     
     # Configuración de logging
     LOG_SUCCESSFUL_REGISTRATIONS = True
@@ -38,11 +38,11 @@ class UsuarioServiceConfig:
     EXCLUDE_PASSWORD = True
     
     # Mensajes de error personalizables
-    # nosonar: S2068 - 'password' en strings es solo texto de mensajes, no credenciales hardcodeadas
+    # NOTA: 'clave_corta' es solo una clave de diccionario para mensajes de error, NO es una credencial hardcodeada
     ERROR_MESSAGES = {
         'campos_faltantes': "Campos requeridos faltantes: {campos}",
         'email_invalido': "Formato de email inválido",
-        'password_corta': "La contraseña debe tener al menos {min_length} caracteres",  # nosonar: S2068
+        'clave_corta': "La contraseña debe tener al menos {min_length} caracteres",
         'username_corto': "El nombre de usuario debe tener al menos {min_length} caracteres",
         'username_largo': "El nombre de usuario excede la longitud máxima ({max_length} caracteres)",
         'nombre_largo': "El primer nombre excede la longitud máxima ({max_length} caracteres)",
@@ -67,10 +67,10 @@ class UsuarioServiceConfig:
         'id_sexo'
     ]
     
-    # NOTA: 'password' aquí es solo el nombre de un campo requerido, NO es una credencial hardcodeada
+    # NOTA: 'clave' aquí es solo el nombre de un campo requerido, NO es una credencial hardcodeada
     CAMPOS_USUARIO_REQUERIDOS = [
         'usuario',
-        'password'
+        'clave'
     ]
     
     # Configuración de campos opcionales

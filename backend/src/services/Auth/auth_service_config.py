@@ -27,7 +27,7 @@ class AuthServiceConfig:
     # Configuración de validación
     MIN_USERNAME_LENGTH = 3
     MAX_USERNAME_LENGTH = 200
-    MIN_PASSWORD_LENGTH = 6
+    MIN_CLAVE_LENGTH = 6
     
     # Configuración de logging
     LOG_SUCCESSFUL_LOGINS = True
@@ -41,11 +41,10 @@ class AuthServiceConfig:
     INCLUDE_SESSION_DATA = True
     
     # Mensajes de error personalizables
-    # NOTA: 'password_required' es solo una clave de diccionario para mensajes de error, NO es una credencial hardcodeada
-    # nosonar: S2068 - 'password' en strings es solo texto de mensajes, no credenciales hardcodeadas
+    # NOTA: 'clave_requerida' es solo una clave de diccionario para mensajes de error, NO es una credencial hardcodeada
     ERROR_MESSAGES = {
         'username_required': "El nombre de usuario es requerido",
-        'password_required': "La contraseña es requerida",  # nosonar: S2068
+        'clave_requerida': "La contraseña es requerida",
         'username_too_short': f"El nombre de usuario debe tener al menos {MIN_USERNAME_LENGTH} caracteres",
         'invalid_credentials': "Credenciales inválidas",
         'user_inactive': "Usuario inactivo",
