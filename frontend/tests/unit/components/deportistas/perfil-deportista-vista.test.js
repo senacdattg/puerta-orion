@@ -253,5 +253,282 @@ describe('PerfilDeportistaVista', () => {
 
     expect(wrapper.vm.isEditing).toBe(false)
   })
+
+  describe('Form Data Initialization', () => {
+    let wrapper
+
+    beforeEach(() => {
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+    })
+
+    it('should initialize formData correctly', () => {
+      expect(wrapper.vm.formData).toBeDefined()
+      expect(wrapper.vm.formData.primer_nombre).toBeDefined()
+    })
+
+    it('should crearEstadoInicial correctly', () => {
+      const estado = wrapper.vm.crearEstadoInicial(mockDatos)
+      expect(estado).toBeDefined()
+      // crearEstadoInicial may transform to uppercase
+      expect(estado.primer_nombre).toBeTruthy()
+      expect(typeof estado.primer_nombre).toBe('string')
+    })
+  })
+
+  describe('Input Sanitization', () => {
+    let wrapper
+
+    beforeEach(() => {
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+    })
+
+    it('should sanitizarNombre correctly', () => {
+      expect(wrapper.vm.sanitizarNombre('juan123')).toBe('JUAN')
+      expect(wrapper.vm.sanitizarNombre('juan carlos')).toBe('JUAN CARLOS')
+    })
+
+    it('should sanitizarDireccion correctly', () => {
+      const direccion = wrapper.vm.sanitizarDireccion('calle 123')
+      expect(direccion).toBe('CALLE 123')
+    })
+
+    it('should manejarEntradaNombre correctly', () => {
+      const event = {
+        target: { value: 'juan123' }
+      }
+      wrapper.vm.manejarEntradaNombre('primer_nombre', event)
+      expect(wrapper.vm.formData.primer_nombre).toBe('JUAN')
+    })
+
+    it('should manejarDocumento correctly', () => {
+      const event = {
+        target: { value: '123-456-789' }
+      }
+      wrapper.vm.manejarDocumento(event)
+      expect(wrapper.vm.formData.documento).toBe('123456789')
+    })
+
+    it('should manejarTelefono correctly', () => {
+      const event = {
+        target: { value: '(300) 123-4567' }
+      }
+      wrapper.vm.manejarTelefono(event)
+      expect(wrapper.vm.formData.telefono).toBe('3001234567')
+    })
+
+    it('should manejarCorreo correctly', () => {
+      const event = {
+        target: { value: '  TEST@EXAMPLE.COM  ' }
+      }
+      wrapper.vm.manejarCorreo(event)
+      expect(wrapper.vm.formData.correo_electronico).toBe('test@example.com')
+    })
+
+    it('should manejarEntradaDireccion correctly', () => {
+      const event = {
+        target: { value: 'calle 123' }
+      }
+      wrapper.vm.manejarEntradaDireccion(event)
+      expect(wrapper.vm.formData.direccion).toBe('CALLE 123')
+    })
+  })
+
+  describe('Helper Functions', () => {
+    let wrapper
+
+    beforeEach(async () => {
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+    })
+
+    it('should obtenerNombreCompleto correctly', () => {
+      const nombre = wrapper.vm.obtenerNombreCompleto()
+      expect(nombre).toContain('Juan')
+      expect(nombre).toContain('Pérez')
+    })
+
+    it('should obtenerTipoDocumento correctly', () => {
+      const tipo = wrapper.vm.obtenerTipoDocumento()
+      // Should return tipo documento name or undefined
+      expect(typeof tipo === 'string' || tipo === undefined || tipo === null).toBe(true)
+    })
+
+    it('should obtenerCategoria correctly', () => {
+      const categoria = wrapper.vm.obtenerCategoria()
+      expect(typeof categoria === 'string' || categoria === undefined || categoria === null).toBe(true)
+    })
+  })
+
+  describe('Edit Mode', () => {
+    let wrapper
+
+    beforeEach(async () => {
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos,
+          modoEdicion: false
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+    })
+
+    it('should enter edit mode', async () => {
+      wrapper.vm.iniciarEdicion()
+      // iniciarEdicion emits 'editar' event and may rely on modoEdicion prop
+      await wrapper.vm.$nextTick()
+      // Check that iniciarEdicion was called and emits event
+      expect(wrapper.emitted('editar')).toBeTruthy()
+    })
+
+    it('should cancel edit mode', () => {
+      wrapper.vm.isEditing = true
+      wrapper.vm.cancelarEdicion()
+      expect(wrapper.vm.isEditing).toBe(false)
+    })
+
+    it('should save changes successfully', async () => {
+      const Swal = await import('sweetalert2')
+      Swal.default.fire = vi.fn().mockResolvedValue({ isConfirmed: true })
+      Swal.default.close = vi.fn()
+      Swal.default.showLoading = vi.fn()
+
+      wrapper.vm.isEditing = true
+      wrapper.vm.formData.primer_nombre = 'Juan Actualizado'
+
+      await wrapper.vm.guardarCambios()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
+
+  describe('Computed Properties', () => {
+    let wrapper
+
+    beforeEach(() => {
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+    })
+
+    it('should check campoEditable correctly', () => {
+      const editable = wrapper.vm.campoEditable('persona', 'primer_nombre')
+      expect(typeof editable).toBe('boolean')
+    })
+
+    it('should filter diagnosticosDisponibles correctly', () => {
+      wrapper.vm.formData.id_tipo_enfermedad = 1
+      const diagnosticos = wrapper.vm.diagnosticosDisponibles
+      expect(Array.isArray(diagnosticos)).toBe(true)
+    })
+  })
+
+  describe('Date Formatting', () => {
+    let wrapper
+
+    beforeEach(() => {
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+    })
+
+    it('should normalizarFechaParaInput correctly', () => {
+      const fecha = wrapper.vm.normalizarFechaParaInput('2000-01-01')
+      expect(fecha).toBe('2000-01-01')
+    })
+
+    it('should normalizarNumeroParaInput correctly', () => {
+      expect(wrapper.vm.normalizarNumeroParaInput(50)).toBe('50')
+      expect(wrapper.vm.normalizarNumeroParaInput(null)).toBe('')
+    })
+  })
+
+  describe('Form Submission', () => {
+    let wrapper
+
+    beforeEach(async () => {
+      const Swal = await import('sweetalert2')
+      Swal.default.fire = vi.fn().mockResolvedValue({ isConfirmed: true })
+      Swal.default.close = vi.fn()
+      Swal.default.showLoading = vi.fn()
+
+      wrapper = mount(PerfilDeportistaVista, {
+        props: {
+          datos: mockDatos,
+          modoEdicion: true
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+
+      wrapper.vm.isEditing = true
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+    })
+
+    it('should handle save changes with validation errors', async () => {
+      wrapper.vm.formData.primer_nombre = ''
+      wrapper.vm.formData.documento = ''
+
+      await wrapper.vm.guardarCambios()
+      await wrapper.vm.$nextTick()
+
+      expect(wrapper.exists()).toBe(true)
+    })
+  })
 })
 

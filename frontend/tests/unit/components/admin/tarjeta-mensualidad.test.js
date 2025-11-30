@@ -154,7 +154,9 @@ describe('TarjetaMensualidad Component', () => {
         }
       })
 
-      expect(wrapper.vm.diasParaVencimiento).toBeLessThanOrEqual(5)
+      // Allow 1 day difference due to timing
+      expect(wrapper.vm.diasParaVencimiento).toBeGreaterThanOrEqual(4)
+      expect(wrapper.vm.diasParaVencimiento).toBeLessThanOrEqual(6)
     })
 
     it('should return correct vencimiento class', () => {

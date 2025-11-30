@@ -71,7 +71,9 @@ class TestMercadoPagoService:
         
         assert resultado['meses_cubiertos'] == 2
         assert resultado['sobrante'] == 0.0
-        assert mock_mensualidad.estado is False  # Puede quedar pendiente si hay saldo
+        # Si se cubren meses completos sin sobrante, el saldo_pendiente es 0 y el estado es True
+        assert resultado['nuevo_saldo_pendiente'] == 0.0
+        assert resultado['estado'] is True
     
     def test_aplicar_abono_mensualidad_con_sobrante(self):
         """Test: Aplicar abono con sobrante."""
@@ -102,7 +104,7 @@ class TestMercadoPagoService:
         assert mock_mensualidad.fecha_pago == date.today()
         assert mock_mensualidad.saldo_pendiente == 0.0
     
-    def test_crear_preferencia_success(self, service):
+    def test_crear_preferencia_success(self, service, app_context):
         """Test: Crear preferencia exitosamente."""
         datos_pago = {
             'monto': 50000.0,
@@ -112,51 +114,84 @@ class TestMercadoPagoService:
         
         mock_response = {
             'id': 'pref_123',
-            'init_point': 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref_123'
+            'init_point': 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref_123',
+            'external_reference': 'ref_123'
+        }
+        
+        mock_sdk_result = {
+            'status': 201,
+            'response': mock_response
         }
         
         with patch.object(service.sdk, 'preference') as mock_preference:
-            mock_preference.return_value.create.return_value = mock_response
-            
-            resultado = service.crear_preferencia(datos_pago)
-            
-            assert resultado['id'] == 'pref_123'
-            assert 'init_point' in resultado
+            mock_preference.return_value.create.return_value = mock_sdk_result
+            with patch('src.services.mercadopago_service.TransaccionMercadoPago') as mock_transaccion:
+                mock_transaccion.crear_transaccion.return_value = MagicMock()
+                with patch('src.services.mercadopago_service.db') as mock_db:
+                    mock_db.session.commit = MagicMock()
+                    mock_db.session.add = MagicMock()
+                    
+                    resultado = service.crear_preferencia(datos_pago)
+                    
+                    assert resultado['success'] is True
+                    assert resultado['preference_id'] == 'pref_123'
+                    assert 'init_point' in resultado
     
     def test_crear_preferencia_sin_sdk(self):
         """Test: Error cuando SDK no está inicializado."""
         with patch.dict('os.environ', {}, clear=True):
             service = MercadoPagoService()
             
-            with pytest.raises(Exception):
-                service.crear_preferencia({'monto': 50000.0})
+            resultado = service.crear_preferencia({'monto': 50000.0})
+            
+            assert resultado['success'] is False
+            assert 'no configurado' in resultado.get('error', '').lower()
     
-    def test_verificar_pago_success(self, service):
+    def test_verificar_pago_success(self, service, app_context):
         """Test: Verificar pago exitosamente."""
         payment_id = '123456789'
-        mock_payment = {
+        mock_payment_data = {
             'id': payment_id,
             'status': 'approved',
-            'transaction_amount': 50000.0
+            'transaction_amount': 50000.0,
+            'currency_id': 'COP'
+        }
+        
+        mock_sdk_result = {
+            'status': 200,
+            'response': mock_payment_data
         }
         
         with patch.object(service.sdk, 'payment') as mock_payment_sdk:
-            mock_payment_sdk.return_value.get.return_value = mock_payment
-            
-            resultado = service.verificar_pago(payment_id)
-            
-            assert resultado['id'] == payment_id
-            assert resultado['status'] == 'approved'
+            mock_payment_sdk.return_value.get.return_value = mock_sdk_result
+            with patch('src.services.mercadopago_service.TransaccionMercadoPago') as mock_transaccion:
+                mock_transaccion.query.filter_by.return_value.first.return_value = None
+                with patch('src.services.mercadopago_service.db') as mock_db:
+                    mock_db.session.commit = MagicMock()
+                    
+                    resultado = service.verificar_pago(payment_id)
+                    
+                    assert resultado['success'] is True
+                    assert resultado['estado'] == 'approved'
+                    assert resultado['monto'] == 50000.0
+                    assert 'payment' in resultado
     
     def test_verificar_pago_no_encontrado(self, service):
         """Test: Pago no encontrado."""
         payment_id = '999999999'
         
+        mock_sdk_result = {
+            'status': 404,
+            'response': None
+        }
+        
         with patch.object(service.sdk, 'payment') as mock_payment_sdk:
-            mock_payment_sdk.return_value.get.return_value = None
+            mock_payment_sdk.return_value.get.return_value = mock_sdk_result
             
             resultado = service.verificar_pago(payment_id)
-            assert resultado is None
+            
+            assert resultado['success'] is False
+            assert 'error' in resultado
     
     def test_procesar_webhook_success(self, service, app_context):
         """Test: Procesar webhook exitosamente."""
@@ -199,7 +234,7 @@ class TestMercadoPagoService:
         resultado = service.procesar_webhook(webhook_data)
         
         assert resultado['success'] is False
-        assert 'tipo' in resultado.get('error', '').lower()
+        assert 'no reconocido' in resultado.get('message', '').lower()
     
     def test_obtener_metodo_pago_mercadopago(self, service, app_context):
         """Test: Obtener método de pago MercadoPago."""

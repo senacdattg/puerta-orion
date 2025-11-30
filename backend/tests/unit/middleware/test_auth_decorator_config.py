@@ -236,3 +236,4 @@ class TestConfigFunctions:
             AuthDecoratorConfig.AUDIT_INCLUDE_IP = original_include_ip
             AuthDecoratorConfig.AUDIT_INCLUDE_USER_AGENT = original_include_ua
 
+
