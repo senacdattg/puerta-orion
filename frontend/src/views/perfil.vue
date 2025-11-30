@@ -52,15 +52,15 @@
               <!-- Mostrar información básica del usuario del store -->
               <div v-if="usuario" class="info-grid">
                 <div class="info-row">
-                  <label>ID Usuario:</label>
+                  <span class="info-label">ID Usuario:</span>
                   <span>{{ usuario.id_usuario }}</span>
                 </div>
                 <div class="info-row">
-                  <label>Username:</label>
+                  <span class="info-label">Username:</span>
                   <span>{{ usuario.username || usuario.usuario }}</span>
                 </div>
                 <div class="info-row">
-                  <label>Estado:</label>
+                  <span class="info-label">Estado:</span>
                   <span>
                     <span class="badge" :class="usuario.estado ? 'badge-success' : 'badge-muted'">
                       {{ usuario.estado ? 'Activo' : 'Inactivo' }}
@@ -68,11 +68,11 @@
                   </span>
                 </div>
                 <div class="info-row" v-if="usuario.persona">
-                  <label>Persona (del store):</label>
+                  <span class="info-label">Persona (del store):</span>
                   <span>{{ usuario.persona.nombre_completo || usuario.persona.documento || 'No disponible' }}</span>
                 </div>
                 <div class="info-row" v-if="usuario.roles && usuario.roles.length > 0">
-                  <label>Roles:</label>
+                  <span class="info-label">Roles:</span>
                   <span>
                     <span
                       v-for="(rol, index) in usuario.roles"
@@ -105,47 +105,47 @@
                 <i class="fas fa-exclamation-triangle"></i> {{ detalle?.error || detalle?.warning }}
               </div>
               <div class="info-row">
-                <label>Nombre completo:</label>
+                <span class="info-label">Nombre completo:</span>
                 <span>{{ `${detalle.persona.primer_nombre || ''} ${detalle.persona.segundo_nombre || ''} ${detalle.persona.primer_apellido || ''} ${detalle.persona.segundo_apellido || ''}`.trim() || 'No disponible' }}</span>
               </div>
               <div class="info-row">
-                <label>Primer nombre:</label>
+                <span class="info-label">Primer nombre:</span>
                 <span>{{ detalle.persona.primer_nombre || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Segundo nombre:</label>
+                <span class="info-label">Segundo nombre:</span>
                 <span>{{ detalle.persona.segundo_nombre || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Primer apellido:</label>
+                <span class="info-label">Primer apellido:</span>
                 <span>{{ detalle.persona.primer_apellido || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Segundo apellido:</label>
+                <span class="info-label">Segundo apellido:</span>
                 <span>{{ detalle.persona.segundo_apellido || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Correo electrónico:</label>
+                <span class="info-label">Correo electrónico:</span>
                 <span>{{ detalle.persona.correo_electronico || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Tipo de documento:</label>
+                <span class="info-label">Tipo de documento:</span>
                 <span>{{ nombreTipoDocumento(detalle.persona.id_tipo_documento) || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Número de documento:</label>
+                <span class="info-label">Número de documento:</span>
                 <span>{{ detalle.persona.documento || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Teléfono:</label>
+                <span class="info-label">Teléfono:</span>
                 <span>{{ detalle.persona.telefono || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Dirección:</label>
+                <span class="info-label">Dirección:</span>
                 <span>{{ detalle.persona.direccion || '—' }}</span>
               </div>
               <div class="info-row">
-                <label>Sexo:</label>
+                <span class="info-label">Sexo:</span>
                 <span>{{ nombreSexo(detalle.persona.id_sexo) }}</span>
               </div>
             </div>
@@ -156,7 +156,7 @@
                 {{ detalle?.error || 'Por favor, contacte al administrador para completar el registro.' }}
               </div>
               <div v-if="detalle?.usuario" class="info-row">
-                <label>Usuario:</label>
+                <span class="info-label">Usuario:</span>
                 <span>{{ detalle.usuario.usuario || '—' }}</span>
               </div>
             </div>
@@ -223,19 +223,19 @@
               </div>
               <div class="card-content deportista-section">
                 <div class="info-grid">
-                  <div class="info-row"><label>Fecha nacimiento:</label><span>{{ formatearFechaNacimiento(detalle.deportista?.fecha_nacimiento) || '—' }}</span></div>
-                  <div class="info-row"><label>Tipo sanguíneo:</label><span>{{ nombreSangre(detalle.deportista.id_tipo_sanguineo) }}</span></div>
-                  <div class="info-row"><label>Ciudad residencia:</label><span>{{ nombreCiudad(detalle.deportista.id_ciudad_recidencia) }}</span></div>
-                  <div class="info-row"><label>EPS:</label><span>{{ nombreEPS(detalle.deportista.id_eps) }}</span></div>
+                  <div class="info-row"><span class="info-label">Fecha nacimiento:</span><span>{{ formatearFechaNacimiento(detalle.deportista?.fecha_nacimiento) || '—' }}</span></div>
+                  <div class="info-row"><span class="info-label">Tipo sanguíneo:</span><span>{{ nombreSangre(detalle.deportista.id_tipo_sanguineo) }}</span></div>
+                  <div class="info-row"><span class="info-label">Ciudad residencia:</span><span>{{ nombreCiudad(detalle.deportista.id_ciudad_recidencia) }}</span></div>
+                  <div class="info-row"><span class="info-label">EPS:</span><span>{{ nombreEPS(detalle.deportista.id_eps) }}</span></div>
                 </div>
 
                 <div class="metrics-grid">
                   <div class="metric-card">
-                    <label>Peso</label>
+                    <span class="info-label">Peso</span>
                     <span class="metric-value">{{ detalle.deportista.peso ?? '—' }} kg</span>
                   </div>
                   <div class="metric-card">
-                    <label>Altura</label>
+                    <span class="info-label">Altura</span>
                     <span class="metric-value">{{ detalle.deportista.altura ?? '—' }} m</span>
                   </div>
                 </div>
@@ -244,14 +244,14 @@
                 <div class="info-subsection" v-if="detalle?.informacion_deportiva">
                   <h4>⚽ Información Deportiva</h4>
                   <div class="info-grid">
-                    <div class="info-row"><label>Categoría:</label><span>{{ nombreCategoria(detalle.informacion_deportiva.id_categoria) }}</span></div>
-                    <div class="info-row"><label>Practica otro deporte:</label><span><span class="badge" :class="detalle.informacion_deportiva.practica_otro_deporte ? 'badge-success' : 'badge-muted'">{{ detalle.informacion_deportiva.practica_otro_deporte ? 'Sí' : 'No' }}</span></span></div>
-                    <div class="info-row"><label>Participa en escuela:</label><span><span class="badge" :class="detalle.informacion_deportiva.participa_escuela ? 'badge-success' : 'badge-muted'">{{ detalle.informacion_deportiva.participa_escuela ? 'Sí' : 'No' }}</span></span></div>
-                    <div class="info-row"><label>Recomendación médica:</label><span><span class="badge" :class="detalle.informacion_deportiva.recomendacion_medica ? 'badge-warning' : 'badge-success'">{{ detalle.informacion_deportiva.recomendacion_medica ? 'Sí' : 'No' }}</span></span></div>
-                    <div class="info-row" v-if="detalle.informacion_deportiva.descripcion_recomendacion"><label>Descripción:</label><span>{{ detalle.informacion_deportiva.descripcion_recomendacion }}</span></div>
-                    <div class="info-row"><label>Escuela:</label><span>{{ nombreEscuela(detalle.informacion_deportiva.id_escuela) }}</span></div>
-                    <div class="info-row"><label>Deporte:</label><span>{{ nombreDeporte(detalle.informacion_deportiva.id_deporte) }}</span></div>
-                    <div class="info-row"><label>Institución registro:</label><span>{{ nombreInstitucionRegistro(detalle.informacion_deportiva.id_institucion_registro) }}</span></div>
+                    <div class="info-row"><span class="info-label">Categoría:</span><span>{{ nombreCategoria(detalle.informacion_deportiva.id_categoria) }}</span></div>
+                    <div class="info-row"><span class="info-label">Practica otro deporte:</span><span><span class="badge" :class="detalle.informacion_deportiva.practica_otro_deporte ? 'badge-success' : 'badge-muted'">{{ detalle.informacion_deportiva.practica_otro_deporte ? 'Sí' : 'No' }}</span></span></div>
+                    <div class="info-row"><span class="info-label">Participa en escuela:</span><span><span class="badge" :class="detalle.informacion_deportiva.participa_escuela ? 'badge-success' : 'badge-muted'">{{ detalle.informacion_deportiva.participa_escuela ? 'Sí' : 'No' }}</span></span></div>
+                    <div class="info-row"><span class="info-label">Recomendación médica:</span><span><span class="badge" :class="detalle.informacion_deportiva.recomendacion_medica ? 'badge-warning' : 'badge-success'">{{ detalle.informacion_deportiva.recomendacion_medica ? 'Sí' : 'No' }}</span></span></div>
+                    <div class="info-row" v-if="detalle.informacion_deportiva.descripcion_recomendacion"><span class="info-label">Descripción:</span><span>{{ detalle.informacion_deportiva.descripcion_recomendacion }}</span></div>
+                    <div class="info-row"><span class="info-label">Escuela:</span><span>{{ nombreEscuela(detalle.informacion_deportiva.id_escuela) }}</span></div>
+                    <div class="info-row"><span class="info-label">Deporte:</span><span>{{ nombreDeporte(detalle.informacion_deportiva.id_deporte) }}</span></div>
+                    <div class="info-row"><span class="info-label">Institución registro:</span><span>{{ nombreInstitucionRegistro(detalle.informacion_deportiva.id_institucion_registro) }}</span></div>
                   </div>
                 </div>
 
@@ -259,8 +259,8 @@
                 <div class="info-subsection" v-if="detalle?.diagnostico && detalle.diagnostico.length > 0">
                   <h4>🏥 Diagnósticos Médicos</h4>
                   <div class="info-grid">
-                    <div class="info-row" v-if="detalle.tipo_enfermedad"><label>Tipo enfermedad:</label><span>{{ nombreTipoEnfermedad(detalle.tipo_enfermedad) }}</span></div>
-                    <div class="info-row"><label>Diagnósticos:</label>
+                    <div class="info-row" v-if="detalle.tipo_enfermedad"><span class="info-label">Tipo enfermedad:</span><span>{{ nombreTipoEnfermedad(detalle.tipo_enfermedad) }}</span></div>
+                    <div class="info-row"><span class="info-label">Diagnósticos:</span>
                       <div class="badges-list">
                         <span class="badge badge-info" v-for="diagId in detalle.diagnostico" :key="diagId">{{ nombreDiagnostico(diagId) }}</span>
                       </div>
@@ -332,9 +332,10 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>Buscar acudiente por cédula:</label>
+            <label for="buscar-acudiente-input">Buscar acudiente por cédula:</label>
             <div class="input-busqueda">
               <input
+                id="buscar-acudiente-input"
                 type="text"
                 v-model="busquedaAcudiente"
                 @input="buscarAcudientes"
@@ -362,8 +363,8 @@
 
           <div v-if="acudienteSeleccionado" class="formulario-asociacion">
             <div class="form-group">
-              <label>Parentesco:</label>
-              <select v-model="idParentesco" class="select-input" required>
+              <label for="parentesco-select">Parentesco:</label>
+              <select id="parentesco-select" v-model="idParentesco" class="select-input" required>
                 <option value="">Seleccione un parentesco</option>
                 <option
                   v-for="parentesco in parentescos"
@@ -657,7 +658,7 @@ const esSoloAno = (fecha) => {
 }
 
 const formatearSoloAno = (fecha) => {
-  const año = parseInt(fecha)
+  const año = Number.parseInt(fecha, 10)
   if (validarAno(año)) {
     return `01/01/${año}`
   }
@@ -666,7 +667,7 @@ const formatearSoloAno = (fecha) => {
 
 const parsearFechaString = (fecha) => {
   const dateObj = new Date(fecha)
-  if (!isNaN(dateObj.getTime())) {
+  if (!Number.isNaN(dateObj.getTime())) {
     return formatearDateADDMYYYY(dateObj)
   }
   return null
@@ -686,7 +687,7 @@ const formatearFechaComoString = (fecha) => {
 }
 
 const formatearFechaComoDate = (fecha) => {
-  if (!isNaN(fecha.getTime())) {
+  if (!Number.isNaN(fecha.getTime())) {
     return formatearDateADDMYYYY(fecha)
   }
   return null
@@ -849,7 +850,7 @@ async function asociarAcudiente() {
   try {
     const datos = {
       id_deportista: detalle.value.deportista.id_deportista,
-      id_parentesco: parseInt(idParentesco.value),
+      id_parentesco: Number.parseInt(idParentesco.value, 10),
       es_responsable: esResponsable.value
     }
 
@@ -1004,4 +1005,26 @@ const getRolId = (rol) => {
   return getNombreRol(rol)
 }
 </script>
+
+<style scoped>
+/* Estilos para info-label: mantiene la apariencia de los labels originales */
+.info-label {
+  font-weight: 600;
+  color: #495057;
+  margin-right: 0.5rem;
+  display: inline-block;
+  min-width: 150px;
+}
+
+/* Asegurar que info-row mantenga el mismo estilo que antes */
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.info-row .info-label {
+  flex-shrink: 0;
+}
+</style>
 

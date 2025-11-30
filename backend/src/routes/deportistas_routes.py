@@ -18,7 +18,6 @@ from datetime import date
 import traceback
 
 from flask import Blueprint, request
-from flask import Response
 
 from src.services.deportista_service import DeportistaService
 from src.services.registro_deportista_service import RegistroDeportistaService
@@ -26,9 +25,7 @@ from src.services.catalogos_service import CatalogosService
 from src.utils.logger import obtener_registrador
 from src.utils.http_responses import HttpResponseBuilder, handle_exception, JsonResponse
 from src.utils.error_messages import (
-    ERROR_INTERNO_SERVIDOR,
     ERROR_CONTENT_TYPE_JSON,
-    ERROR_USUARIO_NO_AUTENTICADO,
     ERROR_DEPORTISTA_NO_ENCONTRADO,
     ERROR_ID_ENTERO_POSITIVO,
 )
@@ -36,7 +33,6 @@ from src.middleware.auth_decorator import token_required, get_current_user
 from src.utils.request_validators import obtener_json_requerido, RequestValidationError
 from src.models.base import db
 from sqlalchemy import cast, String, or_
-from flask_cors import cross_origin
 
 deportistas_bp = Blueprint('deportistas', __name__, url_prefix='/api/deportistas')
 logger = obtener_registrador('aplicacion')
@@ -751,13 +747,9 @@ def _buscar_persona_por_documento_multiple(documento: str) -> Tuple[Optional[Any
     doc_str = str(documento).strip()
     columnas = []
     for nombre in ('numero_documento', 'documento', 'num_documento', 'dni', 'cedula'):
-        try:
-            col = getattr(Persona, nombre, None)
-            if col is not None:
-                columnas.append(col)
-        except Exception:
-            continue
-    
+        col = getattr(Persona, nombre, None)
+        if col is not None:
+            columnas.append(col)
     if not columnas:
         return None, HttpResponseBuilder.success(
             data=None,
@@ -876,7 +868,7 @@ def buscar_deportista_por_documento_para_acudiente() -> JsonResponse:
             return error_response
         
         # Verify person has deportista role
-        tiene_rol, error_response = _verificar_rol_deportista(persona)
+        _, error_response = _verificar_rol_deportista(persona)
         if error_response:
             return error_response
         

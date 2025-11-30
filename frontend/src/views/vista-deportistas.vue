@@ -198,7 +198,7 @@ async function cambiarEstadoDeportista(deportista) {
   }
 
   // Confirmar el cambio
-  const nuevoEstado = deportista.estado === 'activo' ? false : true;
+  const nuevoEstado = deportista.estado !== 'activo';
   const accion = nuevoEstado ? 'activar' : 'desactivar';
   const confirmacion = await Swal.fire({
     icon: 'question',

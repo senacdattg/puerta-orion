@@ -86,9 +86,10 @@
           <!-- Búsqueda de deportista -->
           <div class="busqueda-deportista">
             <div class="busqueda-row">
-              <label class="form-label">🔍 Buscar deportista:</label>
+              <label for="buscar-deportista-input" class="form-label">🔍 Buscar deportista:</label>
               <div class="input-busqueda">
                 <input
+                  id="buscar-deportista-input"
                   type="text"
                   inputmode="numeric"
                   pattern="[0-9]*"
@@ -144,8 +145,8 @@
             <div class="separador"></div>
             <h4 class="formulario-titulo">📝 Datos de la asociación</h4>
             <div class="form-group">
-              <label class="form-label">Parentesco <span class="required">*</span></label>
-              <select v-model="idParentesco" class="select-input" required>
+              <label for="parentesco-select-acudidos" class="form-label">Parentesco <span class="required">*</span></label>
+              <select id="parentesco-select-acudidos" v-model="idParentesco" class="select-input" required>
                 <option value="">Seleccione un parentesco</option>
                 <option
                   v-for="parentesco in parentescos"
@@ -226,7 +227,7 @@ const MAX_DOCUMENTO = 20
 function normalizarDocumento(valor = '') {
   return (valor || '')
     .toString()
-    .replace(/\D/g, '') // Solo números
+    .replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex, se requiere replace con regex para eliminar todos los no-dígitos
     .slice(0, MAX_DOCUMENTO)
 }
 
@@ -514,7 +515,7 @@ const asociarDeportista = async () => {
   try {
     const datos = {
       id_deportista: deportistaSeleccionado.value.id_deportista,
-      id_parentesco: parseInt(idParentesco.value),
+      id_parentesco: Number.parseInt(idParentesco.value, 10),
       es_responsable: esResponsable.value
     }
 
