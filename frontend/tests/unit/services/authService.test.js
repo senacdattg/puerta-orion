@@ -3,7 +3,7 @@ import authService from '@/services/authService'
 import { mockToken, mockUser, mockLoginCredentials } from '../../fixtures/auth'
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 describe('AuthService', () => {
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('AuthService', () => {
         }
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse
       })
@@ -31,7 +31,7 @@ describe('AuthService', () => {
       expect(result.success).toBe(true)
       expect(result.token).toBe(mockToken)
       expect(result.user).toEqual(mockUser)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/login'),
         expect.objectContaining({
           method: 'POST',
@@ -43,7 +43,7 @@ describe('AuthService', () => {
     })
 
     it('should handle login error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Invalid credentials' })
       })
@@ -64,7 +64,7 @@ describe('AuthService', () => {
         password: 'password123'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         headers: {
           get: vi.fn(() => 'application/json')
@@ -81,7 +81,7 @@ describe('AuthService', () => {
     })
 
     it('should handle register error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         headers: {
           get: vi.fn(() => 'application/json')
@@ -100,14 +100,14 @@ describe('AuthService', () => {
     it('should logout successfully', async () => {
       localStorage.setItem('token', mockToken)
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       })
 
       await authService.logout(mockToken)
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/logout'),
         expect.objectContaining({
           method: 'POST',
@@ -128,7 +128,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -140,7 +140,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.data).toEqual(mockUser)
-      
+
       // Restore
       localStorage.getItem = originalGetItem
     })
@@ -154,7 +154,7 @@ describe('AuthService', () => {
 
   describe('Verify Token', () => {
     it('should verify valid token', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true })
       })
@@ -165,7 +165,7 @@ describe('AuthService', () => {
     })
 
     it('should return false for invalid token', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ success: false, message: 'Token inválido' })
@@ -194,7 +194,7 @@ describe('AuthService', () => {
 
       const mockPermissions = ['ver_evento', 'editar_perfil']
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: {
@@ -208,7 +208,7 @@ describe('AuthService', () => {
       expect(result.success).toBe(true)
       // The service returns { success: true, ...data.data }, so permisos should be in result
       expect(result.permisos || result.data?.permisos).toEqual(mockPermissions)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -220,9 +220,9 @@ describe('AuthService', () => {
         if (key === 'token') return mockToken
         return originalGetItem(key)
       })
-      
+
       expect(authService.getToken()).toBe(mockToken)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -232,12 +232,12 @@ describe('AuthService', () => {
         if (key === 'token') return mockToken
         return originalGetItem(key)
       })
-      
+
       expect(authService.hasToken()).toBe(true)
 
       localStorage.getItem = vi.fn(() => null)
       expect(authService.hasToken()).toBe(false)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -253,7 +253,7 @@ describe('AuthService', () => {
 
       expect(removedItems).toContain('token')
       expect(removedItems).toContain('user')
-      
+
       localStorage.removeItem = originalRemoveItem
     })
   })
@@ -268,7 +268,7 @@ describe('AuthService', () => {
 
       const mockPermissions = ['ver_evento', 'editar_perfil', 'ver_mensualidad']
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: {
@@ -281,7 +281,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.permisos).toEqual(mockPermissions)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -301,7 +301,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Unauthorized' })
       })
@@ -309,7 +309,7 @@ describe('AuthService', () => {
       const result = await authService.getUserPermissions()
 
       expect(result.success).toBe(false)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -322,7 +322,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           success: true,
@@ -334,7 +334,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.perfil_completo).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -351,13 +351,13 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Not found' })
       })
 
       await expect(authService.verificarEstadoPerfil()).rejects.toThrow()
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -376,7 +376,7 @@ describe('AuthService', () => {
         roles: ['Deportista']
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockDetail
       })
@@ -385,7 +385,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.id).toBe(1)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -396,7 +396,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ error: 'Token expired' })
@@ -406,7 +406,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(false)
       expect(result.expired).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -417,7 +417,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 500,
         json: async () => ({ error: 'Server error' })
@@ -426,7 +426,7 @@ describe('AuthService', () => {
       const result = await authService.getProfileDetail()
 
       expect(result.success).toBe(false)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -446,7 +446,7 @@ describe('AuthService', () => {
         fecha_nacimiento: '2010-01-01'
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: { id: 1, ...datosDeportista },
@@ -458,7 +458,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.data).toBeTruthy()
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -473,7 +473,7 @@ describe('AuthService', () => {
         id_categoria: 1
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: { id: 1 },
@@ -484,7 +484,7 @@ describe('AuthService', () => {
       const result = await authService.completarPerfilDeportista(datosDeportista)
 
       expect(result.success).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -495,7 +495,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Validation error' })
       })
@@ -503,7 +503,7 @@ describe('AuthService', () => {
       const result = await authService.completarPerfilDeportista({})
 
       expect(result.success).toBe(false)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -522,7 +522,7 @@ describe('AuthService', () => {
         id_parentesco: 1
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: datosAsociacion,
@@ -533,7 +533,7 @@ describe('AuthService', () => {
       const result = await authService.asociarAcudienteDeportista(datosAsociacion)
 
       expect(result.success).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -544,7 +544,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Already associated' })
       })
@@ -552,7 +552,7 @@ describe('AuthService', () => {
       const result = await authService.asociarAcudienteDeportista({})
 
       expect(result.success).toBe(false)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -571,7 +571,7 @@ describe('AuthService', () => {
         es_responsable: true
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: datosAcudiente,
@@ -582,7 +582,7 @@ describe('AuthService', () => {
       const result = await authService.completarPerfilAcudiente(datosAcudiente)
 
       expect(result.success).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -598,7 +598,7 @@ describe('AuthService', () => {
         id_parentesco: 2
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: { ...datosAcudiente, es_responsable: false },
@@ -609,14 +609,14 @@ describe('AuthService', () => {
       const result = await authService.completarPerfilAcudiente(datosAcudiente)
 
       expect(result.success).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
 
   describe('Forgot Password', () => {
     it('should send forgot password request successfully', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           message: 'Email sent'
@@ -627,7 +627,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.message).toBeTruthy()
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/forgot-password'),
         expect.objectContaining({
           method: 'POST',
@@ -637,7 +637,7 @@ describe('AuthService', () => {
     })
 
     it('should handle API error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({
           error: 'Email not found'
@@ -653,7 +653,7 @@ describe('AuthService', () => {
 
   describe('Reset Password', () => {
     it('should reset password successfully', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           message: 'Password reset successful'
@@ -663,7 +663,7 @@ describe('AuthService', () => {
       const result = await authService.resetPassword('token123', 'newpass', 'newpass')
 
       expect(result.success).toBe(true)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/reset-password'),
         expect.objectContaining({
           method: 'POST',
@@ -673,7 +673,7 @@ describe('AuthService', () => {
     })
 
     it('should handle API error', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({
           error: 'Invalid token'
@@ -697,7 +697,7 @@ describe('AuthService', () => {
       const datosPersona = { primer_nombre: 'Updated' }
       const datosUsuario = { usuario: 'newuser' }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: { id: 1, ...datosPersona, ...datosUsuario },
@@ -708,7 +708,7 @@ describe('AuthService', () => {
       const result = await authService.updateUser(1, datosPersona, datosUsuario)
 
       expect(result.success).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -721,7 +721,7 @@ describe('AuthService', () => {
 
       const datosPersona = { primer_nombre: 'Updated' }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: { id: 1, ...datosPersona },
@@ -732,7 +732,7 @@ describe('AuthService', () => {
       const result = await authService.updateUser(1, datosPersona)
 
       expect(result.success).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -745,10 +745,10 @@ describe('AuthService', () => {
 
       // The service throws an error but catches it and returns { success: false }
       const result = await authService.updateUser(1, {}, {})
-      
+
       expect(result.success).toBe(false)
       expect(result.error).toContain('Debe proporcionar')
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -766,7 +766,7 @@ describe('AuthService', () => {
         paneles: ['/deportista/dashboard']
       }
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: mockRoles
@@ -777,7 +777,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(true)
       expect(result.data).toEqual(mockRoles)
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -788,7 +788,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ error: 'Unauthorized' })
@@ -798,7 +798,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(false)
       expect(result.expired).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -811,7 +811,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           data: { activeRole: 'Deportista' }
@@ -821,14 +821,14 @@ describe('AuthService', () => {
       const result = await authService.activateRole('Deportista')
 
       expect(result.success).toBe(true)
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/roles/activar'),
         expect.objectContaining({
           method: 'PUT',
           body: expect.stringContaining('Deportista')
         })
       )
-      
+
       localStorage.getItem = originalGetItem
     })
 
@@ -839,7 +839,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ error: 'Unauthorized' })
@@ -849,7 +849,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(false)
       expect(result.expired).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
   })
@@ -859,12 +859,12 @@ describe('AuthService', () => {
       // Mock AbortController properly
       const mockAbort = vi.fn()
       const mockSignal = {}
-      global.AbortController = vi.fn(function() {
+      globalThis.AbortController = vi.fn(function() {
         this.abort = mockAbort
         this.signal = mockSignal
       })
 
-      global.fetch = vi.fn(() => {
+      globalThis.fetch = vi.fn(() => {
         const error = new Error('Aborted')
         error.name = 'AbortError'
         return Promise.reject(error)
@@ -877,7 +877,7 @@ describe('AuthService', () => {
     })
 
     it('should handle network error', async () => {
-      global.fetch = vi.fn(() => {
+      globalThis.fetch = vi.fn(() => {
         const error = new TypeError('Failed to fetch')
         error.message = 'Failed to fetch'
         return Promise.reject(error)
@@ -891,7 +891,7 @@ describe('AuthService', () => {
     })
 
     it('should handle non-JSON response', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         headers: {
           get: vi.fn(() => 'text/html')
@@ -919,7 +919,7 @@ describe('AuthService', () => {
     })
 
     it('should handle invalid JSON response', async () => {
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => {
@@ -933,7 +933,7 @@ describe('AuthService', () => {
     })
 
     it('should handle network error silently', async () => {
-      global.fetch = vi.fn(() => {
+      globalThis.fetch = vi.fn(() => {
         const error = new Error('Failed to fetch')
         return Promise.reject(error)
       })
@@ -952,7 +952,7 @@ describe('AuthService', () => {
         return originalGetItem(key)
       })
 
-      global.fetch.mockResolvedValueOnce({
+      globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
         json: async () => ({ error: 'Token expired' })
@@ -962,7 +962,7 @@ describe('AuthService', () => {
 
       expect(result.success).toBe(false)
       expect(result.expired).toBe(true)
-      
+
       localStorage.getItem = originalGetItem
     })
   })

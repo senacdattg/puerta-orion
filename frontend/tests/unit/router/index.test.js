@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { createRouter, createWebHistory } from 'vue-router'
 import router from '@/router/index'
 import { useAuthStore } from '@/stores/auth'
 
@@ -9,7 +8,7 @@ vi.mock('@/stores/auth', () => ({
 }))
 
 // Mock localStorage
-global.localStorage = {
+globalThis.localStorage = {
   getItem: vi.fn(() => null),
   setItem: vi.fn(),
   removeItem: vi.fn()
@@ -110,25 +109,25 @@ describe('Router Navigation Guards', () => {
   })
 
   it('should have deportista routes with role restrictions', () => {
-    const deportistaRoutes = router.options.routes.filter(r => 
+    const deportistaRoutes = router.options.routes.filter(r =>
       r.name && r.name.includes('deportista')
     )
     expect(deportistaRoutes.length).toBeGreaterThan(0)
     deportistaRoutes.forEach(route => {
-      if (route.meta && route.meta.requiresRole) {
+      if (route.meta?.requiresRole) {
         expect(route.meta.requiresRole).toContain('Deportista')
       }
     })
   })
 
   it('should have acudiente routes with role restrictions', () => {
-    const acudienteRoutes = router.options.routes.filter(r => 
+    const acudienteRoutes = router.options.routes.filter(r =>
       r.name && (r.name.includes('acudiente') || r.path?.includes('/acudiente/'))
     )
     expect(acudienteRoutes.length).toBeGreaterThan(0)
     // Verificar que al menos una ruta de acudiente tiene el rol requerido
-    const routesWithRole = acudienteRoutes.filter(route => 
-      route.meta && route.meta.requiresRole && route.meta.requiresRole.includes('Acudiente')
+    const routesWithRole = acudienteRoutes.filter(route =>
+      route.meta?.requiresRole?.includes('Acudiente')
     )
     expect(routesWithRole.length).toBeGreaterThan(0)
   })

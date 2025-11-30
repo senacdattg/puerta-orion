@@ -1,36 +1,26 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useModalScrollLock } from '@/composables/useModalScrollLock'
 
 describe('useModalScrollLock', () => {
   let mostrar
-  let originalBodyClassList
-  let originalDocumentElementClassList
-  let originalBodyStyle
-  let originalDocumentElementStyle
 
   beforeEach(() => {
     mostrar = ref(false)
 
-    // Save original values
-    originalBodyClassList = document.body.classList
-    originalDocumentElementClassList = document.documentElement.classList
-    originalBodyStyle = document.body.style
-    originalDocumentElementStyle = document.documentElement.style
-
     // Mock window methods
-    global.window.scrollTo = vi.fn()
-    global.window.pageYOffset = 100
-    global.document.documentElement.scrollTop = 100
-    global.document.body.scrollTop = 100
+    globalThis.window.scrollTo = vi.fn()
+    globalThis.window.pageYOffset = 100
+    globalThis.document.documentElement.scrollTop = 100
+    globalThis.document.body.scrollTop = 100
 
     // Mock getComputedStyle
-    global.window.getComputedStyle = vi.fn(() => ({
+    globalThis.window.getComputedStyle = vi.fn(() => ({
       scrollBehavior: 'smooth'
     }))
 
     // Mock requestAnimationFrame
-    global.requestAnimationFrame = vi.fn((callback) => {
+    globalThis.requestAnimationFrame = vi.fn((callback) => {
       callback()
       return 1
     })
@@ -58,7 +48,7 @@ describe('useModalScrollLock', () => {
   })
 
   it('should set body top position when modal opens', () => {
-    global.window.pageYOffset = 200
+    globalThis.window.pageYOffset = 200
 
     useModalScrollLock(mostrar)
 
@@ -85,7 +75,7 @@ describe('useModalScrollLock', () => {
   })
 
   it('should restore scroll position when modal closes', () => {
-    global.window.pageYOffset = 150
+    globalThis.window.pageYOffset = 150
 
     useModalScrollLock(mostrar)
 
@@ -96,7 +86,7 @@ describe('useModalScrollLock', () => {
 
     mostrar.value = false
     vi.waitFor(() => {
-      expect(global.window.scrollTo).toHaveBeenCalledWith({
+      expect(globalThis.window.scrollTo).toHaveBeenCalledWith({
         top: 150,
         left: 0,
         behavior: 'auto'
@@ -122,9 +112,6 @@ describe('useModalScrollLock', () => {
   })
 
   it('should clean up on unmount', () => {
-    const { onUnmounted } = require('vue')
-    const cleanup = vi.fn()
-
     useModalScrollLock(mostrar)
 
     mostrar.value = true
@@ -142,7 +129,7 @@ describe('useModalScrollLock', () => {
 
   it('should handle multiple requestAnimationFrame calls', () => {
     let callCount = 0
-    global.requestAnimationFrame = vi.fn((callback) => {
+    globalThis.requestAnimationFrame = vi.fn((callback) => {
       callCount++
       if (callCount === 1) {
         callback()
@@ -160,7 +147,7 @@ describe('useModalScrollLock', () => {
     mostrar.value = false
 
     vi.waitFor(() => {
-      expect(global.requestAnimationFrame).toHaveBeenCalled()
+      expect(globalThis.requestAnimationFrame).toHaveBeenCalled()
     })
   })
 })
