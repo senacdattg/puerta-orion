@@ -6,6 +6,7 @@ import Pie from '../components/layout/pie.vue';
 import mensualidadesService from '@/services/mensualidadesService';
 import { getApiUrl } from '@/config/environment';
 import Swal from 'sweetalert2';
+import { formatoCOP, nombreMes, obtenerNombrePersonaDesdeObjeto } from '@/utils/formatting';
 
 defineOptions({ name: 'MensualidadesView' });
 
@@ -13,35 +14,7 @@ const mensualidades = ref([]);
 const loading = ref(false);
 const errorMsg = ref('');
 
-function formatoCOP(valor) {
-  try { return new Intl.NumberFormat('es-CO').format(Number(valor)); } catch { return String(valor); }
-}
-
-function nombreMes(fechaISO) {
-  if (!fechaISO) return '';
-  const d = new Date(fechaISO);
-  return d.toLocaleDateString('es-CO', { month: 'long' }).replace(/^./, m => m.toUpperCase());
-}
-
-function obtenerNombrePersonaDesdeObjeto(persona, fallbackId) {
-  if (!persona) return `Persona #${fallbackId}`;
-  // Intentar múltiples convenciones de nombre
-  const posibles = [
-    persona.nombre,
-    persona.nombres,
-    persona.nombre_persona,
-    persona.nombre_completo,
-    persona.full_name,
-    persona.display_name
-  ].filter(Boolean);
-  if (posibles.length > 0) return String(posibles[0]);
-  // Combinar nombre + apellido si existen
-  const nombre = persona.primer_nombre || persona.nombre1 || persona.nombre;
-  const apellido = persona.primer_apellido || persona.apellido1 || persona.apellidos || persona.apellido;
-  if (nombre && apellido) return `${nombre} ${apellido}`;
-  if (nombre) return String(nombre);
-  return `Persona #${fallbackId}`;
-}
+// Use shared formatting utilities
 
 function mapMensualidadToCard(m) {
   const estadoTxt = m.estado_texto || (m.estado ? 'Pagado' : 'Pendiente');

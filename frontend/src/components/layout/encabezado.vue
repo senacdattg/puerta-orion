@@ -113,6 +113,7 @@ import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick }
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Swal from 'sweetalert2'
+import { useFooterActions } from '@/composables/useFooterActions'
 
 // Definir nombre del componente para evitar error del linter
 defineOptions({
@@ -142,43 +143,8 @@ const menuOpenedByClick = ref(false) // Track si se abrió por click
 const profileMenuClickHandler = ref(null) // Handler para clicks fuera del menú
 const profileMenuOpenTime = ref(0) // Timestamp cuando se abrió el menú
 
-// Computed para obtener el rol del usuario desde la sesión
-const userRole = computed(() => {
-  // Si hay un rol activo seleccionado, usarlo directamente
-  if (authStore.activeRole) {
-    const activeRole = authStore.activeRole
-    // Normalizar el nombre del rol para que coincida con las claves del objeto opcionesPorRol
-    if (activeRole === 'SuperAdmin' || activeRole === 'Administrador') {
-      return 'Admin'
-    }
-    return activeRole
-  }
-
-  if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
-    return 'Usuario'
-  }
-
-  // Obtener el primer rol del usuario (o el más relevante)
-  const roles = authStore.user.roles
-  const roleNames = new Set(roles.map(role =>
-    typeof role === 'string' ? role : role.nombre_rol
-  ))
-
-  // Priorizar roles en orden de importancia (solo si no hay rol activo)
-  if (roleNames.has('SuperAdmin') || roleNames.has('Administrador')) {
-    return 'Admin'
-  } else if (roleNames.has('Entrenador')) {
-    return 'Entrenador'
-  } else if (roleNames.has('Deportista')) {
-    return 'Deportista'
-  } else if (roleNames.has('Acudiente')) {
-    return 'Acudiente'
-  } else if (roleNames.includes('usuario')) {
-    return 'Usuario'
-  }
-
-  return 'Usuario'
-})
+// Use shared footer actions logic for userRole
+const { userRole } = useFooterActions()
 
 // Computed para obtener la foto de perfil
 const fotoPerfil = computed(() => {

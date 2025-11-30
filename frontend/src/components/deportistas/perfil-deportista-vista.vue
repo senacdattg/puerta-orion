@@ -545,6 +545,7 @@ import personasService from '@/services/personasService';
 import { getApiUrl } from '@/config/environment';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
+import { extraerMensajeError } from '@/utils/error-handling';
 
 defineOptions({
   name: 'PerfilDeportistaVista'
@@ -1028,42 +1029,6 @@ function verificarCambios() {
   return false
 }
 
-// Extraer mensaje de error de manera legible
-function extraerMensajeError(error) {
-  if (!error) {
-    return 'No se pudo completar la actualización. Por favor, intenta nuevamente.'
-  }
-
-  if (typeof error === 'string') {
-    return error
-  }
-
-  if (error.message) {
-    return error.message
-  }
-
-  if (error.error) {
-    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
-  }
-
-  if (error.details) {
-    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
-  }
-
-  if (typeof error === 'object') {
-    try {
-      const errorStr = JSON.stringify(error)
-      if (errorStr.length > 200) {
-        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
-      }
-      return errorStr
-    } catch {
-      return 'Error desconocido. Por favor, intenta nuevamente.'
-    }
-  }
-
-  return 'Error desconocido. Por favor, intenta nuevamente.'
-}
 
 function iniciarEdicion() {
   inicializarFormulario()

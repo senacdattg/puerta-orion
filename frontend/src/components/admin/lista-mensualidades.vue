@@ -283,6 +283,7 @@ import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
 import Swal from 'sweetalert2';
+import { extraerMensajeError } from '@/utils/error-handling';
 
 // Props
 const props = defineProps({
@@ -642,42 +643,6 @@ function verificarCambios() {
   return false
 }
 
-// Extraer mensaje de error de manera legible
-function extraerMensajeError(error) {
-  if (!error) {
-    return 'No se pudo completar la creación. Por favor, intenta nuevamente.'
-  }
-
-  if (typeof error === 'string') {
-    return error
-  }
-
-  if (error.message) {
-    return error.message
-  }
-
-  if (error.error) {
-    return typeof error.error === 'string' ? error.error : JSON.stringify(error.error)
-  }
-
-  if (error.details) {
-    return typeof error.details === 'string' ? error.details : JSON.stringify(error.details)
-  }
-
-  if (typeof error === 'object') {
-    try {
-      const errorStr = JSON.stringify(error)
-      if (errorStr.length > 200) {
-        return 'Error al procesar la solicitud. Verifica que todos los datos sean correctos.'
-      }
-      return errorStr
-    } catch {
-      return 'Error desconocido. Por favor, intenta nuevamente.'
-    }
-  }
-
-  return 'Error desconocido. Por favor, intenta nuevamente.'
-}
 
 function cerrarFormularioForzado() {
   mostrarFormulario.value = false;

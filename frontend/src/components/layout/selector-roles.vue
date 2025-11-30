@@ -28,6 +28,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useUserRegistration } from '@/composables/useUserRegistration'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -58,37 +59,8 @@ function obtenerRolPrincipal(roles) {
   return primero || 'usuario'
 }
 
-// Calcular edad del deportista basándose en fecha_nacimiento
-const edadDeportista = computed(() => {
-  try {
-    // Buscar fecha_nacimiento en diferentes lugares del store
-    const userDetail = authStore.userDetail
-    const deportista = userDetail?.deportista || authStore.user?.deportista
-
-    if (!deportista) return null
-
-    const fechaNacimiento = deportista.fecha_nacimiento
-
-    if (!fechaNacimiento) return null
-
-    // Si fecha_nacimiento es solo el año (número)
-    const añoActual = new Date().getFullYear()
-    const añoNacimiento = typeof fechaNacimiento === 'number' ? fechaNacimiento : new Date(fechaNacimiento).getFullYear()
-    const edad = añoActual - añoNacimiento
-
-    return edad
-  } catch (error) {
-    console.error('Error al calcular edad:', error)
-    return null
-  }
-})
-
-// Verificar si el deportista es mayor de edad (>= 18 años)
-const esMayorDeEdad = computed(() => {
-  const edad = edadDeportista.value
-  if (edad === null) return false // Si no se puede calcular la edad, por defecto no mostrar
-  return edad >= 18
-})
+// Use shared registration logic for age calculations
+const { edadDeportista, esMayorDeEdad } = useUserRegistration()
 
 // Verificar si el usuario es deportista
 const esDeportista = computed(() => {

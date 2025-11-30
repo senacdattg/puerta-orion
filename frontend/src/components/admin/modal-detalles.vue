@@ -378,6 +378,7 @@ import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
 import defaultAvatar from '@/assets/imgs/perfil.png';
 import { useModalScrollLock } from '@/composables/useModalScrollLock';
+import { extraerMensajeError } from '@/utils/error-handling';
 
 // Props
 const props = defineProps({
@@ -1884,23 +1885,18 @@ function _parsearRespuestaPago(text) {
 }
 
 function _extraerMensajeError(json, text) {
-  // Extract nested ternary operations to reduce cognitive complexity
-  if (json?.error) {
-    if (typeof json.error === 'string') {
-      return json.error;
+  // Try to extract from json first using shared utility
+  if (json) {
+    const errorFromJson = extraerMensajeError(json)
+    if (errorFromJson && errorFromJson !== 'No se pudo completar la operación. Por favor, intenta nuevamente.') {
+      return errorFromJson
     }
-    return json.error.message || JSON.stringify(json.error);
   }
-  if (json?.message) {
-    if (typeof json.message === 'string') {
-      return json.message;
-    }
-    return json.message.message || JSON.stringify(json.message);
-  }
+  // Fallback to text if json doesn't have error info
   if (text && typeof text === 'string') {
-    return text;
+    return text
   }
-  return 'No se pudo crear la preferencia';
+  return 'No se pudo crear la preferencia'
 }
 
 async function _mostrarErrorPago(mensaje) {
