@@ -600,11 +600,12 @@ def _actualizar_activo_campo(mensualidad: Mensualidad, valor: Any) -> None:
         mensualidad.activo = bool(valor)
 
 
-def _actualizar_estado_y_fecha_pago(mensualidad: Mensualidad) -> None:
+def _actualizar_estado_y_fecha_pago(mensualidad: Mensualidad, fecha_abono: Optional[date] = None) -> None:
     """Sincroniza estado y fecha de pago según el saldo pendiente."""
     if mensualidad.saldo_pendiente == 0:
         mensualidad.estado = True
-        mensualidad.fecha_pago = date.today()
+        # Usar la fecha del abono si se proporciona, de lo contrario usar la fecha actual
+        mensualidad.fecha_pago = fecha_abono if fecha_abono else date.today()
     else:
         mensualidad.estado = False
         mensualidad.fecha_pago = None
@@ -674,20 +675,24 @@ def _actualizar_vencimiento_y_saldo_post_abono(
     saldo_actual: float,
 ) -> None:
     """Actualiza la fecha de vencimiento y saldo después del abono."""
-    if meses_cubiertos > 0:
-        base_fecha = (
-            mensualidad.fecha_vencimiento
-            if mensualidad.fecha_vencimiento and mensualidad.fecha_vencimiento > date.today()
-            else date.today()
-        )
-        mensualidad.fecha_vencimiento = _add_months(base_fecha, meses_cubiertos)
-        mensualidad.saldo_pendiente = max(0, monto_base - sobrante) if monto_base > 0 else 0
-    else:
-        try:
-            saldo_float = float(mensualidad.saldo_pendiente)
-        except Exception:
-            saldo_float = saldo_actual
-        mensualidad.saldo_pendiente = max(0, saldo_float - monto_abonado)
+    # Usar directamente el saldo_actual que ya fue calculado correctamente
+    # Este saldo es más confiable que leer mensualidad.saldo_pendiente directamente
+    saldo_float = float(saldo_actual)
+    
+    logger.info(
+        "Actualizando saldo pendiente: mensualidad_id=%s, saldo_actual=%s, monto_abonado=%s, nuevo_saldo=%s",
+        mensualidad.id_mensualidad,
+        saldo_float,
+        monto_abonado,
+        max(0.0, saldo_float - monto_abonado)
+    )
+    
+    # Calcular el nuevo saldo: saldo actual menos el monto abonado
+    nuevo_saldo = max(0.0, saldo_float - monto_abonado)
+    mensualidad.saldo_pendiente = nuevo_saldo
+    
+    # La fecha de vencimiento NO se actualiza automáticamente al registrar un abono
+    # Se mantiene la fecha de vencimiento original de la mensualidad
 
 
 @mensualidades_bp.get('/buscar-persona')
@@ -996,8 +1001,21 @@ def abonar_mensualidad(mensualidad_id: int) -> JsonResponse:
         )
 
         monto_abonado = _obtener_monto_abonado(data)
+        
+        # Refrescar la mensualidad desde la base de datos para asegurar que tenemos los valores más recientes
+        db.session.refresh(mensualidad)
+        
         monto_base = _obtener_monto_base(mensualidad)
         saldo_actual = _obtener_saldo_actual(mensualidad, monto_base)
+
+        logger.info(
+            "Registrando abono: mensualidad_id=%s, monto_base=%s, saldo_actual=%s, monto_abonado=%s, saldo_pendiente_bd=%s",
+            mensualidad_id,
+            monto_base,
+            saldo_actual,
+            monto_abonado,
+            mensualidad.saldo_pendiente
+        )
 
         if saldo_actual >= 0 and monto_abonado > saldo_actual + 1e-6:
             raise RequestValidationError(ERROR_MONTO_ABONADO_SUPERA, status_code=400)
@@ -1023,12 +1041,30 @@ def abonar_mensualidad(mensualidad_id: int) -> JsonResponse:
         )
         db.session.add(abono)
 
-        _actualizar_estado_y_fecha_pago(mensualidad)
+        # Actualizar estado y fecha de pago, usando la fecha del abono si el saldo llega a 0
+        # La función _actualizar_vencimiento_y_saldo_post_abono ya actualizó el saldo pendiente
+        _actualizar_estado_y_fecha_pago(mensualidad, fecha_abono if mensualidad.saldo_pendiente == 0 else None)
 
+        # Verificar el saldo antes del commit
+        logger.info(
+            "Antes del commit: mensualidad_id=%s, saldo_pendiente=%s",
+            mensualidad_id,
+            mensualidad.saldo_pendiente
+        )
+        
         db.session.commit()
+        
+        # Refrescar después del commit para asegurar que tenemos el valor final
+        db.session.refresh(mensualidad)
+        logger.info(
+            "Después del commit: mensualidad_id=%s, saldo_pendiente=%s",
+            mensualidad_id,
+            mensualidad.saldo_pendiente
+        )
+        # Usar _serializar_mensualidad para incluir todos los campos necesarios (created_at, estado_texto, persona_nombre, etc.)
         return jsonify({
             'success': True,
-            'data': mensualidad.to_dict(),
+            'data': _serializar_mensualidad(mensualidad),
             'meses_cubiertos': meses_cubiertos,
             'sobrante': sobrante,
             'abono': abono.to_dict()
@@ -1117,7 +1153,13 @@ def actualizar_abono(mensualidad_id: int, abono_id: int) -> JsonResponse:
             _recalcular_estado_mensualidad(mensualidad)
 
         db.session.commit()
-        return jsonify({'success': True, 'data': abono.to_dict()}), 200
+        # Devolver tanto el abono actualizado como la mensualidad actualizada
+        # Usar _serializar_mensualidad para incluir todos los campos necesarios
+        return jsonify({
+            'success': True,
+            'data': abono.to_dict(),
+            'mensualidad': _serializar_mensualidad(mensualidad) if mensualidad else None
+        }), 200
     except RequestValidationError as exc:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(exc)}), exc.status_code
@@ -1142,11 +1184,169 @@ def eliminar_abono(mensualidad_id: int, abono_id: int) -> JsonResponse:
             _recalcular_estado_mensualidad(mensualidad)
 
         db.session.commit()
-        return jsonify({'success': True}), 200
+        # Devolver la mensualidad actualizada después de eliminar el abono
+        # Usar _serializar_mensualidad para incluir todos los campos necesarios
+        return jsonify({
+            'success': True,
+            'mensualidad': _serializar_mensualidad(mensualidad) if mensualidad else None
+        }), 200
     except Exception as exc:  # pylint: disable=broad-except
         logger.error("Error eliminando abono: %s", str(exc))
         db.session.rollback()
         return jsonify({'success': False, 'error': str(exc)}), 500
+
+
+def _obtener_id_metodo_pago_ninguno() -> Optional[int]:
+    """Obtiene el ID del método de pago 'Ninguno'."""
+    try:
+        # Buscar método de pago con nombre 'Ninguno' (case insensitive)
+        metodos = MetodoPago.query.all()
+        for metodo in metodos:
+            nombre = getattr(metodo, 'nombre_metodo', '') or getattr(metodo, 'nombre', '')
+            if nombre and str(nombre).lower().strip() == 'ninguno':
+                return getattr(metodo, 'id_metodo_pago', None) or getattr(metodo, 'id', None)
+    except Exception as exc:
+        logger.error(f"Error buscando método de pago 'Ninguno': {str(exc)}")
+    return None
+
+
+def _contar_mensualidades_vencidas_sin_pagar(id_persona: int, fecha_hoy: date) -> int:
+    """Cuenta las mensualidades vencidas sin pagar para una persona."""
+    try:
+        count = db.session.query(Mensualidad).filter(
+            Mensualidad.id_persona == id_persona,
+            Mensualidad.fecha_vencimiento < fecha_hoy,
+            Mensualidad.saldo_pendiente > 0,
+            Mensualidad.activo == True
+        ).count()
+        return count or 0
+    except Exception:
+        return 0
+
+
+def _obtener_mensualidad_mas_reciente_vencida(id_persona: int, fecha_hoy: date) -> Optional[Mensualidad]:
+    """Obtiene la mensualidad más reciente vencida para una persona."""
+    try:
+        mensualidad = Mensualidad.query.filter(
+            Mensualidad.id_persona == id_persona,
+            Mensualidad.fecha_vencimiento < fecha_hoy,
+            Mensualidad.activo == True
+        ).order_by(Mensualidad.fecha_vencimiento.desc()).first()
+        return mensualidad
+    except Exception:
+        return None
+
+
+def _renovar_mensualidades_automaticamente() -> Dict[str, Any]:
+    """Renueva automáticamente las mensualidades vencidas si cumplen las condiciones."""
+    fecha_hoy = date.today()
+    mensualidades_renovadas = 0
+    mensualidades_bloqueadas = 0
+    errores = []
+    
+    try:
+        id_metodo_ninguno = _obtener_id_metodo_pago_ninguno()
+        if not id_metodo_ninguno:
+            return {
+                'success': False,
+                'error': 'No se encontró el método de pago "Ninguno"',
+                'renovadas': 0,
+                'bloqueadas': 0
+            }
+        
+        # Obtener todas las personas con mensualidades vencidas
+        personas_con_vencidas = db.session.query(Mensualidad.id_persona).filter(
+            Mensualidad.fecha_vencimiento < fecha_hoy,
+            Mensualidad.activo == True
+        ).distinct().all()
+        
+        personas_procesadas = set()
+        
+        for (id_persona,) in personas_con_vencidas:
+            if id_persona in personas_procesadas:
+                continue
+            personas_procesadas.add(id_persona)
+            
+            try:
+                # Contar mensualidades vencidas sin pagar
+                count_vencidas = _contar_mensualidades_vencidas_sin_pagar(id_persona, fecha_hoy)
+                
+                # Si tiene 3 o más vencidas sin pagar, no renovar
+                if count_vencidas >= 3:
+                    mensualidades_bloqueadas += 1
+                    continue
+                
+                # Obtener la mensualidad más reciente vencida
+                mensualidad_anterior = _obtener_mensualidad_mas_reciente_vencida(id_persona, fecha_hoy)
+                if not mensualidad_anterior:
+                    continue
+                
+                # Verificar si ya existe una mensualidad para el mes siguiente
+                fecha_siguiente = _add_months(mensualidad_anterior.fecha_vencimiento, 1)
+                
+                existe_duplicada = Mensualidad.query.filter(
+                    Mensualidad.id_persona == id_persona,
+                    Mensualidad.fecha_vencimiento == fecha_siguiente,
+                    Mensualidad.activo == True
+                ).first()
+                
+                if existe_duplicada:
+                    continue
+                
+                # Crear nueva mensualidad
+                nueva_mensualidad = Mensualidad(
+                    id_persona=id_persona,
+                    id_metodo_pago=id_metodo_ninguno,
+                    monto_pago=mensualidad_anterior.monto_pago,
+                    estado=False,  # Pendiente
+                    fecha_pago=None,
+                    saldo_pendiente=mensualidad_anterior.monto_pago,  # Saldo pendiente igual al monto total
+                    fecha_vencimiento=fecha_siguiente,
+                    activo=True
+                )
+                
+                db.session.add(nueva_mensualidad)
+                mensualidades_renovadas += 1
+                
+            except Exception as exc:
+                logger.error(f"Error renovando mensualidad para persona {id_persona}: {str(exc)}")
+                errores.append(f"Persona {id_persona}: {str(exc)}")
+                continue
+        
+        db.session.commit()
+        
+        return {
+            'success': True,
+            'renovadas': mensualidades_renovadas,
+            'bloqueadas': mensualidades_bloqueadas,
+            'errores': errores if errores else None
+        }
+        
+    except Exception as exc:
+        db.session.rollback()
+        logger.error(f"Error en renovación automática: {str(exc)}")
+        return {
+            'success': False,
+            'error': str(exc),
+            'renovadas': mensualidades_renovadas,
+            'bloqueadas': mensualidades_bloqueadas
+        }
+
+
+@mensualidades_bp.post('/renovar-automaticamente')
+@permission_required('crear_mensualidad')
+def renovar_mensualidades_automaticamente() -> JsonResponse:
+    """Endpoint para ejecutar la renovación automática de mensualidades."""
+    try:
+        resultado = _renovar_mensualidades_automaticamente()
+        status_code = 200 if resultado.get('success') else 500
+        return jsonify(resultado), status_code
+    except Exception as exc:
+        logger.error(f"Error ejecutando renovación automática: {str(exc)}")
+        return jsonify({
+            'success': False,
+            'error': str(exc)
+        }), 500
 
 
 def registrar_mensualidades_routes(app: Flask) -> None:

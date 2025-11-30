@@ -1,5 +1,5 @@
 <template>
-  <div class="tarjeta-mensualidad" @click="verDetalle">
+  <div class="tarjeta-mensualidad" @click="verDetalleCompleto">
     <div class="header-mensualidad">
       <div class="avatar-deportista">
         <img
@@ -36,19 +36,21 @@
           <span class="detalle-valor precio">{{ totalPagadoTexto() }}</span>
         </div>
       </div>
+      <button
+        v-if="puedeToggleMensualidad"
+        class="estado-mensualidad"
+        :class="mensualidad.activo !== false ? 'activo' : 'inactivo'"
+        @click.stop="cambiarEstado"
+        :disabled="cambiandoEstado"
+        :title="mensualidad.activo !== false ? 'Desactivar mensualidad' : 'Activar mensualidad'"
+      >
+        {{ mensualidad.activo !== false ? 'ACTIVO' : 'INACTIVO' }}
+      </button>
     </div>
 
     <!-- Botones de acción (visibilidad según permisos) -->
     <div class="acciones-mensualidad">
       <div class="acciones-principales">
-        <button
-          class="boton-accion boton-principal"
-          @click.stop="verDetalleCompleto"
-          title="Ver detalles completos"
-        >
-          <span class="icono-accion">👁️</span>
-          <span class="texto-accion">Ver Detalles</span>
-        </button>
         <button
           class="boton-accion boton-principal"
           v-if="puedeIniciarPago && saldoPendientePositivo"
@@ -57,25 +59,6 @@
         >
           <span class="icono-accion">💳</span>
           <span class="texto-accion">Pagar</span>
-        </button>
-      </div>
-
-      <div class="acciones-secundarias">
-        <button
-          class="boton-accion boton-secundario gestionar"
-          @click.stop="gestionarMensualidad"
-          title="Gestionar mensualidad"
-          v-if="puedeEditarMensualidad"
-        >
-          <span class="icono-accion">⚙️</span>
-        </button>
-        <button
-          class="boton-accion boton-secundario eliminar"
-          @click.stop="eliminarMensualidad"
-          :title="props.mensualidad.activo ? 'Desactivar mensualidad' : 'Reactivar mensualidad'"
-          v-if="puedeToggleMensualidad"
-        >
-          <span class="icono-accion">{{ props.mensualidad.activo ? '🗑️' : '♻️' }}</span>
         </button>
       </div>
     </div>
@@ -88,7 +71,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { API_CONFIG } from '@/config/environment';
 import Swal from 'sweetalert2';
@@ -115,27 +98,26 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['ver-detalle', 'gestionar', 'eliminar', 'ver-detalle-completo']);
+const emit = defineEmits(['eliminar', 'ver-detalle-completo']);
 
 // Permisos
 const authStore = useAuthStore();
-const roleNames = computed(() => (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol));
-const isSuperOrAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNames.value.includes('Administrador'));
+// Verificar el rol activo actual, no todos los roles del usuario
+const isSuperOrAdmin = computed(() => {
+  const rolActivo = authStore.activeRole;
+  return rolActivo === 'SuperAdmin' || rolActivo === 'Administrador';
+});
 
-const puedeEditarMensualidad = computed(() => {
-  if (isSuperOrAdmin.value) return true;
-  try { return !!authStore?.hasPermission?.('editar_mensualidad'); } catch { return false; }
-});
-const puedeToggleMensualidad = computed(() => {
-  if (isSuperOrAdmin.value) return true;
-  try {
-    return !!authStore?.hasPermission?.('desactivar_mensualidad') || !!authStore?.hasPermission?.('reactivar_mensualidad');
-  } catch { return false; }
-});
+// Solo Administrador y SuperAdministrador pueden editar y desactivar mensualidades
+const puedeEditarMensualidad = computed(() => isSuperOrAdmin.value);
+const puedeToggleMensualidad = computed(() => isSuperOrAdmin.value);
 
 // Pago: permitir a Deportista/Acudiente iniciar pago
-const roles = roleNames; // alias
-const puedeIniciarPago = computed(() => roles.value.includes('Deportista') || roles.value.includes('Acudiente'));
+// Para el pago, verificamos el rol activo actual
+const puedeIniciarPago = computed(() => {
+  const rolActivo = authStore.activeRole;
+  return rolActivo === 'Deportista' || rolActivo === 'Acudiente';
+});
 const saldoPendientePositivo = computed(() => {
   const spRaw = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldoPendiente;
   const spNum = Number(spRaw);
@@ -244,20 +226,17 @@ const textoVencimiento = computed(() => {
   return `Vence en ${dias} días`;
 });
 
-// Funciones
-function verDetalle() {
-  emit('ver-detalle', props.mensualidad);
-}
+// Estado para controlar el cambio de estado
+const cambiandoEstado = ref(false);
 
+// Funciones
 function verDetalleCompleto() {
   emit('ver-detalle-completo', props.mensualidad);
 }
 
-function gestionarMensualidad() {
-  emit('gestionar', props.mensualidad);
-}
-
-function eliminarMensualidad() {
+function cambiarEstado() {
+  // Evitar múltiples clics mientras se procesa
+  if (cambiandoEstado.value) return;
   emit('eliminar', props.mensualidad);
 }
 

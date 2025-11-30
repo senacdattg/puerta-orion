@@ -74,10 +74,10 @@
 
     <!-- Modal para buscar y asociar deportista -->
     <div v-if="mostrarModalAcudir" class="modal-overlay" @click.self="cerrarModalAcudir">
-      <div class="modal-content">
+      <div class="modal-content modal-sm" @click.stop>
         <div class="modal-header">
-          <h2>Acudir a un Deportista</h2>
-          <button class="btn-cerrar-modal" @click="cerrarModalAcudir">
+          <h2 class="modal-title">Acudir a un Deportista</h2>
+          <button class="btn-cerrar" @click="cerrarModalAcudir">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -85,50 +85,66 @@
         <div class="modal-body">
           <!-- Búsqueda de deportista -->
           <div class="busqueda-deportista">
-            <label>Buscar deportista:</label>
-            <div class="input-busqueda">
-              <input
-                type="text"
-                v-model="busquedaDeportista"
-                @input="buscarDeportistas"
-                placeholder="Buscar por nombre o documento..."
-                class="input-text"
-              />
-              <i class="fas fa-search"></i>
+            <div class="busqueda-row">
+              <label class="form-label">🔍 Buscar deportista:</label>
+              <div class="input-busqueda">
+                <input
+                  type="text"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  v-model="busquedaDeportista"
+                  @input="manejarBusqueda"
+                  placeholder="Buscar por documento..."
+                  class="input-text"
+                />
+              </div>
             </div>
             <div v-if="buscando" class="cargando-busqueda">
-              <p>Buscando...</p>
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Buscando...</span>
             </div>
           </div>
 
           <!-- Lista de deportistas encontrados -->
           <div v-if="deportistasEncontrados.length > 0" class="deportistas-lista">
-            <h3>Deportistas encontrados:</h3>
-            <div
-              v-for="deportista in deportistasEncontrados"
-              :key="deportista.id_deportista"
-              class="deportista-item"
-              :class="{ 'seleccionado': deportistaSeleccionado?.id_deportista === deportista.id_deportista }"
-              @click="seleccionarDeportista(deportista)"
-            >
-              <div class="deportista-info">
-                <strong>{{ deportista.nombre }}</strong>
-                <span v-if="deportista.documento">Documento: {{ deportista.documento }}</span>
-                <span v-if="deportista.categoria">Categoría: {{ deportista.categoria }}</span>
+            <h4 class="lista-titulo">📋 Deportistas encontrados</h4>
+            <div class="deportistas-grid">
+              <div
+                v-for="deportista in deportistasEncontrados"
+                :key="deportista.id_deportista"
+                class="deportista-item"
+                :class="{ 'seleccionado': deportistaSeleccionado?.id_deportista === deportista.id_deportista }"
+                @click="seleccionarDeportista(deportista)"
+              >
+                <div class="deportista-info">
+                  <strong class="deportista-nombre">{{ deportista.nombre_completo || deportista.nombre || 'Sin nombre' }}</strong>
+                  <div class="deportista-detalles">
+                    <span v-if="deportista.documento" class="detalle-item">
+                      <i class="fas fa-id-card"></i>
+                      {{ deportista.documento }}
+                    </span>
+                    <span v-if="deportista.categoria" class="detalle-item">
+                      <i class="fas fa-tag"></i>
+                      {{ deportista.categoria }}
+                    </span>
+                  </div>
+                </div>
+                <i v-if="deportistaSeleccionado?.id_deportista === deportista.id_deportista" class="fas fa-check-circle icono-seleccionado"></i>
               </div>
-              <i class="fas fa-check-circle" v-if="deportistaSeleccionado?.id_deportista === deportista.id_deportista"></i>
             </div>
           </div>
 
           <div v-else-if="busquedaDeportista && !buscando && deportistasEncontrados.length === 0" class="sin-resultados-busqueda">
+            <i class="fas fa-search"></i>
             <p>No se encontraron deportistas con ese criterio de búsqueda.</p>
           </div>
 
           <!-- Formulario de asociación -->
           <div v-if="deportistaSeleccionado" class="formulario-asociacion">
-            <h3>Datos de la asociación:</h3>
+            <div class="separador"></div>
+            <h4 class="formulario-titulo">📝 Datos de la asociación</h4>
             <div class="form-group">
-              <label>Parentesco:</label>
+              <label class="form-label">Parentesco <span class="required">*</span></label>
               <select v-model="idParentesco" class="select-input" required>
                 <option value="">Seleccione un parentesco</option>
                 <option
@@ -143,7 +159,7 @@
             <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" v-model="esResponsable" />
-                Es responsable legal
+                <span>Es responsable legal</span>
               </label>
             </div>
           </div>
@@ -166,24 +182,22 @@
     </div>
 
     <!-- Modal para ver perfil completo del deportista -->
-    <div v-if="mostrarModalPerfil" class="modal-overlay" @click.self="cerrarModalPerfil">
-      <div class="modal-content modal-perfil">
-        <div class="modal-body">
-          <div v-if="cargandoPerfil" class="cargando">
-            <p>Cargando información...</p>
-          </div>
-          <PerfilDeportistaVista
-            v-else-if="deportistaSeleccionadoPerfil"
-            :datos="deportistaSeleccionadoPerfil"
-            :modoEdicion="modoEdicionPerfil"
-            @cerrar="cerrarModalPerfil"
-            @editar="habilitarEdicionPerfil"
-            @cancelar="cancelarEdicionPerfil"
-            @guardar="manejarGuardadoPerfil"
-          />
-          <div v-else class="error">
-            <p>No se pudo cargar la información del deportista</p>
-          </div>
+    <div v-if="mostrarModalPerfil" class="modal-overlay modal-deportistas-overlay" @click.self="cerrarModalPerfil">
+      <div class="modal-content modal-deportistas" @click.stop>
+        <div v-if="cargandoPerfil" class="cargando-perfil">
+          <p>Cargando información...</p>
+        </div>
+        <PerfilDeportistaVista
+          v-else-if="deportistaSeleccionadoPerfil"
+          :datos="deportistaSeleccionadoPerfil"
+          :modoEdicion="modoEdicionPerfil"
+          @cerrar="cerrarModalPerfil"
+          @editar="habilitarEdicionPerfil"
+          @cancelar="cancelarEdicionPerfil"
+          @guardar="manejarGuardadoPerfil"
+        />
+        <div v-else class="error-perfil">
+          <p>No se pudo cargar la información del deportista</p>
         </div>
       </div>
     </div>
@@ -204,6 +218,18 @@ import PerfilDeportistaVista from '@/components/deportistas/perfil-deportista-vi
 import Swal from 'sweetalert2'
 import { getApiBaseUrl } from '@/config/environment'
 
+// Constantes para validación de documento
+const MIN_DOCUMENTO = 6
+const MAX_DOCUMENTO = 20
+
+// Función para normalizar documento (solo números)
+function normalizarDocumento(valor = '') {
+  return (valor || '')
+    .toString()
+    .replace(/\D/g, '') // Solo números
+    .slice(0, MAX_DOCUMENTO)
+}
+
 const authStore = useAuthStore()
 
 const acudidos = ref([])
@@ -218,6 +244,14 @@ const parentescos = ref([])
 const idParentesco = ref('')
 const esResponsable = ref(false)
 const asociando = ref(false)
+
+// Función para manejar el input de búsqueda (normalizar y buscar)
+function manejarBusqueda(event) {
+  const valorNormalizado = normalizarDocumento(event?.target?.value ?? busquedaDeportista.value ?? '')
+  busquedaDeportista.value = valorNormalizado
+  buscarDeportistas()
+}
+
 
 onMounted(async () => {
   // Recargar el perfil del usuario para obtener información actualizada
@@ -396,38 +430,51 @@ const cerrarModalAcudir = () => {
 const buscarDeportistas = async () => {
   const busqueda = busquedaDeportista.value.trim()
 
-  if (!busqueda || busqueda.length < 2) {
+  if (!busqueda) {
     deportistasEncontrados.value = []
     return
   }
 
+  // Validar que tenga al menos 6 dígitos
+  if (busqueda.length < MIN_DOCUMENTO) {
+    deportistasEncontrados.value = []
+    return
+  }
+
+  // Buscar deportista por documento usando el nuevo servicio específico para acudientes
   buscando.value = true
   try {
-    // Buscar todos los deportistas (paginación alta para buscar)
-    const response = await deportistasService.listarDeportistas(1, 1000)
+    const respuesta = await deportistasService.buscarDeportistaPorDocumentoParaAcudiente(busqueda)
 
-    if (response.success && response.data) {
-      // Filtrar por nombre o documento
-      deportistasEncontrados.value = response.data.filter(deportista => {
-        const nombre = (deportista.nombre || '').toLowerCase()
-        const documento = (deportista.documento || deportista.persona?.documento || '').toString().toLowerCase()
-        const busquedaLower = busqueda.toLowerCase()
-
-        return nombre.includes(busquedaLower) || documento.includes(busquedaLower)
-      })
-
-      console.log(`✅ ${deportistasEncontrados.value.length} deportista(s) encontrado(s)`)
+    if (respuesta?.success && respuesta.encontrado) {
+      const deportista = respuesta.data
+      deportistasEncontrados.value = [deportista]
+      console.log('✅ Deportista encontrado por documento:', deportista)
     } else {
       deportistasEncontrados.value = []
+
+      // Verificar si el deportista ya es acudido
+      if (respuesta?.ya_acudido) {
+        const nombreDeportista = respuesta.data?.nombre_completo || respuesta.data?.nombre || 'este deportista'
+        await Swal.fire({
+          icon: 'info',
+          title: 'Deportista ya asociado',
+          text: `${nombreDeportista} ya es acudido por ti.`,
+          confirmButtonText: 'Entendido'
+        })
+      } else {
+        const mensaje = respuesta?.message || 'No se encontró un deportista con ese documento.'
+        console.log('ℹ️', mensaje)
+      }
     }
   } catch (error) {
-    console.error('❌ Error al buscar deportistas:', error)
+    console.error('❌ Error al buscar por documento:', error)
+    deportistasEncontrados.value = []
     await Swal.fire({
       icon: 'error',
-      title: 'Error al buscar deportistas',
-      text: 'Por favor, intenta de nuevo.'
+      title: 'Error al buscar deportista',
+      text: error.message || 'Por favor, intenta de nuevo.'
     })
-    deportistasEncontrados.value = []
   } finally {
     buscando.value = false
   }

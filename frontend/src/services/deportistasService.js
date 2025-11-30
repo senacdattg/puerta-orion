@@ -167,6 +167,55 @@ class DeportistasService {
       throw error
     }
   }
+
+  /**
+   * Busca un deportista por documento para que un acudiente lo asocie
+   * Valida que el deportista no sea ya acudido por el acudiente actual
+   * @param {string} documento - Número de documento del deportista
+   * @returns {Promise<Object>} Respuesta con información del deportista encontrado
+   */
+  async buscarDeportistaPorDocumentoParaAcudiente(documento) {
+    try {
+      const baseURL = getBaseUrl()
+      const qs = new URLSearchParams()
+      if (documento) qs.set('documento', documento)
+      
+      console.log(`🔄 DeportistasApi.buscarDeportistaPorDocumentoParaAcudiente: fetch -> ${baseURL}/deportistas/acudientes/buscar-deportista?${qs.toString()}`)
+      
+      const response = await fetch(`${baseURL}/deportistas/acudientes/buscar-deportista?${qs.toString()}`, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      })
+
+      console.log(`📡 DeportistasApi.buscarDeportistaPorDocumentoParaAcudiente: response ${response.status} ${response.statusText}`)
+      
+      const text = await response.text()
+      let data = {}
+      try {
+        data = text ? JSON.parse(text) : {}
+      } catch (e) {
+        console.error('Error al parsear respuesta JSON:', e, 'Texto recibido:', text)
+      }
+
+      if (!response.ok) {
+        let errorMessage = `Error ${response.status}: ${response.statusText}`
+        if (data?.error) {
+          errorMessage = typeof data.error === 'string' ? data.error : JSON.stringify(data.error)
+        } else if (data?.message) {
+          errorMessage = data.message
+        }
+        console.error(`❌ DeportistasApi.buscarDeportistaPorDocumentoParaAcudiente: server error response`, data)
+        const error = new Error(errorMessage)
+        error.status = response.status
+        throw error
+      }
+
+      return data
+    } catch (error) {
+      console.error('❌ DeportistasApi.buscarDeportistaPorDocumentoParaAcudiente: request error', error)
+      throw error
+    }
+  }
 }
 
 // Exportar instancia única del servicio

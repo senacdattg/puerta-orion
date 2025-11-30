@@ -162,6 +162,31 @@ def _initialize_extensions(app: Flask) -> None:
     gestor_logs.inicializar_aplicacion(app)
     db.init_app(app)
     migrate.init_app(app, db)
+    _initialize_scheduler(app)
+
+
+def _initialize_scheduler(app: Flask) -> None:
+    """Inicializa el scheduler de tareas programadas."""
+    try:
+        from src.utils.scheduler import init_scheduler
+        init_scheduler(app)
+        app.logger.info("Scheduler de tareas programadas inicializado")
+    except ImportError as exc:
+        app.logger.warning("No se pudo inicializar el scheduler: %s", str(exc))
+    except Exception as exc:
+        app.logger.error("Error inicializando scheduler: %s", str(exc))
+
+
+def _initialize_scheduler(app: Flask) -> None:
+    """Inicializa el scheduler de tareas programadas."""
+    try:
+        from src.utils.scheduler import init_scheduler
+        init_scheduler(app)
+        app.logger.info("Scheduler de tareas programadas inicializado")
+    except ImportError as exc:
+        app.logger.warning("No se pudo inicializar el scheduler: %s", str(exc))
+    except Exception as exc:
+        app.logger.error("Error inicializando scheduler: %s", str(exc))
 
 
 def _register_blueprints(app: Flask) -> None:
@@ -254,10 +279,23 @@ def _normalize_origins(origins: Iterable[str]) -> list[str]:
 # Instancia global de la aplicación Flask
 app = create_app()
 
+
+def shutdown_handler() -> None:
+    """Maneja el cierre de la aplicación, deteniendo el scheduler."""
+    try:
+        from src.utils.scheduler import shutdown_scheduler
+        shutdown_scheduler()
+    except Exception:
+        pass
+
+
 if __name__ == '__main__':
     # Obtener configuración para el servidor
     config_obj = get_config()
     
-    app.run(
-        host='0.0.0.0', port=5000, debug=True
-    )
+    try:
+        app.run(
+            host='0.0.0.0', port=5000, debug=True
+        )
+    finally:
+        shutdown_handler()

@@ -29,9 +29,33 @@ class MensualidadesApi {
       })
       console.log(`📡 ${logLabel}: response`, res.status, res.statusText)
       if (!res.ok) {
-        const errorText = await res.text()
-        console.error(`❌ ${logLabel}: server error`, errorText)
-        throw new Error(`${res.status} ${res.statusText}`)
+        let errorMessage = `${res.status} ${res.statusText}`
+        try {
+          // Leer el texto de la respuesta primero
+          const errorText = await res.text()
+          console.error(`❌ ${logLabel}: server error response`, errorText)
+          
+          // Intentar parsear como JSON
+          try {
+            const errorData = JSON.parse(errorText)
+            // Intentar extraer el mensaje de error del backend
+            if (errorData?.error) {
+              errorMessage = errorData.error
+            } else if (errorData?.message) {
+              errorMessage = errorData.message
+            }
+          } catch {
+            // Si no es JSON válido, usar el texto directamente si no está vacío
+            if (errorText && errorText.trim()) {
+              errorMessage = errorText
+            }
+          }
+        } catch (readError) {
+          console.error(`❌ ${logLabel}: could not read error response`, readError)
+        }
+        const error = new Error(errorMessage)
+        error.status = res.status
+        throw error
       }
       const data = await res.json()
       return data
@@ -140,5 +164,3 @@ class MensualidadesApi {
 // Exportar instancia única, igual que otros services
 export default new MensualidadesApi()
 export { MensualidadesApi }
-
-

@@ -87,9 +87,9 @@
 	display: flex;
 	justify-content: center;
 	align-items: center;
-}
+  }
 
-.boton-agregar:hover {
+  .boton-agregar:hover {
 	transform: scale(1.1);
 	box-shadow: var(--sombra-fuerte);
 }

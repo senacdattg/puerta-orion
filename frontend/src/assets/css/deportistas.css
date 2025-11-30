@@ -584,33 +584,67 @@
   margin-bottom: 1.5rem;
 }
 
-.busqueda-deportista label {
-  display: block;
-  margin-bottom: var(--espaciado-sm);
-  font-weight: var(--peso-fuente-semibold);
+.busqueda-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.busqueda-deportista .form-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  font-weight: 600;
   color: var(--color-gris-oscuro);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .input-busqueda {
   position: relative;
+  min-width: 25px;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
-/* NOTA: Los estilos de .input-text se movieron a components/forms.css para evitar duplicación.
-   Este archivo ahora solo contiene estilos específicos de deportistas.
-*/
+.input-busqueda .input-text {
+  padding-right: 3.75rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
 
 .input-busqueda i {
   position: absolute;
-  right: var(--espaciado-md);
+  right: 1rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--color-gris);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .cargando-busqueda {
-  margin-top: var(--espaciado-sm);
+  margin-top: 0.75rem;
   color: var(--color-gris);
-  font-style: italic;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cargando-busqueda i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* --- Lista de deportistas en el modal --- */
@@ -618,72 +652,180 @@
   margin-bottom: 1.5rem;
 }
 
-.deportistas-lista h3 {
-  margin: 0 0 var(--espaciado-md) 0;
+.lista-titulo {
+  margin: 0 0 1rem 0;
   color: var(--color-gris-oscuro);
-  font-size: var(--tamano-fuente-lg);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.deportistas-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.deportistas-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.deportistas-grid::-webkit-scrollbar-track {
+  background: var(--color-gris-claro);
+  border-radius: 3px;
+}
+
+.deportistas-grid::-webkit-scrollbar-thumb {
+  background: var(--color-gris);
+  border-radius: 3px;
+}
+
+.deportistas-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gris-oscuro);
 }
 
 .deportista-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--espaciado-md);
-  margin-bottom: var(--espaciado-sm);
+  padding: 1rem;
   border: 2px solid var(--color-gris-medio);
-  border-radius: var(--radio-borde-pequeno);
+  border-radius: 8px;
   cursor: pointer;
-  transition: var(--transicion);
+  transition: all 0.2s ease;
+  background: var(--color-blanco);
 }
 
 .deportista-item:hover {
   border-color: var(--color-primario);
   background: var(--color-gris-50);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .deportista-item.seleccionado {
   border-color: var(--color-primario);
-  background: var(--color-info-badge-bg);
+  background: linear-gradient(135deg, rgba(0, 71, 171, 0.1) 0%, rgba(0, 71, 171, 0.05) 100%);
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.2);
 }
 
 .deportista-info {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.deportista-nombre {
+  color: var(--color-gris-oscuro);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.deportista-detalles {
+  display: flex;
+  flex-direction: column;
   gap: 0.25rem;
 }
 
-.deportista-info strong {
-  color: var(--color-gris-oscuro);
-  font-size: var(--tamano-fuente-base);
-}
-
-.deportista-info span {
+.deportista-detalles .detalle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   color: var(--color-gris);
-  font-size: var(--tamano-fuente-sm);
+  font-size: 0.875rem;
 }
 
-.deportista-item i.fa-check-circle {
+.deportista-detalles .detalle-item i {
+  width: 14px;
+  font-size: 0.75rem;
   color: var(--color-primario);
-  font-size: var(--tamano-fuente-lg);
+}
+
+.icono-seleccionado {
+  color: var(--color-primario);
+  font-size: 1.25rem;
+  margin-left: 0.5rem;
 }
 
 .sin-resultados-busqueda {
   text-align: center;
-  padding: var(--espaciado-xl);
+  padding: 2rem 1rem;
   color: var(--color-gris);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sin-resultados-busqueda i {
+  font-size: 2rem;
+  color: var(--color-gris);
+  opacity: 0.5;
+}
+
+.sin-resultados-busqueda p {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 /* --- Formulario de asociación --- */
 .formulario-asociacion {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 2px solid var(--color-gris-200);
 }
 
-.formulario-asociacion h3 {
-  margin: 0 0 var(--espaciado-md) 0;
+.separador {
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--color-gris-claro), transparent);
+  margin: 1.5rem 0;
+}
+
+.formulario-titulo {
+  margin: 0 0 1.25rem 0;
   color: var(--color-gris-oscuro);
-  font-size: var(--tamano-fuente-lg);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.formulario-asociacion .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.formulario-asociacion .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.formulario-asociacion .form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  font-size: 0.9rem;
+}
+
+.required {
+  color: var(--color-peligro);
+}
+
+.formulario-asociacion .select-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: var(--color-blanco);
+  color: var(--color-gris-oscuro);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.formulario-asociacion .select-input:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
 }
 
 /* NOTA: Los estilos de .form-group, .form-group label y .select-input
@@ -694,15 +836,23 @@
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   cursor: pointer;
   font-weight: normal;
+  font-size: 0.9rem;
+  color: var(--color-gris-oscuro);
+  user-select: none;
 }
 
 .checkbox-label input[type="checkbox"] {
   width: 1.2rem;
   height: 1.2rem;
   cursor: pointer;
+  accent-color: var(--color-primario);
+}
+
+.checkbox-label:hover {
+  color: var(--color-primario);
 }
 
 /* --- Footer del modal --- */

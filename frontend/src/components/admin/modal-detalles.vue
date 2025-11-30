@@ -1,6 +1,6 @@
 <template>
       <div class="modal-overlay" @click="cerrarModal">
-        <div class="modal-content mensualidades-modal modal-sm" @click.stop>
+        <div class="modal-content mensualidades-modal modal-lg" @click.stop>
           <div class="modal-header">
             <h2 class="modal-title">
               <i :class="editando ? 'fas fa-edit' : 'fas fa-file-invoice-dollar'"></i>
@@ -23,8 +23,8 @@
             </div>
             <div class="info-basica">
               <h4 class="nombre-deportista">{{ mensualidad.nombre }}</h4>
-              <span :class="`estado-actual estado-${mensualidad.estado.toLowerCase()}`">
-                {{ mensualidad.estado }}
+              <span :class="`estado-actual estado-${(mensualidad.estado_texto || (typeof mensualidad.estado === 'string' ? mensualidad.estado : (mensualidad.estado ? 'Pagado' : 'Pendiente'))).toLowerCase()}`">
+                {{ mensualidad.estado_texto || (typeof mensualidad.estado === 'string' ? mensualidad.estado : (mensualidad.estado ? 'Pagado' : 'Pendiente')) }}
               </span>
             </div>
           </div>
@@ -56,11 +56,7 @@
 
           <!-- Modo edición -->
           <div v-else class="formulario-edicion">
-            <!-- Tabs Edición / Abonos -->
-            <div class="tabs-edicion">
-              <button type="button" class="tab-btn" :class="{ active: activeTab==='editar' }" @click="activeTab='editar'">Editar</button>
-              <button type="button" class="tab-btn" :class="{ active: activeTab==='abonos' }" @click="activeTab='abonos'">Abonos</button>
-            </div>
+            <!-- Tabs Edición (se eliminó el tab de Abonos) -->
             <!-- Encabezado contextual (oculto en edición para mostrar solo campos) -->
             <div class="seccion-form" v-if="false">
               <h6>Resumen rápido</h6>
@@ -71,7 +67,7 @@
                 </div>
                 <div class="detalle-item" style="text-align:center;">
                   <span class="detalle-label">Estado actual</span>
-                  <span class="detalle-valor" :class="`estado-${mensualidad.estado.toLowerCase()}`">{{ mensualidad.estado }}</span>
+                  <span class="detalle-valor" :class="`estado-${(mensualidad.estado_texto || (typeof mensualidad.estado === 'string' ? mensualidad.estado : (mensualidad.estado ? 'Pagado' : 'Pendiente'))).toLowerCase()}`">{{ mensualidad.estado_texto || (typeof mensualidad.estado === 'string' ? mensualidad.estado : (mensualidad.estado ? 'Pagado' : 'Pendiente')) }}</span>
                 </div>
                 <div class="detalle-item" style="text-align:center;">
                   <span class="detalle-label">Valor total</span>
@@ -87,10 +83,9 @@
                 </div>
               </div>
             </div>
-            <div class="linea-abajo" style="margin:12px 0;" v-if="false"></div>
-            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='editar'"></div>
+            <div class="linea-abajo" style="margin:12px 0;"></div>
             <!-- Sección: Datos de pago -->
-            <div class="seccion-form" v-if="activeTab==='editar'">
+            <div class="seccion-form">
               <h6>Datos de pago</h6>
               <p class="descripcion-seccion">Configura el método, el estado deseado y los importes.</p>
               <div class="grid-detalles" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;">
@@ -179,10 +174,10 @@
                 </div>
               </div>
             </div>
-            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='editar'"></div>
+            <div class="linea-abajo" style="margin:12px 0;"></div>
 
             <!-- Sección: Fechas y estado -->
-            <div class="seccion-form" v-if="activeTab==='editar'">
+            <div class="seccion-form">
               <h6>Fechas y vigencia</h6>
               <p class="descripcion-seccion">Controla vigencia y confirma cuándo quedó pago.</p>
               <div class="grid-detalles">
@@ -220,50 +215,6 @@
               </div>
             </div>
             <div class="linea-abajo" style="margin:12px 0;"></div>
-
-            <!-- Sección: Registrar abono -->
-            <div class="seccion-form seccion-abono" v-if="activeTab==='abonos'">
-              <h6>Registrar abono</h6>
-              <p class="descripcion-seccion">Añade un abono con su fecha para mantener el historial al día.</p>
-              <div class="grid-detalles">
-                <div class="campo-formulario">
-                  <label for="abono-fecha">
-                    <i class="fas fa-calendar-plus"></i>
-                    Fecha del abono
-                  </label>
-                  <input id="abono-fecha" v-model="nuevoAbono.fecha" type="date" class="input-edicion" />
-                </div>
-                <div class="campo-formulario">
-                  <label for="abono-monto">
-                    <i class="fas fa-dollar-sign"></i>
-                    Monto del abono
-                  </label>
-                  <input
-                    id="abono-monto"
-                    v-model="nuevoAbono.monto"
-                    type="text"
-                    inputmode="decimal"
-                    class="input-edicion"
-                    placeholder="0"
-                    @input="manejarMontoAbono($event)"
-                  />
-                </div>
-                <div class="campo-formulario">
-                  <label for="abono-metodo">
-                    <i class="fas fa-money-bill-wave"></i>
-                    Método de pago
-                  </label>
-                  <select id="abono-metodo" v-model="nuevoAbono.id_metodo_pago" class="select-edicion">
-                    <option :value="undefined">—</option>
-                    <option v-for="m in metodosPago" :key="m.id" :value="m.id" :disabled="String(m.nombre).toLowerCase()==='ninguno'">{{ m.nombre }}</option>
-                  </select>
-                </div>
-                <div class="campo-formulario" style="align-self:end;">
-                  <button type="button" class="btn btn-primary" @click="registrarAbono" v-if="puedeAbonar">Registrar Abono</button>
-          </div>
-        </div>
-            </div>
-            <div class="linea-abajo" style="margin:12px 0;" v-if="activeTab==='abonos'"></div>
           </div>
         </div>
 
@@ -276,7 +227,7 @@
             <div class="resumen-pagos">
             <div class="resumen-item">
               <span class="resumen-label">Valor Total Mensualidad</span>
-              <span class="resumen-valor">{{ mensualidad.valor }}</span>
+              <span class="resumen-valor">{{ mensualidad.valor || formatCOP(mensualidad.monto_pago_raw ?? mensualidad.monto_pago ?? 0) }}</span>
             </div>
               <div class="resumen-item">
                 <span class="resumen-label">Total Pagado</span>
@@ -286,10 +237,6 @@
                 <span class="resumen-label">Saldo Pendiente</span>
                 <span class="resumen-valor pendiente">${{ calcularSaldoPendienteHistorial().toLocaleString('es-CO') }}</span>
               </div>
-            <div class="resumen-item">
-              <span class="resumen-label">Pagado</span>
-              <span class="resumen-valor pagado">${{ calcularPagadoMostrado().toLocaleString('es-CO') }}</span>
-            </div>
             </div>
 
             <div class="lista-pagos">
@@ -298,17 +245,17 @@
                 <table class="tabla-historial" style="width:100%; border-collapse:collapse;">
                   <caption class="sr-only">Historial de fechas de pago y abonos de la mensualidad</caption>
                   <thead>
-                    <tr style="text-align:left; border-bottom:1px solid #e5e7eb;">
+                    <tr style="text-align:center; border-bottom:1px solid #e5e7eb;">
                       <th style="padding:8px;">Fecha</th>
                       <th style="padding:8px;">Monto</th>
                       <th style="padding:8px;">Método</th>
                       <th style="padding:8px;">Tipo</th>
-                      <th style="padding:8px; text-align:right;">Acciones</th>
+                      <th style="padding:8px;">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(item, index) in listaPagosYAbonos()" :key="index" style="border-bottom:1px solid #f3f4f6;">
-                      <td style="padding:8px;">
+                      <td style="padding:8px; text-align:center;">
                         <template v-if="abonoEditIndex===index">
                           <input type="date" v-model="abonoEdit.fecha" class="input-edicion" />
                         </template>
@@ -316,7 +263,7 @@
                           {{ formatearFecha(item.fecha) }}
                         </template>
                       </td>
-                      <td style="padding:8px;">
+                      <td style="padding:8px; text-align:center;">
                         <template v-if="abonoEditIndex===index">
                           <input type="number" v-model.number="abonoEdit.monto" class="input-edicion" style="max-width:120px;" />
                         </template>
@@ -324,7 +271,7 @@
                           {{ item.monto !== undefined ? `$${Number(item.monto).toLocaleString('es-CO')}` : '—' }}
                         </template>
                       </td>
-                      <td style="padding:8px;">
+                      <td style="padding:8px; text-align:center;">
                         <template v-if="abonoEditIndex===index">
                           <select v-model.number="abonoEdit.id_metodo_pago" class="select-edicion" style="max-width:140px;">
                             <option :value="undefined">—</option>
@@ -335,9 +282,9 @@
                           {{ item.metodo || '—' }}
                         </template>
                       </td>
-                      <td style="padding:8px; color:#6b7280;">{{ item.tipo }}</td>
+                      <td style="padding:8px; color:#6b7280; text-align:center;">{{ item.tipo }}</td>
                       <td style="padding:8px; text-align:right;">
-                        <template v-if="item.tipo==='Abono'">
+                        <template v-if="item.id_abono && item.tipo !== 'Creación'">
                           <template v-if="abonoEditIndex===index">
                             <button class="btn btn-primary" style="margin-right:6px;" @click="guardarEdicionAbono()">Guardar</button>
                             <button class="btn btn-secondary" @click="abonoEditIndex=null">Cancelar</button>
@@ -352,11 +299,43 @@
                         </template>
                       </td>
                     </tr>
+                    <!-- Fila para agregar nuevo abono -->
+                    <!-- Fila para agregar nuevo abono -->
+                    <tr v-if="puedeAbonar && abonoEditIndex === -1" style="border-bottom:1px solid #f3f4f6; background-color: #f9fafb;">
+                      <td style="padding:8px; text-align:center;">
+                        <input type="date" v-model="nuevoAbono.fecha" class="input-edicion" />
+                      </td>
+                      <td style="padding:8px; text-align:center;">
+                        <input type="number" v-model.number="nuevoAbono.monto" class="input-edicion" style="max-width:120px;" placeholder="0" />
+                      </td>
+                      <td style="padding:8px; text-align:center;">
+                        <select v-model.number="nuevoAbono.id_metodo_pago" class="select-edicion" style="max-width:140px;">
+                          <option :value="undefined">—</option>
+                          <option v-for="m in metodosPago" :key="m.id" :value="m.id" :disabled="String(m.nombre).toLowerCase()==='ninguno'">{{ m.nombre }}</option>
+                        </select>
+                      </td>
+                      <td style="padding:8px; color:#6b7280; text-align:center;">Abono</td>
+                      <td style="padding:8px; text-align:right;">
+                        <button class="btn btn-primary" style="margin-right:6px;" @click="guardarNuevoAbonoDesdeTabla()">Guardar</button>
+                        <button class="btn btn-secondary" @click="cancelarNuevoAbono()">Cancelar</button>
+                      </td>
+                    </tr>
+                    <!-- Botón para agregar nuevo abono -->
+                    <tr v-if="puedeAbonar && abonoEditIndex === null">
+                      <td colspan="5" style="padding:12px; text-align:center;">
+                        <button class="btn btn-secondary" @click="iniciarNuevoAbono()" style="width:100%;">
+                          ➕ Agregar Abono
+                        </button>
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
               <div v-else class="sin-pagos">
-                <p>No hay pagos ni abonos registrados</p>
+                <p v-if="!puedeAbonar || abonoEditIndex === -1">No hay pagos ni abonos registrados</p>
+                <button v-if="puedeAbonar && abonoEditIndex === null" class="btn btn-secondary" @click="iniciarNuevoAbono()" style="margin-top:1rem;">
+                  ➕ Agregar Abono
+                </button>
               </div>
             </div>
           </div>
@@ -425,7 +404,6 @@ useModalScrollLock(computed(() => props.mostrar));
 
 // Estado reactivo
 const editando = ref(props.modoEdicion);
-const activeTab = ref('editar');
 const metodosPago = ref([]);
 const formEdicion = ref({
   id_metodo_pago: undefined,
@@ -597,11 +575,17 @@ function inicializarDocumentoEdicion() {
 
 // Función para normalizar valores para comparación
 function normalizarValorParaComparacion(valor) {
-  if (valor === null || valor === undefined) {
+  if (valor === null || valor === undefined || valor === '') {
     return ''
   }
   if (typeof valor === 'string') {
-    return valor.trim()
+    const trimmed = valor.trim()
+    // Si es un string numérico, convertirlo a número para comparación
+    const num = Number(trimmed)
+    if (!Number.isNaN(num) && trimmed !== '') {
+      return num
+    }
+    return trimmed
   }
   if (typeof valor === 'number') {
     return valor
@@ -609,12 +593,13 @@ function normalizarValorParaComparacion(valor) {
   if (typeof valor === 'boolean') {
     return valor
   }
-  return valor
+  return String(valor)
 }
 
 // Verificar si hay cambios
 function verificarCambios() {
   if (!formEdicionInicial.value) {
+    console.log('⚠️ [verificarCambios] No hay estado inicial guardado');
     return false
   }
 
@@ -626,12 +611,26 @@ function verificarCambios() {
   for (const campo of campos) {
     const valorInicial = normalizarValorParaComparacion(formEdicionInicial.value[campo])
     const valorActual = normalizarValorParaComparacion(formEdicion.value[campo])
+
+    // Comparación más robusta
     if (valorInicial !== valorActual) {
+      console.log(`✅ [verificarCambios] Cambio detectado en campo "${campo}":`, {
+        inicial: valorInicial,
+        actual: valorActual,
+        tipoInicial: typeof valorInicial,
+        tipoActual: typeof valorActual
+      });
       return true
     }
   }
 
+  console.log('ℹ️ [verificarCambios] No se detectaron cambios');
   return false
+}
+
+// Helper para obtener el ID de la mensualidad (soporta múltiples formatos)
+function obtenerIdMensualidad() {
+  return props.mensualidad?.id || props.mensualidad?.id_mensualidad || null;
 }
 
 function configurarFormularioDesdeProps() {
@@ -642,7 +641,11 @@ function configurarFormularioDesdeProps() {
     valorSinSimbolo: extraerNumeroDeValor(props.mensualidad.valor),
     numero_documento: documentoOriginal.value,
     fecha_vencimiento: props.mensualidad.vencimiento ? formatearAInputDate(props.mensualidad.vencimiento) : '',
-    saldo_pendiente: props.mensualidad.saldoPendiente || undefined,
+    saldo_pendiente: props.mensualidad.saldo_pendiente_raw !== undefined && props.mensualidad.saldo_pendiente_raw !== null
+      ? String(props.mensualidad.saldo_pendiente_raw)
+      : (props.mensualidad.saldoPendiente !== undefined && props.mensualidad.saldoPendiente !== null
+        ? String(props.mensualidad.saldoPendiente)
+        : undefined),
     estado_ui: props.mensualidad.estado || 'Pendiente',
     activo: props.mensualidad.activo === undefined ? true : Boolean(props.mensualidad.activo),
     fecha_pago: props.mensualidad.fecha && props.mensualidad.fecha !== 'Pendiente' ? formatearAInputDate(props.mensualidad.fecha) : ''
@@ -651,19 +654,55 @@ function configurarFormularioDesdeProps() {
 
   // Si estamos editando, guardar estado inicial
   if (editando.value && !formEdicionInicial.value) {
-    formEdicionInicial.value = structuredClone(formEdicion.value);
+    formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
+    console.log('💾 [configurarFormularioDesdeProps] Guardando estado inicial:', formEdicionInicial.value);
   }
 }
 
 configurarFormularioDesdeProps();
 
-watch(() => props.mensualidad, async () => {
-  configurarFormularioDesdeProps();
+watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => {
+  console.log('👀 [watch mensualidad] Watch disparado', {
+    idNueva: nuevaMensualidad?.id || nuevaMensualidad?.id_mensualidad,
+    idAnterior: anteriorMensualidad?.id || anteriorMensualidad?.id_mensualidad,
+    saldoPendienteRawNuevo: nuevaMensualidad?.saldo_pendiente_raw,
+    saldoPendienteRawAnterior: anteriorMensualidad?.saldo_pendiente_raw
+  });
+
+  // Solo ejecutar si realmente cambió la mensualidad (nueva referencia o cambio en campos clave)
+  if (!anteriorMensualidad || nuevaMensualidad?.id !== anteriorMensualidad?.id) {
+    console.log('👀 [watch mensualidad] ID cambió, configurando formulario desde props');
+    configurarFormularioDesdeProps();
+  }
+
   // Recargar abonos cuando se actualiza la mensualidad
-  if (props.mensualidad?.id) {
+  // También verificar si cambió el saldo pendiente, estado, o monto para forzar recarga
+  const cambioRelevante = anteriorMensualidad && (
+    nuevaMensualidad?.saldo_pendiente_raw !== anteriorMensualidad?.saldo_pendiente_raw ||
+    nuevaMensualidad?.saldo_pendiente !== anteriorMensualidad?.saldo_pendiente ||
+    nuevaMensualidad?.monto_pago_raw !== anteriorMensualidad?.monto_pago_raw ||
+    nuevaMensualidad?.monto_pago !== anteriorMensualidad?.monto_pago ||
+    nuevaMensualidad?.estado !== anteriorMensualidad?.estado ||
+    nuevaMensualidad?.estado_texto !== anteriorMensualidad?.estado_texto
+  );
+
+  console.log('👀 [watch mensualidad] Cambio relevante detectado:', cambioRelevante);
+
+  // Si hubo un cambio relevante, actualizar el formulario
+  if (cambioRelevante) {
+    console.log('👀 [watch mensualidad] Configurando formulario desde props debido a cambio relevante');
+    configurarFormularioDesdeProps();
+  }
+
+  const mensualidadId = obtenerIdMensualidad();
+  if (mensualidadId && (!anteriorMensualidad || cambioRelevante || nuevaMensualidad?.id !== anteriorMensualidad?.id)) {
     try {
-      const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
-      abonos.value = (respAb.data || []).map(a => ({
+      const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+      // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
+      // Solo incluir abonos reales con id_abono
+      abonos.value = (respAb.data || [])
+        .filter(a => a.id_abono !== null && a.id_abono !== undefined)
+        .map(a => ({
         id_abono: a.id_abono,
         monto: Number(a.monto) || 0,
         fecha_abono: a.fecha_abono,
@@ -674,12 +713,101 @@ watch(() => props.mensualidad, async () => {
       abonos.value = [];
     }
   }
-}, { deep: true });
+}, { deep: true, immediate: false });
+
+// Función auxiliar para normalizar el formulario antes de guardar estado inicial
+function normalizarFormularioParaGuardar(form) {
+  // Crear un nuevo objeto con solo los campos necesarios (evitar structuredClone que falla con objetos complejos)
+  const formNormalizado = {
+    id_metodo_pago: form.id_metodo_pago,
+    valor: form.valor,
+    valorSinSimbolo: form.valorSinSimbolo,
+    numero_documento: form.numero_documento,
+    fecha_vencimiento: form.fecha_vencimiento,
+    saldo_pendiente: form.saldo_pendiente,
+    estado_ui: form.estado_ui,
+    activo: form.activo,
+    fecha_pago: form.fecha_pago
+  };
+
+  // Normalizar saldo_pendiente
+  if (formNormalizado.saldo_pendiente !== undefined && formNormalizado.saldo_pendiente !== null && formNormalizado.saldo_pendiente !== '') {
+    formNormalizado.saldo_pendiente = String(formNormalizado.saldo_pendiente);
+  } else {
+    formNormalizado.saldo_pendiente = undefined;
+  }
+
+  // Normalizar id_metodo_pago
+  if (formNormalizado.id_metodo_pago !== undefined && formNormalizado.id_metodo_pago !== null) {
+    formNormalizado.id_metodo_pago = Number(formNormalizado.id_metodo_pago);
+  } else {
+    formNormalizado.id_metodo_pago = undefined;
+  }
+
+  // Normalizar valorSinSimbolo
+  if (formNormalizado.valorSinSimbolo !== undefined && formNormalizado.valorSinSimbolo !== null) {
+    formNormalizado.valorSinSimbolo = String(formNormalizado.valorSinSimbolo);
+  } else {
+    formNormalizado.valorSinSimbolo = '';
+  }
+
+  // Normalizar numero_documento
+  if (formNormalizado.numero_documento !== undefined && formNormalizado.numero_documento !== null) {
+    formNormalizado.numero_documento = String(formNormalizado.numero_documento).trim();
+  } else {
+    formNormalizado.numero_documento = '';
+  }
+
+  // Normalizar fecha_vencimiento
+  if (formNormalizado.fecha_vencimiento !== undefined && formNormalizado.fecha_vencimiento !== null) {
+    formNormalizado.fecha_vencimiento = String(formNormalizado.fecha_vencimiento).trim();
+  } else {
+    formNormalizado.fecha_vencimiento = '';
+  }
+
+  // Normalizar estado_ui
+  if (formNormalizado.estado_ui !== undefined && formNormalizado.estado_ui !== null) {
+    formNormalizado.estado_ui = String(formNormalizado.estado_ui).trim();
+  } else {
+    formNormalizado.estado_ui = 'Pendiente';
+  }
+
+  // Normalizar activo (boolean)
+  formNormalizado.activo = Boolean(formNormalizado.activo);
+
+  return formNormalizado;
+}
+
+// Watch para cuando cambia el modo de edición desde props
+watch(() => props.modoEdicion, (nuevoModo) => {
+  editando.value = nuevoModo;
+  if (nuevoModo && !formEdicionInicial.value) {
+    // Guardar estado inicial cuando se activa la edición
+    formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
+    console.log('💾 [watch modoEdicion] Guardando estado inicial:', formEdicionInicial.value);
+  } else if (!nuevoModo) {
+    formEdicionInicial.value = null;
+  }
+});
+
+// Watch para cuando cambia editando internamente
+watch(() => editando.value, (nuevoValor) => {
+  if (nuevoValor && !formEdicionInicial.value) {
+    // Guardar estado inicial cuando se activa la edición
+    formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
+    console.log('💾 [watch editando] Guardando estado inicial:', formEdicionInicial.value);
+  } else if (!nuevoValor) {
+    formEdicionInicial.value = null;
+  }
+});
 
 // Permisos
 const authStore = useAuthStore();
-const roleNames = computed(() => (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol));
-const isSuperOrAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNames.value.includes('Administrador'));
+// Verificar el rol activo actual, no todos los roles del usuario
+const isSuperOrAdmin = computed(() => {
+  const rolActivo = authStore.activeRole;
+  return rolActivo === 'SuperAdmin' || rolActivo === 'Administrador';
+});
 const puedeEditarMensualidad = computed(() => {
   if (isSuperOrAdmin.value) return true;
   try { return !!authStore?.hasPermission?.('editar_mensualidad'); } catch { return false; }
@@ -690,10 +818,12 @@ const puedeAbonar = computed(() => {
   try { return !!authStore?.hasPermission?.('abonar_mensualidad'); } catch { return false; }
 });
 const puedeEditarAbono = computed(() => {
+  // Los abonos siempre se pueden editar si el usuario tiene permisos, independientemente del estado de la mensualidad
   if (isSuperOrAdmin.value) return true;
   try { return !!authStore?.hasPermission?.('editar_abono_mensualidad'); } catch { return false; }
 });
 const puedeEliminarAbono = computed(() => {
+  // Los abonos siempre se pueden eliminar si el usuario tiene permisos, independientemente del estado de la mensualidad
   if (isSuperOrAdmin.value) return true;
   try { return !!authStore?.hasPermission?.('eliminar_abono_mensualidad'); } catch { return false; }
 });
@@ -718,8 +848,18 @@ onMounted(async () => {
 
   // Cargar abonos para totales
   try {
-    const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
-    abonos.value = (respAb.data || []).map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+    const mensualidadId = obtenerIdMensualidad();
+    if (!mensualidadId) {
+      console.warn('No se pudo obtener el ID de la mensualidad');
+      abonos.value = [];
+      return;
+    }
+    const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+    // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
+    // Solo incluir abonos reales con id_abono
+    abonos.value = (respAb.data || [])
+      .filter(a => a.id_abono !== null && a.id_abono !== undefined)
+      .map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
   } catch {
     abonos.value = [];
   }
@@ -792,32 +932,6 @@ function validarFormularioEdicion() {
   };
 }
 
-function validarAbonoFormulario() {
-  const errores = [];
-
-  const normalizadoMonto = normalizarMonto(nuevoAbono.value.monto ?? '');
-  nuevoAbono.value.monto = normalizadoMonto;
-  const monto = parseMonto(normalizadoMonto);
-
-  if (!Number.isFinite(monto) || monto <= 0) {
-    errores.push('El monto del abono debe ser un número mayor a 0');
-  } else {
-    const saldoRestante = Number(saldoPendienteHistNum.value || 0);
-    if (saldoRestante > 0 && monto > saldoRestante + 0.00001) {
-      errores.push('El abono no puede superar el saldo pendiente actual');
-    }
-  }
-
-  if (nuevoAbono.value.fecha && !esFechaValida(nuevoAbono.value.fecha)) {
-    errores.push('La fecha del abono no es válida');
-  }
-
-  return {
-    errores,
-    monto
-  };
-}
-
 function manejarValorSinSimbolo(event) {
   const normalizado = normalizarMonto(event?.target?.value ?? formEdicion.value.valorSinSimbolo ?? '');
   formEdicion.value.valorSinSimbolo = normalizado;
@@ -825,13 +939,13 @@ function manejarValorSinSimbolo(event) {
 }
 
 function manejarSaldoPendiente(event) {
-  const normalizado = normalizarMonto(event?.target?.value ?? formEdicion.value.saldo_pendiente ?? '');
-  formEdicion.value.saldo_pendiente = normalizado;
-}
-
-function manejarMontoAbono(event) {
-  const normalizado = normalizarMonto(event?.target?.value ?? nuevoAbono.value.monto ?? '');
-  nuevoAbono.value.monto = normalizado;
+  const valor = event?.target?.value ?? formEdicion.value.saldo_pendiente ?? '';
+  if (valor === '' || valor === null || valor === undefined) {
+    formEdicion.value.saldo_pendiente = undefined;
+  } else {
+    const normalizado = normalizarMonto(valor);
+    formEdicion.value.saldo_pendiente = normalizado;
+  }
 }
 
 function formatearAInputDate(valor) {
@@ -973,7 +1087,8 @@ function toggleEdicion() {
 
   // Si inicia edición, guardar estado inicial
   if (editando.value) {
-    formEdicionInicial.value = structuredClone(formEdicion.value);
+    formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
+    console.log('💾 [toggleEdicion] Guardando estado inicial:', formEdicionInicial.value);
   } else {
     configurarFormularioDesdeProps();
     formEdicionInicial.value = null;
@@ -1056,39 +1171,109 @@ async function guardarCambios() {
     }
   }
 
-  if (formEdicion.value.estado_ui === 'Pagado') {
-    payloadUpdate.saldo_pendiente = 0;
-  } else if (saldo !== undefined) {
+  // Siempre enviar el saldo_pendiente del formulario, el backend calculará el estado automáticamente
+  // Si saldo es undefined, usar el valor actual de la mensualidad para mantener consistencia
+  if (saldo !== undefined) {
     payloadUpdate.saldo_pendiente = saldo;
+  } else {
+    // Si no se especifica saldo en el formulario, usar el valor actual de la mensualidad
+    const saldoActual = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente;
+    if (saldoActual !== undefined && saldoActual !== null) {
+      payloadUpdate.saldo_pendiente = Number(saldoActual);
+    }
   }
 
   const nombrePersonaActualizada = personaDocumentoEdicion.value?.nombre_completo || props.mensualidad.persona_nombre || props.mensualidad.nombre;
   const idMetodoEnRespuesta = Object.hasOwn(payloadUpdate, 'id_metodo_pago') ? payloadUpdate.id_metodo_pago : props.mensualidad.id_metodo_pago;
-
-  const mensualidadActualizada = {
-    ...props.mensualidad,
-    ...payloadUpdate,
-    valor: formEdicion.value.valor,
-    numero_documento: documentoActual,
-    persona_nombre: nombrePersonaActualizada,
-    nombre: nombrePersonaActualizada,
-    id_metodo_pago: idMetodoEnRespuesta
-  };
 
   documentoOriginal.value = documentoActual;
   if (nombrePersonaActualizada) {
     actualizarEstadoDocumentoEdicion('found', `${nombrePersonaActualizada} registrada en el sistema.`);
   }
 
-  // Emitir evento (el componente padre manejará el éxito/error)
-  emit('guardar-cambios', mensualidadActualizada);
+  try {
+    const mensualidadId = obtenerIdMensualidad();
+    if (!mensualidadId) {
+      throw new Error('No se pudo obtener el ID de la mensualidad');
+    }
 
-  // Actualizar estado inicial después de guardar exitosamente
-  formEdicionInicial.value = structuredClone(formEdicion.value);
-  editando.value = false;
+    // Llamar directamente al backend y esperar la respuesta
+    const respuesta = await mensualidadesService.update(mensualidadId, payloadUpdate);
+
+    // Obtener los datos actualizados del backend
+    const mensualidadBackend = respuesta?.data || respuesta;
+
+    // Mapear los datos del backend al formato del modal
+    const mensualidadActualizada = {
+      ...props.mensualidad,
+      ...mensualidadBackend,
+      id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || mensualidadId,
+      valor: formatCOP(mensualidadBackend.monto_pago || monto),
+      monto_pago_raw: mensualidadBackend.monto_pago,
+      saldo_pendiente_raw: mensualidadBackend.saldo_pendiente,
+      estado_bool: mensualidadBackend.estado,
+      estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+      estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+      fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
+      numero_documento: documentoActual,
+      persona_nombre: nombrePersonaActualizada,
+      nombre: nombrePersonaActualizada,
+      id_metodo_pago: idMetodoEnRespuesta
+    };
+
+    // Emitir evento con los datos del backend
+    emit('guardar-cambios', mensualidadActualizada);
+
+    // Cerrar el loading y mostrar éxito
+    Swal.close();
+    await Swal.fire({
+      icon: 'success',
+      title: 'Cambios guardados',
+      text: 'La mensualidad se actualizó correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    });
+
+    // Actualizar estado inicial después de guardar exitosamente
+    formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
+    editando.value = false;
+  } catch (error) {
+    // Cerrar el loading si hay error
+    Swal.close();
+
+    // Mostrar error
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al guardar',
+      text: error?.message || 'No se pudieron guardar los cambios. Por favor, intenta nuevamente.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    });
+  }
 }
 
-async function registrarAbono() {
+// Functions for creating abono from table
+function iniciarNuevoAbono() {
+  // Cancel any ongoing edit
+  if (abonoEditIndex.value !== null && abonoEditIndex.value !== -1) {
+    abonoEditIndex.value = null;
+  }
+  // Set to -1 to indicate we're creating a new abono
+  abonoEditIndex.value = -1;
+  // Initialize nuevoAbono with today's date as default
+  nuevoAbono.value = {
+    fecha: new Date().toISOString().split('T')[0],
+    monto: '',
+    id_metodo_pago: undefined
+  };
+}
+
+function cancelarNuevoAbono() {
+  abonoEditIndex.value = null;
+  nuevoAbono.value = { fecha: '', monto: '', id_metodo_pago: undefined };
+}
+
+async function guardarNuevoAbonoDesdeTabla() {
   if (!puedeAbonar.value) {
     await Swal.fire({
       icon: 'warning',
@@ -1097,7 +1282,62 @@ async function registrarAbono() {
     });
     return;
   }
-  const { errores, monto } = validarAbonoFormulario();
+
+  // Normalize and validate monto
+  const normalizadoMonto = normalizarMonto(nuevoAbono.value.monto ?? '');
+  nuevoAbono.value.monto = normalizadoMonto;
+  const monto = parseMonto(normalizadoMonto);
+
+  const errores = [];
+
+  if (!Number.isFinite(monto) || monto <= 0) {
+    errores.push('El monto debe ser mayor a 0');
+  } else {
+    const valorTotalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
+    const totalPagadoActual = calcularTotalPagado();
+    const totalConNuevoAbono = totalPagadoActual + monto;
+    const saldoRestante = Number(saldoPendienteHistNum.value || 0);
+
+    // Single validation: check if the new abono would exceed the total or remaining balance
+    if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + 0.00001) {
+      errores.push(`El monto excede el valor total de la mensualidad (${formatCOP(valorTotalMensualidad)})`);
+    } else if (monto > saldoRestante + 0.00001) {
+      errores.push(`El monto excede el saldo pendiente (${formatCOP(saldoRestante)})`);
+    }
+  }
+
+  // Validate date: must not be before the creation date of the monthly payment
+  if (!nuevoAbono.value.fecha || !nuevoAbono.value.fecha.trim()) {
+    errores.push('La fecha del abono es requerida');
+  } else if (!esFechaValida(nuevoAbono.value.fecha)) {
+    errores.push('La fecha del abono no es válida');
+  } else {
+    const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
+    if (fechaCreacion) {
+      try {
+        const fechaCreacionDate = new Date(fechaCreacion);
+        const fechaAbonoDate = new Date(nuevoAbono.value.fecha);
+
+        // Validate dates are valid
+        if (isNaN(fechaCreacionDate.getTime()) || isNaN(fechaAbonoDate.getTime())) {
+          errores.push('Las fechas no son válidas');
+        } else {
+          // Normalize dates to YYYY-MM-DD format for comparison
+          const fechaCreacionStr = fechaCreacionDate.toISOString().split('T')[0];
+          const fechaAbonoStr = fechaAbonoDate.toISOString().split('T')[0];
+
+          // Allow same day (>=) - only block if strictly before (<)
+          if (fechaAbonoStr < fechaCreacionStr) {
+            const fechaCreacionFormateada = formatearFecha(fechaCreacion);
+            errores.push(`La fecha no puede ser anterior a la creación (${fechaCreacionFormateada})`);
+          }
+        }
+      } catch {
+        errores.push('Error al validar la fecha del abono');
+      }
+    }
+  }
+
   if (errores.length > 0) {
     await Swal.fire({
       icon: 'error',
@@ -1106,6 +1346,7 @@ async function registrarAbono() {
     });
     return;
   }
+
   try {
     const metodoPagoAbono = normalizarIdMetodoPago(nuevoAbono.value.id_metodo_pago);
     const payloadAbono = {
@@ -1115,7 +1356,12 @@ async function registrarAbono() {
     if (metodoPagoAbono !== undefined) {
       payloadAbono.id_metodo_pago = metodoPagoAbono;
     }
-    await mensualidadesService.abonar(props.mensualidad.id, payloadAbono)
+    const mensualidadId = obtenerIdMensualidad();
+    if (!mensualidadId) {
+      throw new Error('No se pudo obtener el ID de la mensualidad');
+    }
+    const respuestaAbono = await mensualidadesService.abonar(mensualidadId, payloadAbono);
+
     await Swal.fire({
       icon: 'success',
       title: 'Abono registrado',
@@ -1123,15 +1369,50 @@ async function registrarAbono() {
       timer: 1500,
       showConfirmButton: false
     });
-    // Sugerir al padre refrescar datos
-    emit('guardar-cambios', { ...props.mensualidad });
-    // Recargar abonos en el modal
+
+    // Use updated data from backend
+    const mensualidadBackend = respuestaAbono?.data || props.mensualidad;
+
+    // Ensure the object has all necessary fields mapped correctly
+    const saldoPendienteBackend = mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente ?? null;
+    const montoPagoBackend = mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago ?? null;
+
+    const mensualidadActualizada = {
+      ...props.mensualidad,
+      ...mensualidadBackend,
+      id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || obtenerIdMensualidad(),
+      saldo_pendiente_raw: saldoPendienteBackend,
+      saldo_pendiente: saldoPendienteBackend,
+      saldoPendiente: saldoPendienteBackend,
+      monto_pago_raw: montoPagoBackend,
+      monto_pago: montoPagoBackend,
+      estado_bool: mensualidadBackend.estado,
+      estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+      estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+      fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
+      persona_nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre,
+      nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
+    };
+
+    // Emit updated data to parent
+    emit('guardar-cambios', mensualidadActualizada);
+
+    // Reload abonos immediately after registering
     try {
-      const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
-      abonos.value = (respAb.data || []).map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+      const mensualidadId = obtenerIdMensualidad();
+      if (mensualidadId) {
+        const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+        abonos.value = (respAb.data || [])
+          .filter(a => a.id_abono !== null && a.id_abono !== undefined)
+          .map(a => ({ id_abono: a.id_abono, monto: Number(a.monto) || 0, fecha_abono: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final }));
+      }
     } catch {
-      // Ignorar error de refresco de abonos en UI
+      // Ignore error refreshing abonos in UI
     }
+
+    // Close the new abono row
+    abonoEditIndex.value = null;
+    nuevoAbono.value = { fecha: '', monto: '', id_metodo_pago: undefined };
   } catch (e) {
     await Swal.fire({
       icon: 'error',
@@ -1139,7 +1420,6 @@ async function registrarAbono() {
       text: e?.message || 'No pudimos registrar el abono. Intenta nuevamente.'
     });
   }
-  nuevoAbono.value = { fecha: '', monto: '', id_metodo_pago: undefined };
 }
 
 function iniciarEdicionAbono(index) {
@@ -1169,14 +1449,51 @@ async function guardarEdicionAbono() {
     return;
   }
   try {
-    await mensualidadesService.updateAbono(props.mensualidad.id, ed.id_abono, {
+    const mensualidadId = obtenerIdMensualidad();
+    if (!mensualidadId) {
+      throw new Error('No se pudo obtener el ID de la mensualidad');
+    }
+    const respuesta = await mensualidadesService.updateAbono(mensualidadId, ed.id_abono, {
       fecha_abono: ed.fecha,
       monto: Number(ed.monto),
       id_metodo_pago: ed.id_metodo_pago
     });
-    const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
-    abonos.value = (respAb.data || []).map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+    const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+    // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
+    // Solo incluir abonos reales con id_abono
+    abonos.value = (respAb.data || [])
+      .filter(a => a.id_abono !== null && a.id_abono !== undefined)
+      .map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
     abonoEditIndex.value = null;
+
+    // Actualizar la mensualidad en el componente padre si el backend devolvió la mensualidad actualizada
+    // La respuesta del servicio viene directamente como respuesta.data (el servicio ya parsea el JSON)
+    // El backend devuelve: { success: true, data: {...}, mensualidad: {...} }
+    const mensualidadBackend = respuesta?.mensualidad || respuesta?.data?.mensualidad;
+    if (mensualidadBackend) {
+      // Asegurar que el objeto tenga todos los campos necesarios mapeados correctamente
+      const mensualidadActualizada = {
+        ...props.mensualidad,
+        ...mensualidadBackend,
+        id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || obtenerIdMensualidad(),
+        // Asegurar que saldo_pendiente_raw esté disponible (puede venir como saldo_pendiente del backend)
+        saldo_pendiente_raw: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
+        saldo_pendiente: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
+        // Asegurar que monto_pago_raw esté disponible
+        monto_pago_raw: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
+        monto_pago: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
+        // Asegurar campos de estado
+        estado_bool: mensualidadBackend.estado,
+        estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+        estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+        // Asegurar fecha de vencimiento
+        fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
+        // Asegurar campos de persona
+        persona_nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre,
+        nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
+      };
+      emit('guardar-cambios', mensualidadActualizada);
+    }
   } catch (e) {
     await Swal.fire({
       icon: 'error',
@@ -1209,9 +1526,54 @@ async function eliminarAbono(index) {
   });
   if (!confirmar.isConfirmed) return;
   try {
-    await mensualidadesService.deleteAbono(props.mensualidad.id, original.id_abono);
-    const respAb = await mensualidadesService.listarAbonos(props.mensualidad.id);
-    abonos.value = (respAb.data || []).map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+    const mensualidadId = obtenerIdMensualidad();
+    if (!mensualidadId) {
+      throw new Error('No se pudo obtener el ID de la mensualidad');
+    }
+    const respuesta = await mensualidadesService.deleteAbono(mensualidadId, original.id_abono);
+    const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+    // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
+    // Solo incluir abonos reales con id_abono
+    abonos.value = (respAb.data || [])
+      .filter(a => a.id_abono !== null && a.id_abono !== undefined)
+      .map(a => ({ monto: Number(a.monto) || 0, fecha: a.fecha_abono, id_metodo_pago: a.id_metodo_pago, es_pago_final: !!a.es_pago_final, id_abono: a.id_abono }));
+
+    // Actualizar la mensualidad en el componente padre si el backend devolvió la mensualidad actualizada
+    // La respuesta del servicio viene directamente como respuesta.data (el servicio ya parsea el JSON)
+    // El backend devuelve: { success: true, mensualidad: {...} }
+    const mensualidadBackend = respuesta?.mensualidad || respuesta?.data?.mensualidad;
+    if (mensualidadBackend) {
+      // Asegurar que el objeto tenga todos los campos necesarios mapeados correctamente
+      const mensualidadActualizada = {
+        ...props.mensualidad,
+        ...mensualidadBackend,
+        id: mensualidadBackend.id_mensualidad || mensualidadBackend.id || obtenerIdMensualidad(),
+        // Asegurar que saldo_pendiente_raw esté disponible (puede venir como saldo_pendiente del backend)
+        saldo_pendiente_raw: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
+        saldo_pendiente: mensualidadBackend.saldo_pendiente_raw ?? mensualidadBackend.saldo_pendiente,
+        // Asegurar que monto_pago_raw esté disponible
+        monto_pago_raw: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
+        monto_pago: mensualidadBackend.monto_pago_raw ?? mensualidadBackend.monto_pago,
+        // Asegurar campos de estado
+        estado_bool: mensualidadBackend.estado,
+        estado_texto: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+        estado: mensualidadBackend.estado_texto || (mensualidadBackend.estado ? 'Pagado' : 'Pendiente'),
+        // Asegurar fecha de vencimiento
+        fecha_vencimiento_raw: mensualidadBackend.fecha_vencimiento,
+        // Asegurar campos de persona
+        persona_nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre,
+        nombre: mensualidadBackend.persona_nombre || props.mensualidad.persona_nombre || props.mensualidad.nombre
+      };
+      emit('guardar-cambios', mensualidadActualizada);
+    }
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Abono eliminado',
+      text: 'El abono se eliminó correctamente.',
+      timer: 1500,
+      showConfirmButton: false
+    });
   } catch (e) {
     await Swal.fire({
       icon: 'error',
@@ -1222,9 +1584,26 @@ async function eliminarAbono(index) {
 }
 
 function calcularTotalPagado() {
+  // Primero intentar calcular sumando los abonos actuales (más confiable después de crear/eliminar)
   if (abonos.value && abonos.value.length > 0) {
-    return abonos.value.reduce((total, a) => total + (a.monto || 0), 0);
+    const totalAbonos = abonos.value.reduce((total, a) => total + (Number(a.monto) || 0), 0);
+    if (totalAbonos > 0) {
+      return totalAbonos;
+    }
   }
+
+  // Si no hay abonos o la suma es 0, usar el cálculo basado en el saldo pendiente del backend
+  const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
+  const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
+  if (!Number.isNaN(totalMensualidad) && spBackend !== undefined && spBackend !== null && spBackend !== '') {
+    const n = Number(spBackend);
+    if (!Number.isNaN(n)) {
+      // Total pagado = Total mensualidad - Saldo pendiente
+      return Math.max(0, totalMensualidad - n);
+    }
+  }
+
+  // Último fallback: usar fechasPago si están disponibles
   if (!props.mensualidad.fechasPago || props.mensualidad.fechasPago.length === 0) return 0;
   return props.mensualidad.fechasPago.reduce((total, pago) => total + obtenerMontoPago(pago), 0);
 }
@@ -1239,29 +1618,30 @@ function obtenerMontoPago(pago) {
 function calcularSaldoPendienteHistorial() {
   // 1) Priorizar el valor proveniente del backend para mantener consistencia con la tarjeta
   const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
+  console.log('💰 [calcularSaldoPendienteHistorial] Valores:', {
+    saldo_pendiente_raw: props.mensualidad.saldo_pendiente_raw,
+    saldo_pendiente: props.mensualidad.saldo_pendiente,
+    saldoPendiente: props.mensualidad.saldoPendiente,
+    spBackendUsado: spBackend,
+    mensualidadId: obtenerIdMensualidad()
+  });
+
   if (spBackend !== undefined && spBackend !== null && spBackend !== '') {
     const n = Number(spBackend);
-    if (!Number.isNaN(n)) return Math.max(0, n);
+    if (!Number.isNaN(n)) {
+      console.log('💰 [calcularSaldoPendienteHistorial] Retornando saldo del backend:', n);
+      return Math.max(0, n);
+    }
   }
 
   // 2) Fallback: calcular con (valor total - total pagado) cuando no hay saldo del backend
   const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
   const totalPagado = calcularTotalPagado();
   const saldo = totalMensualidad - totalPagado;
+  console.log('💰 [calcularSaldoPendienteHistorial] Retornando saldo calculado:', saldo, { totalMensualidad, totalPagado });
   return Math.max(0, saldo);
 }
 
-function calcularPagadoMostrado() {
-  // Si tenemos saldo del backend y el total de la mensualidad, calcular pagado como (total - saldo)
-  const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
-  const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
-  if (!Number.isNaN(totalMensualidad) && spBackend !== undefined && spBackend !== null && spBackend !== '') {
-    const n = Number(spBackend);
-    if (!Number.isNaN(n)) return Math.max(0, totalMensualidad - n);
-  }
-  // Fallback al total de abonos/pagos registrados en el historial
-  return calcularTotalPagado();
-}
 
 const saldoPendienteHistNum = computed(() => calcularSaldoPendienteHistorial());
 
@@ -1329,6 +1709,8 @@ function mapearAbonoAItem(abono) {
 }
 
 function buscarAbonoInicial(abonosList, fechaCreacion) {
+  // Buscar si hay un abono en la fecha de creación para mostrar su monto en el registro de creación
+  // Pero siempre mostrar la fecha de creación como registro separado
   if (!fechaCreacion || abonosList.length === 0) return null;
   const fechaCreacionStr = String(fechaCreacion).slice(0, 10);
   return abonosList.find(a => String(a.fecha).slice(0, 10) === fechaCreacionStr);
@@ -1356,18 +1738,24 @@ function agregarRegistroCreacion(items, fechaCreacion, abonoInicial) {
   });
 }
 
-function agregarAbonosNoIniciales(items, abonosList, abonoInicial) {
+function agregarAbonosNoIniciales(items, abonosList) {
+  // Agregar todos los abonos, incluso si hay uno en la fecha de creación
+  // La fecha de creación se muestra como registro separado, y los abonos se muestran normalmente
   if (abonosList.length === 0) return;
   for (const a of abonosList) {
-    if (abonoInicial && a.id_abono === abonoInicial.id_abono) {
-      continue;
-    }
+    // No excluir el abono inicial, mostrarlo también como abono normal
     items.push(a);
   }
 }
 
 function agregarFechasPagoHeredadas(items, fechasPago) {
+  // No agregar fechas de pago heredadas si ya hay abonos en la lista
+  // Las fechas de pago heredadas solo se usan cuando no hay abonos registrados
   if (!fechasPago || fechasPago.length === 0) return;
+  // Solo agregar fechas de pago heredadas si no hay abonos reales en la lista
+  const hayAbonosReales = items.some(x => x.id_abono !== undefined);
+  if (hayAbonosReales) return; // Si hay abonos reales, no usar fechas heredadas
+
   for (const p of fechasPago) {
     const fecha = (typeof p === 'object' && p.fecha) ? p.fecha : p;
     const yaExiste = items.some(x => String(x.fecha).slice(0, 10) === String(fecha).slice(0, 10));
@@ -1384,7 +1772,7 @@ function listaPagosYAbonos() {
   const abonoInicial = buscarAbonoInicial(abonosList, fechaCreacion);
 
   agregarRegistroCreacion(items, fechaCreacion, abonoInicial);
-  agregarAbonosNoIniciales(items, abonosList, abonoInicial);
+  agregarAbonosNoIniciales(items, abonosList);
   agregarFechasPagoHeredadas(items, props.mensualidad.fechasPago);
 
   return items.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
@@ -1420,7 +1808,14 @@ async function pagarConMercadoPago() {
     let json;
     try { json = text ? JSON.parse(text) : {}; } catch { json = {}; }
     if (!resp.ok || !json.success) {
-      const msg = json.error || json.message || text || 'No se pudo crear la preferencia';
+      let msg = 'No se pudo crear la preferencia';
+      if (json.error) {
+        msg = typeof json.error === 'string' ? json.error : (json.error.message || JSON.stringify(json.error));
+      } else if (json.message) {
+        msg = typeof json.message === 'string' ? json.message : (json.message.message || JSON.stringify(json.message));
+      } else if (text && typeof text === 'string') {
+        msg = text;
+      }
       await Swal.fire({
         icon: 'error',
         title: 'No se pudo iniciar el pago',

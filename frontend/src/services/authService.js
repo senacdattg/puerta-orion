@@ -464,19 +464,40 @@ class AuthService {
         throw new Error('No hay token de autenticación')
       }
 
-      const response = await fetch(`${this.baseURL}/api/deportistas/asociar-acudiente`, {
+      // Extraer id_deportista de los datos y construir la URL correcta
+      const idDeportista = datosAsociacion.id_deportista
+      if (!idDeportista) {
+        throw new Error('El id_deportista es requerido')
+      }
+
+      // Construir el body sin el id_deportista ya que va en la URL
+      const body = {
+        id_parentesco: datosAsociacion.id_parentesco,
+        es_responsable: datosAsociacion.es_responsable
+      }
+
+      const response = await fetch(`${this.baseURL}/api/deportistas/${idDeportista}/acudientes`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(datosAsociacion)
+        body: JSON.stringify(body)
       })
 
-      const data = await response.json()
+      // Verificar si la respuesta es JSON antes de parsear
+      const contentType = response.headers.get('content-type')
+      let data = {}
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        throw new Error(`Error ${response.status}: ${response.statusText}. ${text.substring(0, 100)}`)
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al asociar acudiente con deportista')
+        throw new Error(data.error || data.message || 'Error al asociar acudiente con deportista')
       }
 
       return { success: true, data: data.data, message: data.message }

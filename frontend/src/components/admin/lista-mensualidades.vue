@@ -67,7 +67,7 @@
       <!-- Grid de mensualidades -->
       <div v-else class="grid-mensualidades">
         <TarjetaMensualidad v-for="mensualidad in mensualidadesFiltradas" :key="mensualidad.id"
-          :mensualidad="mensualidad" @ver-detalle-completo="verDetalleCompleto" @gestionar="abrirModalEnModoEdicion"
+          :mensualidad="mensualidad" @ver-detalle-completo="verDetalleCompleto"
           @eliminar="eliminarMensualidad" />
 
         <div v-if="esAdmin" class="boton-agregar" @click="abrirFormulario">
@@ -275,13 +275,13 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, watch } from 'vue';
+import mensualidadesService from '@/services/mensualidadesService';
 import { useAuthStore } from '@/stores/auth';
 import TarjetaMensualidad from './tarjeta-mensualidad.vue';
 import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
-import mensualidadesService from '@/services/mensualidadesService';
 import Swal from 'sweetalert2';
 
 // Props
@@ -302,7 +302,7 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(['editar', 'nueva', 'eliminar']);
+const emit = defineEmits(['editar', 'nueva', 'eliminar', 'recargar']);
 
 // Constantes
 const meses = [
@@ -311,8 +311,11 @@ const meses = [
 ];
 
 const authStore = useAuthStore();
-const roleNames = computed(() => (authStore.user?.roles || []).map(r => typeof r === 'string' ? r : r?.nombre_rol));
-const esAdmin = computed(() => roleNames.value.includes('SuperAdmin') || roleNames.value.includes('Administrador'));
+// Verificar el rol activo actual, no todos los roles del usuario
+const esAdmin = computed(() => {
+  const rolActivo = authStore.activeRole;
+  return rolActivo === 'SuperAdmin' || rolActivo === 'Administrador';
+});
 
 const estados = ['Pagado', 'Pendiente', 'Vencido'];
 
@@ -374,9 +377,27 @@ const modalDetalleEnEdicion = ref(false);
 
 // Estado del formulario
 const mostrarFormulario = ref(false);
+const esperandoCierreFormulario = ref(false);
 
-// Bloquear scroll del body cuando el modal está abierto
+// Bloquear scroll del body cuando el modal de crear está abierto
+// El modal de detalles maneja su propio bloqueo de scroll
 useModalScrollLock(computed(() => mostrarFormulario.value));
+
+// Watch para cerrar el formulario cuando las mensualidades se actualicen después de crear una nueva
+watch(() => props.mensualidades, (nuevasMensualidades) => {
+  // Si estamos esperando cerrar el formulario y las mensualidades cambiaron
+  if (esperandoCierreFormulario.value && mostrarFormulario.value) {
+    // Verificar que realmente hay nuevas mensualidades (no solo un cambio vacío)
+    if (nuevasMensualidades && nuevasMensualidades.length > 0) {
+      // Esperar un momento para que el mensaje de éxito del padre se muestre primero
+      setTimeout(() => {
+        cerrarFormularioForzado();
+        esperandoCierreFormulario.value = false;
+      }, 100);
+    }
+  }
+}, { deep: true });
+
 const formKey = ref(0);
 const form = ref({
   numero_documento: '',
@@ -440,28 +461,52 @@ function abrirModalEnModoEdicion(mensualidad) {
 async function guardarCambiosMensualidad(mensualidadActualizada) {
   console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
 
-  const index = props.mensualidades.findIndex(m => m.id === mensualidadActualizada.id);
-  if (index !== -1) {
-    Object.assign(props.mensualidades[index], mensualidadActualizada);
-  }
-  emit('editar', mensualidadActualizada);
-  const estabaVisible = modalDetalleCompletoVisible.value;
-  if (estabaVisible) {
-    modalDetalleCompletoVisible.value = false;
-    await nextTick();
-  }
-  await Swal.fire({
-    icon: 'success',
-    title: 'Cambios guardados',
-    text: 'La mensualidad se actualizó correctamente.',
-    timer: 1500,
-    showConfirmButton: false
+  // El array de mensualidades se actualizará en el componente padre a través del emit 'editar'
+  // Por ahora, solo actualizamos mensualidadSeleccionada para el modal
+
+  // Verificar si la mensualidad actualizada corresponde a la seleccionada usando múltiples criterios
+  const idActualizada = mensualidadActualizada.id || mensualidadActualizada.id_mensualidad;
+  const idSeleccionada = mensualidadSeleccionada.value?.id || mensualidadSeleccionada.value?.id_mensualidad;
+
+  console.log('🔄 [guardarCambiosMensualidad] Comparando IDs:', {
+    idActualizada,
+    idSeleccionada,
+    modalAbierto: modalDetalleCompletoVisible.value,
+    saldoPendienteRaw: mensualidadActualizada.saldo_pendiente_raw,
+    saldoPendiente: mensualidadActualizada.saldo_pendiente
   });
-  if (estabaVisible) {
-    mensualidadSeleccionada.value = { ...mensualidadActualizada };
-    modalDetalleCompletoVisible.value = true;
+
+  // Actualizar la mensualidad seleccionada en el modal si el modal está abierto
+  // Comparar IDs de forma más flexible
+  const idsCoinciden = (
+    idActualizada === idSeleccionada ||
+    (idActualizada && idSeleccionada && String(idActualizada) === String(idSeleccionada)) ||
+    (!mensualidadSeleccionada.value?.id && !mensualidadSeleccionada.value?.id_mensualidad)
+  );
+
+  if (modalDetalleCompletoVisible.value && idsCoinciden) {
+    // Crear un objeto completamente nuevo con todos los campos actualizados del backend
+    // Esto fuerza la reactividad de Vue y dispara el watch en el modal
+    const mensualidadActualizadaClon = JSON.parse(JSON.stringify(mensualidadActualizada));
+    console.log('✅ [guardarCambiosMensualidad] Actualizando mensualidad seleccionada con saldo_pendiente_raw:', mensualidadActualizadaClon.saldo_pendiente_raw);
+    mensualidadSeleccionada.value = mensualidadActualizadaClon;
+  } else {
+    console.warn('⚠️ [guardarCambiosMensualidad] No se actualizó mensualidad seleccionada', {
+      idActualizada,
+      idSeleccionada,
+      modalAbierto: modalDetalleCompletoVisible.value,
+      idsCoinciden
+    });
   }
-  modalDetalleEnEdicion.value = false;
+
+  // Emitir al padre para actualizar la lista de mensualidades
+  emit('editar', mensualidadActualizada);
+
+  // Si estábamos editando, cerrar el modo edición del modal (el modal ya mostró el mensaje de éxito)
+  if (modalDetalleEnEdicion.value) {
+    modalDetalleEnEdicion.value = false;
+  }
+  // El modal se actualizará automáticamente porque mensualidadSeleccionada cambió
 }
 
 // función de reporte eliminada
@@ -539,7 +584,8 @@ async function abrirFormulario() {
     form.value.id_metodo_pago = ninguno.id;
   }
   // Guardar estado inicial cuando se abre el formulario
-  formInicial.value = structuredClone(form.value);
+  // Evitar structuredClone con objetos reactivos de Vue
+  formInicial.value = JSON.parse(JSON.stringify(form.value));
   mostrarFormulario.value = true;
 }
 
@@ -617,6 +663,12 @@ function extraerMensajeError(error) {
   }
 
   return 'Error desconocido. Por favor, intenta nuevamente.'
+}
+
+function cerrarFormularioForzado() {
+  mostrarFormulario.value = false;
+  limpiarFormulario();
+  formInicial.value = null;
 }
 
 async function cerrarFormulario() {
@@ -890,15 +942,19 @@ async function guardarMensualidad() {
   }
 
   try {
-    // Cerrar el loading
-    Swal.close()
+    // Cerrar el loading antes de emitir
+    Swal.close();
 
-    // Emitir evento y esperar respuesta del padre
+    // Marcar que estamos esperando el cierre del formulario
+    esperandoCierreFormulario.value = true;
+
+    // Emitir evento - el padre manejará el éxito/error
     emit('nueva', payload);
 
-    // El componente padre manejará el éxito/error, pero aquí cerramos el formulario
-    cerrarFormulario();
+    // El formulario se cerrará cuando el padre recargue las mensualidades
+    // El watch detectará el cambio y cerrará el formulario
   } catch (error) {
+    esperandoCierreFormulario.value = false;
     // Cerrar el loading si aún está abierto
     Swal.close()
 

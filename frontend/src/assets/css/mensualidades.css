@@ -110,6 +110,9 @@
 /* --- Contenido de la tarjeta --- */
 .contenido-mensualidad {
   margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .contenido-mensualidad .nombre-deportista {
@@ -229,6 +232,50 @@
 
 .detalle-valor.vencimiento {
   color: var(--color-advertencia);
+}
+
+/* --- Estado de mensualidad (similar a deportistas) --- */
+.estado-mensualidad {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.75rem;
+  align-self: center;
+}
+
+.estado-mensualidad.activo {
+  background: var(--color-exito);
+  color: var(--color-blanco);
+}
+
+.estado-mensualidad.activo:hover:not(:disabled) {
+  background: var(--color-exito);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.estado-mensualidad.inactivo {
+  background: var(--color-gris);
+  color: var(--color-blanco);
+}
+
+.estado-mensualidad.inactivo:hover:not(:disabled) {
+  background: var(--color-gris);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.estado-mensualidad:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ===== ESTILOS DE ACCIONES DE LA TARJETA ===== */
@@ -799,6 +846,8 @@
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
   border-bottom: 2px solid var(--color-gris-claro);
+  width: 100%;
+  max-width: 100%;
 }
 
 .seccion-detalles h5,
@@ -818,6 +867,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  padding: var(--espaciado-md);
+  background: var(--color-gris-claro);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-medio);
+  box-sizing: border-box;
 }
 
 /* --- Sección financiera --- */
@@ -842,6 +898,10 @@
   text-align: center;
   border: 2px solid transparent;
   transition: var(--transicion);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .resumen-item:hover {
@@ -851,12 +911,17 @@
 
 /* --- Label de resumen --- */
 .resumen-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.9rem;
   color: var(--color-gris);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  min-height: 2.5rem;
+  line-height: 1.2;
+  text-align: center;
 }
 
 /* --- Valor de resumen --- */
@@ -910,6 +975,8 @@
 /* --- Sección de historial --- */
 .seccion-historial {
   margin-bottom: 1.5rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* ===== ESTILOS DEL FOOTER DEL MODAL ===== */
@@ -1029,6 +1096,8 @@
 /* --- Campo de formulario --- */
 .campo-formulario {
   margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .campo-formulario label {
@@ -1046,6 +1115,16 @@
   font-size: 1rem;
   width: 16px;
   text-align: center;
+}
+
+/* --- Texto de ayuda (hint) --- */
+.campo-formulario small.hint {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-gris);
+  line-height: 1.4;
+  width: 100%;
 }
 
 /* --- Input y select de mensualidad --- */
@@ -1801,12 +1880,13 @@
 /* --- Resumen de pagos --- */
 .resumen-pagos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--espaciado-md);
   padding: var(--espaciado-md);
   background: var(--color-gris-claro);
   border-radius: var(--radio-borde-pequeno);
   border: 1px solid var(--color-gris-medio);
+  align-items: start;
 }
 
 /* --- Lista de pagos --- */
@@ -1860,7 +1940,9 @@
 /* Responsive para fechas de pago y historial */
 @media (max-width: 768px) {
   .resumen-pagos {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--espaciado-sm);
+    padding: var(--espaciado-sm);
   }
 
   .fecha-pago-item {

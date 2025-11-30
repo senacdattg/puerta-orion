@@ -1,4 +1,4 @@
-import { watch, onUnmounted } from 'vue';
+import { watch, onUnmounted, onMounted } from 'vue';
 
 /**
  * Composable para bloquear el scroll del body cuando un modal está abierto
@@ -9,58 +9,78 @@ export function useModalScrollLock(mostrar) {
   let scrollPosition = 0;
   let originalScrollBehavior = '';
 
+  function bloquearScroll() {
+    // Guardar la posición actual del scroll
+    scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
+    // Guardar el comportamiento de scroll original
+    originalScrollBehavior = document.documentElement.style.scrollBehavior || window.getComputedStyle(document.documentElement).scrollBehavior;
+
+    // Aplicar la posición guardada al body antes de fijarlo
+    document.body.style.top = `-${scrollPosition}px`;
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+    document.documentElement.classList.add('modal-open');
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function desbloquearScroll() {
+    // Desactivar temporalmente scroll-behavior: smooth para evitar animación
+    document.documentElement.style.scrollBehavior = 'auto';
+    document.body.style.scrollBehavior = 'auto';
+
+    // Remover las clases y estilos
+    document.body.classList.remove('modal-open');
+    document.documentElement.classList.remove('modal-open');
+    document.body.style.top = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
+
+    // Restaurar la posición del scroll sin animación usando requestAnimationFrame
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: scrollPosition,
+        left: 0,
+        behavior: 'auto'
+      });
+
+      // Restaurar el comportamiento de scroll original después de restaurar la posición
+      requestAnimationFrame(() => {
+        if (originalScrollBehavior) {
+          document.documentElement.style.scrollBehavior = originalScrollBehavior;
+          document.body.style.scrollBehavior = originalScrollBehavior;
+        } else {
+          document.documentElement.style.scrollBehavior = '';
+          document.body.style.scrollBehavior = '';
+        }
+      });
+    });
+  }
+
   // Bloquear scroll del body cuando el modal está abierto
   watch(mostrar, (nuevoValor) => {
     if (nuevoValor) {
-      // Guardar la posición actual del scroll
-      scrollPosition = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-
-      // Guardar el comportamiento de scroll original
-      originalScrollBehavior = document.documentElement.style.scrollBehavior || window.getComputedStyle(document.documentElement).scrollBehavior;
-
-      // Aplicar la posición guardada al body antes de fijarlo
-      document.body.style.top = `-${scrollPosition}px`;
-      document.body.classList.add('modal-open');
-      document.documentElement.classList.add('modal-open');
+      bloquearScroll();
     } else {
-      // Desactivar temporalmente scroll-behavior: smooth para evitar animación
-      document.documentElement.style.scrollBehavior = 'auto';
-      document.body.style.scrollBehavior = 'auto';
+      desbloquearScroll();
+    }
+  }, { immediate: true });
 
-      // Remover las clases y estilos
-      document.body.classList.remove('modal-open');
-      document.documentElement.classList.remove('modal-open');
-      document.body.style.top = '';
-
-      // Restaurar la posición del scroll sin animación usando requestAnimationFrame
-      requestAnimationFrame(() => {
-        window.scrollTo({
-          top: scrollPosition,
-          left: 0,
-          behavior: 'auto'
-        });
-
-        // Restaurar el comportamiento de scroll original después de restaurar la posición
-        requestAnimationFrame(() => {
-          if (originalScrollBehavior) {
-            document.documentElement.style.scrollBehavior = originalScrollBehavior;
-            document.body.style.scrollBehavior = originalScrollBehavior;
-          } else {
-            document.documentElement.style.scrollBehavior = '';
-            document.body.style.scrollBehavior = '';
-          }
-        });
-      });
+  // También bloquear cuando el componente se monta si ya está visible
+  onMounted(() => {
+    const valorMostrar = typeof mostrar === 'function' ? mostrar() : (mostrar?.value ?? false);
+    if (valorMostrar) {
+      bloquearScroll();
     }
   });
 
   // Limpiar al desmontar el componente
   onUnmounted(() => {
-    document.body.classList.remove('modal-open');
-    document.documentElement.classList.remove('modal-open');
-    document.body.style.top = '';
-    document.documentElement.style.scrollBehavior = '';
-    document.body.style.scrollBehavior = '';
+    desbloquearScroll();
   });
 }
 
