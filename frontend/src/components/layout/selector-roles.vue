@@ -247,12 +247,83 @@ async function cambiarRol(event) {
   }
 }
 
-// Observar cambios en los roles del usuario y el detalle del usuario
-watch(() => [rolesDisponibles.value, authStore.userDetail], () => {
-  // Cargar detalle si no está cargado y el usuario es deportista
+// Helper functions to reduce cognitive complexity in watch
+function _cargarDetalleDeportista() {
   if (esDeportista.value && !authStore.userDetail) {
     authStore.loadUserProfileDetail()
   }
+}
+
+function _obtenerNombresRoles(roles) {
+  return roles.map(r => {
+    if (typeof r === 'string') return r
+    if (r.nombre_rol) return r.nombre_rol
+    return String(r)
+  })
+}
+
+function _verificarRolGuardadoValido(rolActivoGuardado, rolesUsuario) {
+  const nombresRoles = _obtenerNombresRoles(rolesUsuario);
+  return nombresRoles.some(r => 
+    r === rolActivoGuardado || r.toLowerCase() === rolActivoGuardado.toLowerCase()
+  );
+}
+
+function _restaurarRolGuardado(rolActivoGuardado, rolActivoActual) {
+  const rolesSonIguales = rolActivoActual === rolActivoGuardado;
+  if (rolesSonIguales) {
+    console.log(`✅ [selector-roles] Rol activo "${rolActivoGuardado}" fue seleccionado explícitamente, NO cambiando automáticamente`)
+  } else {
+    console.log(`✅ [selector-roles] Restaurando rol activo guardado: ${rolActivoGuardado} (fue seleccionado explícitamente, NO cambiando)`)
+    rolActivo.value = rolActivoGuardado
+    const rolStoreEsDiferente = authStore.activeRole !== rolActivoGuardado;
+    if (rolStoreEsDiferente) {
+      // Pasar true para forzar el cambio cuando se restaura un rol guardado explícitamente
+      authStore.setActiveRole?.(rolActivoGuardado, true)
+    }
+  }
+}
+
+function _manejarRolGuardado(rolActivoGuardado) {
+  const rolActivoActual = rolActivo.value || authStore.activeRole
+  const rolesUsuario = authStore.user?.roles || []
+  const rolGuardadoEsValido = _verificarRolGuardadoValido(rolActivoGuardado, rolesUsuario)
+  
+  console.log(`🔍 [selector-roles] Verificando rol guardado: ${rolActivoGuardado}, válido: ${rolGuardadoEsValido}, actual: ${rolActivoActual}`)
+  
+  if (rolGuardadoEsValido) {
+    _restaurarRolGuardado(rolActivoGuardado, rolActivoActual)
+    return true // Indica que se manejó el rol guardado
+  }
+  return false
+}
+
+function _debeCambiarRolAutomaticamente(rolActivoGuardado) {
+  return !rolActivoGuardado && 
+         esDeportista.value && 
+         !esMayorDeEdad.value && 
+         (rolActivo.value === 'Usuario' || rolActivo.value === 'usuario')
+}
+
+function _cambiarRolAutomatico() {
+  const roles = authStore.user?.roles || []
+  const nombresRoles = roles.map(r => getNombreRolSimple(r) || r).filter(Boolean)
+  const rolesDisponibles = nombresRoles.filter(rol => rol !== 'Usuario' && rol !== 'usuario')
+
+  if (rolesDisponibles.length > 0) {
+    const nuevoRol = obtenerRolPrincipal(roles)
+    if (nuevoRol && nuevoRol !== 'Usuario' && nuevoRol !== 'usuario') {
+      console.log(`🔄 [selector-roles] Cambiando rol de "Usuario" a "${nuevoRol}" (usuario menor de edad, NO hay rol guardado)`)
+      rolActivo.value = nuevoRol
+      authStore.setActiveRole?.(nuevoRol)
+    }
+  }
+}
+
+// Observar cambios en los roles del usuario y el detalle del usuario
+// Refactored to reduce cognitive complexity by extracting helper functions
+watch(() => [rolesDisponibles.value, authStore.userDetail], () => {
+  _cargarDetalleDeportista()
 
   // PROTECCIÓN CRÍTICA: NUNCA cambiar automáticamente el rol activo si el usuario lo seleccionó explícitamente
   // Verificar PRIMERO si hay un rol activo guardado en localStorage (indica selección explícita del usuario)
@@ -261,54 +332,16 @@ watch(() => [rolesDisponibles.value, authStore.userDetail], () => {
   // Si hay un rol guardado en localStorage, significa que el usuario lo seleccionó explícitamente
   // NO cambiar el rol en NINGÚN caso, independientemente de la edad, roles disponibles, etc.
   if (rolActivoGuardado) {
-    const rolActivoActual = rolActivo.value || authStore.activeRole
-    // Verificar que el rol guardado esté en los roles del usuario
-    const rolesUsuario = authStore.user?.roles || []
-    const nombresRoles = rolesUsuario.map(r => {
-      if (typeof r === 'string') return r
-      if (r.nombre_rol) return r.nombre_rol
-      return String(r)
-    })
-    const rolGuardadoEsValido = nombresRoles.some(r => 
-      r === rolActivoGuardado || r.toLowerCase() === rolActivoGuardado.toLowerCase()
-    )
-    
-    console.log(`🔍 [selector-roles] Verificando rol guardado: ${rolActivoGuardado}, válido: ${rolGuardadoEsValido}, actual: ${rolActivoActual}`)
-    
-    if (rolGuardadoEsValido) {
-      // El rol guardado es válido, mantenerlo SIEMPRE
-      // Converted negated condition to positive form for better readability
-      const rolesSonIguales = rolActivoActual === rolActivoGuardado;
-      if (rolesSonIguales) {
-        console.log(`✅ [selector-roles] Rol activo "${rolActivoGuardado}" fue seleccionado explícitamente, NO cambiando automáticamente`)
-      } else {
-        console.log(`✅ [selector-roles] Restaurando rol activo guardado: ${rolActivoGuardado} (fue seleccionado explícitamente, NO cambiando)`)
-        rolActivo.value = rolActivoGuardado
-        const rolStoreEsDiferente = authStore.activeRole !== rolActivoGuardado;
-        if (rolStoreEsDiferente) {
-          // Pasar true para forzar el cambio cuando se restaura un rol guardado explícitamente
-          authStore.setActiveRole?.(rolActivoGuardado, true)
-        }
-      }
+    const rolManejado = _manejarRolGuardado(rolActivoGuardado)
+    if (rolManejado) {
       return // NO cambiar el rol si fue seleccionado explícitamente
     }
   }
   
   // Solo cambiar automáticamente si NO hay rol guardado (no fue seleccionado explícitamente)
   // Y el usuario es deportista menor de edad con rol "Usuario"
-  if (!rolActivoGuardado && esDeportista.value && !esMayorDeEdad.value && (rolActivo.value === 'Usuario' || rolActivo.value === 'usuario')) {
-    const roles = authStore.user?.roles || []
-    const nombresRoles = roles.map(r => getNombreRolSimple(r) || r).filter(Boolean)
-    const rolesDisponibles = nombresRoles.filter(rol => rol !== 'Usuario' && rol !== 'usuario')
-
-    if (rolesDisponibles.length > 0) {
-      const nuevoRol = obtenerRolPrincipal(roles)
-      if (nuevoRol && nuevoRol !== 'Usuario' && nuevoRol !== 'usuario') {
-        console.log(`🔄 [selector-roles] Cambiando rol de "Usuario" a "${nuevoRol}" (usuario menor de edad, NO hay rol guardado)`)
-        rolActivo.value = nuevoRol
-        authStore.setActiveRole?.(nuevoRol)
-      }
-    }
+  if (_debeCambiarRolAutomaticamente(rolActivoGuardado)) {
+    _cambiarRolAutomatico()
   }
 }, { immediate: true })
 

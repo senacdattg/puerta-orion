@@ -614,6 +614,74 @@ export default {
             }
         },
 
+        // Helper functions to reduce cognitive complexity in guardarEvento
+        async _mostrarSinCambios() {
+            await Swal.fire({
+                icon: 'info',
+                title: 'Sin cambios',
+                text: 'No se han realizado modificaciones en el evento. No hay nada que guardar.',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#004AAD'
+            });
+        },
+
+        async _mostrarErroresValidacion(errores) {
+            await Swal.fire({
+                icon: 'error',
+                title: 'Corrige los errores',
+                html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc3545'
+            });
+        },
+
+        async _confirmarGuardado() {
+            return await Swal.fire({
+                icon: 'question',
+                title: this.modoEdicion ? '¿Actualizar evento?' : '¿Crear evento?',
+                text: this.modoEdicion
+                    ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
+                    : '¿Estás seguro de que deseas crear este evento?',
+                showCancelButton: true,
+                confirmButtonText: this.modoEdicion ? 'Sí, actualizar' : 'Sí, crear',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#004AAD',
+                cancelButtonColor: '#6c757d'
+            });
+        },
+
+        async _manejarErrorGuardado(error) {
+            console.error('Error al guardar evento:', error);
+            // El error ya fue mostrado en crearNuevoEvento o actualizarEventoExistente
+            // Solo mostrar aquí si no se mostró antes
+            if (!error.mostrado) {
+                const mensajeError = this.extraerMensajeError(error);
+                await Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    html: `<p><strong>Error al guardar el evento.</strong></p><p>${mensajeError}</p>`,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        },
+
+        _normalizarCamposEvento() {
+            // Normalizar campos antes de validar (aplicar trim aquí al guardar)
+            this.nuevoEvento.titulo = this.nuevoEvento.titulo ? this.nuevoEvento.titulo.replaceAll(/\s+/g, ' ').trim().slice(0, MAX_TITULO) : '';
+            this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
+        },
+
+        async _verificarCambiosEnEdicion() {
+            if (!this.modoEdicion) return true;
+            const tieneCambios = this.verificarCambios();
+            if (!tieneCambios) {
+                await this._mostrarSinCambios();
+                return false;
+            }
+            return true;
+        },
+
         normalizarEspacios(valor = '') {
             return valor ? valor.replaceAll(/\s+/g, ' ').trim() : '';
         },
@@ -1328,81 +1396,38 @@ export default {
             }
         },
 
+        // Refactored to reduce cognitive complexity by extracting helper functions
         async guardarEvento() {
             if (!this.puedeCrear && !this.puedeEditar) return;
 
             // Verificar si hay cambios antes de continuar (solo para edición)
-            if (this.modoEdicion) {
-                const tieneCambios = this.verificarCambios()
+            const puedeContinuar = await this._verificarCambiosEnEdicion();
+            if (!puedeContinuar) return;
 
-                if (!tieneCambios) {
-                    await Swal.fire({
-                        icon: 'info',
-                        title: 'Sin cambios',
-                        text: 'No se han realizado modificaciones en el evento. No hay nada que guardar.',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#004AAD'
-                    })
-                    return
-                }
-            }
-
-            // Normalizar campos antes de validar (aplicar trim aquí al guardar)
-            this.nuevoEvento.titulo = this.nuevoEvento.titulo ? this.nuevoEvento.titulo.replaceAll(/\s+/g, ' ').trim().slice(0, MAX_TITULO) : '';
-            this.nuevoEvento.lugar = this.normalizarLugar(this.nuevoEvento.lugar);
+            // Normalizar campos antes de validar
+            this._normalizarCamposEvento();
             const errores = this.validarEvento();
 
             if (errores.length > 0) {
-                await Swal.fire({
-                    icon: 'error',
-                    title: 'Corrige los errores',
-                    html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${errores.join('<br>')}</p>`,
-                    confirmButtonText: 'Entendido',
-                    confirmButtonColor: '#dc3545'
-                });
+                await this._mostrarErroresValidacion(errores);
                 return;
             }
 
             // Confirmación antes de guardar
-            const confirmacion = await Swal.fire({
-                icon: 'question',
-                title: this.modoEdicion ? '¿Actualizar evento?' : '¿Crear evento?',
-                text: this.modoEdicion
-                    ? '¿Estás seguro de que deseas guardar los cambios en este evento?'
-                    : '¿Estás seguro de que deseas crear este evento?',
-                showCancelButton: true,
-                confirmButtonText: this.modoEdicion ? 'Sí, actualizar' : 'Sí, crear',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#004AAD',
-                cancelButtonColor: '#6c757d'
-            });
-
+            const confirmacion = await this._confirmarGuardado();
             if (!confirmacion.isConfirmed) {
                 return;
             }
 
             try {
                 this.cargando = true;
-
                 if (this.modoEdicion) {
                     await this.actualizarEventoExistente();
                 } else {
                     await this.crearNuevoEvento();
                 }
             } catch (error) {
-                console.error('Error al guardar evento:', error);
-                // El error ya fue mostrado en crearNuevoEvento o actualizarEventoExistente
-                // Solo mostrar aquí si no se mostró antes
-                if (!error.mostrado) {
-                    const mensajeError = this.extraerMensajeError(error);
-                    await Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        html: `<p><strong>Error al guardar el evento.</strong></p><p>${mensajeError}</p>`,
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#dc3545'
-                    });
-                }
+                await this._manejarErrorGuardado(error);
             } finally {
                 this.cargando = false;
             }
