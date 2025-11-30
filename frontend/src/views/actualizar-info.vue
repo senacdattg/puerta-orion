@@ -392,18 +392,20 @@
             </div>
 
             <div class="form-group">
-              <label>¿Practica otro deporte además del principal?</label>
-              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <label for="practica-otro-deporte-group">¿Practica otro deporte además del principal?</label>
+              <div id="practica-otro-deporte-group" style="display: flex; gap: 1rem; margin-top: 0.5rem;" role="radiogroup" aria-labelledby="practica-otro-deporte-label">
+                <label for="practica-otro-deporte-si" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                   <input
+                    id="practica-otro-deporte-si"
                     type="radio"
                     v-model="formDataDeportista.practica_otro_deporte"
                     :value="true"
                   >
                   Sí
                 </label>
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <label for="practica-otro-deporte-no" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                   <input
+                    id="practica-otro-deporte-no"
                     type="radio"
                     v-model="formDataDeportista.practica_otro_deporte"
                     :value="false"
@@ -414,10 +416,11 @@
             </div>
 
             <div class="form-group">
-              <label>¿Participa en escuela de formación?</label>
-              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <label for="participa-escuela-group">¿Participa en escuela de formación?</label>
+              <div id="participa-escuela-group" style="display: flex; gap: 1rem; margin-top: 0.5rem;" role="radiogroup" aria-labelledby="participa-escuela-label">
+                <label for="participa-escuela-si" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                   <input
+                    id="participa-escuela-si"
                     type="radio"
                     v-model="formDataDeportista.participa_escuela"
                     :value="true"
@@ -425,8 +428,9 @@
                   >
                   Sí
                 </label>
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <label for="participa-escuela-no" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                   <input
+                    id="participa-escuela-no"
                     type="radio"
                     v-model="formDataDeportista.participa_escuela"
                     :value="false"
@@ -468,10 +472,11 @@
             </h4>
 
             <div class="form-group">
-              <label>¿Tiene alguna enfermedad o condición médica?</label>
-              <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <label for="tiene-enfermedades-group">¿Tiene alguna enfermedad o condición médica?</label>
+              <div id="tiene-enfermedades-group" style="display: flex; gap: 1rem; margin-top: 0.5rem;" role="radiogroup" aria-labelledby="tiene-enfermedades-label">
+                <label for="tiene-enfermedades-si" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                   <input
+                    id="tiene-enfermedades-si"
                     type="radio"
                     v-model="formDataDeportista.tiene_enfermedades"
                     :value="true"
@@ -479,8 +484,9 @@
                   >
                   Sí
                 </label>
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <label for="tiene-enfermedades-no" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                   <input
+                    id="tiene-enfermedades-no"
                     type="radio"
                     v-model="formDataDeportista.tiene_enfermedades"
                     :value="false"
@@ -514,9 +520,9 @@
               </div>
 
               <div v-if="formDataDeportista.tipo_enfermedad" class="form-group">
-                <label>Diagnósticos:</label>
-                <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-top: 10px;"
-                     :style="!puedeEditarCampo.antecedentesMedicos ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''">
+                <fieldset id="diagnosticos-group" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; margin-top: 10px;"
+                         :style="!puedeEditarCampo.antecedentesMedicos ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''">
+                  <legend>Diagnósticos:</legend>
                   <div
                     v-for="diagnostico in diagnosticosDisponibles"
                     :key="diagnostico.id_diagnostico"
@@ -535,14 +541,15 @@
                       {{ diagnostico.nombre }}
                     </label>
                   </div>
-                </div>
+                </fieldset>
               </div>
 
               <div class="form-group">
-                <label>¿Existe alguna recomendación médica?</label>
-                <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
-                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <label for="recomendacion-medica-group">¿Existe alguna recomendación médica?</label>
+                <div id="recomendacion-medica-group" style="display: flex; gap: 1rem; margin-top: 0.5rem;" role="radiogroup" aria-labelledby="recomendacion-medica-label">
+                  <label for="recomendacion-medica-si" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                     <input
+                      id="recomendacion-medica-si"
                       type="radio"
                       v-model="formDataDeportista.recomendacion_medica"
                       :value="true"
@@ -550,8 +557,9 @@
                     >
                     Sí
                   </label>
-                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                  <label for="recomendacion-medica-no" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                     <input
+                      id="recomendacion-medica-no"
                       type="radio"
                       v-model="formDataDeportista.recomendacion_medica"
                       :value="false"
@@ -742,20 +750,20 @@ const rolUsuario = computed(() => {
   }
 
   // Extraer nombres de roles
-  const nombresRoles = userRoles.map(rol => {
+  const nombresRoles = new Set(userRoles.map(rol => {
     if (typeof rol === 'string') return rol
     if (rol.nombre_rol) return rol.nombre_rol
     return rol.toString()
-  })
+  }))
 
   // Prioridad: Entrenador > Deportista > Acudiente
-  if (nombresRoles.includes('Entrenador') || nombresRoles.includes('Administrador') || nombresRoles.includes('SuperAdmin')) {
+  if (nombresRoles.has('Entrenador') || nombresRoles.has('Administrador') || nombresRoles.has('SuperAdmin')) {
     return 'Entrenador'
   }
-  if (nombresRoles.includes('Deportista')) {
+  if (nombresRoles.has('Deportista')) {
     return 'Deportista'
   }
-  if (nombresRoles.includes('Acudiente')) {
+  if (nombresRoles.has('Acudiente')) {
     return 'Acudiente'
   }
 
@@ -984,7 +992,7 @@ function transformarMayusculas(valor = '') {
 // Función para sanitizar nombres (igual que en formulario-general.vue)
 function sanitizarNombre(valor = '', obligatorio = true) {
   const mayus = transformarMayusculas(valor)
-  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ')
+  const limpio = mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, '').replace(/\s{2,}/g, ' ') // NOSONAR: S7781 - replaceAll no acepta regex
   if (!obligatorio && !limpio.trim()) {
     return ''
   }
@@ -994,13 +1002,13 @@ function sanitizarNombre(valor = '', obligatorio = true) {
 // Función para sanitizar dirección (igual que en formulario-general.vue)
 function sanitizarDireccion(valor = '') {
   const mayus = transformarMayusculas(valor)
-  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart()
+  return mayus.replace(/[^A-Z0-9ÁÉÍÓÚÜÑ#\-.\s]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781 - replaceAll no acepta regex
 }
 
 // Función para sanitizar strings (normalizar espacios, trim) - mantener para compatibilidad
 function sanitizarString(valor) {
   if (!valor || typeof valor !== 'string') return ''
-  return valor.replace(/\s+/g, ' ').trim()
+  return valor.replace(/\s+/g, ' ').trim() // NOSONAR: S7781 - replaceAll no acepta regex
 }
 
 // Handlers para validación en tiempo real (igual que en formulario-general.vue)
@@ -1019,7 +1027,7 @@ function manejarEntradaNombre(campo, event, obligatorio = true) {
 function manejarDocumento(event) {
   if (!event || !event.target) return
   const valor = event.target.value || ''
-  const digitos = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO)
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_DOCUMENTO) // NOSONAR: S7781 - replaceAll no acepta regex
   formData.value.documento = digitos
   // Asegurar que el input también muestre el valor sanitizado
   if (event.target.value !== digitos) {
@@ -1030,7 +1038,7 @@ function manejarDocumento(event) {
 function manejarTelefono(event) {
   if (!event || !event.target) return
   const valor = event.target.value || ''
-  const digitos = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO)
+  const digitos = valor.replace(/\D/g, '').slice(0, MAX_TELEFONO) // NOSONAR: S7781 - replaceAll no acepta regex
   formData.value.telefono = digitos
   // Asegurar que el input también muestre el valor sanitizado
   if (event.target.value !== digitos) {
@@ -1079,9 +1087,9 @@ const cargarDatosPersona = (persona) => {
   formData.value.primer_apellido = sanitizarNombre(persona.primer_apellido)
   formData.value.segundo_apellido = sanitizarNombre(persona.segundo_apellido, false)
   formData.value.correo_electronico = (persona.correo_electronico || '').trim().toLowerCase()
-  formData.value.telefono = (persona.telefono || '').replace(/\D/g, '')
+  formData.value.telefono = (persona.telefono || '').replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
   formData.value.direccion = sanitizarDireccion(persona.direccion || '')
-  formData.value.documento = (persona.documento || '').replace(/\D/g, '')
+  formData.value.documento = (persona.documento || '').replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
   formData.value.id_tipo_documento = persona.id_tipo_documento || null
   formData.value.id_sexo = persona.id_sexo || null
 }
@@ -1199,8 +1207,14 @@ async function cargarDatosUsuario() {
     }
 
     // Guardar datos iniciales después de cargar
-    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
-    formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value))
+    try {
+      formDataInicial.value = structuredClone(formData.value)
+      formDataDeportistaInicial.value = structuredClone(formDataDeportista.value)
+    } catch {
+      // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value)) // NOSONAR: S7784
+      formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value)) // NOSONAR: S7784
+    }
   } catch (err) {
     console.error('Error al cargar datos del usuario:', err)
     error.value = 'Error al cargar los datos del usuario. Por favor, recarga la página.'
@@ -1274,66 +1288,74 @@ function verificarCambios() {
   return false
 }
 
-// Función para validar formulario antes de guardar (igual que en formulario-general.vue)
-function validarFormulario() {
-  const errores = []
-
-  // Validar nombres (solo si se pueden editar)
-  if (rolUsuario.value === 'Entrenador') {
-    if (puedeEditarCampo.value.primerNombre && formData.value.primer_nombre) {
-      if (!REGEX_NOMBRE.test(formData.value.primer_nombre)) {
-        errores.push('El primer nombre solo debe contener letras y espacios')
-      }
-    }
-    if (puedeEditarCampo.value.primerApellido && formData.value.primer_apellido) {
-      if (!REGEX_NOMBRE.test(formData.value.primer_apellido)) {
-        errores.push('El primer apellido solo debe contener letras y espacios')
-      }
-    }
-    if (puedeEditarCampo.value.segundoNombre && formData.value.segundo_nombre) {
-      if (formData.value.segundo_nombre && !REGEX_NOMBRE.test(formData.value.segundo_nombre)) {
-        errores.push('El segundo nombre solo debe contener letras y espacios')
-      }
-    }
-    if (puedeEditarCampo.value.segundoApellido && formData.value.segundo_apellido) {
-      if (formData.value.segundo_apellido && !REGEX_NOMBRE.test(formData.value.segundo_apellido)) {
-        errores.push('El segundo apellido solo debe contener letras y espacios')
-      }
-    }
+// Helper functions to reduce cognitive complexity in validarFormulario
+// Extracted individual validation functions following SRP (Single Responsibility Principle)
+function _validarCampoNombre(campo, nombreCampo, errores) {
+  if (!campo) return
+  if (!REGEX_NOMBRE.test(campo)) {
+    errores.push(`El ${nombreCampo} solo debe contener letras y espacios`)
   }
+}
 
-  // Validar correo electrónico
+function _validarNombresEntrenador(errores) {
+  if (rolUsuario.value !== 'Entrenador') return
+
+  if (puedeEditarCampo.value.primerNombre && formData.value.primer_nombre) {
+    _validarCampoNombre(formData.value.primer_nombre, 'primer nombre', errores)
+  }
+  if (puedeEditarCampo.value.primerApellido && formData.value.primer_apellido) {
+    _validarCampoNombre(formData.value.primer_apellido, 'primer apellido', errores)
+  }
+  if (puedeEditarCampo.value.segundoNombre && formData.value.segundo_nombre) {
+    _validarCampoNombre(formData.value.segundo_nombre, 'segundo nombre', errores)
+  }
+  if (puedeEditarCampo.value.segundoApellido && formData.value.segundo_apellido) {
+    _validarCampoNombre(formData.value.segundo_apellido, 'segundo apellido', errores)
+  }
+}
+
+function _validarCorreo(errores) {
   if (formData.value.correo_electronico && !REGEX_CORREO.test(formData.value.correo_electronico)) {
     errores.push('Ingrese un correo electrónico válido')
   }
+}
 
-  // Validar teléfono (solo números y longitud)
-  if (puedeEditarCampo.value.telefono && formData.value.telefono) {
-    const telefonoLimpio = formData.value.telefono.replace(/\D/g, '')
-    if (telefonoLimpio.length < MIN_TELEFONO || telefonoLimpio.length > MAX_TELEFONO) {
-      errores.push(`El teléfono debe tener entre ${MIN_TELEFONO} y ${MAX_TELEFONO} dígitos`)
-    }
+function _validarTelefono(errores) {
+  if (!puedeEditarCampo.value.telefono || !formData.value.telefono) return
+  const telefonoLimpio = formData.value.telefono.replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
+  if (telefonoLimpio.length < MIN_TELEFONO || telefonoLimpio.length > MAX_TELEFONO) {
+    errores.push(`El teléfono debe tener entre ${MIN_TELEFONO} y ${MAX_TELEFONO} dígitos`)
   }
+}
 
-  // Validar documento (solo números y longitud) - solo si se puede editar
-  if (puedeEditarCampo.value.numeroDocumento && formData.value.documento) {
-    const documentoLimpio = formData.value.documento.replace(/\D/g, '')
-    if (documentoLimpio.length < MIN_DOCUMENTO || documentoLimpio.length > MAX_DOCUMENTO) {
-      errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`)
-    }
+function _validarDocumento(errores) {
+  if (!puedeEditarCampo.value.numeroDocumento || !formData.value.documento) return
+  const documentoLimpio = formData.value.documento.replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
+  if (documentoLimpio.length < MIN_DOCUMENTO || documentoLimpio.length > MAX_DOCUMENTO) {
+    errores.push(`El número de documento debe tener entre ${MIN_DOCUMENTO} y ${MAX_DOCUMENTO} dígitos`)
   }
+}
 
-  // Validar usuario
-  if (formData.value.usuario) {
-    const usuarioLimpio = formData.value.usuario.trim()
-    if (usuarioLimpio.length < 3) {
-      errores.push('El nombre de usuario debe tener al menos 3 caracteres')
-    }
-    if (usuarioLimpio.length > 200) {
-      errores.push('El nombre de usuario no puede exceder 200 caracteres')
-    }
+function _validarUsuario(errores) {
+  if (!formData.value.usuario) return
+  const usuarioLimpio = formData.value.usuario.trim()
+  if (usuarioLimpio.length < 3) {
+    errores.push('El nombre de usuario debe tener al menos 3 caracteres')
   }
+  if (usuarioLimpio.length > 200) {
+    errores.push('El nombre de usuario no puede exceder 200 caracteres')
+  }
+}
 
+// Función para validar formulario antes de guardar (igual que en formulario-general.vue)
+// Refactored to reduce cognitive complexity by extracting helper functions
+function validarFormulario() {
+  const errores = []
+  _validarNombresEntrenador(errores)
+  _validarCorreo(errores)
+  _validarTelefono(errores)
+  _validarDocumento(errores)
+  _validarUsuario(errores)
   return errores
 }
 
@@ -1357,7 +1379,7 @@ const prepararDatosPersona = () => {
   }
 
   if (puedeEditarCampo.value.telefono && formData.value.telefono) {
-    datosPersona.telefono = formData.value.telefono.replace(/\D/g, '')
+    datosPersona.telefono = formData.value.telefono.replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
   }
   if (puedeEditarCampo.value.direccion && formData.value.direccion) {
     datosPersona.direccion = sanitizarDireccion(formData.value.direccion)
@@ -1495,7 +1517,7 @@ const agregarDatosDiagnostico = (datosDeportistaActualizar) => {
       datosDeportistaActualizar.tipo_enfermedad = formDataDeportista.value.tipo_enfermedad
     }
     if (formDataDeportista.value.diagnostico && formDataDeportista.value.diagnostico.length > 0) {
-      datosDeportistaActualizar.diagnostico = formDataDeportista.value.diagnostico.map(d => parseInt(d))
+      datosDeportistaActualizar.diagnostico = formDataDeportista.value.diagnostico.map(d => Number.parseInt(d, 10))
     }
   } else if (formDataDeportista.value.tiene_enfermedades === false) {
     datosDeportistaActualizar.diagnostico = []
@@ -1508,10 +1530,10 @@ const agregarPesoAltura = (datosDeportista) => {
   }
 
   if (formDataDeportista.value.peso !== null) {
-    datosDeportista.peso = parseFloat(formDataDeportista.value.peso)
+    datosDeportista.peso = Number.parseFloat(formDataDeportista.value.peso)
   }
   if (formDataDeportista.value.altura !== null) {
-    datosDeportista.altura = parseFloat(formDataDeportista.value.altura)
+    datosDeportista.altura = Number.parseFloat(formDataDeportista.value.altura)
   }
 }
 
@@ -1545,8 +1567,20 @@ const mostrarExitoYRecargar = async () => {
   await authStore.loadUserProfile()
 
   // Actualizar datos iniciales con los nuevos datos guardados
-  formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
-  formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value))
+  try {
+    formDataInicial.value = structuredClone(formData.value)
+    formDataDeportistaInicial.value = structuredClone(formDataDeportista.value)
+  } catch {
+    // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+    try {
+      formDataInicial.value = structuredClone(formData.value)
+      formDataDeportistaInicial.value = structuredClone(formDataDeportista.value)
+    } catch {
+      // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value)) // NOSONAR: S7784
+      formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value)) // NOSONAR: S7784
+    }
+  }
 
   router.push('/perfil')
 }

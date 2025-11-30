@@ -351,8 +351,8 @@ const validarYProcesarPeso = (datosDeportista) => {
     return true
   }
 
-  const peso = parseFloat(pesoStr)
-  if (isNaN(peso) || peso <= 0 || peso > 300) {
+  const peso = Number.parseFloat(pesoStr)
+  if (Number.isNaN(peso) || peso <= 0 || peso > 300) {
     mensajeError.value = 'El peso debe ser un número entre 1 y 300 kg'
     return false
   }
@@ -367,8 +367,8 @@ const validarYProcesarAltura = (datosDeportista) => {
     return true
   }
 
-  const altura = parseFloat(alturaStr)
-  if (isNaN(altura) || altura <= 0 || altura > 3) {
+  const altura = Number.parseFloat(alturaStr)
+  if (Number.isNaN(altura) || altura <= 0 || altura > 3) {
     mensajeError.value = 'La altura debe ser un número entre 0.1 y 3 metros'
     return false
   }
@@ -383,10 +383,10 @@ const validarYProcesarFechaNacimiento = (datosDeportista) => {
     return true
   }
 
-  const año = parseInt(fechaStr)
+  const año = Number.parseInt(fechaStr, 10)
   const añoActual = new Date().getFullYear()
 
-  if (isNaN(año) || año < 1900 || año > añoActual) {
+  if (Number.isNaN(año) || año < 1900 || año > añoActual) {
     mensajeError.value = `El año de nacimiento debe estar entre 1900 y ${añoActual}`
     return false
   }
@@ -397,17 +397,17 @@ const validarYProcesarFechaNacimiento = (datosDeportista) => {
 
 const agregarCamposOpcionales = (datosDeportista) => {
   if (formDeportista.value.id_tipo_sanguineo && formDeportista.value.id_tipo_sanguineo !== '') {
-    datosDeportista.id_tipo_sanguineo = parseInt(formDeportista.value.id_tipo_sanguineo)
+    datosDeportista.id_tipo_sanguineo = Number.parseInt(formDeportista.value.id_tipo_sanguineo, 10)
   }
 
   if (formDeportista.value.id_eps && formDeportista.value.id_eps !== '') {
-    datosDeportista.id_eps = parseInt(formDeportista.value.id_eps)
+    datosDeportista.id_eps = Number.parseInt(formDeportista.value.id_eps, 10)
   }
 }
 
 const construirDatosDeportista = () => {
   const datosDeportista = {
-    id_categoria: parseInt(formDeportista.value.id_categoria)
+    id_categoria: Number.parseInt(formDeportista.value.id_categoria, 10)
   }
 
   if (!validarYProcesarPeso(datosDeportista)) {

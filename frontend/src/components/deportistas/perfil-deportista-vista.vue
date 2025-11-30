@@ -749,7 +749,7 @@ watch(
           formDataInicial.value = structuredClone(formData.value);
         } catch {
           // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
-          formDataInicial.value = JSON.parse(JSON.stringify(formData.value));
+          formDataInicial.value = JSON.parse(JSON.stringify(formData.value)); // NOSONAR: S7784
         }
       }
   },
@@ -1073,7 +1073,7 @@ function iniciarEdicion() {
     formDataInicial.value = structuredClone(formData.value)
   } catch {
     // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
-    formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+    formDataInicial.value = JSON.parse(JSON.stringify(formData.value)) // NOSONAR: S7784
   }
   emit('editar')
 }
@@ -1387,7 +1387,7 @@ async function guardarCambios() {
       formDataInicial.value = structuredClone(formData.value)
     } catch {
       // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
-      formDataInicial.value = JSON.parse(JSON.stringify(formData.value))
+      formDataInicial.value = JSON.parse(JSON.stringify(formData.value)) // NOSONAR: S7784
     }
 
     await Swal.fire({

@@ -345,49 +345,82 @@ watch(() => [rolesDisponibles.value, authStore.userDetail], () => {
   }
 }, { immediate: true })
 
-// Observar cambios en los roles disponibles
-watch(() => rolesDisponibles.value, (nuevosRoles) => {
-  if (nuevosRoles && nuevosRoles.length > 0) {
-    const nombresRoles = nuevosRoles.map(r => getNombreRolSimple(r) || r)
+// Helper functions to reduce cognitive complexity in watch for rolesDisponibles
+function _obtenerNombresRolesDisponibles(roles) {
+  return roles.map(r => getNombreRolSimple(r) || r)
+}
 
-    // Solo cambiar el rol activo si no está en los roles disponibles Y no hay uno guardado válido
-    const rolActivoGuardado = authStore.activeRole || localStorage.getItem('activeRole')
-    const todosLosRolesUsuario = authStore.user?.roles || []
-    const nombresTodosRoles = todosLosRolesUsuario.map(r => {
-      if (typeof r === 'string') return r
-      if (r.nombre_rol) return r.nombre_rol
-      return String(r)
-    })
+function _obtenerRolActivoGuardado() {
+  return authStore.activeRole || localStorage.getItem('activeRole')
+}
 
-    // Verificar si el rol activo guardado está en todos los roles del usuario (no solo en rolesDisponibles)
-    const rolGuardadoEsValido = rolActivoGuardado && nombresTodosRoles.some(r => 
-      r === rolActivoGuardado || r.toLowerCase() === rolActivoGuardado.toLowerCase()
-    )
+function _obtenerNombresTodosRolesUsuario() {
+  const todosLosRolesUsuario = authStore.user?.roles || []
+  return todosLosRolesUsuario.map(r => {
+    if (typeof r === 'string') return r
+    if (r.nombre_rol) return r.nombre_rol
+    return String(r)
+  })
+}
 
-    if (!nombresRoles.includes(rolActivo.value)) {
-      // Si el rol activo guardado es válido (está en los roles del usuario), mantenerlo
-      if (rolGuardadoEsValido && rolActivoGuardado === rolActivo.value) {
-        console.log(`✅ Manteniendo rol activo guardado en selector-roles: ${rolActivoGuardado} (no está en rolesDisponibles pero es válido)`)
-        return // No cambiar el rol
-      }
+function _verificarRolGuardadoValidoEnTodosRoles(rolActivoGuardado, nombresTodosRoles) {
+  if (!rolActivoGuardado) return false
+  return nombresTodosRoles.some(r => 
+    r === rolActivoGuardado || r.toLowerCase() === rolActivoGuardado.toLowerCase()
+  )
+}
 
-      // Verificar si el rol fue seleccionado explícitamente por el usuario (está en localStorage)
-      const rolEnLocalStorage = localStorage.getItem('activeRole')
-      if (rolEnLocalStorage && rolEnLocalStorage === rolActivo.value) {
-        console.log(`✅ [selector-roles] Rol activo "${rolEnLocalStorage}" fue seleccionado explícitamente, NO cambiando aunque no esté en rolesDisponibles`)
-        return // NO cambiar el rol si fue seleccionado explícitamente
-      }
+function _debeMantenerRolGuardado(rolGuardadoEsValido, rolActivoGuardado) {
+  return rolGuardadoEsValido && rolActivoGuardado === rolActivo.value
+}
 
-      // Si no hay rol guardado válido y no fue seleccionado explícitamente, cambiar al rol principal
-      const nuevoRolPrincipal = obtenerRolPrincipal(nuevosRoles)
-      if (nuevoRolPrincipal) {
-        console.log(`🔄 [selector-roles] Cambiando rol activo a rol principal: ${nuevoRolPrincipal} (rol actual ${rolActivo.value} no está disponible y no fue seleccionado explícitamente)`)
-        rolActivo.value = nuevoRolPrincipal
-        // NO llamar a setActiveRole aquí para evitar cambios automáticos no deseados
-        // Solo actualizar la referencia local
-      }
-    }
+function _fueRolSeleccionadoExplicitamente(rolEnLocalStorage) {
+  return rolEnLocalStorage && rolEnLocalStorage === rolActivo.value
+}
+
+function _cambiarARolPrincipalSiNecesario(nuevosRoles) {
+  const nuevoRolPrincipal = obtenerRolPrincipal(nuevosRoles)
+  if (nuevoRolPrincipal) {
+    console.log(`🔄 [selector-roles] Cambiando rol activo a rol principal: ${nuevoRolPrincipal} (rol actual ${rolActivo.value} no está disponible y no fue seleccionado explícitamente)`)
+    rolActivo.value = nuevoRolPrincipal
+    // NO llamar a setActiveRole aquí para evitar cambios automáticos no deseados
+    // Solo actualizar la referencia local
   }
+}
+
+// Observar cambios en los roles disponibles
+// Refactored to reduce cognitive complexity by extracting helper functions
+watch(() => rolesDisponibles.value, (nuevosRoles) => {
+  if (!nuevosRoles || nuevosRoles.length === 0) {
+    return
+  }
+
+  const nombresRoles = _obtenerNombresRolesDisponibles(nuevosRoles)
+  
+  // Solo cambiar el rol activo si no está en los roles disponibles Y no hay uno guardado válido
+  const rolActivoGuardado = _obtenerRolActivoGuardado()
+  const nombresTodosRoles = _obtenerNombresTodosRolesUsuario()
+  const rolGuardadoEsValido = _verificarRolGuardadoValidoEnTodosRoles(rolActivoGuardado, nombresTodosRoles)
+
+  if (nombresRoles.includes(rolActivo.value)) {
+    return // El rol actual está disponible, no hacer nada
+  }
+
+  // Si el rol activo guardado es válido (está en los roles del usuario), mantenerlo
+  if (_debeMantenerRolGuardado(rolGuardadoEsValido, rolActivoGuardado)) {
+    console.log(`✅ Manteniendo rol activo guardado en selector-roles: ${rolActivoGuardado} (no está en rolesDisponibles pero es válido)`)
+    return // No cambiar el rol
+  }
+
+  // Verificar si el rol fue seleccionado explícitamente por el usuario (está en localStorage)
+  const rolEnLocalStorage = localStorage.getItem('activeRole')
+  if (_fueRolSeleccionadoExplicitamente(rolEnLocalStorage)) {
+    console.log(`✅ [selector-roles] Rol activo "${rolEnLocalStorage}" fue seleccionado explícitamente, NO cambiando aunque no esté en rolesDisponibles`)
+    return // NO cambiar el rol si fue seleccionado explícitamente
+  }
+
+  // Si no hay rol guardado válido y no fue seleccionado explícitamente, cambiar al rol principal
+  _cambiarARolPrincipalSiNecesario(nuevosRoles)
 }, { immediate: true })
 
 // Mantener sincronía si el rol activo en el store cambia desde otra parte

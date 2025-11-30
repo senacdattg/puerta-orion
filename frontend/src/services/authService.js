@@ -70,7 +70,7 @@ class AuthService {
       // Verificar si la respuesta es JSON válido
       let data
       const contentType = response.headers.get('content-type')
-      if (contentType && contentType.includes('application/json')) {
+      if (contentType?.includes('application/json')) {
         data = await response.json()
         console.log('📦 Datos recibidos:', data)
       } else {
@@ -417,8 +417,8 @@ class AuthService {
        // Asegurar que los campos opcionales estén presentes con valores por defecto
        const datosCompletos = {
          id_categoria: datosDeportista.id_categoria || datosDeportista.categoria,
-         peso: datosDeportista.peso ? parseFloat(datosDeportista.peso) : null,
-         altura: datosDeportista.altura ? parseFloat(datosDeportista.altura) : null,
+        peso: datosDeportista.peso ? Number.parseFloat(datosDeportista.peso) : null,
+        altura: datosDeportista.altura ? Number.parseFloat(datosDeportista.altura) : null,
          fecha_nacimiento: datosDeportista.fecha_nacimiento || datosDeportista.fechaNacimiento,
          id_tipo_sanguineo: datosDeportista.id_tipo_sanguineo || datosDeportista.tipoSangre,
          id_ciudad_recidencia: datosDeportista.id_ciudad_recidencia || datosDeportista.ciudad,
@@ -488,8 +488,8 @@ class AuthService {
       // Verificar si la respuesta es JSON antes de parsear
       const contentType = response.headers.get('content-type')
       let data = {}
-      
-      if (contentType && contentType.includes('application/json')) {
+
+      if (contentType?.includes('application/json')) {
         data = await response.json()
       } else {
         const text = await response.text()
@@ -522,7 +522,7 @@ class AuthService {
        const datosCompletos = {
          id_deportista: datosAcudiente.id_deportista,
          id_parentesco: datosAcudiente.id_parentesco,
-         es_responsable: datosAcudiente.es_responsable !== undefined ? datosAcudiente.es_responsable : false
+         es_responsable: datosAcudiente.es_responsable ?? false
        }
 
        const response = await fetch(`${this.baseURL}/api/auth/perfil/completar-acudiente`, {

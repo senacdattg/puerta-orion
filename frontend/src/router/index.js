@@ -280,11 +280,11 @@ function hasRequiredRole(userRoles, requiredRoles) {
   if (!requiredRoles || requiredRoles.length === 0) return true
   if (!userRoles || userRoles.length === 0) return false
 
-  const roleNames = userRoles.map(role =>
+  const roleNames = new Set(userRoles.map(role =>
     typeof role === 'string' ? role : role.nombre_rol
-  )
+  ))
 
-  return requiredRoles.some(requiredRole => roleNames.includes(requiredRole))
+  return requiredRoles.some(requiredRole => roleNames.has(requiredRole))
 }
 
 // Función auxiliar para obtener nombres de roles
@@ -396,7 +396,7 @@ async function manejarRutaRequierePermiso(authStore, requiredPermission, next) {
 
   const permisos = authStore.permissions || []
   const has = (Array.isArray(permisos) && permisos.includes(requiredPermission)) ||
-              (authStore.hasPermission && authStore.hasPermission(requiredPermission))
+              (authStore.hasPermission?.(requiredPermission))
 
   if (!has) {
     console.log('🚫 Acceso denegado: permiso insuficiente. Requerido:', requiredPermission)
@@ -486,7 +486,7 @@ function extraerMetadatosRuta(to) {
     requiresAuth: to.matched.some(record => record.meta.requiresAuth),
     requiresGuest: to.matched.some(record => record.meta.requiresGuest),
     requiresRole: to.matched.some(record => record.meta.requiresRole),
-    requiredPermission: to.matched.find(r => r.meta && r.meta.requiresPermission)?.meta?.requiresPermission
+    requiredPermission: to.matched.find(r => r.meta?.requiresPermission)?.meta?.requiresPermission
   }
 }
 

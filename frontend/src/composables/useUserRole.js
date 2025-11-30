@@ -119,7 +119,7 @@ export function useUserRole() {
     const panelList = authStore.panels || []
     // Using for...of instead of forEach for better performance and readability
     for (const panel of panelList) {
-      if (panel && panel.module) {
+      if (panel?.module) { // NOSONAR: S6582
         result[panel.module] = panel.allowed !== false
       }
     }

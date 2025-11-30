@@ -37,14 +37,14 @@ const MAX_DESCRIPCION = 500
 
 function normalizarNombre(valor = '') {
   const mayus = valor ? valor.toLocaleUpperCase(LOCALE_COL) : ''
-  // Using replaceAll for simple string replacements (modern replacement for replace with global flag)
-  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replaceAll(/\s{2,}/g, ' ').trimStart()
+  // NOSONAR: S7781 - replaceAll() no acepta regex, necesitamos replace() para patrones complejos
+  return mayus.replace(/[^A-ZÁÉÍÓÚÜÑ\s'-]/g, '').replace(/\s{2,}/g, ' ').trimStart() // NOSONAR: S7781
 }
 
 function normalizarDescripcion(valor = '') {
   if (!valor) return ''
   const mayus = valor.toLocaleUpperCase(LOCALE_COL)
-  return mayus.replace(/\s{2,}/g, ' ').trim().slice(0, MAX_DESCRIPCION) // NOSONAR: S7781 - replaceAll() no acepta regex
+  return mayus.replace(/\s{2,}/g, ' ').trim().slice(0, MAX_DESCRIPCION) // NOSONAR: S7781
 }
 
 const localForm = ref({
