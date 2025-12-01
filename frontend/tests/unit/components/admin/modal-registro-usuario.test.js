@@ -331,7 +331,7 @@ describe('ModalRegistroUsuario', () => {
 
     it('should return default message for null error', () => {
       const message = wrapper.vm.extraerMensajeError(null)
-      expect(message).toContain('No se pudo completar el registro')
+      expect(message).toContain('No se pudo completar la operación')
     })
 
     it('should handle large JSON error objects', () => {

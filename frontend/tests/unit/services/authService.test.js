@@ -9,6 +9,8 @@ describe('AuthService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     localStorage.clear()
+    // Reset fetch mock to ensure clean state
+    globalThis.fetch = vi.fn()
   })
 
   describe('Login', () => {
@@ -524,6 +526,9 @@ describe('AuthService', () => {
 
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           data: datosAsociacion,
           message: 'Asociación exitosa'
@@ -546,6 +551,10 @@ describe('AuthService', () => {
 
       globalThis.fetch.mockResolvedValueOnce({
         ok: false,
+        status: 400,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({ error: 'Already associated' })
       })
 
@@ -573,6 +582,9 @@ describe('AuthService', () => {
 
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           data: datosAcudiente,
           message: 'Perfil completado'
@@ -639,6 +651,10 @@ describe('AuthService', () => {
     it('should handle API error', async () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: false,
+        status: 404,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           error: 'Email not found'
         })
@@ -655,6 +671,9 @@ describe('AuthService', () => {
     it('should reset password successfully', async () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           message: 'Password reset successful'
         })
@@ -675,6 +694,10 @@ describe('AuthService', () => {
     it('should handle API error', async () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: false,
+        status: 400,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           error: 'Invalid token'
         })
@@ -699,6 +722,9 @@ describe('AuthService', () => {
 
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           data: { id: 1, ...datosPersona, ...datosUsuario },
           message: 'Updated successfully'
@@ -768,6 +794,9 @@ describe('AuthService', () => {
 
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           data: mockRoles
         })
@@ -791,6 +820,9 @@ describe('AuthService', () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({ error: 'Unauthorized' })
       })
 
@@ -813,6 +845,9 @@ describe('AuthService', () => {
 
       globalThis.fetch.mockResolvedValueOnce({
         ok: true,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({
           data: { activeRole: 'Deportista' }
         })
@@ -842,6 +877,9 @@ describe('AuthService', () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
+        headers: {
+          get: vi.fn(() => 'application/json')
+        },
         json: async () => ({ error: 'Unauthorized' })
       })
 

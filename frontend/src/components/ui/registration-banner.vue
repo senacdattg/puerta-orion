@@ -47,6 +47,9 @@ const authStore = useAuthStore()
 // Use shared registration logic
 const {
   yaEsDeportista,
+  yaEsAcudiente,
+  edadDeportista,
+  esMayorDeEdad,
   mostrarOpcionAcudiente
 } = useUserRegistration()
 
@@ -71,6 +74,16 @@ const navigateToRegister = (type) => {
     router.push('/registrar-deportista-form')
   }
 }
+
+// Expose properties for testing purposes
+defineExpose({
+  yaEsDeportista,
+  yaEsAcudiente,
+  edadDeportista,
+  esMayorDeEdad,
+  mostrarOpcionAcudiente,
+  navigateToRegister
+})
 </script>
 
 

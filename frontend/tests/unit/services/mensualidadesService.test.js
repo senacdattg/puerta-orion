@@ -83,7 +83,13 @@ describe('MensualidadesApi', () => {
         text: async () => 'Server error'
       })
 
-      await expect(mensualidadesService.list()).rejects.toThrow('500')
+      try {
+        await mensualidadesService.list()
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error.message).toBe('Server error')
+        expect(error.status).toBe(500)
+      }
     })
   })
 
@@ -124,7 +130,13 @@ describe('MensualidadesApi', () => {
         text: async () => 'Not found'
       })
 
-      await expect(mensualidadesService.get(999)).rejects.toThrow('404')
+      try {
+        await mensualidadesService.get(999)
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error.message).toBe('Not found')
+        expect(error.status).toBe(404)
+      }
     })
   })
 
@@ -166,7 +178,13 @@ describe('MensualidadesApi', () => {
         text: async () => 'Invalid data'
       })
 
-      await expect(mensualidadesService.create({})).rejects.toThrow('400')
+      try {
+        await mensualidadesService.create({})
+        expect.fail('Should have thrown an error')
+      } catch (error) {
+        expect(error.message).toBe('Invalid data')
+        expect(error.status).toBe(400)
+      }
     })
   })
 

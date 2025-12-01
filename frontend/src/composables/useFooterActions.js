@@ -20,7 +20,7 @@ function getUserRole(authStore) {
     return active
   }
 
-  if (!authStore.user || !authStore.user.roles || authStore.user.roles.length === 0) {
+  if (!authStore.user?.roles?.length) { // NOSONAR: S6582
     return 'Usuario'
   }
 

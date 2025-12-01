@@ -15,7 +15,7 @@
     "test": "vitest run --reporter=verbose --reporter=junit --outputFile=./coverage/test-results.xml",
     "test:ui": "vitest --ui",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage --reporter=verbose --reporter=junit --outputFile=./coverage/test-results.xml"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.1.0",

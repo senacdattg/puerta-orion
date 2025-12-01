@@ -32,7 +32,8 @@ vi.mock('@/components/deportistas/perfil-deportista-vista.vue', () => ({
 vi.mock('@/services/deportistasService', () => ({
   default: {
     obtenerDeportistaPorId: vi.fn(),
-    listarDeportistas: vi.fn()
+    listarDeportistas: vi.fn(),
+    buscarDeportistaPorDocumentoParaAcudiente: vi.fn()
   }
 }))
 
@@ -235,19 +236,18 @@ describe('VerAcudidos View', () => {
       await wrapper.vm.$nextTick()
 
       const deportistasService = await import('@/services/deportistasService')
-      deportistasService.default.listarDeportistas.mockResolvedValueOnce({
+      deportistasService.default.buscarDeportistaPorDocumentoParaAcudiente.mockResolvedValueOnce({
         success: true,
-        data: [
-          {
-            id_deportista: 1,
-            nombre: 'Juan Pérez',
-            documento: '12345678',
-            categoria: 'Juvenil'
-          }
-        ]
+        encontrado: true,
+        data: {
+          id_deportista: 1,
+          nombre_completo: 'Juan Pérez',
+          documento: '12345678',
+          categoria: 'Juvenil'
+        }
       })
 
-      wrapper.vm.busquedaDeportista = 'Juan'
+      wrapper.vm.busquedaDeportista = '12345678'
       await wrapper.vm.buscarDeportistas()
       await wrapper.vm.$nextTick()
 

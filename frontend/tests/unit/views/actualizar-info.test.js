@@ -388,8 +388,16 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should transformarMayusculas correctly', () => {
-      expect(wrapper.vm.transformarMayusculas('test')).toBe('TEST')
-      expect(wrapper.vm.transformarMayusculas('test case')).toBe('TEST CASE')
+      // transformarMayusculas is not exposed in the component - it's a private utility function
+      // The component uses sanitizarNombre internally which applies uppercase transformation
+      // Testing the actual behavior: manejarEntradaNombre which uses sanitizarNombre internally
+      const event = { target: { value: 'test' } }
+      wrapper.vm.manejarEntradaNombre('primer_nombre', event)
+      expect(wrapper.vm.formData.primer_nombre).toBe('TEST')
+      
+      const event2 = { target: { value: 'test case' } }
+      wrapper.vm.manejarEntradaNombre('primer_nombre', event2)
+      expect(wrapper.vm.formData.primer_nombre).toBe('TEST CASE')
     })
 
     it('should normalizarValorParaComparacion correctly', () => {

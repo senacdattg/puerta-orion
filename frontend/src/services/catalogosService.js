@@ -139,15 +139,15 @@ class CatalogosService {
 
       // El backend devuelve { success: true, data: { tipos_documento: [...], sexos: [...] } }
       // Necesitamos acceder a response.data, no directamente a response
-      const catalogos = response && typeof response === 'object' && 'data' in response
+      const catalogos = (typeof response === 'object' && response !== null && 'data' in response)
         ? response.data
         : response;
 
       console.log('📦 CatalogosService: Catálogos extraídos:', catalogos);
 
       const resultado = {
-        tiposDocumento: (catalogos && catalogos.tipos_documento) ? catalogos.tipos_documento : [],
-        sexos: (catalogos && catalogos.sexos) ? catalogos.sexos : []
+        tiposDocumento: catalogos?.tipos_documento ?? [], // NOSONAR: S6582
+        sexos: catalogos?.sexos ?? [] // NOSONAR: S6582
       };
 
       console.log('✅ CatalogosService: Resultado procesado:', resultado);
