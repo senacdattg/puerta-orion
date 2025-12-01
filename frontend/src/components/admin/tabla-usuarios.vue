@@ -810,6 +810,11 @@ async function cargarDatos() {
   }
 }
 
+// Expose method for parent component to reload data
+defineExpose({
+  cargarDatos
+});
+
 // Mostrar más usuarios (solo incrementa la visualización, no hace petición)
 function cargarMasUsuarios() {
   if (!hasMore.value) return;
