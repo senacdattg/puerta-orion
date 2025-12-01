@@ -23,7 +23,7 @@ class Escuela(BaseModel):
     nombre = db.Column(db.String(150), nullable=False, unique=True)
     
     # Relaciones
-    informaciones_deportivas = db.relationship('InformacionDeportiva', lazy=True)
+    informaciones_deportivas = db.relationship('InformacionDeportiva', lazy=True, overlaps="escuela")
 
     def __repr__(self):
         return f"<Escuela {self.nombre}>"

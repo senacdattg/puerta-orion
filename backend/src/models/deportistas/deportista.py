@@ -54,14 +54,14 @@ class Deportista(BaseModel):
     
     # Relaciones
     persona = relationship('Persona', uselist=False)
-    categoria = relationship('Categoria', lazy=True)
-    tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], lazy=True)
-    ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], lazy=True)
+    categoria = relationship('Categoria', lazy=True, overlaps="deportistas")
+    tipo_sanguineo = relationship('GrupoSanguineo', foreign_keys=[id_tipo_sanguineo], lazy=True, overlaps="deportistas")
+    ciudad_residencia = relationship('CiudadResidencia', foreign_keys=[id_ciudad_recidencia], lazy=True, overlaps="deportistas")
     informacion_deportiva = relationship('InformacionDeportiva', foreign_keys=[id_informacion_deportiva], lazy=True)
-    eps = relationship('EPS', foreign_keys=[id_eps], lazy=True)
+    eps = relationship('EPS', foreign_keys=[id_eps], lazy=True, overlaps="deportistas")
     
     # Relación muchos a muchos con acudientes a través de DeportistaAcudiente
-    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True)
+    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True, overlaps="deportista")
     
     # Relación uno a muchos con diagnósticos históricos de deportistas
     # La relación diagnosticos_deportista se define vía backref desde DiagnosticoDeportista

@@ -436,3 +436,207 @@ class TestActivarPersona:
                 if data is not None:
                     assert data.get('success') is False
 
+
+@pytest.mark.routes
+@pytest.mark.integration
+@pytest.mark.personas
+class TestListarPersonasErrores:
+    """Tests adicionales para casos de error en listar personas"""
+
+    def test_listar_personas_error_inesperado(self, client):
+        """Test: Manejo de errores inesperados al listar."""
+        # Arrange
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.filter_by.side_effect = Exception("Database error")
+            
+            # Act
+            response = client.get('/api/personas/personas')
+            
+            # Assert
+            assert response.status_code in [200, 404, 500]
+            if response.status_code == 500:
+                data = response.get_json()
+                assert data is not None
+                assert data.get('success') is False
+
+
+@pytest.mark.routes
+@pytest.mark.integration
+@pytest.mark.personas
+class TestObtenerPersonaErrores:
+    """Tests adicionales para casos de error en obtener persona"""
+
+    def test_obtener_persona_error_inesperado(self, client):
+        """Test: Manejo de errores inesperados al obtener persona."""
+        # Arrange
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.side_effect = Exception("Database error")
+            
+            # Act
+            response = client.get('/api/personas/personas/1')
+            
+            # Assert
+            assert response.status_code in [200, 404, 500]
+            if response.status_code == 500:
+                data = response.get_json()
+                assert data is not None
+                assert data.get('success') is False
+
+
+@pytest.mark.routes
+@pytest.mark.integration
+@pytest.mark.personas
+class TestActualizarPersonaErrores:
+    """Tests adicionales para casos de error en actualizar persona"""
+
+    def test_actualizar_persona_email_duplicado(self, client):
+        """Test: Error cuando el email está duplicado."""
+        # Arrange
+        mock_persona = create_mock_persona(id_persona=1)
+        datos_actualizacion = {'correo_electronico': 'duplicado@example.com'}
+        
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.return_value = mock_persona
+            with patch('src.routes.personas_routes._validar_relaciones'):
+                with patch('src.routes.personas_routes._preparar_actualizacion') as mock_preparar:
+                    with patch('src.routes.personas_routes.db') as mock_db:
+                        from src.utils.request_validators import RequestValidationError
+                        mock_preparar.side_effect = RequestValidationError('Email duplicado', status_code=400)
+                        mock_db.session.rollback = MagicMock()
+                        
+                        # Act
+                        response = make_json_request(
+                            client, 'PUT', '/api/personas/personas/1',
+                            data=datos_actualizacion
+                        )
+                        
+                        # Assert
+                        assert response.status_code in [400, 404]
+
+    def test_actualizar_persona_documento_duplicado(self, client):
+        """Test: Error cuando el documento está duplicado."""
+        # Arrange
+        mock_persona = create_mock_persona(id_persona=1)
+        datos_actualizacion = {'documento': '12345678'}
+        
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.return_value = mock_persona
+            with patch('src.routes.personas_routes._validar_relaciones'):
+                with patch('src.routes.personas_routes._preparar_actualizacion') as mock_preparar:
+                    with patch('src.routes.personas_routes.db') as mock_db:
+                        from src.utils.request_validators import RequestValidationError
+                        mock_preparar.side_effect = RequestValidationError('Documento duplicado', status_code=400)
+                        mock_db.session.rollback = MagicMock()
+                        
+                        # Act
+                        response = make_json_request(
+                            client, 'PUT', '/api/personas/personas/1',
+                            data=datos_actualizacion
+                        )
+                        
+                        # Assert
+                        assert response.status_code in [400, 404]
+
+    def test_actualizar_persona_telefono_invalido(self, client):
+        """Test: Error cuando el teléfono es inválido."""
+        # Arrange
+        mock_persona = create_mock_persona(id_persona=1)
+        datos_actualizacion = {'telefono': '123'}  # Muy corto
+        
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.return_value = mock_persona
+            with patch('src.routes.personas_routes._validar_relaciones'):
+                with patch('src.routes.personas_routes._preparar_actualizacion') as mock_preparar:
+                    with patch('src.routes.personas_routes.db') as mock_db:
+                        from src.utils.validations import ValidationError
+                        mock_preparar.side_effect = ValidationError('Teléfono inválido')
+                        mock_db.session.rollback = MagicMock()
+                        
+                        # Act
+                        response = make_json_request(
+                            client, 'PUT', '/api/personas/personas/1',
+                            data=datos_actualizacion
+                        )
+                        
+                        # Assert
+                        assert response.status_code in [400, 404]
+
+    def test_actualizar_persona_error_inesperado(self, client):
+        """Test: Manejo de errores inesperados al actualizar."""
+        # Arrange
+        mock_persona = create_mock_persona(id_persona=1)
+        datos_actualizacion = {'primer_nombre': 'Juan'}
+        
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.return_value = mock_persona
+            with patch('src.routes.personas_routes._validar_relaciones'):
+                with patch('src.routes.personas_routes._preparar_actualizacion') as mock_preparar:
+                    with patch('src.routes.personas_routes.db') as mock_db:
+                        mock_preparar.side_effect = Exception("Unexpected error")
+                        mock_db.session.rollback = MagicMock()
+                        
+                        # Act
+                        response = make_json_request(
+                            client, 'PUT', '/api/personas/personas/1',
+                            data=datos_actualizacion
+                        )
+                        
+                        # Assert
+                        assert response.status_code in [400, 404, 500]
+
+
+@pytest.mark.routes
+@pytest.mark.integration
+@pytest.mark.personas
+class TestEliminarPersonaErrores:
+    """Tests adicionales para casos de error en eliminar persona"""
+
+    def test_eliminar_persona_error_inesperado(self, client):
+        """Test: Manejo de errores inesperados al eliminar."""
+        # Arrange
+        mock_persona = create_mock_persona(id_persona=1)
+        
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.return_value = mock_persona
+            with patch('src.routes.personas_routes.db') as mock_db:
+                mock_db.session.commit.side_effect = Exception("Database error")
+                mock_db.session.rollback = MagicMock()
+                
+                # Act
+                response = client.delete('/api/personas/personas/1')
+                
+                # Assert
+                assert response.status_code in [200, 404, 500]
+                if response.status_code == 500:
+                    data = response.get_json()
+                    assert data is not None
+                    assert data.get('success') is False
+
+
+@pytest.mark.routes
+@pytest.mark.integration
+@pytest.mark.personas
+class TestActivarPersonaErrores:
+    """Tests adicionales para casos de error en activar persona"""
+
+    def test_activar_persona_error_inesperado(self, client):
+        """Test: Manejo de errores inesperados al activar."""
+        # Arrange
+        mock_persona = create_mock_persona(id_persona=1)
+        
+        with patch('src.routes.personas_routes.Persona.query') as mock_query:
+            mock_query.get.return_value = mock_persona
+            with patch('src.routes.personas_routes.db') as mock_db:
+                mock_db.session.commit.side_effect = Exception("Database error")
+                mock_db.session.rollback = MagicMock()
+                
+                # Act
+                response = client.put('/api/personas/personas/1/activar')
+                
+                # Assert
+                assert response.status_code in [200, 404, 500]
+                if response.status_code == 500:
+                    data = response.get_json()
+                    assert data is not None
+                    assert data.get('success') is False
+

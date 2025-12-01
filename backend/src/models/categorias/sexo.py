@@ -26,7 +26,7 @@ class Sexo(BaseModel):
     nombre = Column(db.String(150), nullable=False)
     
     # Relaciones
-    personas = relationship('Persona', lazy=True)
+    personas = relationship('Persona', lazy=True, overlaps="sexo")
     
     def __repr__(self):
         """

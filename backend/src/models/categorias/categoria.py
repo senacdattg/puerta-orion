@@ -26,8 +26,8 @@ class Categoria(BaseModel):
     estado = Column(Boolean, default=True, nullable=False)
     
     # Relaciones
-    eventos = relationship('Evento', lazy=True)
-    deportistas = relationship('Deportista', lazy=True)
+    eventos = relationship('Evento', lazy=True, overlaps="categoria")
+    deportistas = relationship('Deportista', lazy=True, overlaps="categoria")
     
     def __repr__(self):
         """

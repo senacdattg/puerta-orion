@@ -25,7 +25,7 @@ class CiudadResidencia(BaseModel):
     nombre_ciudad = Column(String(150), nullable=False, unique=True)
     
     # Relaciones
-    deportistas = relationship('Deportista', lazy=True)
+    deportistas = relationship('Deportista', lazy=True, overlaps="ciudad_residencia")
     
     def __repr__(self):
         """

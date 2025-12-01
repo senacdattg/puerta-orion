@@ -37,7 +37,7 @@ class DiagnosticoDeportista(BaseModel):
     fecha = db.Column(db.Date, nullable=False)
 
     # Relaciones
-    diagnostico = db.relationship('Diagnostico', lazy=True)
+    diagnostico = db.relationship('Diagnostico', lazy=True, overlaps="diagnosticos_deportista")
     deportista = db.relationship('Deportista', lazy=True)
 
     def __repr__(self):
