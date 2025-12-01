@@ -128,8 +128,8 @@ class TestResetPassword:
         # Arrange
         datos_reset = {
             'token': 'valid_token_123',
-            'new_password': '12345',
-            'confirm_password': '12345'
+            'new_password': '12345',  # NOSONAR: S2068 - Test password only, intentionally short for validation test
+            'confirm_password': '12345'  # NOSONAR: S2068 - Test password only, intentionally short for validation test
         }
         mock_token = MagicMock()
         mock_token.token = 'valid_token_123'

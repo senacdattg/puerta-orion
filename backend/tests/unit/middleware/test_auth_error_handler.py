@@ -97,7 +97,8 @@ class TestAuthErrorHandler:
     # Tests para validate_token_format
     def test_validate_token_format_valid(self):
         """Test: Validar formato de token válido."""
-        token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+        # NOSONAR: S2068 - Test JWT token only, standard test token from jwt.io, never used in production
+        token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"  # NOSONAR: S2068
         
         result = validate_token_format(token)
         

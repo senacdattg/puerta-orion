@@ -6,14 +6,18 @@ Funcionalidad: Permite a los usuarios solicitar un token de recuperación de con
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
+from contextlib import ExitStack
 
 from tests.helpers import (
     assert_success_response,
     assert_error_response,
     make_json_request,
 )
-from tests.integration.test_utils import create_mock_persona, create_mock_usuario
+from tests.integration.test_utils import (
+    create_mock_persona,
+    create_mock_usuario,
+    setup_forgot_password_mocks
+)
 
 
 @pytest.mark.routes
@@ -37,21 +41,19 @@ class TestForgotPassword:
         )
         
         # Act
-        with patch('src.routes.auth_reset.Persona.query') as mock_persona_query:
-            mock_persona_query.filter_by.return_value.first.return_value = mock_persona
-            with patch('src.routes.auth_reset.Usuario.query') as mock_usuario_query:
-                mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
-                with patch('src.routes.auth_reset.PasswordResetToken') as mock_token_class:
-                    mock_token_class.query.filter_by.return_value.first.return_value = None
-                    with patch('src.routes.auth_reset.db') as mock_db:
-                        mock_db.session.add = MagicMock()
-                        mock_db.session.commit = MagicMock()
-                        with patch('src.routes.auth_reset._enviar_correo_reset',
-                                   return_value=None):
-                            response = make_json_request(
-                                client, 'POST', '/api/auth/forgot-password',
-                                data=datos_solicitud
-                            )
+        patches = setup_forgot_password_mocks(
+            mock_persona=mock_persona,
+            mock_usuario=mock_usuario,
+            mock_token_exists=False
+        )
+        with ExitStack() as stack:
+            for patch_obj in patches.values():
+                stack.enter_context(patch_obj)
+            
+            response = make_json_request(
+                client, 'POST', '/api/auth/forgot-password',
+                data=datos_solicitud
+            )
         
         # Assert
         assert response.status_code in [200, 500]

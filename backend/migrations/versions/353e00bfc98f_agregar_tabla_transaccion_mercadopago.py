@@ -8,6 +8,7 @@ Create Date: 2025-10-15 16:16:10.451774
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
+from ._helpers_transaccion_mp import create_transaccion_mercadopago_table, drop_transaccion_mercadopago_table
 
 # revision identifiers, used by Alembic.
 revision = '353e00bfc98f'
@@ -23,25 +24,7 @@ def upgrade():
     tables_map = {t.lower(): t for t in inspector.get_table_names()}
 
     if 'puerta_orion_transaccion_mercadopago' not in tables_map:
-        op.create_table('puerta_orion_transaccion_mercadopago',
-        sa.Column('id_transaccion', sa.Integer(), nullable=False),
-        sa.Column('id_pago_mercadopago', sa.String(length=255), nullable=False),
-        sa.Column('preference_id', sa.String(length=255), nullable=True),
-        sa.Column('estado', sa.String(length=50), nullable=False),
-        sa.Column('monto', sa.Numeric(precision=10, scale=2), nullable=False),
-        sa.Column('moneda', sa.String(length=3), nullable=False),
-        sa.Column('fecha_creacion', sa.DateTime(), nullable=False),
-        sa.Column('fecha_actualizacion', sa.DateTime(), nullable=False),
-        sa.Column('datos_pago', mysql.JSON(), nullable=True),
-        sa.Column('id_cuota', sa.Integer(), nullable=True),
-        sa.Column('id_mensualidad', sa.Integer(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=False),
-        sa.Column('updated_at', sa.DateTime(), nullable=False),
-        sa.ForeignKeyConstraint(['id_cuota'], ['puerta_orion_cuota.id_cuota'], ),
-        sa.ForeignKeyConstraint(['id_mensualidad'], ['puerta_orion_mensualidad.id_mensualidad'], ),
-        sa.PrimaryKeyConstraint('id_transaccion'),
-        sa.UniqueConstraint('id_pago_mercadopago')
-        )
+        create_transaccion_mercadopago_table(created_at_nullable=False, updated_at_nullable=False)
 
     if 'puerta_orion_cuota' in tables_map:
         existing_columns_cuota = {col['name'] for col in inspector.get_columns(tables_map['puerta_orion_cuota'])}
@@ -57,5 +40,5 @@ def downgrade():
     with op.batch_alter_table('puerta_orion_cuota', schema=None) as batch_op:
         batch_op.drop_column('saldo_pendiente')
 
-    op.drop_table('puerta_orion_transaccion_mercadopago')
+    drop_transaccion_mercadopago_table()
     # ### end Alembic commands ###

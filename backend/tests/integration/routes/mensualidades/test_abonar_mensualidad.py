@@ -14,6 +14,11 @@ from tests.helpers import (
     assert_error_response,
     make_json_request,
 )
+from tests.integration.test_utils import (
+    create_mock_mensualidad,
+    create_mock_abono,
+    create_mock_serialized_mensualidad
+)
 
 
 @pytest.mark.routes
@@ -31,44 +36,45 @@ class TestAbonarMensualidad:
             'id_metodo_pago': 1
         }
         
-        mock_mensualidad = MagicMock()
-        mock_mensualidad.id_mensualidad = 1
-        mock_mensualidad.monto_pago = 50000.0
-        mock_mensualidad.saldo_pendiente = 50000.0
-        mock_mensualidad.fecha_vencimiento = date(2024, 12, 31)
-        mock_mensualidad.estado = False
-        mock_mensualidad.fecha_pago = None
-        mock_mensualidad.id_persona = 1
-        mock_mensualidad.created_at = None
-        mock_mensualidad.id_metodo_pago = 1
-        mock_mensualidad.persona = None
-        mock_mensualidad.to_dict.return_value = {
-            'id_mensualidad': 1,
-            'saldo_pendiente': 20000.0,
-            'monto_pago': 50000.0,
-            'estado': False,
-            'fecha_vencimiento': '2024-12-31',
-            'fecha_pago': None
-        }
+        mock_mensualidad = create_mock_mensualidad(
+            id_mensualidad=1,
+            monto_pago=50000.0,
+            saldo_pendiente=50000.0,
+            fecha_vencimiento=date(2024, 12, 31),
+            estado=False,
+            id_metodo_pago=1,
+            to_dict_data={
+                'id_mensualidad': 1,
+                'saldo_pendiente': 20000.0,
+                'monto_pago': 50000.0,
+                'estado': False,
+                'fecha_vencimiento': '2024-12-31',
+                'fecha_pago': None
+            }
+        )
         
-        mock_abono = MagicMock()
-        mock_abono.to_dict.return_value = {
-            'id_abono': 1,
-            'monto': 30000.0,
-            'fecha_abono': '2024-12-15',
-            'id_mensualidad': 1
-        }
+        mock_abono = create_mock_abono(
+            id_abono=1,
+            id_mensualidad=1,
+            monto=30000.0,
+            fecha_abono=date(2024, 12, 15),
+            id_metodo_pago=1,
+            to_dict_data={
+                'id_abono': 1,
+                'monto': 30000.0,
+                'fecha_abono': '2024-12-15',
+                'id_mensualidad': 1
+            }
+        )
         
         # Mock para _serializar_mensualidad
-        mock_serialized = {
-            'id_mensualidad': 1,
-            'saldo_pendiente': 20000.0,
-            'monto_pago': 50000.0,
-            'estado': False,
-            'estado_texto': 'Pendiente',
-            'persona_nombre': None,
-            'numero_documento': None
-        }
+        mock_serialized = create_mock_serialized_mensualidad(
+            id_mensualidad=1,
+            saldo_pendiente=20000.0,
+            monto_pago=50000.0,
+            estado=False,
+            estado_texto='Pendiente'
+        )
         
         # Act
         with patch('src.routes.mensualidades_routes.Mensualidad.query') as mock_query:
@@ -114,10 +120,11 @@ class TestAbonarMensualidad:
         # Arrange
         datos_abono = {'monto_abonado': 60000.0}
         
-        mock_mensualidad = MagicMock()
-        mock_mensualidad.id_mensualidad = 1
-        mock_mensualidad.monto_pago = 50000.0
-        mock_mensualidad.saldo_pendiente = 50000.0
+        mock_mensualidad = create_mock_mensualidad(
+            id_mensualidad=1,
+            monto_pago=50000.0,
+            saldo_pendiente=50000.0
+        )
         
         # Act
         with patch('src.routes.mensualidades_routes.Mensualidad.query') as mock_query:
@@ -139,10 +146,11 @@ class TestAbonarMensualidad:
         # Arrange
         datos_abono = {'monto_abonado': -100}
         
-        mock_mensualidad = MagicMock()
-        mock_mensualidad.id_mensualidad = 1
-        mock_mensualidad.monto_pago = 50000.0
-        mock_mensualidad.saldo_pendiente = 50000.0
+        mock_mensualidad = create_mock_mensualidad(
+            id_mensualidad=1,
+            monto_pago=50000.0,
+            saldo_pendiente=50000.0
+        )
         
         # Act
         with patch('src.routes.mensualidades_routes.Mensualidad.query') as mock_query:
@@ -166,17 +174,14 @@ class TestAbonarMensualidad:
             'fecha_abono': '2024-12-15'
         }
         
-        mock_mensualidad = MagicMock()
-        mock_mensualidad.id_mensualidad = 1
-        mock_mensualidad.monto_pago = 50000.0
-        mock_mensualidad.saldo_pendiente = 50000.0
-        mock_mensualidad.fecha_vencimiento = date(2024, 12, 31)
-        mock_mensualidad.estado = False
-        mock_mensualidad.fecha_pago = None
-        mock_mensualidad.id_persona = 1
-        mock_mensualidad.created_at = None
-        mock_mensualidad.id_metodo_pago = 1
-        mock_mensualidad.persona = None
+        mock_mensualidad = create_mock_mensualidad(
+            id_mensualidad=1,
+            monto_pago=50000.0,
+            saldo_pendiente=50000.0,
+            fecha_vencimiento=date(2024, 12, 31),
+            estado=False,
+            id_metodo_pago=1
+        )
         
         # Configurar to_dict para retornar el estado y saldo actualizados dinámicamente
         def to_dict_side_effect():
@@ -191,19 +196,20 @@ class TestAbonarMensualidad:
             }
         mock_mensualidad.to_dict.side_effect = to_dict_side_effect
         
-        mock_abono = MagicMock()
-        mock_abono.to_dict.return_value = {'id_abono': 1, 'monto': 50000.0}
+        mock_abono = create_mock_abono(
+            id_abono=1,
+            monto=50000.0,
+            to_dict_data={'id_abono': 1, 'monto': 50000.0}
+        )
         
         # Mock para _serializar_mensualidad
-        mock_serialized = {
-            'id_mensualidad': 1,
-            'saldo_pendiente': 0.0,
-            'monto_pago': 50000.0,
-            'estado': True,
-            'estado_texto': 'Pagado',
-            'persona_nombre': None,
-            'numero_documento': None
-        }
+        mock_serialized = create_mock_serialized_mensualidad(
+            id_mensualidad=1,
+            saldo_pendiente=0.0,
+            monto_pago=50000.0,
+            estado=True,
+            estado_texto='Pagado'
+        )
         
         # Act
         with patch('src.routes.mensualidades_routes.Mensualidad.query') as mock_query:
@@ -309,42 +315,40 @@ class TestActualizarAbono:
             'id_metodo_pago': 2
         }
         
-        mock_abono = MagicMock()
-        mock_abono.to_dict.return_value = {
-            'id_abono': 1,
-            'monto': 35000.0,
-            'fecha_abono': '2024-12-16',
-            'id_mensualidad': 1,
-            'id_metodo_pago': 2
-        }
-        mock_abono.id_abono = 1
-        mock_abono.id_mensualidad = 1
-        mock_abono.fecha_abono = date(2024, 12, 15)
-        mock_abono.monto = 30000.0
+        mock_abono = create_mock_abono(
+            id_abono=1,
+            id_mensualidad=1,
+            monto=30000.0,
+            fecha_abono=date(2024, 12, 15),
+            id_metodo_pago=2,
+            to_dict_data={
+                'id_abono': 1,
+                'monto': 35000.0,
+                'fecha_abono': '2024-12-16',
+                'id_mensualidad': 1,
+                'id_metodo_pago': 2
+            }
+        )
         
-        mock_mensualidad = MagicMock()
-        mock_mensualidad.id_mensualidad = 1
-        mock_mensualidad.monto_pago = 50000.0
-        mock_mensualidad.id_persona = 1
-        mock_mensualidad.created_at = None
-        mock_mensualidad.id_metodo_pago = 1
-        mock_mensualidad.persona = None
-        mock_mensualidad.to_dict.return_value = {
-            'id_mensualidad': 1,
-            'monto_pago': 50000.0,
-            'estado': False
-        }
+        mock_mensualidad = create_mock_mensualidad(
+            id_mensualidad=1,
+            monto_pago=50000.0,
+            id_metodo_pago=1,
+            to_dict_data={
+                'id_mensualidad': 1,
+                'monto_pago': 50000.0,
+                'estado': False
+            }
+        )
         
         # Mock para _serializar_mensualidad
-        mock_serialized = {
-            'id_mensualidad': 1,
-            'saldo_pendiente': 15000.0,
-            'monto_pago': 50000.0,
-            'estado': False,
-            'estado_texto': 'Pendiente',
-            'persona_nombre': None,
-            'numero_documento': None
-        }
+        mock_serialized = create_mock_serialized_mensualidad(
+            id_mensualidad=1,
+            saldo_pendiente=15000.0,
+            monto_pago=50000.0,
+            estado=False,
+            estado_texto='Pendiente'
+        )
         
         # Act
         with patch('src.routes.mensualidades_routes.AbonoMensualidad.query') as mock_abono_query:
@@ -416,29 +420,25 @@ class TestEliminarAbono:
         mock_abono.id_abono = 1
         mock_abono.id_mensualidad = 1
         
-        mock_mensualidad = MagicMock()
-        mock_mensualidad.id_mensualidad = 1
-        mock_mensualidad.monto_pago = 50000.0
-        mock_mensualidad.id_persona = 1
-        mock_mensualidad.created_at = None
-        mock_mensualidad.id_metodo_pago = 1
-        mock_mensualidad.persona = None
-        mock_mensualidad.to_dict.return_value = {
-            'id_mensualidad': 1,
-            'monto_pago': 50000.0,
-            'estado': False
-        }
+        mock_mensualidad = create_mock_mensualidad(
+            id_mensualidad=1,
+            monto_pago=50000.0,
+            id_metodo_pago=1,
+            to_dict_data={
+                'id_mensualidad': 1,
+                'monto_pago': 50000.0,
+                'estado': False
+            }
+        )
         
         # Mock para _serializar_mensualidad
-        mock_serialized = {
-            'id_mensualidad': 1,
-            'saldo_pendiente': 50000.0,
-            'monto_pago': 50000.0,
-            'estado': False,
-            'estado_texto': 'Pendiente',
-            'persona_nombre': None,
-            'numero_documento': None
-        }
+        mock_serialized = create_mock_serialized_mensualidad(
+            id_mensualidad=1,
+            saldo_pendiente=50000.0,
+            monto_pago=50000.0,
+            estado=False,
+            estado_texto='Pendiente'
+        )
         
         # Act
         with patch('src.routes.mensualidades_routes.AbonoMensualidad.query') as mock_abono_query:

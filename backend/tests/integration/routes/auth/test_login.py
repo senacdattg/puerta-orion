@@ -23,14 +23,14 @@ class TestLogin:
     def test_login_success(self, client):
         """Test: Login exitoso."""
         # Arrange
-        from tests.helpers.test_config import TEST_USERNAME, TEST_PASSWORD
+        from tests.helpers.test_config import TEST_USERNAME, TEST_PASSWORD, TEST_TOKEN
         
         datos_login = {
             'username': TEST_USERNAME,
             'password': TEST_PASSWORD
         }
         mock_result = {
-            'token': 'test_token_12345',
+            'token': TEST_TOKEN,
             'usuario': {
                 'id_usuario': 1,
                 'username': 'testuser'

@@ -178,3 +178,143 @@ def setup_mock_db_session_get(mock_db: MagicMock, personas: Dict[int, Any]) -> N
     
     mock_db.session.get = mock_get
 
+
+def create_mock_abono(
+    id_abono: int = 1,
+    id_mensualidad: int = 1,
+    monto: float = 30000.0,
+    fecha_abono: date = None,
+    id_metodo_pago: int = None,
+    to_dict_data: Dict[str, Any] = None
+) -> MagicMock:
+    """
+    Crea un mock de AbonoMensualidad con valores por defecto configurables.
+    
+    Args:
+        id_abono: ID del abono
+        id_mensualidad: ID de la mensualidad
+        monto: Monto del abono
+        fecha_abono: Fecha del abono
+        id_metodo_pago: ID del método de pago
+        to_dict_data: Datos para el método to_dict
+    
+    Returns:
+        MagicMock configurado como AbonoMensualidad
+    """
+    if fecha_abono is None:
+        fecha_abono = date(2024, 12, 15)
+    
+    if to_dict_data is None:
+        to_dict_data = {
+            'id_abono': id_abono,
+            'monto': monto,
+            'fecha_abono': fecha_abono.isoformat(),
+            'id_mensualidad': id_mensualidad
+        }
+    
+    mock_abono = MagicMock()
+    mock_abono.id_abono = id_abono
+    mock_abono.id_mensualidad = id_mensualidad
+    mock_abono.monto = monto
+    mock_abono.fecha_abono = fecha_abono
+    mock_abono.id_metodo_pago = id_metodo_pago
+    mock_abono.to_dict.return_value = to_dict_data
+    
+    return mock_abono
+
+
+def setup_forgot_password_mocks(
+    mock_persona: Any = None,
+    mock_usuario: MagicMock = None,
+    mock_token_exists: bool = False,
+    mock_enviar_correo_side_effect: Any = None
+) -> Dict[str, Any]:
+    """
+    Configura los mocks comunes para tests de forgot_password.
+    
+    Args:
+        mock_persona: Mock de Persona (opcional)
+        mock_usuario: Mock de Usuario (opcional)
+        mock_token_exists: Si existe un token previo
+        mock_enviar_correo_side_effect: Side effect para _enviar_correo_reset
+    
+    Returns:
+        Diccionario con los patches configurados
+    """
+    from unittest.mock import patch
+    
+    if mock_persona is None:
+        mock_persona = create_mock_persona()
+    if mock_usuario is None:
+        mock_usuario = create_mock_usuario(persona=mock_persona)
+    
+    patches = {}
+    
+    # Mock Persona.query
+    mock_persona_query = MagicMock()
+    mock_persona_query.filter_by.return_value.first.return_value = mock_persona
+    patches['persona_query'] = patch('src.routes.auth_reset.Persona.query', mock_persona_query)
+    
+    # Mock Usuario.query
+    mock_usuario_query = MagicMock()
+    mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
+    patches['usuario_query'] = patch('src.routes.auth_reset.Usuario.query', mock_usuario_query)
+    
+    # Mock PasswordResetToken
+    mock_token_class = MagicMock()
+    mock_token_class.query.filter_by.return_value.first.return_value = (
+        MagicMock() if mock_token_exists else None
+    )
+    patches['token_class'] = patch('src.routes.auth_reset.PasswordResetToken', mock_token_class)
+    
+    # Mock db
+    mock_db = MagicMock()
+    mock_db.session.add = MagicMock()
+    mock_db.session.commit = MagicMock()
+    patches['db'] = patch('src.routes.auth_reset.db', mock_db)
+    
+    # Mock _enviar_correo_reset
+    mock_enviar = MagicMock()
+    if mock_enviar_correo_side_effect is not None:
+        mock_enviar.side_effect = mock_enviar_correo_side_effect
+    patches['enviar_correo'] = patch('src.routes.auth_reset._enviar_correo_reset', mock_enviar)
+    
+    return patches
+
+
+def create_mock_serialized_mensualidad(
+    id_mensualidad: int = 1,
+    saldo_pendiente: float = 20000.0,
+    monto_pago: float = 50000.0,
+    estado: bool = False,
+    estado_texto: str = None,
+    persona_nombre: str = None,
+    numero_documento: str = None
+) -> Dict[str, Any]:
+    """
+    Crea un diccionario con datos serializados de mensualidad para mocks.
+    
+    Args:
+        id_mensualidad: ID de la mensualidad
+        saldo_pendiente: Saldo pendiente
+        monto_pago: Monto del pago
+        estado: Estado booleano
+        estado_texto: Texto del estado
+        persona_nombre: Nombre de la persona
+        numero_documento: Número de documento
+    
+    Returns:
+        Diccionario con datos serializados
+    """
+    if estado_texto is None:
+        estado_texto = 'Pagado' if estado else 'Pendiente'
+    
+    return {
+        'id_mensualidad': id_mensualidad,
+        'saldo_pendiente': saldo_pendiente,
+        'monto_pago': monto_pago,
+        'estado': estado,
+        'estado_texto': estado_texto,
+        'persona_nombre': persona_nombre,
+        'numero_documento': numero_documento
+    }
