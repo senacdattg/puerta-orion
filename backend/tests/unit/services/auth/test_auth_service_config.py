@@ -256,3 +256,5 @@ class TestConfigInstances:
         """Test: session_config es una instancia de SessionConfig."""
         assert isinstance(session_config, SessionConfig)
 
+
+
