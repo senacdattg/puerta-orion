@@ -677,7 +677,8 @@ function configurarFormularioDesdeProps() {
 
 configurarFormularioDesdeProps();
 
-watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => {
+// Helper functions to reduce cognitive complexity in watch mensualidad
+function _logWatchMensualidad(nuevaMensualidad, anteriorMensualidad) {
   if (LOG_CONFIG && LOG_CONFIG.enabled) {
     console.log('👀 [watch mensualidad] Watch disparado', {
       idNueva: nuevaMensualidad?.id || nuevaMensualidad?.id_mensualidad,
@@ -686,18 +687,25 @@ watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => 
       saldoPendienteRawAnterior: anteriorMensualidad?.saldo_pendiente_raw
     });
   }
+}
 
-  // Solo ejecutar si realmente cambió la mensualidad (nueva referencia o cambio en campos clave)
-  if (!anteriorMensualidad || nuevaMensualidad?.id !== anteriorMensualidad?.id) {
-    if (LOG_CONFIG && LOG_CONFIG.enabled) {
-      console.log('👀 [watch mensualidad] ID cambió, configurando formulario desde props');
-    }
-    configurarFormularioDesdeProps();
+function _detectarCambioId(nuevaMensualidad, anteriorMensualidad) {
+  return !anteriorMensualidad || nuevaMensualidad?.id !== anteriorMensualidad?.id;
+}
+
+function _manejarCambioId() {
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('👀 [watch mensualidad] ID cambió, configurando formulario desde props');
+  }
+  configurarFormularioDesdeProps();
+}
+
+function _detectarCambioRelevante(nuevaMensualidad, anteriorMensualidad) {
+  if (!anteriorMensualidad) {
+    return false;
   }
 
-  // Recargar abonos cuando se actualiza la mensualidad
-  // También verificar si cambió el saldo pendiente, estado, o monto para forzar recarga
-  const cambioRelevante = anteriorMensualidad && (
+  return (
     nuevaMensualidad?.saldo_pendiente_raw !== anteriorMensualidad?.saldo_pendiente_raw ||
     nuevaMensualidad?.saldo_pendiente !== anteriorMensualidad?.saldo_pendiente ||
     nuevaMensualidad?.monto_pago_raw !== anteriorMensualidad?.monto_pago_raw ||
@@ -705,29 +713,63 @@ watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => 
     nuevaMensualidad?.estado !== anteriorMensualidad?.estado ||
     nuevaMensualidad?.estado_texto !== anteriorMensualidad?.estado_texto
   );
+}
 
+function _manejarCambioRelevante(cambioRelevante) {
   if (LOG_CONFIG && LOG_CONFIG.enabled) {
     console.log('👀 [watch mensualidad] Cambio relevante detectado:', cambioRelevante);
   }
 
-  // Si hubo un cambio relevante, actualizar el formulario
   if (cambioRelevante) {
     if (LOG_CONFIG && LOG_CONFIG.enabled) {
       console.log('👀 [watch mensualidad] Configurando formulario desde props debido a cambio relevante');
     }
     configurarFormularioDesdeProps();
   }
+}
 
+function _debeRecargarAbonos(anteriorMensualidad, cambioRelevante, nuevaMensualidad) {
   const mensualidadId = obtenerIdMensualidad();
-  if (mensualidadId && (!anteriorMensualidad || cambioRelevante || nuevaMensualidad?.id !== anteriorMensualidad?.id)) {
-    try {
-      const respAb = await mensualidadesService.listarAbonos(mensualidadId);
-      // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
-      // Solo incluir abonos reales con id_abono
-      abonos.value = mapearAbonosDelBackend(respAb.data);
-    } catch {
-      abonos.value = [];
-    }
+  if (!mensualidadId) {
+    return false;
+  }
+
+  return !anteriorMensualidad || cambioRelevante || nuevaMensualidad?.id !== anteriorMensualidad?.id;
+}
+
+async function _recargarAbonos() {
+  const mensualidadId = obtenerIdMensualidad();
+  if (!mensualidadId) {
+    return;
+  }
+
+  try {
+    const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+    // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
+    // Solo incluir abonos reales con id_abono
+    abonos.value = mapearAbonosDelBackend(respAb.data);
+  } catch {
+    abonos.value = [];
+  }
+}
+
+// NOSONAR: S3776 - Complexity reduced through helper functions extraction
+watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => {
+  _logWatchMensualidad(nuevaMensualidad, anteriorMensualidad);
+
+  // Solo ejecutar si realmente cambió la mensualidad (nueva referencia o cambio en campos clave)
+  if (_detectarCambioId(nuevaMensualidad, anteriorMensualidad)) {
+    _manejarCambioId();
+  }
+
+  // Recargar abonos cuando se actualiza la mensualidad
+  // También verificar si cambió el saldo pendiente, estado, o monto para forzar recarga
+  const cambioRelevante = _detectarCambioRelevante(nuevaMensualidad, anteriorMensualidad);
+  _manejarCambioRelevante(cambioRelevante);
+
+  // Recargar abonos si es necesario
+  if (_debeRecargarAbonos(anteriorMensualidad, cambioRelevante, nuevaMensualidad)) {
+    await _recargarAbonos();
   }
 }, { deep: true, immediate: false });
 
@@ -848,7 +890,9 @@ onMounted(async () => {
   try {
     const mensualidadId = obtenerIdMensualidad();
     if (!mensualidadId) {
-      console.warn('No se pudo obtener el ID de la mensualidad');
+      if (LOG_CONFIG && LOG_CONFIG.enabled) {
+        console.warn('No se pudo obtener el ID de la mensualidad');
+      }
       abonos.value = [];
       return;
     }
@@ -1321,7 +1365,7 @@ function _validarMontoAbono(monto) {
   if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + TOLERANCIA_COMPARACION_MONTO) {
     errores.push(`El monto excede el valor total de la mensualidad (${formatCOP(valorTotalMensualidad)})`);
   }
-  
+
   // Second check: abono amount should not exceed remaining balance
   if (monto > saldoRestante + TOLERANCIA_COMPARACION_MONTO) {
     errores.push(`El monto excede el saldo pendiente (${formatCOP(saldoRestante)})`);
@@ -1615,7 +1659,7 @@ function obtenerMontoPago(pago) {
 function calcularSaldoPendienteHistorial() {
   // 1) Priorizar el valor proveniente del backend para mantener consistencia con la tarjeta
   const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
-  
+
   if (LOG_CONFIG && LOG_CONFIG.enabled) {
     console.log('💰 [calcularSaldoPendienteHistorial] Valores:', {
       saldo_pendiente_raw: props.mensualidad.saldo_pendiente_raw,

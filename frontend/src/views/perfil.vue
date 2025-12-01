@@ -422,58 +422,6 @@ const authStore = useAuthStore()
 const usuario = ref(null)
 const detalle = ref(null)
 
-// Calcular edad del deportista basándose en fecha_nacimiento
-const edadDeportista = computed(() => {
-  try {
-    const deportista = detalle.value?.deportista || authStore.userDetail?.deportista || authStore.user?.deportista
-
-    if (!deportista) return null
-
-    const fechaNacimiento = deportista.fecha_nacimiento
-
-    if (!fechaNacimiento) return null
-
-    // Si fecha_nacimiento es solo el año (número)
-    const añoActual = new Date().getFullYear()
-    const añoNacimiento = typeof fechaNacimiento === 'number' ? fechaNacimiento : new Date(fechaNacimiento).getFullYear()
-    const edad = añoActual - añoNacimiento
-
-    return edad
-  } catch (error) {
-    console.error('Error al calcular edad:', error)
-    return null
-  }
-})
-
-// Verificar si el deportista es mayor de edad (>= 18 años)
-const esMayorDeEdad = computed(() => {
-  const edad = edadDeportista.value
-  if (edad === null) return false
-  return edad >= 18
-})
-
-// Verificar si el usuario es deportista
-const esDeportista = computed(() => {
-  const roles = usuario.value?.roles || []
-  const nombresRoles = roles.map(r => {
-    if (typeof r === 'string') return r
-    if (typeof r === 'object' && r !== null && r.nombre_rol) return r.nombre_rol
-    return null
-  }).filter(Boolean)
-  return nombresRoles.includes('Deportista')
-})
-
-// Verificar si el usuario ya tiene el rol Acudiente
-const yaEsAcudiente = computed(() => {
-  const roles = usuario.value?.roles || []
-  const nombresRoles = roles.map(r => {
-    if (typeof r === 'string') return r
-    if (typeof r === 'object' && r !== null && r.nombre_rol) return r.nombre_rol
-    return null
-  }).filter(Boolean)
-  return nombresRoles.includes('Acudiente')
-})
-
 // Mostrar todos los roles asignados (sin filtrar "Usuario")
 // El backend ya maneja la lógica de visibilidad en rolesSelector
 const rolesAsignadosFiltrados = computed(() => {

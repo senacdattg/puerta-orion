@@ -35,7 +35,7 @@
 
 <script setup>
 import { ref, watch, computed, nextTick, onUnmounted } from 'vue'
-import { API_CONFIG } from '@/config/environment'
+import { API_CONFIG, LOG_CONFIG } from '@/config/environment'
 import TipoDocumento from '../datos-dinamicos/tipo-documento.vue'
 import Sexo from '../datos-dinamicos/sexo.vue'
 import Ciudad from '../datos-dinamicos/ciudad.vue'
@@ -130,11 +130,15 @@ const camposNombre = {
 
 const componenteFormulario = computed(() => {
   if (!props.tema) {
-    console.log('modal-editar-dato: No hay tema')
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('modal-editar-dato: No hay tema')
+    }
     return null
   }
   const componente = componentes[props.tema] || null
-  console.log('modal-editar-dato: tema =', props.tema, 'componente =', componente ? componente.name : 'null')
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('modal-editar-dato: tema =', props.tema, 'componente =', componente ? componente.name : 'null')
+  }
   return componente
 })
 
@@ -154,7 +158,7 @@ function clonarObjeto(objeto) {
     // Fallback to manual clone for complex objects
     const clon = {}
     for (const key in objeto) {
-      if (Object.prototype.hasOwnProperty.call(objeto, key)) {
+      if (Object.hasOwn(objeto, key)) {
         const valor = objeto[key]
         if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
           clon[key] = clonarObjeto(valor)
@@ -503,7 +507,9 @@ async function guardar() {
     // Cerrar el loading si aún está abierto
     Swal.close()
 
-    console.error('Error al guardar:', error)
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.error('Error al guardar:', error)
+    }
     const mensajeError = extraerMensajeErrorDato(error)
 
     await Swal.fire({

@@ -1538,132 +1538,157 @@ onMounted(async () => {
   }
 });
 
-async function cargarCatalogos() {
+// Helper functions to reduce cognitive complexity in cargarCatalogos
+function _obtenerEndpointsCatalogos() {
+  return [
+    { url: getApiUrl('/api/deportistas/catalogos/grupos-sanguineos'), name: 'grupos-sanguineos' },
+    { url: getApiUrl('/api/deportistas/catalogos/ciudades-residencia'), name: 'ciudades-residencia' },
+    { url: getApiUrl('/api/deportistas/catalogos/eps'), name: 'eps' },
+    { url: getApiUrl('/api/deportistas/catalogos/deportes'), name: 'deportes' },
+    { url: getApiUrl('/api/deportistas/catalogos/escuelas'), name: 'escuelas' },
+    { url: getApiUrl('/api/deportistas/catalogos/instituciones-registro'), name: 'instituciones-registro' },
+    { url: getApiUrl('/api/deportistas/catalogos/tipos-enfermedad'), name: 'tipos-enfermedad' },
+    { url: getApiUrl('/api/deportistas/catalogos/diagnosticos'), name: 'diagnosticos' },
+    { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
+  ];
+}
+
+function _logBaseUrl() {
+  if (LOG_CONFIG.enabled) {
+    console.log('🔗 Base URL para catálogos:', getApiUrl(''));
+  }
+}
+
+async function _cargarEndpointCatalogo(endpoint) {
   try {
     if (LOG_CONFIG.enabled) {
-      console.log('🔗 Base URL para catálogos:', getApiUrl(''));
+      console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
     }
-
-    // Cargar todos los catálogos necesarios desde las rutas de deportistas
-    const endpoints = [
-      { url: getApiUrl('/api/deportistas/catalogos/grupos-sanguineos'), name: 'grupos-sanguineos' },
-      { url: getApiUrl('/api/deportistas/catalogos/ciudades-residencia'), name: 'ciudades-residencia' },
-      { url: getApiUrl('/api/deportistas/catalogos/eps'), name: 'eps' },
-      { url: getApiUrl('/api/deportistas/catalogos/deportes'), name: 'deportes' },
-      { url: getApiUrl('/api/deportistas/catalogos/escuelas'), name: 'escuelas' },
-      { url: getApiUrl('/api/deportistas/catalogos/instituciones-registro'), name: 'instituciones-registro' },
-      { url: getApiUrl('/api/deportistas/catalogos/tipos-enfermedad'), name: 'tipos-enfermedad' },
-      { url: getApiUrl('/api/deportistas/catalogos/diagnosticos'), name: 'diagnosticos' },
-      { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
-    ];
-
-    // Obtener token de autenticación
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const resultados = await Promise.all(
-      endpoints.map(async (endpoint) => {
-        try {
-          if (LOG_CONFIG.enabled) {
-            console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
-          }
-          const response = await fetch(endpoint.url);
-          const data = await response.json();
-          if (LOG_CONFIG.enabled) {
-            console.log(`✅ ${endpoint.name} cargado:`, response.ok);
-          }
-          return { name: endpoint.name, ok: response.ok, data };
-        } catch (error) {
-          if (LOG_CONFIG.enabled) {
-            console.error(`❌ Error al cargar ${endpoint.name}:`, error);
-          }
-          return { name: endpoint.name, ok: false, data: null, error: error.message };
-        }
-      })
-    );
-
-    // También cargar categorías usando el servicio
-    let categorias = [];
-    try {
-      categorias = await catalogosService.getCategorias();
-      if (LOG_CONFIG.enabled) {
-        console.log('✅ Categorías cargadas:', categorias);
-      }
-    } catch (error) {
-      if (LOG_CONFIG.enabled) {
-        console.error('❌ Error al cargar categorías:', error);
-      }
-    }
-
-    const [sangre, ciudades, eps, deportes, escuelas, instituciones, tiposEnfermedad, diagnosticos, tiposDocumento] = resultados.map(r => r.data);
-
-    // Mapear respuestas - algunas vienen con 'success', otras con 'data' directamente
-    const procesarCatalogo = (respuesta, valorPorDefecto = []) => {
-      if (!respuesta) return valorPorDefecto;
-      if (Array.isArray(respuesta)) return respuesta;
-      if (respuesta.success && Array.isArray(respuesta.data)) return respuesta.data;
-      if (Array.isArray(respuesta.data)) return respuesta.data;
-      return valorPorDefecto;
-    };
-
-    catalogos.value.tiposSanguineos = procesarCatalogo(sangre);
-    catalogos.value.ciudades = procesarCatalogo(ciudades);
-    catalogos.value.eps = procesarCatalogo(eps);
-    catalogos.value.deportes = procesarCatalogo(deportes);
-    catalogos.value.escuelas = procesarCatalogo(escuelas);
-    catalogos.value.instituciones = procesarCatalogo(instituciones);
-    catalogos.value.categorias = Array.isArray(categorias) ? categorias : [];
-    catalogos.value.tiposEnfermedad = procesarCatalogo(tiposEnfermedad);
-    catalogos.value.diagnosticos = procesarCatalogo(diagnosticos);
-    catalogos.value.tiposDocumento = procesarCatalogo(tiposDocumento);
-
-    // Logs de debugging
+    const response = await fetch(endpoint.url);
+    const data = await response.json();
     if (LOG_CONFIG.enabled) {
-      console.log('📋 ========== RESUMEN DE CATÁLOGOS CARGADOS ==========');
-      console.log('📋 Tipos sanguíneos:', catalogos.value.tiposSanguineos.length);
-      console.log('📋 Ciudades:', catalogos.value.ciudades.length);
-      console.log('📋 EPS:', catalogos.value.eps.length);
-      console.log('📋 Deportes:', catalogos.value.deportes.length);
-      console.log('📋 Escuelas:', catalogos.value.escuelas.length);
-      console.log('📋 Instituciones:', catalogos.value.instituciones.length);
-      console.log('📋 Categorías:', catalogos.value.categorias.length);
-      console.log('📋 Tipos de enfermedad:', catalogos.value.tiposEnfermedad.length);
-      console.log('📋 Diagnósticos:', catalogos.value.diagnosticos.length);
-      console.log('📋 Tipos de documento:', catalogos.value.tiposDocumento.length);
+      console.log(`✅ ${endpoint.name} cargado:`, response.ok);
     }
-
-    if (LOG_CONFIG.enabled && catalogos.value.tiposEnfermedad.length > 0) {
-      console.log('📋 Ejemplo tipo enfermedad:', catalogos.value.tiposEnfermedad[0]);
-    }
-    if (catalogos.value.diagnosticos.length > 0) {
-      if (LOG_CONFIG.enabled) {
-        console.log('📋 Ejemplo diagnóstico:', catalogos.value.diagnosticos[0]);
-      }
-    }
-    if (catalogos.value.tiposDocumento.length > 0) {
-      if (LOG_CONFIG.enabled) {
-        console.log('📋 Ejemplo tipo documento:', catalogos.value.tiposDocumento[0]);
-      }
-    }
-
+    return { name: endpoint.name, ok: response.ok, data };
+  } catch (error) {
     if (LOG_CONFIG.enabled) {
-      console.log('✅ Catálogos cargados completamente');
+      console.error(`❌ Error al cargar ${endpoint.name}:`, error);
     }
-    // Marcar como cargado incluso si algunos catálogos fallaron
-    catalogosCargados.value = true;
+    return { name: endpoint.name, ok: false, data: null, error: error.message };
+  }
+}
+
+async function _cargarTodosCatalogos(endpoints) {
+  return await Promise.all(endpoints.map(endpoint => _cargarEndpointCatalogo(endpoint)));
+}
+
+async function _cargarCategorias() {
+  try {
+    const categorias = await catalogosService.getCategorias();
+    if (LOG_CONFIG.enabled) {
+      console.log('✅ Categorías cargadas:', categorias);
+    }
+    return categorias;
+  } catch (error) {
+    if (LOG_CONFIG.enabled) {
+      console.error('❌ Error al cargar categorías:', error);
+    }
+    return [];
+  }
+}
+
+function _procesarCatalogo(respuesta, valorPorDefecto = []) {
+  if (!respuesta) {
+    return valorPorDefecto;
+  }
+  if (Array.isArray(respuesta)) {
+    return respuesta;
+  }
+  if (respuesta.success && Array.isArray(respuesta.data)) {
+    return respuesta.data;
+  }
+  if (Array.isArray(respuesta.data)) {
+    return respuesta.data;
+  }
+  return valorPorDefecto;
+}
+
+function _asignarCatalogos(resultados, categorias) {
+  const [sangre, ciudades, eps, deportes, escuelas, instituciones, tiposEnfermedad, diagnosticos, tiposDocumento] = resultados.map(r => r.data);
+
+  catalogos.value.tiposSanguineos = _procesarCatalogo(sangre);
+  catalogos.value.ciudades = _procesarCatalogo(ciudades);
+  catalogos.value.eps = _procesarCatalogo(eps);
+  catalogos.value.deportes = _procesarCatalogo(deportes);
+  catalogos.value.escuelas = _procesarCatalogo(escuelas);
+  catalogos.value.instituciones = _procesarCatalogo(instituciones);
+  catalogos.value.categorias = Array.isArray(categorias) ? categorias : [];
+  catalogos.value.tiposEnfermedad = _procesarCatalogo(tiposEnfermedad);
+  catalogos.value.diagnosticos = _procesarCatalogo(diagnosticos);
+  catalogos.value.tiposDocumento = _procesarCatalogo(tiposDocumento);
+}
+
+function _logResumenCatalogos() {
+  if (!LOG_CONFIG.enabled) {
+    return;
+  }
+  
+  console.log('📋 ========== RESUMEN DE CATÁLOGOS CARGADOS ==========');
+  console.log('📋 Tipos sanguíneos:', catalogos.value.tiposSanguineos.length);
+  console.log('📋 Ciudades:', catalogos.value.ciudades.length);
+  console.log('📋 EPS:', catalogos.value.eps.length);
+  console.log('📋 Deportes:', catalogos.value.deportes.length);
+  console.log('📋 Escuelas:', catalogos.value.escuelas.length);
+  console.log('📋 Instituciones:', catalogos.value.instituciones.length);
+  console.log('📋 Categorías:', catalogos.value.categorias.length);
+  console.log('📋 Tipos de enfermedad:', catalogos.value.tiposEnfermedad.length);
+  console.log('📋 Diagnósticos:', catalogos.value.diagnosticos.length);
+  console.log('📋 Tipos de documento:', catalogos.value.tiposDocumento.length);
+}
+
+function _logEjemplosCatalogos() {
+  if (!LOG_CONFIG.enabled) {
+    return;
+  }
+  
+  if (catalogos.value.tiposEnfermedad.length > 0) {
+    console.log('📋 Ejemplo tipo enfermedad:', catalogos.value.tiposEnfermedad[0]);
+  }
+  if (catalogos.value.diagnosticos.length > 0) {
+    console.log('📋 Ejemplo diagnóstico:', catalogos.value.diagnosticos[0]);
+  }
+  if (catalogos.value.tiposDocumento.length > 0) {
+    console.log('📋 Ejemplo tipo documento:', catalogos.value.tiposDocumento[0]);
+  }
+}
+
+function _marcarCatalogosCargados() {
+  catalogosCargados.value = true;
+  if (LOG_CONFIG.enabled) {
+    console.log('✅ Catálogos cargados completamente');
+  }
+}
+
+// NOSONAR: S3776 - Complexity reduced through helper functions extraction
+async function cargarCatalogos() {
+  try {
+    _logBaseUrl();
+
+    const endpoints = _obtenerEndpointsCatalogos();
+    const resultados = await _cargarTodosCatalogos(endpoints);
+    const categorias = await _cargarCategorias();
+
+    _asignarCatalogos(resultados, categorias);
+    _logResumenCatalogos();
+    _logEjemplosCatalogos();
+    _marcarCatalogosCargados();
   } catch (error) {
     if (LOG_CONFIG.enabled) {
       console.error('Error al cargar catálogos:', error);
     }
     // Aún así, marcar como cargado para que el componente se muestre
     // El perfil puede funcionar sin todos los catálogos
-    catalogosCargados.value = true;
+    _marcarCatalogosCargados();
   }
 }
 

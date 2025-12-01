@@ -238,12 +238,10 @@
 <script setup>
 import { ref, onMounted, watch } from "vue"
 import { useRouter } from "vue-router"
-import { useAuthStore } from "@/stores/auth"
 import catalogosService from "@/services/catalogosService"
 import { sanitizarNombre, sanitizarDireccion } from "@/utils/sanitization"
 
 const router = useRouter()
-const authStore = useAuthStore()
 
 // Props del componente
 const props = defineProps({
@@ -292,7 +290,6 @@ const cargandoCatalogos = ref(false)
 const mensajeError = ref('')
 const mensajeExito = ref('')
 
-const LOCALE_COL = 'es-CO'
 const REGEX_NOMBRE = /^[A-ZÁÉÍÓÚÜÑ ]+$/
 const REGEX_CORREO = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
 const MAX_DOCUMENTO = 10
@@ -463,81 +460,10 @@ async function manejarSubmit() {
   emit('submit', form.value)
 }
 
-// Registrar usuario
-async function registrarUsuario() {
-  cargando.value = true
-
-  try {
-    // Preparar datos para el backend
-    const datosPersona = {
-      primer_nombre: form.value.nombre1,
-      segundo_nombre: form.value.nombre2 || null,
-      primer_apellido: form.value.apellido1,
-      segundo_apellido: form.value.apellido2 || null,
-      documento: form.value.numeroDocumento,
-      correo_electronico: form.value.correo,
-      direccion: form.value.direccion || null,
-      telefono: form.value.telefono || null,
-      id_tipo_documento: Number.parseInt(form.value.idTipoDocumento),
-      id_sexo: Number.parseInt(form.value.idSexo)
-    }
-
-    const datosUsuario = {
-      usuario: form.value.usuario,
-      password: form.value.contrasena
-    }
-
-    // Registrar usando el store
-    const datosRegistro = {
-      persona: datosPersona,
-      usuario: datosUsuario
-    }
-    const resultado = await authStore.register(datosRegistro)
-
-    if (resultado.success) {
-      mensajeExito.value = '¡Registro exitoso! Redirigiendo al login...'
-
-      // Limpiar formulario
-      limpiarFormulario()
-
-      // Redirigir al login después de 2 segundos
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-    } else {
-      mensajeError.value = resultado.error || 'Error al registrar usuario'
-    }
-  } catch (error) {
-    console.error('Error en registro:', error)
-    mensajeError.value = 'Error al procesar el registro'
-  } finally {
-    cargando.value = false
-  }
-}
-
 // Limpiar mensajes
 function limpiarMensajes() {
   mensajeError.value = ''
   mensajeExito.value = ''
-}
-
-// Limpiar formulario
-function limpiarFormulario() {
-  form.value = {
-    nombre1: "",
-    nombre2: "",
-    apellido1: "",
-    apellido2: "",
-    idTipoDocumento: "",
-    numeroDocumento: "",
-    idSexo: "",
-    correo: "",
-    telefono: "",
-    direccion: "",
-    usuario: "",
-    contrasena: "",
-    confirmarContrasena: ""
-  }
 }
 
 // Volver al login

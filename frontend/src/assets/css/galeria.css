@@ -618,10 +618,6 @@ textarea[readonly] {
   margin-bottom: 1rem;
 }
 
-.galeria-modal.modal-sm .modal-body {
-  padding: 1.25rem;
-}
-
 .galeria-modal.modal-sm .modal-footer {
   padding: 1rem 1.25rem;
 }

@@ -54,7 +54,6 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { APP_CONFIG, SOCIAL_LINKS } from '@/config/constants'
 import { useFooterActions } from '@/composables/useFooterActions'
 
@@ -64,7 +63,6 @@ defineOptions({
 })
 
 const appConfig = APP_CONFIG
-const authStore = useAuthStore()
 
 /**
  * Validates a URL to ensure it's safe for use in href attributes.
@@ -125,7 +123,7 @@ const socialLinks = computed(() => {
 })
 
 // Use shared footer actions logic
-const { userRole, accionesRapidas } = useFooterActions()
+const { accionesRapidas } = useFooterActions()
 </script>
 
 

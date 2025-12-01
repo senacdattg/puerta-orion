@@ -306,26 +306,27 @@ export const useAuthStore = defineStore('auth', () => {
 
   const setPermissionsByRole = () => {
     // Fallback: establecer permisos basados en roles si no hay permisos específicos
-    if (!user.value || !user.value.roles) {
+    if (!user.value?.roles) {
       permissions.value = []
       return
     }
 
-    const roles = user.value.roles.map(role =>
+    const rolesArray = user.value.roles.map(role =>
       typeof role === 'string' ? role : role.nombre_rol
     )
+    const roles = new Set(rolesArray)
 
     const permisos = []
 
     // SuperAdmin y Administrador tienen todos los permisos
-    if (roles.includes('SuperAdmin') || roles.includes('Administrador')) {
+    if (roles.has('SuperAdmin') || roles.has('Administrador')) {
       permisos.push(
         'crear_evento', 'editar_evento', 'eliminar_evento', 'ver_evento', 'ver_calendario',
         'gestionar_usuarios', 'acceso_panel_admin'
       )
     }
     // Entrenador puede crear y editar eventos
-    else if (roles.includes('Entrenador')) {
+    else if (roles.has('Entrenador')) {
       permisos.push('crear_evento', 'editar_evento', 'ver_evento', 'ver_calendario')
     }
     // Otros roles solo pueden ver eventos
@@ -411,7 +412,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.getProfileDetail()
       console.log('📥 Respuesta del servicio:', response)
 
-      if (response && response.success) {
+      if (response?.success) {
         userDetail.value = extraerUserDetail(response)
         console.log('✅ userDetail actualizado:', userDetail.value)
 
@@ -461,7 +462,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     userDetail.value = null
 
-    if (err.message && err.message.includes('persona asociada')) {
+    if (err.message?.includes('persona asociada')) {
       console.warn('⚠️ Continuando con datos parciales')
     }
     return false
@@ -573,6 +574,107 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('user', JSON.stringify(user.value))
   }
 
+  const extraerNombresRoles = (roles) => {
+    return roles.map(r => {
+      if (typeof r === 'string') return r
+      if (r.nombre_rol) return r.nombre_rol
+      return String(r)
+    })
+  }
+
+  const validarRolEnUsuario = (roleName, nombresRoles) => {
+    return nombresRoles.some(r =>
+      r === roleName || r.toLowerCase() === roleName.toLowerCase()
+    )
+  }
+
+  const manejarMantenerRolGuardado = async (rolActivoGuardado, roleName) => {
+    console.log(`⚠️ [setActiveRole] Intento de cambiar rol de "${rolActivoGuardado}" a "${roleName}", pero "${rolActivoGuardado}" fue seleccionado explícitamente. Manteniendo "${rolActivoGuardado}"`)
+    if (activeRole.value !== rolActivoGuardado) {
+      activeRole.value = rolActivoGuardado
+      await loadPermissionsForRole(rolActivoGuardado)
+    }
+    return { success: true, message: 'Rol mantenido (fue seleccionado explícitamente)' }
+  }
+
+  const verificarSiMantenerRolGuardado = async (rolActivoGuardado, roleName, forzarCambio) => {
+    if (!rolActivoGuardado || rolActivoGuardado === roleName || forzarCambio) {
+      return null
+    }
+
+    const rolesUsuario = user.value?.roles || []
+    const nombresRoles = extraerNombresRoles(rolesUsuario)
+    const rolSolicitadoEsValido = validarRolEnUsuario(roleName, nombresRoles)
+    const rolGuardadoEsValido = validarRolEnUsuario(rolActivoGuardado, nombresRoles)
+
+    if (rolGuardadoEsValido && rolSolicitadoEsValido && rolActivoGuardado !== roleName) {
+      return await manejarMantenerRolGuardado(rolActivoGuardado, roleName)
+    }
+
+    return null
+  }
+
+  const determinarRolFinal = (roleName, rolBackend) => {
+    if (!rolBackend) {
+      return roleName
+    }
+
+    const rolBackendNormalizado = rolBackend.toLowerCase().trim()
+    const roleNameNormalizado = roleName.toLowerCase().trim()
+
+    if (rolBackendNormalizado === roleNameNormalizado) {
+      return rolBackend
+    }
+
+    console.warn(`⚠️ [setActiveRole] Backend devolvió rol diferente: ${rolBackend} (solicitado: ${roleName}). Usando el solicitado.`)
+    return roleName
+  }
+
+  const actualizarUsuarioConNuevoRol = (rolFinal, selector, panelBackend) => {
+    rolesSelector.value = selector || {}
+    panels.value = Array.isArray(panelBackend) ? panelBackend : []
+
+    if (user.value) {
+      user.value = {
+        ...user.value,
+        rol_activo: rolFinal,
+        roles_selector: selector,
+        paneles: panels.value
+      }
+      localStorage.setItem('user', JSON.stringify(user.value))
+    }
+  }
+
+  const activarRolEnBackend = async (roleName) => {
+    console.log(`🔄 [setActiveRole] Cambiando rol activo a: ${roleName}`)
+
+    const response = await authService.activateRole(roleName)
+    if (!response.success) {
+      throw new Error(response.error || 'No se pudo cambiar el rol activo')
+    }
+
+    const {
+      rol_activo: rolBackend = roleName,
+      roles_selector: selector = rolesSelector.value,
+      paneles: panelBackend = panels.value
+    } = response.data || {}
+
+    return { rolBackend, selector, panelBackend }
+  }
+
+  const aplicarNuevoRolActivo = async (roleName, rolBackend, selector, panelBackend) => {
+    const rolFinal = determinarRolFinal(roleName, rolBackend)
+
+    activeRole.value = rolFinal
+    localStorage.setItem('activeRole', rolFinal)
+    console.log(`✅ [setActiveRole] Rol activo establecido: ${rolFinal} (solicitado: ${roleName}, backend: ${rolBackend})`)
+
+    await loadPermissionsForRole(rolFinal)
+    actualizarUsuarioConNuevoRol(rolFinal, selector, panelBackend)
+
+    return { success: true }
+  }
+
   // Función para establecer el rol activo seleccionado y cargar sus permisos
   const setActiveRole = async (roleName, forzarCambio = false) => {
     try {
@@ -580,91 +682,14 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Debe proporcionar un rol válido')
       }
 
-      // Verificar si hay un rol activo guardado que fue seleccionado explícitamente
       const rolActivoGuardado = localStorage.getItem('activeRole')
-
-      // Si hay un rol guardado y es diferente del solicitado, y no se está forzando el cambio,
-      // verificar si el cambio es necesario o si es un cambio automático no deseado
-      if (rolActivoGuardado && rolActivoGuardado !== roleName && !forzarCambio) {
-        // Verificar que el rol solicitado esté en los roles del usuario
-        const rolesUsuario = user.value?.roles || []
-        const nombresRoles = rolesUsuario.map(r => {
-          if (typeof r === 'string') return r
-          if (r.nombre_rol) return r.nombre_rol
-          return String(r)
-        })
-        const rolSolicitadoEsValido = nombresRoles.some(r =>
-          r === roleName || r.toLowerCase() === roleName.toLowerCase()
-        )
-        const rolGuardadoEsValido = nombresRoles.some(r =>
-          r === rolActivoGuardado || r.toLowerCase() === rolActivoGuardado.toLowerCase()
-        )
-
-        // Si ambos roles son válidos, mantener el guardado (fue seleccionado explícitamente)
-        if (rolGuardadoEsValido && rolSolicitadoEsValido && rolActivoGuardado !== roleName) {
-          console.log(`⚠️ [setActiveRole] Intento de cambiar rol de "${rolActivoGuardado}" a "${roleName}", pero "${rolActivoGuardado}" fue seleccionado explícitamente. Manteniendo "${rolActivoGuardado}"`)
-          // No cambiar el rol, solo actualizar permisos si es necesario
-          if (activeRole.value !== rolActivoGuardado) {
-            activeRole.value = rolActivoGuardado
-            await loadPermissionsForRole(rolActivoGuardado)
-          }
-          return { success: true, message: 'Rol mantenido (fue seleccionado explícitamente)' }
-        }
+      const resultadoMantener = await verificarSiMantenerRolGuardado(rolActivoGuardado, roleName, forzarCambio)
+      if (resultadoMantener) {
+        return resultadoMantener
       }
 
-      console.log(`🔄 [setActiveRole] Cambiando rol activo a: ${roleName}`)
-
-      const response = await authService.activateRole(roleName)
-      if (!response.success) {
-        throw new Error(response.error || 'No se pudo cambiar el rol activo')
-      }
-
-      const {
-        rol_activo: rolBackend = roleName,
-        roles_selector: selector = rolesSelector.value,
-        paneles: panelBackend = panels.value
-      } = response.data || {}
-
-      // IMPORTANTE: Usar el rol que el usuario solicitó explícitamente, no el que devolvió el backend
-      // El backend puede devolver un rol diferente si tiene lógica automática, pero debemos respetar la selección del usuario
-      // Solo usar el rol del backend si es el mismo que se solicitó (puede haber diferencias de mayúsculas)
-      let rolFinal = roleName // Por defecto, usar el rol solicitado
-
-      if (rolBackend) {
-        // Normalizar ambos roles para comparación (case-insensitive)
-        const rolBackendNormalizado = rolBackend.toLowerCase().trim()
-        const roleNameNormalizado = roleName.toLowerCase().trim()
-
-        if (rolBackendNormalizado === roleNameNormalizado) {
-          // El backend devolvió el mismo rol (puede tener diferentes mayúsculas), usar el del backend
-          rolFinal = rolBackend
-        } else {
-          // El backend devolvió un rol diferente, usar el solicitado por el usuario
-          console.warn(`⚠️ [setActiveRole] Backend devolvió rol diferente: ${rolBackend} (solicitado: ${roleName}). Usando el solicitado.`)
-          rolFinal = roleName
-        }
-      }
-
-      activeRole.value = rolFinal
-      localStorage.setItem('activeRole', rolFinal)
-      console.log(`✅ [setActiveRole] Rol activo establecido: ${rolFinal} (solicitado: ${roleName}, backend: ${rolBackend})`)
-
-      rolesSelector.value = selector || {}
-      panels.value = Array.isArray(panelBackend) ? panelBackend : []
-
-      await loadPermissionsForRole(rolFinal)
-
-      if (user.value) {
-        user.value = {
-          ...user.value,
-          rol_activo: rolFinal,
-          roles_selector: selector,
-          paneles: panels.value
-        }
-        localStorage.setItem('user', JSON.stringify(user.value))
-      }
-
-      return { success: true }
+      const { rolBackend, selector, panelBackend } = await activarRolEnBackend(roleName)
+      return await aplicarNuevoRolActivo(roleName, rolBackend, selector, panelBackend)
     } catch (error) {
       console.error('❌ [setActiveRole] Error al establecer rol activo:', error)
       return { success: false, error: error.message || 'Error al cambiar rol activo' }
