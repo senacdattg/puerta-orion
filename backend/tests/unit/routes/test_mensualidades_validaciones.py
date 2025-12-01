@@ -271,7 +271,7 @@ class TestMensualidadesValidaciones:
         mock_persona = MagicMock()
         mock_persona.numero_documento = '12345678'
         
-        with patch('src.routes.mensualidades_routes.Persona') as mock_persona_class:
+        with patch('src.routes.mensualidades_routes.Persona'):
             with patch('src.routes.mensualidades_routes.db') as mock_db:
                 mock_query_result = MagicMock()
                 mock_query_result.first.return_value = mock_persona
@@ -282,7 +282,7 @@ class TestMensualidadesValidaciones:
     
     def test_buscar_persona_por_documento_no_encontrada(self):
         """Test: Persona no encontrada por documento."""
-        with patch('src.routes.mensualidades_routes.Persona') as mock_persona_class:
+        with patch('src.routes.mensualidades_routes.Persona'):
             with patch('src.routes.mensualidades_routes.db') as mock_db:
                 mock_query_result = MagicMock()
                 mock_query_result.first.return_value = None

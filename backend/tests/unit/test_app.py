@@ -134,7 +134,7 @@ class TestConfigureCors:
         app.logger = MagicMock()
         
         with patch('app.CORS') as mock_cors:
-            result = _configure_cors(app)
+            _configure_cors(app)
             
             mock_cors.assert_called_once()
             call_args = mock_cors.call_args
