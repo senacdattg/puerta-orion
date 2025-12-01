@@ -25,7 +25,7 @@ class GrupoSanguineo(BaseModel):
     tipo_sangre = Column(String(150), nullable=False, unique=True)
     
     # Relaciones
-    deportistas = relationship('Deportista', lazy=True)
+    deportistas = relationship('Deportista', lazy=True, overlaps="tipo_sanguineo")
     
     def __repr__(self):
         """

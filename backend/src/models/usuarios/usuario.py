@@ -43,7 +43,7 @@ class Usuario(BaseModel):
     # Si RolUsuario es un modelo aparte para añadir atributos a la relación, entonces esta definición está bien.
     # Si es solo una tabla de unión simple, se puede simplificar la relación 'roles'.
     # Para mantener la flexibilidad, mantendremos roles_usuarios.
-    roles_usuarios = relationship('UsuarioRol', lazy=True)
+    roles_usuarios = relationship('UsuarioRol', lazy=True, overlaps="roles")
     password_reset_tokens = relationship('PasswordResetToken', back_populates='usuario', cascade='all, delete-orphan', lazy=True)
     
     def __repr__(self):

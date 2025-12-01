@@ -30,7 +30,7 @@ class EPS(BaseModel):
     codigo_eps = Column(Integer, nullable=True)
     
     # Relaciones
-    deportistas = relationship('Deportista', lazy=True)
+    deportistas = relationship('Deportista', lazy=True, overlaps="eps")
     
     def __repr__(self):
         """

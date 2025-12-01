@@ -92,3 +92,5 @@ class TestDatabaseInstance:
         from flask_sqlalchemy import SQLAlchemy
         assert isinstance(db, SQLAlchemy)
 
+
+

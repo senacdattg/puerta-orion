@@ -459,3 +459,5 @@ class TestGetUserPermissionsEdgeCases:
         assert len(result) == 1
         assert 'ver_usuario' in result
 
+
+

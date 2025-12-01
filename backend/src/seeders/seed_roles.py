@@ -182,7 +182,7 @@ def _sincronizar_permisos(rol: Rol, nombre_rol: str, permisos_config: set[str]) 
         removidos = 0
         
         for rp in permisos_actuales:
-            permiso_obj = Permiso.query.get(rp.id_permiso)
+            permiso_obj = Permiso.query.filter_by(id_permiso=rp.id_permiso).first()
             if permiso_obj and permiso_obj.nombre not in permisos_config:
                 db.session.delete(rp)
                 removidos += 1

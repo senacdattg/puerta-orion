@@ -34,7 +34,7 @@ class Mensualidad(BaseModel):
     
     # Relaciones
     persona = relationship('Persona', lazy=True)
-    metodo_pago = relationship('MetodoPago', lazy=True)
+    metodo_pago = relationship('MetodoPago', lazy=True, overlaps="mensualidades")
     
     def __repr__(self):
         return f'<Mensualidad persona={self.id_persona} monto={self.monto_pago} estado={"pagado" if self.estado else "pendiente"}>'

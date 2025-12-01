@@ -16,7 +16,7 @@ class Rol(BaseModel):
     permisos = db.relationship('Permiso', secondary='puerta_orion_rol_permiso', back_populates='roles')
     
     # Relaciones many-to-many con usuarios
-    usuarios = db.relationship('Usuario', secondary='puerta_orion_usuario_rol', back_populates='roles')
+    usuarios = db.relationship('Usuario', secondary='puerta_orion_usuario_rol', back_populates='roles', overlaps="roles_usuarios")
     usuarios_activos = db.relationship(
         'Usuario',
         back_populates='rol_activo',

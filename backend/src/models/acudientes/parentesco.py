@@ -26,7 +26,7 @@ class Parentesco(BaseModel):
     nombre = Column(String(50), nullable=False, unique=True)
     
     # Relaciones
-    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True)
+    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True, overlaps="parentesco")
     
     def __repr__(self):
         """

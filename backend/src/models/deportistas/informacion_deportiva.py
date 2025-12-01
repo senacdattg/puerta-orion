@@ -68,9 +68,9 @@ class InformacionDeportiva(BaseModel):
     
     # Relaciones
     persona = db.relationship('Persona', uselist=False)
-    escuela = db.relationship('Escuela', lazy=True)
-    deporte = db.relationship('Deporte', lazy=True)
-    institucion_registro = db.relationship('InstitucionRegistro', foreign_keys=[id_institucion_registro], lazy=True)
+    escuela = db.relationship('Escuela', lazy=True, overlaps="informaciones_deportivas")
+    deporte = db.relationship('Deporte', lazy=True, overlaps="informaciones_deportivas")
+    institucion_registro = db.relationship('InstitucionRegistro', foreign_keys=[id_institucion_registro], lazy=True, overlaps="informaciones_deportivas")
 
     def to_dict(self):
         return {

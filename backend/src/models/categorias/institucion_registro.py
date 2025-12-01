@@ -25,7 +25,7 @@ class InstitucionRegistro(BaseModel):
     nombre_institucion = Column(String(200), nullable=False, unique=True)
     
     # Relaciones
-    informaciones_deportivas = relationship('InformacionDeportiva', lazy=True)
+    informaciones_deportivas = relationship('InformacionDeportiva', lazy=True, overlaps="institucion_registro")
     
     def __repr__(self):
         """

@@ -30,7 +30,7 @@ class Acudiente(BaseModel):
     
     # Relaciones
     persona = relationship('Persona', uselist=False)
-    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True)
+    deportistas_acudientes = relationship('DeportistaAcudiente', lazy=True, overlaps="acudiente")
     
     def __repr__(self):
         """
