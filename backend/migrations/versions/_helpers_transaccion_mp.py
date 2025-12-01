@@ -44,3 +44,4 @@ def drop_transaccion_mercadopago_table():
     op.drop_table('puerta_orion_transaccion_mercadopago')
 
 
+

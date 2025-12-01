@@ -852,3 +852,291 @@ class TestDeportistaService:
         assert 'id_deportista' in result
         assert 'persona' not in result
         assert 'informacion_deportiva' not in result
+    
+    def test_validar_id_escuela_success(self, app_context):
+        """Test: Validar ID de escuela exitosamente."""
+        mock_escuela = MagicMock()
+        
+        with patch('src.models.categorias.escuela.Escuela.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = mock_escuela
+            
+            result = DeportistaService._validar_id_escuela(1)
+            assert result is None
+    
+    def test_validar_id_escuela_no_existe(self, app_context):
+        """Test: Error cuando escuela no existe."""
+        with patch('src.models.categorias.escuela.Escuela.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = None
+            
+            result = DeportistaService._validar_id_escuela(99999)
+            assert result is not None
+            assert result['success'] is False
+            assert result['status_code'] == 400
+    
+    def test_validar_id_escuela_none(self, app_context):
+        """Test: Validar ID de escuela None."""
+        result = DeportistaService._validar_id_escuela(None)
+        assert result is None
+    
+    def test_validar_id_deporte_success(self, app_context):
+        """Test: Validar ID de deporte exitosamente."""
+        mock_deporte = MagicMock()
+        
+        with patch('src.models.categorias.deporte.Deporte.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = mock_deporte
+            
+            result = DeportistaService._validar_id_deporte(1)
+            assert result is None
+    
+    def test_validar_id_deporte_no_existe(self, app_context):
+        """Test: Error cuando deporte no existe."""
+        with patch('src.models.categorias.deporte.Deporte.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = None
+            
+            result = DeportistaService._validar_id_deporte(99999)
+            assert result is not None
+            assert result['success'] is False
+            assert result['status_code'] == 400
+    
+    def test_validar_id_deporte_none(self, app_context):
+        """Test: Validar ID de deporte None."""
+        result = DeportistaService._validar_id_deporte(None)
+        assert result is None
+    
+    def test_validar_id_institucion_registro_success(self, app_context):
+        """Test: Validar ID de institución exitosamente."""
+        mock_institucion = MagicMock()
+        
+        with patch('src.models.categorias.institucion_registro.InstitucionRegistro.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = mock_institucion
+            
+            result = DeportistaService._validar_id_institucion_registro(1)
+            assert result is None
+    
+    def test_validar_id_institucion_registro_no_existe(self, app_context):
+        """Test: Error cuando institución no existe."""
+        with patch('src.models.categorias.institucion_registro.InstitucionRegistro.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = None
+            
+            result = DeportistaService._validar_id_institucion_registro(99999)
+            assert result is not None
+            assert result['success'] is False
+            assert result['status_code'] == 400
+    
+    def test_validar_id_institucion_registro_none(self, app_context):
+        """Test: Validar ID de institución None."""
+        result = DeportistaService._validar_id_institucion_registro(None)
+        assert result is None
+    
+    def test_validar_ids_info_deportiva_success(self, app_context):
+        """Test: Validar todos los IDs de información deportiva exitosamente."""
+        datos = {
+            'id_escuela': 1,
+            'id_deporte': 1,
+            'id_institucion_registro': 1
+        }
+        
+        with patch('src.services.deportista_service.DeportistaService._validar_id_escuela', return_value=None), \
+             patch('src.services.deportista_service.DeportistaService._validar_id_deporte', return_value=None), \
+             patch('src.services.deportista_service.DeportistaService._validar_id_institucion_registro', return_value=None):
+            
+            result = DeportistaService._validar_ids_info_deportiva(datos)
+            assert result is None
+    
+    def test_validar_ids_info_deportiva_con_error(self, app_context):
+        """Test: Validar IDs cuando hay error."""
+        datos = {'id_escuela': 99999}
+        
+        error_response = {
+            'success': False,
+            'message': 'La escuela especificada no existe',
+            'status_code': 400
+        }
+        
+        with patch('src.services.deportista_service.DeportistaService._validar_id_escuela', return_value=error_response):
+            
+            result = DeportistaService._validar_ids_info_deportiva(datos)
+            assert result == error_response
+    
+    def test_validar_diagnosticos_success(self, app_context):
+        """Test: Validar diagnósticos exitosamente."""
+        mock_diag1 = MagicMock()
+        mock_diag1.id_tipo_enfermedad = 1
+        mock_diag2 = MagicMock()
+        mock_diag2.id_tipo_enfermedad = 1
+        
+        with patch('src.models.salud.diagnostico.Diagnostico.query') as mock_query:
+            mock_query.filter_by.return_value.first.side_effect = [mock_diag1, mock_diag2]
+            
+            result = DeportistaService._validar_diagnosticos([1, 2], 1)
+            assert result is None
+    
+    def test_validar_diagnosticos_no_existe(self, app_context):
+        """Test: Error cuando diagnóstico no existe."""
+        with patch('src.models.salud.diagnostico.Diagnostico.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = None
+            
+            result = DeportistaService._validar_diagnosticos([99999], 1)
+            assert result is not None
+            assert result['success'] is False
+            assert result['status_code'] == 400
+    
+    def test_validar_diagnosticos_tipo_enfermedad_no_coincide(self, app_context):
+        """Test: Error cuando diagnóstico no coincide con tipo de enfermedad."""
+        mock_diag = MagicMock()
+        mock_diag.id_tipo_enfermedad = 2  # Diferente al tipo esperado
+        
+        with patch('src.models.salud.diagnostico.Diagnostico.query') as mock_query:
+            mock_query.filter_by.return_value.first.return_value = mock_diag
+            
+            result = DeportistaService._validar_diagnosticos([1], 1)
+            assert result is not None
+            assert result['success'] is False
+            assert result['status_code'] == 400
+    
+    def test_validar_diagnosticos_sin_tipo_enfermedad(self, app_context):
+        """Test: Validar diagnósticos sin tipo de enfermedad."""
+        result = DeportistaService._validar_diagnosticos([1, 2], None)
+        assert result is None
+    
+    def test_obtener_o_crear_info_deportiva_existente(self, app_context):
+        """Test: Obtener información deportiva existente."""
+        mock_info = MagicMock()
+        mock_info.id_informacion_deportiva = 1
+        
+        mock_deportista = MagicMock()
+        mock_deportista.id_persona = 1
+        mock_deportista.id_informacion_deportiva = 1
+        
+        with patch('src.services.deportista_service.InformacionDeportiva.query') as mock_query:
+            
+            mock_query.filter_by.return_value.first.return_value = mock_info
+            
+            result = DeportistaService._obtener_o_crear_info_deportiva(mock_deportista, {})
+            
+            assert result == mock_info
+    
+    def test_obtener_o_crear_info_deportiva_nueva(self, app_context):
+        """Test: Crear nueva información deportiva."""
+        mock_info = MagicMock()
+        mock_info.id_informacion_deportiva = 1
+        
+        mock_deportista = MagicMock()
+        mock_deportista.id_persona = 1
+        mock_deportista.id_informacion_deportiva = None
+        
+        datos = {
+            'practica_otro_deporte': False,
+            'participa_escuela': True,
+            'recomendacion_medica': False,
+            'id_escuela': 1,
+            'id_deporte': 1
+        }
+        
+        with patch('src.services.deportista_service.InformacionDeportiva') as mock_info_class, \
+             patch('src.services.deportista_service.db') as mock_db, \
+             patch('src.services.deportista_service.sanitize_free_text', return_value='test'):
+            
+            mock_info_class.return_value = mock_info
+            mock_db.session.add = MagicMock()
+            mock_db.session.flush = MagicMock()
+            
+            result = DeportistaService._obtener_o_crear_info_deportiva(mock_deportista, datos)
+            
+            assert result == mock_info
+            mock_db.session.add.assert_called_once()
+    
+    def test_actualizar_info_deportiva_success(self, app_context):
+        """Test: Actualizar información deportiva exitosamente."""
+        mock_info = MagicMock()
+        
+        datos = {
+            'practica_otro_deporte': True,
+            'participa_escuela': False,
+            'id_escuela': 2,
+            'id_deporte': 2
+        }
+        
+        with patch('src.services.deportista_service.sanitize_free_text', return_value='test'):
+            result = DeportistaService._actualizar_info_deportiva(mock_info, datos)
+            
+            assert result is None
+            assert mock_info.practica_otro_deporte is True
+            assert mock_info.participa_escuela is False
+    
+    def test_actualizar_info_deportiva_con_recomendacion(self, app_context):
+        """Test: Actualizar información deportiva con recomendación médica."""
+        mock_info = MagicMock()
+        mock_info.recomendacion_medica = False
+        
+        datos = {
+            'recomendacion_medica': True,
+            'descripcion_recomendacion': 'Test recomendación'
+        }
+        
+        with patch('src.services.deportista_service.sanitize_free_text', return_value='Test recomendación'):
+            result = DeportistaService._actualizar_info_deportiva(mock_info, datos)
+            
+            assert result is None
+            assert mock_info.recomendacion_medica is True
+    
+    def test_actualizar_info_deportiva_sin_recomendacion(self, app_context):
+        """Test: Actualizar información deportiva sin recomendación médica."""
+        mock_info = MagicMock()
+        mock_info.recomendacion_medica = True
+        mock_info.descripcion_recomendacion = 'Test'
+        
+        datos = {
+            'recomendacion_medica': False
+        }
+        
+        result = DeportistaService._actualizar_info_deportiva(mock_info, datos)
+        
+        assert result is None
+        assert mock_info.recomendacion_medica is False
+        assert mock_info.descripcion_recomendacion is None
+    
+    def test_procesar_actualizacion_deportista_success(self, app_context):
+        """Test: Procesar actualización de deportista exitosamente."""
+        mock_deportista = MagicMock()
+        datos = {'peso': 70.0}
+        usuario = {'roles': [{'nombre_rol': 'Administrador'}]}
+        
+        with patch('src.services.deportista_service.DeportistaService._validar_permisos_campos_restrictos', return_value=None), \
+             patch('src.services.deportista_service.DeportistaService._validar_ids_deportista', return_value=None), \
+             patch('src.services.deportista_service.DeportistaService._actualizar_campos_deportista', return_value=None):
+            
+            result = DeportistaService._procesar_actualizacion_deportista(mock_deportista, datos, usuario)
+            assert result is None
+    
+    def test_procesar_actualizacion_deportista_sin_datos(self, app_context):
+        """Test: Procesar actualización sin datos de deportista."""
+        mock_deportista = MagicMock()
+        
+        result = DeportistaService._procesar_actualizacion_deportista(mock_deportista, None, None)
+        assert result is None
+    
+    def test_procesar_actualizacion_info_deportiva_success(self, app_context):
+        """Test: Procesar actualización de información deportiva exitosamente."""
+        mock_info = MagicMock()
+        mock_info.id_informacion_deportiva = 1
+        
+        mock_deportista = MagicMock()
+        mock_deportista.id_informacion_deportiva = 1
+        mock_deportista.informacion_deportiva = mock_info
+        
+        datos = {'id_escuela': 1}
+        
+        with patch('src.services.deportista_service.DeportistaService._obtener_o_crear_info_deportiva', return_value=mock_info), \
+             patch('src.services.deportista_service.DeportistaService._validar_ids_info_deportiva', return_value=None), \
+             patch('src.services.deportista_service.DeportistaService._actualizar_info_deportiva'):
+            
+            result = DeportistaService._procesar_actualizacion_info_deportiva(mock_deportista, datos)
+            assert result is None
+    
+    def test_procesar_actualizacion_info_deportiva_sin_datos(self, app_context):
+        """Test: Procesar actualización sin datos de información deportiva."""
+        mock_deportista = MagicMock()
+        
+        result = DeportistaService._procesar_actualizacion_info_deportiva(mock_deportista, None)
+        assert result is None

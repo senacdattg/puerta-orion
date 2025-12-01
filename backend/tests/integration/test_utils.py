@@ -88,6 +88,10 @@ def create_mock_persona(
             self.nombre_completo = nombre_completo
             self.documento = documento
             self.correo_electronico = correo_electronico
+            # Atributos adicionales requeridos por _serializar_persona
+            self.primer_nombre = nombre_completo.split()[0] if nombre_completo else 'Juan'
+            self.primer_apellido = nombre_completo.split()[-1] if len(nombre_completo.split()) > 1 else 'Pérez'
+            self.telefono = '3001234567'
     
     return MockPersona()
 
@@ -184,7 +188,7 @@ def create_mock_abono(
     id_mensualidad: int = 1,
     monto: float = 30000.0,
     fecha_abono: date = None,
-    id_metodo_pago: int = None,
+    id_metodo_pago: int = 1,
     to_dict_data: Dict[str, Any] = None
 ) -> MagicMock:
     """
@@ -202,14 +206,15 @@ def create_mock_abono(
         MagicMock configurado como AbonoMensualidad
     """
     if fecha_abono is None:
-        fecha_abono = date(2024, 12, 15)
+        fecha_abono = date.today()
     
     if to_dict_data is None:
         to_dict_data = {
             'id_abono': id_abono,
+            'id_mensualidad': id_mensualidad,
             'monto': monto,
             'fecha_abono': fecha_abono.isoformat(),
-            'id_mensualidad': id_mensualidad
+            'id_metodo_pago': id_metodo_pago
         }
     
     mock_abono = MagicMock()
@@ -223,20 +228,49 @@ def create_mock_abono(
     return mock_abono
 
 
-def setup_forgot_password_mocks(
-    mock_persona: Any = None,
-    mock_usuario: MagicMock = None,
-    mock_token_exists: bool = False,
-    mock_enviar_correo_side_effect: Any = None
+def create_mock_serialized_mensualidad(
+    id_mensualidad: int = 1,
+    saldo_pendiente: float = 50000.0,
+    monto_pago: float = 50000.0,
+    estado: bool = False,
+    estado_texto: str = 'Pendiente'
 ) -> Dict[str, Any]:
     """
-    Configura los mocks comunes para tests de forgot_password.
+    Crea un diccionario serializado de mensualidad para mocks.
     
     Args:
-        mock_persona: Mock de Persona (opcional)
-        mock_usuario: Mock de Usuario (opcional)
+        id_mensualidad: ID de la mensualidad
+        saldo_pendiente: Saldo pendiente
+        monto_pago: Monto del pago
+        estado: Estado de la mensualidad
+        estado_texto: Texto del estado
+    
+    Returns:
+        Diccionario con datos serializados de mensualidad
+    """
+    return {
+        'id_mensualidad': id_mensualidad,
+        'saldo_pendiente': saldo_pendiente,
+        'monto_pago': monto_pago,
+        'estado': estado,
+        'estado_texto': estado_texto
+    }
+
+
+def setup_forgot_password_mocks(
+    mock_persona: Any = None,
+    mock_usuario: Any = None,
+    mock_token_exists: bool = False,
+    mock_enviar_correo_side_effect: Exception = None
+) -> Dict[str, Any]:
+    """
+    Configura todos los mocks necesarios para tests de forgot_password.
+    
+    Args:
+        mock_persona: Mock de persona
+        mock_usuario: Mock de usuario
         mock_token_exists: Si existe un token previo
-        mock_enviar_correo_side_effect: Side effect para _enviar_correo_reset
+        mock_enviar_correo_side_effect: Excepción para lanzar al enviar correo
     
     Returns:
         Diccionario con los patches configurados
@@ -245,76 +279,59 @@ def setup_forgot_password_mocks(
     
     if mock_persona is None:
         mock_persona = create_mock_persona()
+    
     if mock_usuario is None:
         mock_usuario = create_mock_usuario(persona=mock_persona)
     
     patches = {}
     
-    # Mock Persona.query
+    # Patch de validación de configuración email
+    patches['validar_config'] = patch('src.routes.auth_reset._validar_configuracion_email', return_value=None)
+    
+    # Patch de queries
     mock_persona_query = MagicMock()
     mock_persona_query.filter_by.return_value.first.return_value = mock_persona
     patches['persona_query'] = patch('src.routes.auth_reset.Persona.query', mock_persona_query)
     
-    # Mock Usuario.query
     mock_usuario_query = MagicMock()
     mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
     patches['usuario_query'] = patch('src.routes.auth_reset.Usuario.query', mock_usuario_query)
     
-    # Mock PasswordResetToken
+    # Patch de token - necesita soportar .all() y .first()
+    mock_token_filter = MagicMock()
+    if mock_token_exists:
+        mock_token_filter.first.return_value = MagicMock()
+        mock_token_filter.all.return_value = [MagicMock()]
+    else:
+        mock_token_filter.first.return_value = None
+        mock_token_filter.all.return_value = []
+    
+    mock_token_query = MagicMock()
+    mock_token_query.filter_by.return_value = mock_token_filter
+    patches['token_query'] = patch('src.routes.auth_reset.PasswordResetToken.query', mock_token_query)
+    
+    # Patch de creación de token
     mock_token_class = MagicMock()
-    mock_token_class.query.filter_by.return_value.first.return_value = (
-        MagicMock() if mock_token_exists else None
-    )
+    mock_token_instance = MagicMock()
+    mock_token_instance.id_token = 1
+    mock_token_instance.token = 'test-token-123'
+    mock_token_class.return_value = mock_token_instance
+    mock_token_class.query = mock_token_query
     patches['token_class'] = patch('src.routes.auth_reset.PasswordResetToken', mock_token_class)
     
-    # Mock db
     mock_db = MagicMock()
     mock_db.session.add = MagicMock()
     mock_db.session.commit = MagicMock()
     patches['db'] = patch('src.routes.auth_reset.db', mock_db)
     
-    # Mock _enviar_correo_reset
-    mock_enviar = MagicMock()
-    if mock_enviar_correo_side_effect is not None:
-        mock_enviar.side_effect = mock_enviar_correo_side_effect
-    patches['enviar_correo'] = patch('src.routes.auth_reset._enviar_correo_reset', mock_enviar)
+    # Patch de envío de correo
+    if mock_enviar_correo_side_effect:
+        patches['enviar_correo'] = patch(
+            'src.routes.auth_reset._enviar_correo_reset',
+            side_effect=mock_enviar_correo_side_effect
+        )
+    else:
+        patches['enviar_correo'] = patch('src.routes.auth_reset._enviar_correo_reset', return_value=None)
     
     return patches
 
-
-def create_mock_serialized_mensualidad(
-    id_mensualidad: int = 1,
-    saldo_pendiente: float = 20000.0,
-    monto_pago: float = 50000.0,
-    estado: bool = False,
-    estado_texto: str = None,
-    persona_nombre: str = None,
-    numero_documento: str = None
-) -> Dict[str, Any]:
-    """
-    Crea un diccionario con datos serializados de mensualidad para mocks.
-    
-    Args:
-        id_mensualidad: ID de la mensualidad
-        saldo_pendiente: Saldo pendiente
-        monto_pago: Monto del pago
-        estado: Estado booleano
-        estado_texto: Texto del estado
-        persona_nombre: Nombre de la persona
-        numero_documento: Número de documento
-    
-    Returns:
-        Diccionario con datos serializados
-    """
-    if estado_texto is None:
-        estado_texto = 'Pagado' if estado else 'Pendiente'
-    
-    return {
-        'id_mensualidad': id_mensualidad,
-        'saldo_pendiente': saldo_pendiente,
-        'monto_pago': monto_pago,
-        'estado': estado,
-        'estado_texto': estado_texto,
-        'persona_nombre': persona_nombre,
-        'numero_documento': numero_documento
-    }
