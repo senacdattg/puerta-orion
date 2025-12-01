@@ -41,8 +41,15 @@ const localForm = ref({
   estado: props.modelValue?.estado ?? true
 })
 
-// Solo actualizar localForm si el valor realmente cambió desde el padre
+// Flag to prevent update cycle when emitting changes from child
+const isUpdatingFromChild = ref(false)
+
+// Only update localForm if the value really changed from parent (not from our own emission)
 watch(() => props.modelValue, (newVal) => {
+  if (isUpdatingFromChild.value) {
+    return
+  }
+
   const nuevoNombre = normalizarNombre(newVal?.nombre || '')
   const nuevoEstado = newVal?.estado ?? true
 
@@ -54,21 +61,28 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { deep: true })
 
-// Normalizar y emitir cambios
+// Normalize and emit changes
 watch([() => localForm.value.nombre, () => localForm.value.estado],
   ([nombre, estado]) => {
     const nombreNormalizado = normalizarNombre(nombre)
+    
+    // If normalization changed the value, update localForm and continue to emit
     if (nombreNormalizado !== nombre) {
       localForm.value.nombre = nombreNormalizado
-      return
     }
 
     const valorActual = props.modelValue
     const nombreActual = normalizarNombre(valorActual?.nombre || '')
     const estadoActual = valorActual?.estado ?? true
 
+    // Emit if there's a real change
     if (nombreNormalizado !== nombreActual || estado !== estadoActual) {
+      isUpdatingFromChild.value = true
       emit('update:modelValue', { nombre: nombreNormalizado, estado })
+      // Reset flag after emit completes
+      setTimeout(() => {
+        isUpdatingFromChild.value = false
+      }, 0)
     }
   }
 )

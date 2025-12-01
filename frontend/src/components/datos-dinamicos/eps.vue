@@ -62,8 +62,15 @@ const localForm = ref({
   estado: props.modelValue?.estado ?? true
 })
 
-// Solo actualizar localForm si el valor realmente cambió desde el padre
+// Flag to prevent update cycle when emitting changes from child
+const isUpdatingFromChild = ref(false)
+
+// Only update localForm if the value really changed from parent (not from our own emission)
 watch(() => props.modelValue, (newVal) => {
+  if (isUpdatingFromChild.value) {
+    return
+  }
+
   const nuevoNombre = normalizarNombre(newVal?.nombre || '')
   const nuevoCodigo = normalizarCodigo(newVal?.codigo || newVal?.codigo_eps || '')
   const nuevoEstado = newVal?.estado ?? true
@@ -79,35 +86,41 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { deep: true })
 
-// Normalizar y emitir cuando cambian los campos
+// Normalize and emit when fields change
 watch([() => localForm.value.nombre, () => localForm.value.codigo, () => localForm.value.estado],
   ([nombre, codigo, estado]) => {
     const nombreNormalizado = normalizarNombre(nombre)
     const codigoNormalizado = normalizarCodigo(codigo)
 
+    // If normalization changed the value, update localForm and continue to emit
     if (nombreNormalizado !== nombre) {
       localForm.value.nombre = nombreNormalizado
-      return
     }
 
     if (codigoNormalizado !== codigo) {
       localForm.value.codigo = codigoNormalizado
-      return
     }
 
+    // Compare with current props value
     const valorActual = props.modelValue
     const nombreActual = normalizarNombre(valorActual?.nombre || '')
     const codigoActual = normalizarCodigo(valorActual?.codigo || valorActual?.codigo_eps || '')
     const estadoActual = valorActual?.estado ?? true
 
+    // Emit if there's a real change
     if (nombreNormalizado !== nombreActual ||
         codigoNormalizado !== codigoActual ||
         estado !== estadoActual) {
+      isUpdatingFromChild.value = true
       emit('update:modelValue', {
         nombre: nombreNormalizado,
         codigo: codigoNormalizado,
         estado
       })
+      // Reset flag after emit completes
+      setTimeout(() => {
+        isUpdatingFromChild.value = false
+      }, 0)
     }
   }
 )

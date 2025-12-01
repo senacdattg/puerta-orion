@@ -379,7 +379,8 @@ import Swal from 'sweetalert2';
 import defaultAvatar from '@/assets/imgs/perfil.png';
 import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import { extraerMensajeError } from '@/utils/error-handling';
-import { normalizarDocumento, normalizarMonto, parseMonto, esFechaValida, normalizarIdMetodoPago, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { normalizarDocumento, normalizarMonto, parseMonto, normalizarIdMetodoPago, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { esFechaValida } from '@/utils/date-utils';
 import { formatoCOP } from '@/utils/formatting';
 
 // Props

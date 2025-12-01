@@ -407,7 +407,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { API_CONFIG } from '@/config/environment'
+import { API_CONFIG, LOG_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import SelectorRoles from '@/components/layout/selector-roles.vue'
@@ -895,7 +895,9 @@ async function asociarAcudiente() {
 
 onMounted(async () => {
   usuario.value = authStore.user
-  console.log('🔍 Usuario actual del store:', usuario.value)
+  if (LOG_CONFIG.enabled) {
+    console.log('🔍 Usuario actual del store:', usuario.value)
+  }
 
   // Cargar catálogos y detalle en paralelo
   await Promise.all([
@@ -903,26 +905,36 @@ onMounted(async () => {
     (async () => {
       try {
         const ok = await authStore.loadUserProfileDetail()
-        console.log('📊 Resultado de loadUserProfileDetail:', ok)
-        console.log('📊 authStore.userDetail:', authStore.userDetail)
+        if (LOG_CONFIG.enabled) {
+          console.log('📊 Resultado de loadUserProfileDetail:', ok)
+          console.log('📊 authStore.userDetail:', authStore.userDetail)
+        }
 
         if (ok && authStore.userDetail) {
           detalle.value = authStore.userDetail
-          console.log('✅ Detalle del usuario cargado:', detalle.value)
+          if (LOG_CONFIG.enabled) {
+            console.log('✅ Detalle del usuario cargado:', detalle.value)
+          }
         } else {
-          console.warn('⚠️ No se pudo cargar el detalle del usuario')
+          if (LOG_CONFIG.enabled) {
+            console.warn('⚠️ No se pudo cargar el detalle del usuario')
+          }
           // Establecer detalle como objeto vacío para evitar errores de renderizado
           detalle.value = {}
         }
       } catch (err) {
-        console.error('❌ Error al cargar detalle:', err)
+        if (LOG_CONFIG.enabled) {
+          console.error('❌ Error al cargar detalle:', err)
+        }
         detalle.value = {}
       }
     })()
   ])
 
-  console.log('📊 Estado final - detalle.value:', detalle.value)
-  console.log('📊 Estado final - usuario.value:', usuario.value)
+  if (LOG_CONFIG.enabled) {
+    console.log('📊 Estado final - detalle.value:', detalle.value)
+    console.log('📊 Estado final - usuario.value:', usuario.value)
+  }
 
   // Cargar acudientes solo si el usuario es deportista Y el rol activo es Deportista
   if (detalle.value?.deportista?.id_deportista && authStore.activeRole === 'Deportista') {
@@ -931,13 +943,24 @@ onMounted(async () => {
 })
 
 watch(() => authStore.userDetail, (nuevo) => {
-  console.log('👀 Watch detectado cambio en userDetail:', nuevo)
+  if (LOG_CONFIG.enabled) {
+    console.log('👀 Watch detectado cambio en userDetail:', nuevo)
+  }
   if (nuevo) {
     detalle.value = nuevo
     // Cargar acudientes solo si el rol activo es Deportista
     if (nuevo.deportista?.id_deportista && authStore.activeRole === 'Deportista') {
       cargarAcudientesDeportista()
     }
+  }
+}, { immediate: true, deep: true })
+
+watch(() => authStore.user, (nuevo) => {
+  if (LOG_CONFIG.enabled) {
+    console.log('👀 Watch detectado cambio en user:', nuevo)
+  }
+  if (nuevo) {
+    usuario.value = nuevo
   }
 }, { immediate: true, deep: true })
 

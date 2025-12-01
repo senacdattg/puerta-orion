@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, nextTick } from 'vue'
+import { ref, watch, computed, nextTick, onUnmounted } from 'vue'
 import { API_CONFIG } from '@/config/environment'
 import TipoDocumento from '../datos-dinamicos/tipo-documento.vue'
 import Sexo from '../datos-dinamicos/sexo.vue'
@@ -142,6 +142,31 @@ const nombreTipo = computed(() => {
   return nombresTipo[props.tema] || 'Dato'
 })
 
+// Función para clonar objetos de forma segura (compatible con objetos reactivos de Vue)
+function clonarObjeto(objeto) {
+  if (!objeto || typeof objeto !== 'object') {
+    return objeto
+  }
+  try {
+    // Use JSON method for simple objects (works with Vue reactive objects)
+    return JSON.parse(JSON.stringify(objeto)) // NOSONAR: S7784 - Safe for simple data structures
+  } catch {
+    // Fallback to manual clone for complex objects
+    const clon = {}
+    for (const key in objeto) {
+      if (Object.prototype.hasOwnProperty.call(objeto, key)) {
+        const valor = objeto[key]
+        if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
+          clon[key] = clonarObjeto(valor)
+        } else {
+          clon[key] = valor
+        }
+      }
+    }
+    return clon
+  }
+}
+
 // Función para normalizar valores igual que al guardar
 function normalizarValorParaComparacion(valor) {
   if (valor === null || valor === undefined) {
@@ -153,13 +178,57 @@ function normalizarValorParaComparacion(valor) {
   return valor
 }
 
+// Flag to track if we're initializing formData
+const isInitializing = ref(false)
+const initializationTimeout = ref(null)
+const hasSavedInitial = ref(false)
+
+// Watch formData to capture normalized values from child component
+// Only save initial data once after child component has normalized
+watch(() => formData.value, (newFormData) => {
+  // Only save as initial if we're in initialization phase and formData is valid
+  if (isInitializing.value && newFormData && Object.keys(newFormData).length > 0 && !hasSavedInitial.value) {
+    // Clear any pending timeout
+    if (initializationTimeout.value) {
+      clearTimeout(initializationTimeout.value)
+    }
+    // Wait for child component to normalize and emit
+    initializationTimeout.value = setTimeout(() => {
+      formDataInicial.value = clonarObjeto(newFormData)
+      isInitializing.value = false
+      hasSavedInitial.value = true
+      initializationTimeout.value = null
+    }, 200)
+  }
+}, { deep: true })
+
+// Cleanup timeout on component unmount to prevent memory leaks
+onUnmounted(() => {
+  if (initializationTimeout.value) {
+    clearTimeout(initializationTimeout.value)
+    initializationTimeout.value = null
+  }
+})
+
 // Inicializar formData cuando cambia el dato
 watch(() => props.dato, async (nuevoDato) => {
+  // Clear any pending initialization
+  if (initializationTimeout.value) {
+    clearTimeout(initializationTimeout.value)
+    initializationTimeout.value = null
+  }
+
+  // Reset flag for saving initial data
+  hasSavedInitial.value = false
+
   if (!nuevoDato || Object.keys(nuevoDato).length === 0) {
     formData.value = {}
     formDataInicial.value = {}
+    isInitializing.value = false
     return
   }
+
+  isInitializing.value = true
 
   const campoNombre = camposNombre[props.tema]
 
@@ -181,14 +250,8 @@ watch(() => props.dato, async (nuevoDato) => {
 
   formData.value = { ...datosIniciales }
 
-  // Esperar a que el componente hijo normalice los valores antes de guardar los iniciales
-  // Usar nextTick para asegurar que el componente hijo haya procesado los valores
+  // Wait for child component to normalize and emit
   await nextTick()
-  // Esperar un momento adicional para que la normalización del componente hijo se complete
-  setTimeout(() => {
-    // Guardar los valores normalizados que vienen del componente hijo
-    formDataInicial.value = structuredClone(formData.value)
-  }, 150)
 }, { immediate: true, deep: true })
 
 function verificarCambios() {
@@ -414,7 +477,7 @@ async function guardar() {
 
     if (result.success) {
       // Actualizar datos iniciales con los nuevos datos guardados
-      formDataInicial.value = structuredClone(formData.value)
+      formDataInicial.value = clonarObjeto(formData.value)
 
       // Éxito: mostrar notificación de confirmación
       await Swal.fire({
