@@ -81,19 +81,31 @@ def create_mock_persona(
     Returns:
         Objeto mock de Persona
     """
-    class MockPersona:
-        """Mock simple de Persona para evitar problemas de serialización."""
-        def __init__(self):
-            self.id_persona = id_persona
-            self.nombre_completo = nombre_completo
-            self.documento = documento
-            self.correo_electronico = correo_electronico
-            # Atributos adicionales requeridos por _serializar_persona
-            self.primer_nombre = nombre_completo.split()[0] if nombre_completo else 'Juan'
-            self.primer_apellido = nombre_completo.split()[-1] if len(nombre_completo.split()) > 1 else 'Pérez'
-            self.telefono = '3001234567'
+    # Crear MagicMock para permitir asignación de to_dict.return_value
+    mock_persona = MagicMock()
+    mock_persona.id_persona = id_persona
+    mock_persona.nombre_completo = nombre_completo
+    mock_persona.documento = documento
+    mock_persona.correo_electronico = correo_electronico
+    # Atributos adicionales requeridos por _serializar_persona
+    mock_persona.primer_nombre = nombre_completo.split()[0] if nombre_completo else 'Juan'
+    mock_persona.primer_apellido = nombre_completo.split()[-1] if len(nombre_completo.split()) > 1 else 'Pérez'
+    mock_persona.telefono = '3001234567'
+    mock_persona.estado = True
     
-    return MockPersona()
+    # Configurar to_dict con valores por defecto
+    default_dict = {
+        'id_persona': id_persona,
+        'nombre_completo': nombre_completo,
+        'primer_nombre': mock_persona.primer_nombre,
+        'primer_apellido': mock_persona.primer_apellido,
+        'documento': documento,
+        'correo_electronico': correo_electronico,
+        'telefono': mock_persona.telefono
+    }
+    mock_persona.to_dict.return_value = default_dict
+    
+    return mock_persona
 
 
 def create_mock_usuario(
