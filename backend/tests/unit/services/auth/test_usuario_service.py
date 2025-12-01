@@ -128,7 +128,7 @@ class TestUsuarioService:
         """Test: User data validation with short password."""
         datos = {
             'usuario': 'testuser',
-            'password': '12345'  # NOSONAR: S2068 - Test password only, intentionally short for validation test
+            'password': '12345'  # nosonar: S2068 - Test password only, intentionally short for validation test
         }
         
         with pytest.raises(UsuarioServiceError, match="La contraseña debe tener al menos 6 caracteres"):
