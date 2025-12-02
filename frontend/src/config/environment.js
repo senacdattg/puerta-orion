@@ -110,7 +110,11 @@ export const APP_ENV_CONFIG = {
 
 const stripTrailingSlash = (value = '') => value.replace(/\/$/, '');
 
-export const getApiUrl = (path = '') => `${stripTrailingSlash(resolveApiUrl())}${path}`;
+export const getApiUrl = (path = '') => {
+  const baseUrl = stripTrailingSlash(resolveApiUrl());
+  const cleanPath = stripTrailingSlash(path);
+  return `${baseUrl}${cleanPath}`;
+};
 
 export const getApiBaseUrl = () => getApiUrl('/api');
 

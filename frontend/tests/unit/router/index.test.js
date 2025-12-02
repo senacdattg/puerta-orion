@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import router from '@/router/index'
+import router, { navigationGuard } from '@/router/index'
 import { useAuthStore } from '@/stores/auth'
 
 // Mock store
@@ -163,12 +163,13 @@ describe('Router Navigation Guards', () => {
     const from = { path: '/' }
 
     // Simular el guard ejecutándose
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith('/login')
   })
 
   it('should redirect authenticated user with multiple roles to role selection', async () => {
+    mockAuthStore.token = 'some-token'
     mockAuthStore.verifyToken.mockResolvedValue(true)
     mockAuthStore.user = {
       roles: [
@@ -183,16 +184,17 @@ describe('Router Navigation Guards', () => {
     }
 
     const next = vi.fn()
-    const to = { path: '/home', matched: [{ meta: { requiresAuth: true } }] }
+    const to = { path: '/calendario', matched: [{ meta: { requiresAuth: true } }] }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
-    // Debería redirigir a selección de rol si tiene múltiples roles
-    expect(mockAuthStore.refreshRoleOptions).toHaveBeenCalled()
+    // Debería redirigir a selección de rol si tiene múltiples roles sin seleccionar
+    expect(next).toHaveBeenCalledWith('/seleccionar-rol')
   })
 
   it('should allow access to route with required role', async () => {
+    mockAuthStore.token = 'some-token'
     mockAuthStore.verifyToken.mockResolvedValue(true)
     mockAuthStore.user = {
       roles: [{ nombre_rol: 'SuperAdmin' }]
@@ -207,12 +209,13 @@ describe('Router Navigation Guards', () => {
     }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith()
   })
 
   it('should deny access to route without required role', async () => {
+    mockAuthStore.token = 'some-token'
     mockAuthStore.verifyToken.mockResolvedValue(true)
     mockAuthStore.user = {
       roles: [{ nombre_rol: 'Deportista' }]
@@ -227,12 +230,13 @@ describe('Router Navigation Guards', () => {
     }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith('/seleccionar-rol')
   })
 
   it('should check permissions for routes requiring permissions', async () => {
+    mockAuthStore.token = 'some-token'
     mockAuthStore.verifyToken.mockResolvedValue(true)
     mockAuthStore.user = {
       roles: [{ nombre_rol: 'Administrador' }]
@@ -248,12 +252,13 @@ describe('Router Navigation Guards', () => {
     }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith()
   })
 
   it('should redirect guest user away from guest-only routes when authenticated', async () => {
+    mockAuthStore.token = 'some-token'
     mockAuthStore.verifyToken.mockResolvedValue(true)
     mockAuthStore.user = {
       roles: [{ nombre_rol: 'Deportista' }]
@@ -268,7 +273,7 @@ describe('Router Navigation Guards', () => {
     }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     // Debería redirigir a la ruta por defecto del rol
     expect(next).toHaveBeenCalled()
@@ -276,6 +281,7 @@ describe('Router Navigation Guards', () => {
   })
 
   it('should handle route with no meta requirements', async () => {
+    mockAuthStore.token = 'some-token'
     mockAuthStore.verifyToken.mockResolvedValue(true)
     mockAuthStore.user = {
       roles: [{ nombre_rol: 'Deportista' }]
@@ -289,7 +295,7 @@ describe('Router Navigation Guards', () => {
     }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith()
   })
@@ -306,7 +312,7 @@ describe('Router Navigation Guards', () => {
     }
     const from = { path: '/' }
 
-    await router.beforeEach(to, from, next)
+    await navigationGuard(to, from, next)
 
     expect(mockAuthStore.inicializar).toHaveBeenCalled()
   })

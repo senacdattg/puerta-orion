@@ -482,16 +482,17 @@ async function verificarAutenticacion(authStore) {
 
 // Función auxiliar para extraer metadatos de la ruta
 function extraerMetadatosRuta(to) {
+  const requiresRoleRecord = to.matched.find(r => r.meta?.requiresRole)
   return {
     requiresAuth: to.matched.some(record => record.meta.requiresAuth),
     requiresGuest: to.matched.some(record => record.meta.requiresGuest),
-    requiresRole: to.matched.some(record => record.meta.requiresRole),
+    requiresRole: requiresRoleRecord?.meta?.requiresRole || null,
     requiredPermission: to.matched.find(r => r.meta?.requiresPermission)?.meta?.requiresPermission
   }
 }
 
-// Guard de navegación global
-router.beforeEach(async (to, from, next) => {
+// Navigation guard function - exported for testing
+export async function navigationGuard(to, from, next) {
   const authStore = useAuthStore()
 
   await inicializarAuthStore(authStore)
@@ -508,8 +509,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (meta.requiresAuth && isAuthenticated && meta.requiresRole) {
-    const requiredRoles = to.meta.requiresRole
-    manejarRutaRequiereRol(authStore, selectorRoles, requiredRoles, to, next)
+    manejarRutaRequiereRol(authStore, selectorRoles, meta.requiresRole, to, next)
     return
   }
 
@@ -528,6 +528,9 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next()
-})
+}
+
+// Guard de navegación global
+router.beforeEach(navigationGuard)
 
 export default router
