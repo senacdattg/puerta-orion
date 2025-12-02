@@ -145,8 +145,8 @@ def app() -> Generator[Flask, None, None]:
     # Por lo tanto, TestingConfig DEBE tener la URI correcta desde el principio
     # Verificamos que la configuración esté correcta después de crear la app
     
-    # Crear app con configuración de testing
-    app = create_app('testing')
+    # Crear app con configuración de testing y sin scheduler
+    app = create_app('testing', testing=True)
     app.config['TESTING'] = True
     # NOTA DE SEGURIDAD: Deshabilitar CSRF solo en entorno de testing
     # - Esta configuración es SOLO para el entorno de pruebas automatizadas
@@ -162,8 +162,17 @@ def app() -> Generator[Flask, None, None]:
         _asegurar_configuracion_base_datos(app)
         _inicializar_base_datos(app, db)
         yield app
+        # Limpiar sesiones y cerrar conexiones
         db.session.remove()
+        db.session.close()
         db.drop_all()
+        # Cerrar engines explícitamente para evitar ResourceWarning
+        try:
+            if hasattr(db, 'engine') and db.engine:
+                db.engine.dispose()
+            _limpiar_engines_cache(app, db)
+        except Exception:
+            pass
 
 
 @pytest.fixture(scope='function')
@@ -187,6 +196,9 @@ def db_session(app: Flask):
     from src.models.base import db
     with app.app_context():
         yield db.session
+        # Asegurar que la sesión se cierra correctamente
+        db.session.remove()
+        db.session.close()
 
 
 # ============================================================================

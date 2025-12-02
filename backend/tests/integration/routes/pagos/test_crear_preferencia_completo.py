@@ -5,7 +5,7 @@ Endpoint: POST /api/mercadopago/crear-preferencia
 Funcionalidad: Crear una preferencia de pago en MercadoPago
 """
 
-import pytest
+import pytest    # pyright: ignore[reportMissingImports]
 from decimal import Decimal
 from datetime import date
 from unittest.mock import patch, MagicMock
@@ -55,26 +55,37 @@ class TestCrearPreferenciaCompleto:
         
         # Mock de SDK de MercadoPago - parchear la instancia del servicio en las rutas
         from src.routes import pagos_routes
+        
+        # Crear un mock que devuelva datos serializables
+        mock_preference_response = {
+            'id': 'pref_123456789',
+            'init_point': 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref_123456789',
+            'external_reference': f'MENS_{mensualidad.id_mensualidad}'
+        }
+        
         mock_preference = MagicMock()
         mock_preference.create.return_value = {
             'status': 201,
-            'response': {
-                'id': 'pref_123456789',
-                'init_point': 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref_123456789',
-                'external_reference': f'MENS_{mensualidad.id_mensualidad}'
-            }
+            'response': mock_preference_response
         }
+        
         mock_sdk_instance = MagicMock()
         mock_sdk_instance.preference.return_value = mock_preference
         pagos_routes.mercadopago_service.sdk = mock_sdk_instance
         
+        # Asegurar que todos los valores sean tipos primitivos serializables
+        primer_nombre = str(getattr(persona, 'primer_nombre', 'Juan'))
+        primer_apellido = str(getattr(persona, 'primer_apellido', 'Pérez'))
+        correo = str(getattr(persona, 'correo_electronico', 'juan@example.com'))
+        documento = str(getattr(persona, 'documento', '12345678'))
+        
         datos_preferencia = {
             'tipo_pago': 'mensualidad',
-            'id_mensualidad': mensualidad.id_mensualidad,
-            'nombre_pagador': persona.primer_nombre + ' ' + persona.primer_apellido,
-            'email_pagador': persona.correo_electronico,
+            'id_mensualidad': int(mensualidad.id_mensualidad),
+            'nombre_pagador': f'{primer_nombre} {primer_apellido}',
+            'email_pagador': correo,
             'tipo_documento': 'CC',
-            'numero_documento': str(persona.documento)
+            'numero_documento': documento
         }
         
         # Act
@@ -127,26 +138,37 @@ class TestCrearPreferenciaCompleto:
         
         # Mock de SDK de MercadoPago - parchear la instancia del servicio en las rutas
         from src.routes import pagos_routes
+        
+        # Crear un mock que devuelva datos serializables
+        mock_preference_response = {
+            'id': 'pref_987654321',
+            'init_point': 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref_987654321',
+            'external_reference': f'CUOTA_{cuota.id_cuota}'
+        }
+        
         mock_preference = MagicMock()
         mock_preference.create.return_value = {
             'status': 201,
-            'response': {
-                'id': 'pref_987654321',
-                'init_point': 'https://www.mercadopago.com/checkout/v1/redirect?pref_id=pref_987654321',
-                'external_reference': f'CUOTA_{cuota.id_cuota}'
-            }
+            'response': mock_preference_response
         }
+        
         mock_sdk_instance = MagicMock()
         mock_sdk_instance.preference.return_value = mock_preference
         pagos_routes.mercadopago_service.sdk = mock_sdk_instance
         
+        # Asegurar que todos los valores sean tipos primitivos serializables
+        primer_nombre = str(getattr(persona, 'primer_nombre', 'Juan'))
+        primer_apellido = str(getattr(persona, 'primer_apellido', 'Pérez'))
+        correo = str(getattr(persona, 'correo_electronico', 'juan@example.com'))
+        documento = str(getattr(persona, 'documento', '12345678'))
+        
         datos_preferencia = {
             'tipo_pago': 'cuota',
-            'id_cuota': cuota.id_cuota,
-            'nombre_pagador': persona.primer_nombre + ' ' + persona.primer_apellido,
-            'email_pagador': persona.correo_electronico,
+            'id_cuota': int(cuota.id_cuota),
+            'nombre_pagador': f'{primer_nombre} {primer_apellido}',
+            'email_pagador': correo,
             'tipo_documento': 'CC',
-            'numero_documento': str(persona.documento),
+            'numero_documento': documento,
             'monto': 100000.00
         }
         

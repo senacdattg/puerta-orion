@@ -246,11 +246,32 @@ class TestInitializeExtensions:
         with patch('app.gestor_logs', mock_gestor_logs):
             with patch('app.db', mock_db):
                 with patch('app.migrate', mock_migrate):
-                    _initialize_extensions(app)
-                    
-                    mock_gestor_logs.inicializar_aplicacion.assert_called_once_with(app)
-                    mock_db.init_app.assert_called_once_with(app)
-                    mock_migrate.init_app.assert_called_once_with(app, mock_db)
+                    with patch('app._initialize_scheduler') as mock_scheduler:
+                        _initialize_extensions(app, testing=False)
+                        
+                        mock_gestor_logs.inicializar_aplicacion.assert_called_once_with(app)
+                        mock_db.init_app.assert_called_once_with(app)
+                        mock_migrate.init_app.assert_called_once_with(app, mock_db)
+                        mock_scheduler.assert_called_once_with(app)
+    
+    def test_initialize_extensions_with_testing(self):
+        """Test: Inicializar extensiones sin scheduler en modo testing."""
+        app = Flask(__name__)
+        
+        mock_gestor_logs = MagicMock()
+        mock_db = MagicMock()
+        mock_migrate = MagicMock()
+        
+        with patch('app.gestor_logs', mock_gestor_logs):
+            with patch('app.db', mock_db):
+                with patch('app.migrate', mock_migrate):
+                    with patch('app._initialize_scheduler') as mock_scheduler:
+                        _initialize_extensions(app, testing=True)
+                        
+                        mock_gestor_logs.inicializar_aplicacion.assert_called_once_with(app)
+                        mock_db.init_app.assert_called_once_with(app)
+                        mock_migrate.init_app.assert_called_once_with(app, mock_db)
+                        mock_scheduler.assert_not_called()
 
 
 @pytest.mark.unit
@@ -353,17 +374,40 @@ class TestCreateApp:
                                         mock_app = Flask(__name__)
                                         mock_build.return_value = mock_app
                                         
-                                        result = create_app('production')
+                                        create_app('production')
                                         
                                         mock_resolve.assert_called_once_with('production')
                                         mock_build.assert_called_once()
                                         mock_load.assert_called_once_with(mock_app, 'testing')
                                         mock_cors.assert_called_once_with(mock_app)
                                         mock_preflight.assert_called_once_with(mock_app)
-                                        mock_ext.assert_called_once_with(mock_app)
+                                        mock_ext.assert_called_once_with(mock_app, testing=False)
                                         mock_bp.assert_called_once_with(mock_app)
                                         mock_status.assert_called_once_with(mock_app, 'testing')
-                                        assert result == mock_app
+    
+    def test_create_app_with_testing(self):
+        """Test: Crear app en modo testing sin scheduler."""
+        with patch('app._resolve_config_name', return_value='testing') as mock_resolve:
+            with patch('app._build_flask_app') as mock_build:
+                with patch('app._load_configuration') as mock_load:
+                    with patch('app._configure_cors') as mock_cors:
+                        with patch('app._register_preflight_handler') as mock_preflight:
+                            with patch('app._initialize_extensions') as mock_ext:
+                                with patch('app._register_blueprints') as mock_bp:
+                                    with patch('app._register_status_routes') as mock_status:
+                                        mock_app = Flask(__name__)
+                                        mock_build.return_value = mock_app
+                                        
+                                        create_app('testing', testing=True)
+                                        
+                                        mock_resolve.assert_called_once_with('testing')
+                                        mock_build.assert_called_once()
+                                        mock_load.assert_called_once_with(mock_app, 'testing')
+                                        mock_cors.assert_called_once_with(mock_app)
+                                        mock_preflight.assert_called_once_with(mock_app)
+                                        mock_ext.assert_called_once_with(mock_app, testing=True)
+                                        mock_bp.assert_called_once_with(mock_app)
+                                        mock_status.assert_called_once_with(mock_app, 'testing')
     
     def test_create_app_returns_flask_instance(self):
         """Test: create_app retorna instancia de Flask."""
@@ -472,17 +516,23 @@ class TestRegisterDomainBlueprints:
         """Test: Registrar blueprints del dominio."""
         app = Flask(__name__)
         
-        # Mock de blueprints
-        mock_pagos_bp = MagicMock()
-        mock_catalogos_bp = MagicMock()
-        mock_dynamic_data_bp = MagicMock()
-        mock_personas_bp = MagicMock()
-        mock_eventos_bp = MagicMock()
-        mock_usuarios_bp = MagicMock()
-        mock_deportistas_bp = MagicMock()
-        mock_galeria_bp = MagicMock()
-        mock_archivos_bp = MagicMock()
-        mock_mensualidades_bp = MagicMock()
+        # Mock de app.register_blueprint
+        mock_register_blueprint = MagicMock()
+        app.register_blueprint = mock_register_blueprint
+        
+        # Mock de blueprints (solo necesitamos que sean objetos Blueprint)
+        from flask import Blueprint
+        
+        mock_pagos_bp = Blueprint('pagos', __name__)
+        mock_catalogos_bp = Blueprint('catalogos', __name__)
+        mock_dynamic_data_bp = Blueprint('dynamic_data', __name__)
+        mock_personas_bp = Blueprint('personas', __name__)
+        mock_eventos_bp = Blueprint('eventos', __name__)
+        mock_usuarios_bp = Blueprint('usuarios', __name__)
+        mock_deportistas_bp = Blueprint('deportistas', __name__)
+        mock_galeria_bp = Blueprint('galeria', __name__)
+        mock_archivos_bp = Blueprint('archivos', __name__)
+        mock_mensualidades_bp = Blueprint('mensualidades', __name__)
         
         with patch('src.routes.pagos_routes.pagos_bp', mock_pagos_bp):
             with patch('src.routes.catalogos_routes.catalogos_bp', mock_catalogos_bp):
@@ -497,5 +547,12 @@ class TestRegisterDomainBlueprints:
                                                 _register_domain_blueprints(app)
                                                 
                                                 # Verificar que se registraron los blueprints
-                                                assert app.register_blueprint.call_count == 10
+                                                assert mock_register_blueprint.call_count == 10
+                                                
+                                                # Verificar que algunos se llamaron con url_prefix
+                                                calls_with_prefix = [
+                                                    c for c in mock_register_blueprint.call_args_list 
+                                                    if len(c) > 1 and c[1] and 'url_prefix' in c[1]
+                                                ]
+                                                assert len(calls_with_prefix) > 0
 

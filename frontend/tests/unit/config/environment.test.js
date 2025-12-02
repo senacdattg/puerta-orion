@@ -253,7 +253,7 @@ describe('Environment Configuration', () => {
     })
 
     it('should update when runtime config changes', () => {
-      
+
 
       globalThis.RUNTIME_CONFIG = {
         VITE_API_URL: 'https://new-api.example.com'

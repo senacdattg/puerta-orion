@@ -34,9 +34,47 @@ class TestRegistroDeportistaServiceIntegration:
         from src.models.categorias.grupo_sanguineo import GrupoSanguineo
         from src.models.categorias.ciudad_residencia import CiudadResidencia
         from src.models.catalogos.eps import EPS
+        from src.models.personas.persona import Persona
         
         from src.models.categorias.deporte import Deporte
         from src.models.categorias.institucion_registro import InstitucionRegistro
+        
+        # Asegurar que la persona existe en la BD
+        id_persona_val = getattr(persona, 'id_persona', None)
+        if id_persona_val:
+            persona_existente = Persona.query.filter_by(id_persona=id_persona_val).first()
+            if persona_existente:
+                id_persona = persona_existente.id_persona
+            else:
+                # Si no existe, crear una nueva
+                persona_nueva = Persona(
+                    primer_nombre=str(getattr(persona, 'primer_nombre', 'Juan')),
+                    primer_apellido=str(getattr(persona, 'primer_apellido', 'Pérez')),
+                    documento=str(getattr(persona, 'documento', '12345678')),
+                    correo_electronico=str(getattr(persona, 'correo_electronico', 'juan@example.com')),
+                    direccion=str(getattr(persona, 'direccion', 'Calle 123')),
+                    telefono=str(getattr(persona, 'telefono', '3001234567')),
+                    id_tipo_documento=int(getattr(persona, 'id_tipo_documento', 1)),
+                    id_sexo=int(getattr(persona, 'id_sexo', 1))
+                )
+                db_session.add(persona_nueva)
+                db_session.commit()
+                id_persona = persona_nueva.id_persona
+        else:
+            # Si persona es un MagicMock sin id_persona, crear una nueva
+            persona_nueva = Persona(
+                primer_nombre='Juan',
+                primer_apellido='Pérez',
+                documento='12345678',
+                correo_electronico='juan@example.com',
+                direccion='Calle 123',
+                telefono='3001234567',
+                id_tipo_documento=1,
+                id_sexo=1
+            )
+            db_session.add(persona_nueva)
+            db_session.commit()
+            id_persona = persona_nueva.id_persona
         
         grupo_sangre = GrupoSanguineo(tipo_sangre='O+')
         ciudad = CiudadResidencia(nombre_ciudad='San José del Guaviare')
@@ -49,7 +87,7 @@ class TestRegistroDeportistaServiceIntegration:
         
         datos_registro = {
             'datos_deportista': {
-                'id_persona': persona.id_persona,
+                'id_persona': id_persona,
                 'fecha_nacimiento': 2010,
                 'id_tipo_sanguineo': grupo_sangre.id_tipo_sangre,
                 'id_ciudad_recidencia': ciudad.id_ciudad,
@@ -73,7 +111,7 @@ class TestRegistroDeportistaServiceIntegration:
         # Verificar que se creó el deportista
         from src.models.deportistas.deportista import Deportista
         deportista = Deportista.query.filter_by(
-            id_persona=persona.id_persona
+            id_persona=id_persona
         ).first()
         assert deportista is not None
         assert deportista.id_categoria == categoria.id_categoria  # Categoría asignada automáticamente
@@ -91,6 +129,44 @@ class TestRegistroDeportistaServiceIntegration:
         from src.services.registro_deportista_service import RegistroDeportistaService
         from src.models.categorias.categoria import Categoria
         from src.models.categorias.grupo_sanguineo import GrupoSanguineo
+        from src.models.personas.persona import Persona
+        
+        # Asegurar que la persona existe en la BD
+        id_persona_val = getattr(persona, 'id_persona', None)
+        if id_persona_val:
+            persona_existente = Persona.query.filter_by(id_persona=id_persona_val).first()
+            if persona_existente:
+                id_persona = persona_existente.id_persona
+            else:
+                # Si no existe, crear una nueva
+                persona_nueva = Persona(
+                    primer_nombre=str(getattr(persona, 'primer_nombre', 'Juan')),
+                    primer_apellido=str(getattr(persona, 'primer_apellido', 'Pérez')),
+                    documento=str(getattr(persona, 'documento', '12345678')),
+                    correo_electronico=str(getattr(persona, 'correo_electronico', 'juan@example.com')),
+                    direccion=str(getattr(persona, 'direccion', 'Calle 123')),
+                    telefono=str(getattr(persona, 'telefono', '3001234567')),
+                    id_tipo_documento=int(getattr(persona, 'id_tipo_documento', 1)),
+                    id_sexo=int(getattr(persona, 'id_sexo', 1))
+                )
+                db_session.add(persona_nueva)
+                db_session.commit()
+                id_persona = persona_nueva.id_persona
+        else:
+            # Si persona es un MagicMock sin id_persona, crear una nueva
+            persona_nueva = Persona(
+                primer_nombre='Juan',
+                primer_apellido='Pérez',
+                documento='12345678',
+                correo_electronico='juan@example.com',
+                direccion='Calle 123',
+                telefono='3001234567',
+                id_tipo_documento=1,
+                id_sexo=1
+            )
+            db_session.add(persona_nueva)
+            db_session.commit()
+            id_persona = persona_nueva.id_persona
         
         # Crear categoría para edad específica
         categoria_joven = Categoria(
@@ -117,7 +193,7 @@ class TestRegistroDeportistaServiceIntegration:
         
         datos_registro = {
             'datos_deportista': {
-                'id_persona': persona.id_persona,
+                'id_persona': id_persona,
                 'fecha_nacimiento': 2010,  # 14 años (dentro del rango Sub-15)
                 'id_tipo_sanguineo': grupo_sangre.id_tipo_sangre,
                 'id_ciudad_recidencia': ciudad.id_ciudad,
@@ -141,7 +217,7 @@ class TestRegistroDeportistaServiceIntegration:
         # Verificar que se asignó la categoría correcta
         from src.models.deportistas.deportista import Deportista
         deportista = Deportista.query.filter_by(
-            id_persona=persona.id_persona
+            id_persona=id_persona
         ).first()
         assert deportista is not None
         # La categoría debe ser asignada según la edad
@@ -189,9 +265,47 @@ class TestRegistroDeportistaServiceIntegration:
         db_session.add_all([grupo_sangre, ciudad, eps, deporte, institucion])
         db_session.commit()
         
+        # Asegurar que la persona existe en la BD
+        from src.models.personas.persona import Persona
+        id_persona_val = getattr(persona, 'id_persona', None)
+        if id_persona_val:
+            persona_existente = Persona.query.filter_by(id_persona=id_persona_val).first()
+            if persona_existente:
+                id_persona = persona_existente.id_persona
+            else:
+                # Si no existe, crear una nueva
+                persona_nueva = Persona(
+                    primer_nombre=str(getattr(persona, 'primer_nombre', 'Juan')),
+                    primer_apellido=str(getattr(persona, 'primer_apellido', 'Pérez')),
+                    documento=str(getattr(persona, 'documento', '12345678')),
+                    correo_electronico=str(getattr(persona, 'correo_electronico', 'juan@example.com')),
+                    direccion=str(getattr(persona, 'direccion', 'Calle 123')),
+                    telefono=str(getattr(persona, 'telefono', '3001234567')),
+                    id_tipo_documento=int(getattr(persona, 'id_tipo_documento', 1)),
+                    id_sexo=int(getattr(persona, 'id_sexo', 1))
+                )
+                db_session.add(persona_nueva)
+                db_session.commit()
+                id_persona = persona_nueva.id_persona
+        else:
+            # Si persona es un MagicMock sin id_persona, crear una nueva
+            persona_nueva = Persona(
+                primer_nombre='Juan',
+                primer_apellido='Pérez',
+                documento='12345678',
+                correo_electronico='juan@example.com',
+                direccion='Calle 123',
+                telefono='3001234567',
+                id_tipo_documento=1,
+                id_sexo=1
+            )
+            db_session.add(persona_nueva)
+            db_session.commit()
+            id_persona = persona_nueva.id_persona
+        
         datos_registro = {
             'datos_deportista': {
-                'id_persona': persona.id_persona,
+                'id_persona': id_persona,
                 'fecha_nacimiento': 2010,
                 'id_tipo_sanguineo': grupo_sangre.id_tipo_sangre,
                 'id_ciudad_recidencia': ciudad.id_ciudad,
@@ -219,7 +333,7 @@ class TestRegistroDeportistaServiceIntegration:
         from src.models.salud.diagnostico_deportista import DiagnosticoDeportista
         
         deportista = Deportista.query.filter_by(
-            id_persona=persona.id_persona
+            id_persona=id_persona
         ).first()
         assert deportista is not None
         
@@ -268,6 +382,14 @@ class TestRegistroDeportistaServiceIntegration:
         """
         # Arrange
         from src.services.registro_deportista_service import RegistroDeportistaService
+        from src.models.deportistas.deportista import Deportista
+        from datetime import date
+        
+        # Asegurar que el deportista tiene fecha_ingreso
+        deportista_existente = Deportista.query.filter_by(id_deportista=deportista.id_deportista).first()
+        if deportista_existente and not deportista_existente.fecha_ingreso:
+            deportista_existente.fecha_ingreso = date.today()
+            db_session.commit()
         
         # Act
         resultado = RegistroDeportistaService.obtener_informacion_completa_deportista(
