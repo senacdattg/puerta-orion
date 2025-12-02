@@ -22,6 +22,10 @@ from app import (
     _register_blueprints,
     _register_status_routes,
     _normalize_origins,
+    _initialize_scheduler,
+    shutdown_handler,
+    _register_auth_blueprints,
+    _register_domain_blueprints,
 )
 
 
@@ -378,4 +382,120 @@ class TestCreateApp:
             # Verificar ruta health
             response = client.get('/health')
             assert response.status_code == 200
+
+
+@pytest.mark.unit
+class TestInitializeScheduler:
+    """Tests para _initialize_scheduler."""
+    
+    def test_initialize_scheduler_success(self):
+        """Test: Inicializar scheduler exitosamente."""
+        app = Flask(__name__)
+        app.logger = MagicMock()
+        
+        mock_init_scheduler = MagicMock()
+        
+        with patch('src.utils.scheduler.init_scheduler', mock_init_scheduler):
+            _initialize_scheduler(app)
+            
+            mock_init_scheduler.assert_called_once_with(app)
+            app.logger.info.assert_called_once()
+            assert 'Scheduler' in app.logger.info.call_args[0][0]
+    
+    def test_initialize_scheduler_import_error(self):
+        """Test: Inicializar scheduler con ImportError."""
+        app = Flask(__name__)
+        app.logger = MagicMock()
+        
+        with patch('src.utils.scheduler.init_scheduler', side_effect=ImportError('Module not found')):
+            _initialize_scheduler(app)
+            
+            app.logger.warning.assert_called_once()
+            assert 'No se pudo inicializar el scheduler' in app.logger.warning.call_args[0][0]
+    
+    def test_initialize_scheduler_generic_exception(self):
+        """Test: Inicializar scheduler con Exception genérica."""
+        app = Flask(__name__)
+        app.logger = MagicMock()
+        
+        with patch('src.utils.scheduler.init_scheduler', side_effect=Exception('Generic error')):
+            _initialize_scheduler(app)
+            
+            app.logger.error.assert_called_once()
+            assert 'Error inicializando scheduler' in app.logger.error.call_args[0][0]
+
+
+@pytest.mark.unit
+class TestShutdownHandler:
+    """Tests para shutdown_handler."""
+    
+    def test_shutdown_handler_success(self):
+        """Test: shutdown_handler exitoso."""
+        mock_shutdown_scheduler = MagicMock()
+        
+        with patch('src.utils.scheduler.shutdown_scheduler', mock_shutdown_scheduler):
+            shutdown_handler()
+            
+            mock_shutdown_scheduler.assert_called_once()
+    
+    def test_shutdown_handler_with_exception(self):
+        """Test: shutdown_handler con Exception (debe manejarse silenciosamente)."""
+        with patch('src.utils.scheduler.shutdown_scheduler', side_effect=Exception('Error')):
+            # No debe lanzar excepción
+            shutdown_handler()
+
+
+@pytest.mark.unit
+class TestRegisterAuthBlueprints:
+    """Tests para _register_auth_blueprints."""
+    
+    def test_register_auth_blueprints(self):
+        """Test: Registrar blueprints de autenticación."""
+        app = Flask(__name__)
+        
+        mock_registrar_auth_routes = MagicMock()
+        mock_registrar_auth_reset_routes = MagicMock()
+        
+        with patch('src.routes.auth_routes.registrar_auth_routes', mock_registrar_auth_routes):
+            with patch('src.routes.auth_reset.registrar_auth_reset_routes', mock_registrar_auth_reset_routes):
+                _register_auth_blueprints(app)
+                
+                mock_registrar_auth_routes.assert_called_once_with(app)
+                mock_registrar_auth_reset_routes.assert_called_once_with(app)
+
+
+@pytest.mark.unit
+class TestRegisterDomainBlueprints:
+    """Tests para _register_domain_blueprints."""
+    
+    def test_register_domain_blueprints(self):
+        """Test: Registrar blueprints del dominio."""
+        app = Flask(__name__)
+        
+        # Mock de blueprints
+        mock_pagos_bp = MagicMock()
+        mock_catalogos_bp = MagicMock()
+        mock_dynamic_data_bp = MagicMock()
+        mock_personas_bp = MagicMock()
+        mock_eventos_bp = MagicMock()
+        mock_usuarios_bp = MagicMock()
+        mock_deportistas_bp = MagicMock()
+        mock_galeria_bp = MagicMock()
+        mock_archivos_bp = MagicMock()
+        mock_mensualidades_bp = MagicMock()
+        
+        with patch('src.routes.pagos_routes.pagos_bp', mock_pagos_bp):
+            with patch('src.routes.catalogos_routes.catalogos_bp', mock_catalogos_bp):
+                with patch('src.routes.dynamic_data_routes.dynamic_data_bp', mock_dynamic_data_bp):
+                    with patch('src.routes.personas_routes.personas_bp', mock_personas_bp):
+                        with patch('src.routes.eventos_routes.eventos_bp', mock_eventos_bp):
+                            with patch('src.routes.usuarios_routes.usuarios_bp', mock_usuarios_bp):
+                                with patch('src.routes.deportistas_routes.deportistas_bp', mock_deportistas_bp):
+                                    with patch('src.routes.galeria_routes.galeria_bp', mock_galeria_bp):
+                                        with patch('src.routes.archivos_routes.archivos_bp', mock_archivos_bp):
+                                            with patch('src.routes.mensualidades_routes.mensualidades_bp', mock_mensualidades_bp):
+                                                _register_domain_blueprints(app)
+                                                
+                                                # Verificar que se registraron los blueprints
+                                                assert app.register_blueprint.call_count == 10
 
