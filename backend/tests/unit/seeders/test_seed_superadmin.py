@@ -36,7 +36,9 @@ class TestSeedSuperadmin:
             assert usuario.estado is True
             
             # Verificar que se creó la persona
-            persona = Persona.query.get(usuario.id_persona)
+            # Usar db.session.get en lugar de query.get para evitar warnings de SQLAlchemy 2.0
+            from src.models.base import db
+            persona = db.session.get(Persona, usuario.id_persona)
             assert persona is not None
             assert persona.primer_nombre == 'Super'
             assert persona.primer_apellido == 'Admin'

@@ -91,9 +91,11 @@ class TestSeedMultipleSuperadmin:
             usuario3 = Usuario.query.filter_by(usuario='admin3').first()
             
             if usuario1 and usuario2 and usuario3:
-                persona1 = Persona.query.get(usuario1.id_persona)
-                persona2 = Persona.query.get(usuario2.id_persona)
-                persona3 = Persona.query.get(usuario3.id_persona)
+                # Usar filter_by en lugar de get() para evitar warnings de SQLAlchemy 2.0
+                from src.models.base import db
+                persona1 = db.session.get(Persona, usuario1.id_persona)
+                persona2 = db.session.get(Persona, usuario2.id_persona)
+                persona3 = db.session.get(Persona, usuario3.id_persona)
                 
                 if persona1 and persona2 and persona3:
                     documentos = {persona1.documento, persona2.documento, persona3.documento}

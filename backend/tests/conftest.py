@@ -141,12 +141,19 @@ def app() -> Generator[Flask, None, None]:
     from app import create_app
     from src.models.base import db
     
+    # Resetear scheduler antes de crear la app para evitar warnings
+    try:
+        from src.utils.scheduler import reset_scheduler
+        reset_scheduler()
+    except Exception:
+        pass
+    
     # CRÍTICO: Flask-SQLAlchemy 3.x crea engines en init_app() y no refleja cambios posteriores
     # Por lo tanto, TestingConfig DEBE tener la URI correcta desde el principio
     # Verificamos que la configuración esté correcta después de crear la app
     
-    # Crear app con configuración de testing y sin scheduler
-    app = create_app('testing', testing=True)
+    # Crear app con configuración de testing
+    app = create_app('testing')
     app.config['TESTING'] = True
     # NOTA DE SEGURIDAD: Deshabilitar CSRF solo en entorno de testing
     # - Esta configuración es SOLO para el entorno de pruebas automatizadas
@@ -171,6 +178,13 @@ def app() -> Generator[Flask, None, None]:
             if hasattr(db, 'engine') and db.engine:
                 db.engine.dispose()
             _limpiar_engines_cache(app, db)
+        except Exception:
+            pass
+        
+        # Resetear scheduler después del test
+        try:
+            from src.utils.scheduler import reset_scheduler
+            reset_scheduler()
         except Exception:
             pass
 

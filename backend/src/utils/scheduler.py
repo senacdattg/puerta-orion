@@ -24,7 +24,12 @@ def init_scheduler(app: Flask) -> None:
     """
     global scheduler
     
+    # No inicializar scheduler en modo testing
+    if app.config.get('TESTING', False):
+        return
+    
     if scheduler is not None:
+        # Scheduler ya está inicializado, no hacer nada
         logger.warning("Scheduler ya está inicializado")
         return
     
@@ -93,9 +98,18 @@ def shutdown_scheduler() -> None:
     global scheduler
     
     if scheduler is not None:
-        scheduler.shutdown()
+        try:
+            scheduler.shutdown()
+        except Exception:
+            pass  # Ignorar errores al cerrar scheduler
         scheduler = None
         logger.info("Scheduler detenido")
+
+
+def reset_scheduler() -> None:
+    """Resetea el scheduler (útil para tests)."""
+    global scheduler
+    scheduler = None
 
 
 def get_scheduler() -> BackgroundScheduler | None:

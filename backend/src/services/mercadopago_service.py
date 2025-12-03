@@ -30,7 +30,16 @@ class MercadoPagoService:
         self.environment = os.getenv('MERCADOPAGO_ENVIRONMENT', 'sandbox')
         
         if not self.access_token or not self.public_key:
-            logger.warning("Credenciales de Mercado Pago no configuradas. Funcionalidad limitada.")
+            # No mostrar warning en modo testing ya que es esperado
+            # Verificar múltiples formas de detectar modo testing
+            is_testing = (
+                os.getenv('FLASK_ENV') == 'testing' or 
+                os.getenv('TESTING') == 'true' or
+                os.getenv('PYTEST_CURRENT_TEST') is not None or
+                'pytest' in os.getenv('_', '').lower()
+            )
+            if not is_testing:
+                logger.warning("Credenciales de Mercado Pago no configuradas. Funcionalidad limitada.")
             self.sdk = None
             return
         

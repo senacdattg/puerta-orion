@@ -167,6 +167,10 @@ def _initialize_extensions(app: Flask) -> None:
 
 def _initialize_scheduler(app: Flask) -> None:
     """Inicializa el scheduler de tareas programadas."""
+    # No inicializar scheduler en modo testing
+    if app.config.get('TESTING', False):
+        return
+    
     try:
         from src.utils.scheduler import init_scheduler
         init_scheduler(app)

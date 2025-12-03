@@ -165,14 +165,53 @@ class TestConfigureCors:
         """Test: Configurar CORS sin orígenes definidos."""
         app = Flask(__name__)
         app.config['CORS_ORIGINS'] = []
+        app.config['CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        with patch('app.CORS') as mock_cors:
+            result = _configure_cors(app)
+            
+            call_args = mock_cors.call_args
+            assert call_args[1]['origins'] == '*'
+            assert call_args[1]['supports_credentials'] is False
+            assert 'EFFECTIVE_CORS_ORIGINS' in app.config
+            assert 'EFFECTIVE_CORS_SUPPORTS_CREDENTIALS' in app.config
+            assert result == ('*',)
+            app.logger.warning.assert_called()
+    
+    def test_configure_cors_with_supports_credentials_and_wildcard_in_list(self):
+        """Test: Configurar CORS con credenciales y wildcard en lista de orígenes."""
+        app = Flask(__name__)
+        app.config['CORS_ORIGINS'] = ['http://localhost:3000', '*']
+        app.config['CORS_SUPPORTS_CREDENTIALS'] = True
         app.logger = MagicMock()
         
         with patch('app.CORS') as mock_cors:
             _configure_cors(app)
             
             call_args = mock_cors.call_args
-            assert call_args[1]['origins'] == '*'
+            # Cuando hay wildcard y credenciales, se elimina el wildcard de la lista
+            # y se deshabilitan las credenciales, pero el origen se normaliza
+            assert call_args[1]['supports_credentials'] is False
+            # El wildcard se elimina de la lista, dejando solo los orígenes válidos
+            origins_arg = call_args[1]['origins']
+            # Puede ser '*' si solo queda wildcard, o lista sin wildcard
+            assert origins_arg == '*' or (isinstance(origins_arg, list) and '*' not in origins_arg)
             app.logger.warning.assert_called()
+    
+    def test_configure_cors_with_default_methods_and_headers(self):
+        """Test: Configurar CORS con métodos y headers por defecto."""
+        app = Flask(__name__)
+        app.config['CORS_ORIGINS'] = ['http://localhost:3000']
+        app.config['CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        with patch('app.CORS') as mock_cors:
+            _configure_cors(app)
+            
+            call_args = mock_cors.call_args
+            assert call_args[1]['methods'] == ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']
+            assert call_args[1]['allow_headers'] == ['Content-Type', 'Authorization']
 
 
 @pytest.mark.unit
@@ -229,6 +268,129 @@ class TestRegisterPreflightHandler:
         
         # Verificar que el before_request está registrado
         assert len(app.before_request_funcs.get(None, [])) > 0
+    
+    def test_preflight_handler_with_options_request(self):
+        """Test: Handler preflight responde correctamente a petición OPTIONS."""
+        app = Flask(__name__)
+        app.config['CORS_METHODS'] = ['GET', 'POST', 'OPTIONS']
+        app.config['CORS_HEADERS'] = ['Content-Type', 'Authorization']
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ['http://localhost:3000']
+        app.config['EFFECTIVE_CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        _register_preflight_handler(app)
+        
+        with app.test_client() as client:
+            response = client.open(
+                '/test',
+                method='OPTIONS',
+                headers={'Origin': 'http://localhost:3000'}
+            )
+            
+            assert response.status_code == 200
+            assert response.headers.get('Access-Control-Allow-Origin') == 'http://localhost:3000'
+            assert 'GET, POST, OPTIONS' in response.headers.get('Access-Control-Allow-Methods', '')
+            assert 'Content-Type, Authorization' in response.headers.get('Access-Control-Allow-Headers', '')
+            assert response.headers.get('Access-Control-Max-Age') == '3600'
+    
+    def test_preflight_handler_with_options_request_with_credentials(self):
+        """Test: Handler preflight con credenciales habilitadas."""
+        app = Flask(__name__)
+        app.config['CORS_METHODS'] = ['GET', 'POST']
+        app.config['CORS_HEADERS'] = ['Content-Type']
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ['http://localhost:3000']
+        app.config['EFFECTIVE_CORS_SUPPORTS_CREDENTIALS'] = True
+        app.logger = MagicMock()
+        
+        _register_preflight_handler(app)
+        
+        with app.test_client() as client:
+            response = client.open(
+                '/test',
+                method='OPTIONS',
+                headers={'Origin': 'http://localhost:3000'}
+            )
+            
+            assert response.status_code == 200
+            assert response.headers.get('Access-Control-Allow-Credentials') == 'true'
+    
+    def test_preflight_handler_with_options_request_no_origin(self):
+        """Test: Handler preflight sin origin en headers."""
+        app = Flask(__name__)
+        app.config['CORS_METHODS'] = ['GET', 'POST']
+        app.config['CORS_HEADERS'] = ['Content-Type']
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ['http://example.com']
+        app.config['EFFECTIVE_CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        _register_preflight_handler(app)
+        
+        with app.test_client() as client:
+            response = client.open(
+                '/test',
+                method='OPTIONS'
+            )
+            
+            assert response.status_code == 200
+            assert response.headers.get('Access-Control-Allow-Origin') == 'http://example.com'
+    
+    def test_preflight_handler_with_options_request_wildcard_origin(self):
+        """Test: Handler preflight con wildcard en orígenes efectivos."""
+        app = Flask(__name__)
+        app.config['CORS_METHODS'] = ['GET']
+        app.config['CORS_HEADERS'] = ['Content-Type']
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ['*']
+        app.config['EFFECTIVE_CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        _register_preflight_handler(app)
+        
+        with app.test_client() as client:
+            response = client.open(
+                '/test',
+                method='OPTIONS'
+            )
+            
+            assert response.status_code == 200
+            assert response.headers.get('Access-Control-Allow-Origin') == '*'
+    
+    def test_preflight_handler_with_non_options_request(self):
+        """Test: Handler preflight no procesa peticiones no OPTIONS."""
+        app = Flask(__name__)
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ['http://localhost:3000']
+        app.logger = MagicMock()
+        
+        _register_preflight_handler(app)
+        
+        @app.route('/test')
+        def test_route():
+            return {'message': 'success'}
+        
+        with app.test_client() as client:
+            response = client.get('/test')
+            
+            assert response.status_code == 200
+            assert response.get_json()['message'] == 'success'
+    
+    def test_preflight_handler_with_options_request_no_allowed_origin(self):
+        """Test: Handler preflight sin origin permitido."""
+        app = Flask(__name__)
+        app.config['CORS_METHODS'] = ['GET']
+        app.config['CORS_HEADERS'] = ['Content-Type']
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ()
+        app.config['EFFECTIVE_CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        _register_preflight_handler(app)
+        
+        with app.test_client() as client:
+            response = client.open(
+                '/test',
+                method='OPTIONS'
+            )
+            
+            assert response.status_code == 200
+            assert 'Access-Control-Allow-Origin' not in response.headers
 
 
 @pytest.mark.unit
@@ -247,31 +409,12 @@ class TestInitializeExtensions:
             with patch('app.db', mock_db):
                 with patch('app.migrate', mock_migrate):
                     with patch('app._initialize_scheduler') as mock_scheduler:
-                        _initialize_extensions(app, testing=False)
+                        _initialize_extensions(app)
                         
                         mock_gestor_logs.inicializar_aplicacion.assert_called_once_with(app)
                         mock_db.init_app.assert_called_once_with(app)
                         mock_migrate.init_app.assert_called_once_with(app, mock_db)
                         mock_scheduler.assert_called_once_with(app)
-    
-    def test_initialize_extensions_with_testing(self):
-        """Test: Inicializar extensiones sin scheduler en modo testing."""
-        app = Flask(__name__)
-        
-        mock_gestor_logs = MagicMock()
-        mock_db = MagicMock()
-        mock_migrate = MagicMock()
-        
-        with patch('app.gestor_logs', mock_gestor_logs):
-            with patch('app.db', mock_db):
-                with patch('app.migrate', mock_migrate):
-                    with patch('app._initialize_scheduler') as mock_scheduler:
-                        _initialize_extensions(app, testing=True)
-                        
-                        mock_gestor_logs.inicializar_aplicacion.assert_called_once_with(app)
-                        mock_db.init_app.assert_called_once_with(app)
-                        mock_migrate.init_app.assert_called_once_with(app, mock_db)
-                        mock_scheduler.assert_not_called()
 
 
 @pytest.mark.unit
@@ -355,6 +498,23 @@ class TestRegisterStatusRoutes:
             data = response.get_json()
             assert 'message' in data
             assert 'no disponible' in data['message']
+    
+    def test_register_status_routes_config_with_no_at_in_uri(self):
+        """Test: Verificar ruta config con URI sin @."""
+        app = Flask(__name__)
+        app.config['DEBUG'] = True
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ('http://localhost:3000',)
+        app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600
+        app.config['LOG_LEVEL'] = 'INFO'
+        
+        _register_status_routes(app, 'testing')
+        
+        with app.test_client() as client:
+            response = client.get('/config')
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data['database_uri'] == 'sqlite:///test.db'
 
 
 @pytest.mark.unit
@@ -381,33 +541,28 @@ class TestCreateApp:
                                         mock_load.assert_called_once_with(mock_app, 'testing')
                                         mock_cors.assert_called_once_with(mock_app)
                                         mock_preflight.assert_called_once_with(mock_app)
-                                        mock_ext.assert_called_once_with(mock_app, testing=False)
+                                        mock_ext.assert_called_once_with(mock_app)
                                         mock_bp.assert_called_once_with(mock_app)
                                         mock_status.assert_called_once_with(mock_app, 'testing')
     
-    def test_create_app_with_testing(self):
-        """Test: Crear app en modo testing sin scheduler."""
-        with patch('app._resolve_config_name', return_value='testing') as mock_resolve:
-            with patch('app._build_flask_app') as mock_build:
-                with patch('app._load_configuration') as mock_load:
-                    with patch('app._configure_cors') as mock_cors:
-                        with patch('app._register_preflight_handler') as mock_preflight:
-                            with patch('app._initialize_extensions') as mock_ext:
-                                with patch('app._register_blueprints') as mock_bp:
-                                    with patch('app._register_status_routes') as mock_status:
-                                        mock_app = Flask(__name__)
-                                        mock_build.return_value = mock_app
-                                        
-                                        create_app('testing', testing=True)
-                                        
-                                        mock_resolve.assert_called_once_with('testing')
-                                        mock_build.assert_called_once()
-                                        mock_load.assert_called_once_with(mock_app, 'testing')
-                                        mock_cors.assert_called_once_with(mock_app)
-                                        mock_preflight.assert_called_once_with(mock_app)
-                                        mock_ext.assert_called_once_with(mock_app, testing=True)
-                                        mock_bp.assert_called_once_with(mock_app)
-                                        mock_status.assert_called_once_with(mock_app, 'testing')
+    def test_create_app_with_none_config_name(self):
+        """Test: Crear app con config_name None usa FLASK_ENV."""
+        with patch.dict(os.environ, {'FLASK_ENV': 'production'}, clear=False):
+            with patch('app._resolve_config_name', return_value='production') as mock_resolve:
+                with patch('app._build_flask_app') as mock_build:
+                    with patch('app._load_configuration'):
+                        with patch('app._configure_cors'):
+                            with patch('app._register_preflight_handler'):
+                                with patch('app._initialize_extensions') as mock_ext:
+                                    with patch('app._register_blueprints'):
+                                        with patch('app._register_status_routes'):
+                                            mock_app = Flask(__name__)
+                                            mock_build.return_value = mock_app
+                                            
+                                            create_app(None)
+                                            
+                                            mock_resolve.assert_called_once_with(None)
+                                            mock_ext.assert_called_once_with(mock_app)
     
     def test_create_app_returns_flask_instance(self):
         """Test: create_app retorna instancia de Flask."""
@@ -555,4 +710,160 @@ class TestRegisterDomainBlueprints:
                                                     if len(c) > 1 and c[1] and 'url_prefix' in c[1]
                                                 ]
                                                 assert len(calls_with_prefix) > 0
+    
+    def test_register_domain_blueprints_with_prefix(self):
+        """Test: Registrar blueprints del dominio con prefijos."""
+        app = Flask(__name__)
+        app.register_blueprint = MagicMock()
+        
+        from flask import Blueprint
+        
+        mock_pagos_bp = Blueprint('pagos', __name__)
+        mock_catalogos_bp = Blueprint('catalogos', __name__)
+        
+        with patch('src.routes.pagos_routes.pagos_bp', mock_pagos_bp):
+            with patch('src.routes.catalogos_routes.catalogos_bp', mock_catalogos_bp):
+                with patch('src.routes.dynamic_data_routes.dynamic_data_bp', mock_catalogos_bp):
+                    with patch('src.routes.personas_routes.personas_bp', mock_catalogos_bp):
+                        with patch('src.routes.eventos_routes.eventos_bp', mock_catalogos_bp):
+                            with patch('src.routes.usuarios_routes.usuarios_bp', mock_catalogos_bp):
+                                with patch('src.routes.deportistas_routes.deportistas_bp', mock_pagos_bp):
+                                    with patch('src.routes.galeria_routes.galeria_bp', mock_catalogos_bp):
+                                        with patch('src.routes.archivos_routes.archivos_bp', mock_catalogos_bp):
+                                            with patch('src.routes.mensualidades_routes.mensualidades_bp', mock_catalogos_bp):
+                                                _register_domain_blueprints(app)
+                                                
+                                                # Verificar que se registraron todos los blueprints
+                                                assert app.register_blueprint.call_count == 10
+                                                
+                                                # Verificar que todos los blueprints se registraron
+                                                assert app.register_blueprint.call_count == 10
+
+
+@pytest.mark.unit
+class TestHealthEndpoint:
+    """Tests para el endpoint /health."""
+    
+    def test_health_endpoint_with_connected_database(self):
+        """Test: Health endpoint con base de datos conectada."""
+        app = create_app('testing')
+        
+        with app.test_client() as client:
+            response = client.get('/health')
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data['status'] == 'healthy'
+            assert 'database' in data
+            assert data['environment'] == 'testing'
+    
+    def test_health_endpoint_with_disconnected_database(self):
+        """Test: Health endpoint sin base de datos."""
+        app = Flask(__name__)
+        app.config['DEBUG'] = False
+        
+        with patch('app.db') as mock_db:
+            mock_db.engine = None
+            _register_status_routes(app, 'testing')
+            
+            with app.test_client() as client:
+                response = client.get('/health')
+                assert response.status_code == 200
+                data = response.get_json()
+                assert data['database'] == 'disconnected'
+
+
+@pytest.mark.unit
+class TestSelectOriginForResponse:
+    """Tests adicionales para _select_origin_for_response."""
+    
+    def test_select_origin_with_empty_tuple_origins(self):
+        """Test: Seleccionar origin con tupla vacía."""
+        app = Flask(__name__)
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ()
+        
+        result = _select_origin_for_response(app, None)
+        assert result is None
+    
+    def test_select_origin_with_first_origin_string(self):
+        """Test: Seleccionar primer origin cuando hay múltiples."""
+        app = Flask(__name__)
+        app.config['EFFECTIVE_CORS_ORIGINS'] = ['http://example.com', 'http://test.com']
+        
+        result = _select_origin_for_response(app, None)
+        assert result == 'http://example.com'
+
+
+@pytest.mark.unit
+class TestConfigureCorsAdditionalCases:
+    """Tests adicionales para _configure_cors."""
+    
+    def test_configure_cors_with_custom_methods_and_headers(self):
+        """Test: Configurar CORS con métodos y headers personalizados."""
+        app = Flask(__name__)
+        app.config['CORS_ORIGINS'] = ['http://localhost:3000']
+        app.config['CORS_SUPPORTS_CREDENTIALS'] = False
+        app.config['CORS_METHODS'] = ['GET', 'POST']
+        app.config['CORS_HEADERS'] = ['Content-Type', 'X-Custom-Header']
+        app.logger = MagicMock()
+        
+        with patch('app.CORS') as mock_cors:
+            _configure_cors(app)
+            
+            call_args = mock_cors.call_args
+            assert call_args[1]['methods'] == ['GET', 'POST']
+            assert call_args[1]['allow_headers'] == ['Content-Type', 'X-Custom-Header']
+    
+    def test_configure_cors_sets_effective_origins(self):
+        """Test: Configurar CORS establece EFFECTIVE_CORS_ORIGINS."""
+        app = Flask(__name__)
+        app.config['CORS_ORIGINS'] = ['http://localhost:3000', 'http://example.com']
+        app.config['CORS_SUPPORTS_CREDENTIALS'] = False
+        app.logger = MagicMock()
+        
+        with patch('app.CORS'):
+            result = _configure_cors(app)
+            
+            assert 'EFFECTIVE_CORS_ORIGINS' in app.config
+            assert 'EFFECTIVE_CORS_SUPPORTS_CREDENTIALS' in app.config
+            assert app.config['EFFECTIVE_CORS_ORIGINS'] == ('http://localhost:3000', 'http://example.com')
+            assert isinstance(result, tuple)
+
+
+@pytest.mark.unit
+class TestNormalizeOriginsAdditionalCases:
+    """Tests adicionales para _normalize_origins."""
+    
+    def test_normalize_origins_with_none_values(self):
+        """Test: Normalizar orígenes con valores None."""
+        origins = ['http://localhost:3000', None, 'http://example.com']
+        result = _normalize_origins(origins)
+        
+        assert result == ['http://localhost:3000', 'http://example.com']
+    
+    def test_normalize_origins_removes_whitespace(self):
+        """Test: Normalizar orígenes elimina espacios."""
+        origins = ['  http://localhost:3000  ', '\thttps://example.com\n']
+        result = _normalize_origins(origins)
+        
+        assert result == ['http://localhost:3000', 'https://example.com']
+
+
+@pytest.mark.unit  
+class TestLoadConfiguration:
+    """Tests adicionales para _load_configuration."""
+    
+    def test_load_configuration_calls_from_object(self):
+        """Test: Cargar configuración llama from_object."""
+        app = Flask(__name__)
+        mock_config = MagicMock()
+        app.logger = MagicMock()
+        
+        with patch('app.config') as mock_config_module:
+            mock_config_module.__getitem__.return_value = mock_config
+            with patch('app.validate_config', return_value=(True, [])):
+                with patch.object(app.config, 'from_object') as mock_from_object:
+                    _load_configuration(app, 'development')
+                    
+                    mock_config_module.__getitem__.assert_called_once_with('development')
+                    mock_from_object.assert_called_once_with(mock_config)
 
