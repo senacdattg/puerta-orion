@@ -8,7 +8,15 @@ Create Date: 2025-10-15 16:16:10.451774
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import mysql
-from ._helpers_transaccion_mp import create_transaccion_mercadopago_table, drop_transaccion_mercadopago_table
+import sys
+import os
+
+# Add migrations/versions to path for helper imports
+migrations_path = os.path.dirname(os.path.abspath(__file__))
+if migrations_path not in sys.path:
+    sys.path.insert(0, migrations_path)
+
+from _helpers_transaccion_mp import create_transaccion_mercadopago_table, drop_transaccion_mercadopago_table
 
 # revision identifiers, used by Alembic.
 revision = '353e00bfc98f'
