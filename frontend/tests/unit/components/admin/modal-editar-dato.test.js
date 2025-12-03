@@ -174,14 +174,12 @@ describe('ModalEditarDato Component', () => {
         }
         return cloned
       } catch {
-        // Si todo falla, retornar copia superficial o valor por defecto
         if (Array.isArray(obj)) {
           return []
         }
         if (typeof obj === 'object') {
           try {
             return JSON.parse(JSON.stringify(obj, (key, value) => {
-              // Omitir funciones, símbolos, y valores no serializables
               if (typeof value === 'function' || typeof value === 'symbol') {
                 return undefined
               }

@@ -579,7 +579,7 @@ class TestCatalogosEndpoints:
                 def failing_build_response(*args, **kwargs):
                     # Fallar solo cuando se llama con debug_info (return final línea 601)
                     if 'debug_info' in kwargs:
-                        raise Exception('Outer error in build_response')
+                        raise RuntimeError('Outer error in build_response')
                     # Para otras llamadas, usar la función original
                     return original_build(*args, **kwargs)
                 
