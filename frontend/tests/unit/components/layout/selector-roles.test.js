@@ -561,6 +561,6 @@ describe('SelectorRoles Component', () => {
       await new Promise(resolve => setTimeout(resolve, 200))
 
       expect(mockAuthStore.setActiveRole).toHaveBeenCalled()
-    })
+  })
 })
 

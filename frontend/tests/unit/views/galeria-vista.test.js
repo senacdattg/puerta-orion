@@ -1,26 +1,31 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import AdminManager from '@/views/admin-manager.vue'
+import GaleriaVista from '@/views/galeria-vista.vue'
 
 // Importar los componentes para asegurar que se ejecuten
 import Encabezado from '@/components/layout/encabezado.vue'
-import PanelAdminComponente from '@/components/admin/panel-admin-componente.vue'
+import Galeria from '@/components/galeria/galeria.vue'
 import Pie from '@/components/layout/pie.vue'
 
-describe('AdminManager', () => {
-  let pinia
+describe('GaleriaVista', () => {
   let wrapper
+  let pinia
 
   beforeEach(() => {
     pinia = createPinia()
     setActivePinia(pinia)
-
     vi.clearAllMocks()
   })
 
+  afterEach(() => {
+    if (wrapper) {
+      wrapper.unmount()
+    }
+  })
+
   const createWrapper = () => {
-    return mount(AdminManager, {
+    return mount(GaleriaVista, {
       global: {
         plugins: [pinia],
         stubs: {
@@ -29,9 +34,9 @@ describe('AdminManager', () => {
             props: ['rol'],
             template: '<div class="encabezado">Encabezado</div>'
           },
-          PanelAdminComponente: {
-            name: 'PanelAdminComponente',
-            template: '<div class="panel-admin">Panel Admin</div>'
+          Galeria: {
+            name: 'Galeria',
+            template: '<div class="galeria">Galeria</div>'
           },
           Pie: {
             name: 'Pie',
@@ -48,6 +53,11 @@ describe('AdminManager', () => {
       expect(wrapper.exists()).toBe(true)
     })
 
+    it('should render main element', () => {
+      wrapper = createWrapper()
+      expect(wrapper.find('main').exists()).toBe(true)
+    })
+
     it('should render Encabezado component', () => {
       wrapper = createWrapper()
       const encabezado = wrapper.findComponent(Encabezado)
@@ -60,10 +70,10 @@ describe('AdminManager', () => {
       expect(encabezado.props('rol')).toBe('Admin')
     })
 
-    it('should render PanelAdminComponente', () => {
+    it('should render Galeria component', () => {
       wrapper = createWrapper()
-      const panelAdmin = wrapper.findComponent(PanelAdminComponente)
-      expect(panelAdmin.exists()).toBe(true)
+      const galeria = wrapper.findComponent(Galeria)
+      expect(galeria.exists()).toBe(true)
     })
 
     it('should render Pie component', () => {
@@ -76,11 +86,11 @@ describe('AdminManager', () => {
       wrapper = createWrapper()
 
       const encabezado = wrapper.findComponent(Encabezado)
-      const panelAdmin = wrapper.findComponent(PanelAdminComponente)
+      const galeria = wrapper.findComponent(Galeria)
       const pie = wrapper.findComponent(Pie)
 
       expect(encabezado.exists()).toBe(true)
-      expect(panelAdmin.exists()).toBe(true)
+      expect(galeria.exists()).toBe(true)
       expect(pie.exists()).toBe(true)
     })
   })
@@ -91,7 +101,7 @@ describe('AdminManager', () => {
 
       // Verify all child components are rendered
       expect(wrapper.findComponent(Encabezado).exists()).toBe(true)
-      expect(wrapper.findComponent(PanelAdminComponente).exists()).toBe(true)
+      expect(wrapper.findComponent(Galeria).exists()).toBe(true)
       expect(wrapper.findComponent(Pie).exists()).toBe(true)
     })
   })
@@ -99,10 +109,10 @@ describe('AdminManager', () => {
   describe('Script Setup Execution', () => {
     it('should execute script setup code', () => {
       wrapper = createWrapper()
-
+      
       // Access component properties to ensure script setup is executed
-      expect(AdminManager.name || AdminManager.__name).toBeDefined()
-
+      expect(GaleriaVista.name || GaleriaVista.__name).toBeDefined()
+      
       // Verify the component instance exists
       expect(wrapper.vm).toBeDefined()
     })
@@ -110,7 +120,7 @@ describe('AdminManager', () => {
     it('should have imports executed', () => {
       // Verify that imports are available
       expect(Encabezado).toBeDefined()
-      expect(PanelAdminComponente).toBeDefined()
+      expect(Galeria).toBeDefined()
       expect(Pie).toBeDefined()
     })
   })

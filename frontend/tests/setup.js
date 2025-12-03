@@ -96,6 +96,7 @@ vi.mock('@/config/environment', () => ({
     logLevel: 'debug'
   },
   getApiUrl: vi.fn((path = '') => `http://localhost:5000${path}`),
+  getApiBaseUrl: vi.fn(() => 'http://localhost:5000/api'),
   APP_ENV_CONFIG: {
     isDevelopment: false,
     isProduction: false,

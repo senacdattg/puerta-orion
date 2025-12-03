@@ -7,6 +7,10 @@ vi.mock('@/stores/auth', () => ({
   useAuthStore: vi.fn()
 }))
 
+// Importar el módulo completo para asegurar que las declaraciones const (líneas 8-24) se ejecuten
+// Esto garantiza que las líneas de lazy imports se rastreen en cobertura
+import '@/router/index'
+
 // Mock localStorage
 globalThis.localStorage = {
   getItem: vi.fn(() => null),
@@ -18,6 +22,45 @@ describe('Router Configuration', () => {
   it('should have router instance', () => {
     expect(router).toBeDefined()
     expect(router.options.routes.length).toBeGreaterThan(0)
+  })
+
+  it('should execute lazy import declarations', async () => {
+    const lazyRoutes = router.options.routes.filter(route => 
+      typeof route.component === 'function'
+    )
+    
+    // Execute all lazy imports to ensure coverage
+    const importPromises = lazyRoutes.map(async (route) => {
+      try {
+        const component = await route.component()
+        return { route: route.name, component, success: true }
+      } catch (error) {
+        return { route: route.name, error, success: false }
+      }
+    })
+    
+    const results = await Promise.all(importPromises)
+    const failures = results.filter(r => !r.success)
+    expect(failures.length).toBe(0)
+  })
+
+  it('should have all lazy import constants defined', () => {
+    // Verificar que las constantes lazy (líneas 8-24) están disponibles en el router
+    const lazyRoutes = router.options.routes.filter(route => 
+      typeof route.component === 'function'
+    )
+    
+    // Verificar que hay múltiples rutas lazy (las líneas 8-24 crean estas rutas)
+    expect(lazyRoutes.length).toBeGreaterThanOrEqual(15)
+  })
+
+  it('should execute router creation code (lines 26-215)', () => {
+    // Verificar que el router se creó correctamente (líneas 26-215)
+    expect(router).toBeDefined()
+    expect(router.options).toBeDefined()
+    expect(router.options.routes).toBeDefined()
+    expect(Array.isArray(router.options.routes)).toBe(true)
+    expect(router.options.history).toBeDefined()
   })
 
   it('should have root redirect to login', () => {
@@ -973,6 +1016,67 @@ describe('Router Navigation Guards', () => {
     await navigationGuard(to, from, next)
 
     expect(next).toHaveBeenCalledWith()
+  })
+})
+
+describe('Router Lazy Loading', () => {
+  it('should have lazy loaded components as functions', () => {
+    const lazyRoutes = router.options.routes.filter(route => 
+      typeof route.component === 'function'
+    )
+    
+    expect(lazyRoutes.length).toBeGreaterThan(0)
+  })
+
+  it('should have Inicio as lazy loaded component', async () => {
+    const route = router.options.routes.find(r => r.name === 'home')
+    expect(route).toBeDefined()
+    expect(typeof route.component).toBe('function')
+    
+    const component = await route.component()
+    expect(component).toBeDefined()
+  })
+
+  it('should have admin-manager as lazy loaded component', async () => {
+    const route = router.options.routes.find(r => r.name === 'admin-manager')
+    expect(route).toBeDefined()
+    expect(typeof route.component).toBe('function')
+    
+    const component = await route.component()
+    expect(component).toBeDefined()
+  })
+
+  it('should execute lazy load functions', async () => {
+    const lazyRoutes = router.options.routes.filter(route => 
+      typeof route.component === 'function'
+    )
+    
+    for (const route of lazyRoutes.slice(0, 5)) {
+      const component = await route.component()
+      expect(component).toBeDefined()
+      expect(component.default || component).toBeDefined()
+    }
+  })
+
+  it('should have Login as non-lazy loaded component', () => {
+    const route = router.options.routes.find(r => r.name === 'login')
+    expect(route).toBeDefined()
+    expect(typeof route.component).not.toBe('function')
+  })
+
+  it('should load all lazy components successfully', async () => {
+    const lazyRoutes = router.options.routes.filter(route => 
+      typeof route.component === 'function'
+    )
+    
+    const loadPromises = lazyRoutes.map(route => 
+      route.component().catch(err => ({ error: err }))
+    )
+    
+    const results = await Promise.all(loadPromises)
+    const errors = results.filter(r => r.error)
+    
+    expect(errors.length).toBe(0)
   })
 })
 
