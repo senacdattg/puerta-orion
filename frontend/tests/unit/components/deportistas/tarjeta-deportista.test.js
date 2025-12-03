@@ -172,14 +172,13 @@ describe('TarjetaDeportista', () => {
     it('should use avatarDefault as image src', () => {
       wrapper = createWrapper()
       const img = wrapper.find('img')
-      
+
       expect(img.exists()).toBe(true)
       expect(img.attributes('alt')).toBe('Perfil de Juan Pérez')
     })
 
     it('should handle image error and set default avatar', async () => {
       wrapper = createWrapper()
-      const img = wrapper.find('img')
 
       const errorEvent = {
         target: {
@@ -234,7 +233,6 @@ describe('TarjetaDeportista', () => {
         deportista: { ...mockDeportista, id_usuario: 1, estado: 'activo' }
       })
 
-      const card = wrapper.find('.tarjeta-deportista')
       const estadoButton = wrapper.find('.estado-deportista')
 
       // Simular click en el botón con stopPropagation
@@ -292,12 +290,12 @@ describe('TarjetaDeportista', () => {
       // Los valores por defecto solo se aplican si la prop default() se ejecuta
       // En Vue 3, si pasas un objeto parcial, solo usa lo que pasaste
       // Por lo tanto, esperamos strings vacíos si no se proporcionan
-      const nombreText = wrapper.find('.nombre-deportista').text()
-      const categoriaText = wrapper.find('.categoria-deportista').text()
-      
       // Verificar que el componente renderiza (puede ser vacío o el valor por defecto)
       expect(wrapper.find('.nombre-deportista').exists()).toBe(true)
       expect(wrapper.find('.categoria-deportista').exists()).toBe(true)
+      // Verificar que los elementos existen aunque puedan estar vacíos
+      expect(wrapper.find('.nombre-deportista').text()).toBeDefined()
+      expect(wrapper.find('.categoria-deportista').text()).toBeDefined()
     })
 
     it('should handle deportista with all properties', () => {
@@ -356,7 +354,7 @@ describe('TarjetaDeportista', () => {
       await wrapper.vm.$nextTick()
 
       const estadoButton = wrapper.find('.estado-deportista')
-      
+
       // Intentar hacer click múltiples veces
       await estadoButton.trigger('click')
       await estadoButton.trigger('click')

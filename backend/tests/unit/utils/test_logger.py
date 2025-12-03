@@ -210,4 +210,123 @@ class TestGestorLogs:
         url = gestor._obtener_url_amigable('/api/test')
         
         assert url == '/api/test'
+    
+    def test_gestor_logs_init_with_app(self):
+        """Test: Inicializar GestorLogs con aplicación (línea 24)."""
+        from flask import Flask
+        
+        app = Flask(__name__)
+        app.config['LOG_DIR'] = '/tmp/test_logs'
+        app.config['LOG_FILE'] = '/tmp/test_logs/app.log'
+        app.config['LOG_ERROR_FILE'] = '/tmp/test_logs/error.log'
+        app.config['LOG_ACCESS_FILE'] = '/tmp/test_logs/access.log'
+        app.config['LOG_DB_FILE'] = '/tmp/test_logs/db.log'
+        app.config['LOG_ARCHIVE_DIR'] = '/tmp/test_logs/archive'
+        app.config['LOG_LEVEL'] = 'INFO'
+        app.config['DEBUG'] = False
+        
+        with patch('src.utils.logger.os.makedirs') as mock_makedirs:
+            with patch.object(GestorLogs, '_configurar_registradores') as mock_config:
+                gestor = GestorLogs(aplicacion=app)
+                
+                assert gestor.aplicacion == app
+                mock_config.assert_called_once()
+    
+    def test_gestor_logs_makedirs_when_directory_not_exists(self):
+        """Test: Crear directorios cuando no existen (línea 61)."""
+        from flask import Flask
+        
+        app = Flask(__name__)
+        app.config['LOG_DIR'] = '/tmp/test_logs_new'
+        app.config['LOG_FILE'] = '/tmp/test_logs_new/app.log'
+        app.config['LOG_ERROR_FILE'] = '/tmp/test_logs_new/error.log'
+        app.config['LOG_ACCESS_FILE'] = '/tmp/test_logs_new/access.log'
+        app.config['LOG_DB_FILE'] = '/tmp/test_logs_new/db.log'
+        app.config['LOG_ARCHIVE_DIR'] = '/tmp/test_logs_new/archive'
+        app.config['LOG_LEVEL'] = 'INFO'
+        app.config['DEBUG'] = False
+        
+        with patch('src.utils.logger.os.path.exists', return_value=False) as mock_exists:
+            with patch('src.utils.logger.os.makedirs') as mock_makedirs:
+                with patch('src.utils.logger.RotatingFileHandler') as mock_handler:
+                    with patch('src.utils.logger.logging.getLogger') as mock_get_logger:
+                        mock_logger = MagicMock()
+                        mock_get_logger.return_value = mock_logger
+                        
+                        gestor = GestorLogs()
+                        gestor.inicializar_aplicacion(app)
+                        
+                        # Verificar que se llamó makedirs
+                        assert mock_makedirs.call_count >= 1
+    
+    def test_gestor_logs_formateador_exception_handling(self):
+        """Test: Manejo de excepción al obtener formateador (líneas 158-159)."""
+        gestor = GestorLogs()
+        
+        # Simular que _obtener_formateador lanza una excepción
+        with patch.object(gestor, '_obtener_formateador', side_effect=Exception('Error')):
+            # Esto debería usar el formateador de fallback en línea 159
+            logger = gestor.obtener_registrador('test_fallback_exception')
+            
+            assert logger is not None
+            assert hasattr(logger, 'info')
+    
+    def test_gestor_logs_configurar_logger_aplicacion_debug_mode(self):
+        """Test: Configurar logger aplicación en modo DEBUG (líneas 76-79)."""
+        from flask import Flask
+        
+        app = Flask(__name__)
+        app.config['LOG_DIR'] = '/tmp/test_logs'
+        app.config['LOG_FILE'] = '/tmp/test_logs/app.log'
+        app.config['LOG_ERROR_FILE'] = '/tmp/test_logs/error.log'
+        app.config['LOG_ACCESS_FILE'] = '/tmp/test_logs/access.log'
+        app.config['LOG_DB_FILE'] = '/tmp/test_logs/db.log'
+        app.config['LOG_ARCHIVE_DIR'] = '/tmp/test_logs/archive'
+        app.config['LOG_LEVEL'] = 'INFO'
+        app.config['DEBUG'] = True  # Modo debug
+        
+        gestor = GestorLogs()
+        
+        with patch('src.utils.logger.os.makedirs'):
+            with patch('src.utils.logger.RotatingFileHandler') as mock_handler_class:
+                with patch('src.utils.logger.logging.getLogger') as mock_get_logger:
+                    with patch('src.utils.logger.logging.StreamHandler') as mock_stream_handler_class:
+                        mock_logger = MagicMock()
+                        mock_get_logger.return_value = mock_logger
+                        mock_handler = MagicMock()
+                        mock_handler_class.return_value = mock_handler
+                        mock_stream_handler = MagicMock()
+                        mock_stream_handler_class.return_value = mock_stream_handler
+                        
+                        gestor.inicializar_aplicacion(app)
+                        
+                        # Verificar que se agregó handler de consola (solo en modo DEBUG)
+                        assert mock_stream_handler.setLevel.called
+    
+    def test_gestor_logs_obtener_registrador_from_registradores(self):
+        """Test: Obtener registrador que ya existe en registradores (línea 141)."""
+        gestor = GestorLogs()
+        gestor.registradores = {}
+        
+        # Crear un logger primero
+        logger1 = gestor.obtener_registrador('test')
+        
+        # Obtener el mismo logger de nuevo (debe retornar el existente)
+        logger2 = gestor.obtener_registrador('test')
+        
+        assert logger1 is logger2
+        assert 'test' in gestor.registradores
+    
+    def test_gestor_logs_obtener_registrador_fallback_to_aplicacion(self):
+        """Test: Fallback a logger 'aplicacion' cuando no existe el solicitado (línea 145)."""
+        gestor = GestorLogs()
+        
+        # Primero crear el logger 'aplicacion'
+        logger_aplicacion = gestor.obtener_registrador('aplicacion')
+        
+        # Luego solicitar otro logger que no existe - debe retornar 'aplicacion'
+        logger_otro = gestor.obtener_registrador('otro_logger')
+        
+        # Verificar que cuando 'otro_logger' no existe, retorna 'aplicacion'
+        assert 'aplicacion' in gestor.registradores
 

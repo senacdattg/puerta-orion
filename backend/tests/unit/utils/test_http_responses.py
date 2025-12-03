@@ -101,6 +101,20 @@ class TestHttpResponseBuilder:
             json_data = response.get_json()
             assert json_data['data'] == {'field': 'value'}
     
+    def test_error_with_kwargs(self, app):
+        """Test: Respuesta de error con kwargs adicionales (línea 104)."""
+        with app.app_context():
+            response, _ = HttpResponseBuilder.error(
+                error='Error',
+                status_code=400,
+                extra_field='extra_value',
+                debug_info={'trace': 'stack'}
+            )
+            
+            json_data = response.get_json()
+            assert json_data['extra_field'] == 'extra_value'
+            assert json_data['debug_info'] == {'trace': 'stack'}
+    
     def test_created(self, app):
         """Test: Respuesta 201 Created."""
         with app.app_context():

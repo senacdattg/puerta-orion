@@ -487,4 +487,197 @@ class TestUsuarioService:
                 usuario_service.actualizar_usuario(1, None, None)
             
             mock_db.session.rollback.assert_called_once()
+    
+    def test_registrar_usuario_completo_unexpected_error(self, usuario_service, datos_persona_validos, datos_usuario_validos):
+        """Test: Unexpected error handling in registrar_usuario_completo (líneas 102-104)."""
+        with patch.object(usuario_service, '_validar_datos_persona') as mock_validar:
+            mock_validar.side_effect = Exception("Unexpected error")
+            
+            with pytest.raises(UsuarioServiceError, match="Error interno del servidor"):
+                usuario_service.registrar_usuario_completo(
+                    datos_persona_validos,
+                    datos_usuario_validos
+                )
+    
+    def test_validar_datos_persona_with_observaciones(self, usuario_service, datos_persona_validos):
+        """Test: Person data validation with observaciones field (línea 131)."""
+        datos_persona_validos['observaciones'] = 'Test observations'
+        
+        with patch('src.services.Auth.usuario_service.validate_name', return_value='Juan'), \
+             patch('src.services.Auth.usuario_service.validate_document', return_value='12345678'), \
+             patch('src.services.Auth.usuario_service.validate_email', return_value='juan@example.com'), \
+             patch('src.services.Auth.usuario_service.validate_phone', return_value='3001234567'), \
+             patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle 123'), \
+             patch('src.services.Auth.usuario_service.sanitize_free_text', return_value='Test observations'):
+            
+            usuario_service._validar_datos_persona(datos_persona_validos)
+            
+            assert datos_persona_validos['observaciones'] == 'Test observations'
+    
+    def test_validar_datos_persona_empty_second_name(self, usuario_service, datos_persona_validos):
+        """Test: Person data validation with empty second name (línea 144)."""
+        datos_persona_validos['segundo_nombre'] = ''
+        
+        with patch('src.services.Auth.usuario_service.validate_name', return_value=''), \
+             patch('src.services.Auth.usuario_service.validate_document', return_value='12345678'), \
+             patch('src.services.Auth.usuario_service.validate_email', return_value='juan@example.com'), \
+             patch('src.services.Auth.usuario_service.validate_phone', return_value='3001234567'), \
+             patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle 123'):
+            
+            usuario_service._validar_datos_persona(datos_persona_validos)
+            
+            assert datos_persona_validos['segundo_nombre'] is None
+    
+    def test_validar_datos_persona_empty_second_lastname(self, usuario_service, datos_persona_validos):
+        """Test: Person data validation with empty second lastname (línea 146)."""
+        datos_persona_validos['segundo_apellido'] = ''
+        
+        with patch('src.services.Auth.usuario_service.validate_name', side_effect=['Juan', '', 'Pérez', '']), \
+             patch('src.services.Auth.usuario_service.validate_document', return_value='12345678'), \
+             patch('src.services.Auth.usuario_service.validate_email', return_value='juan@example.com'), \
+             patch('src.services.Auth.usuario_service.validate_phone', return_value='3001234567'), \
+             patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle 123'):
+            
+            usuario_service._validar_datos_persona(datos_persona_validos)
+            
+            assert datos_persona_validos['segundo_apellido'] is None
+    
+    def test_validar_datos_persona_missing_ids(self, usuario_service, datos_persona_validos):
+        """Test: Person data validation with missing ID fields (línea 138)."""
+        datos_persona_validos.pop('id_tipo_documento', None)
+        datos_persona_validos.pop('id_sexo', None)
+        
+        with patch('src.services.Auth.usuario_service.validate_name', return_value='Juan'), \
+             patch('src.services.Auth.usuario_service.validate_document', return_value='12345678'), \
+             patch('src.services.Auth.usuario_service.validate_email', return_value='juan@example.com'), \
+             patch('src.services.Auth.usuario_service.validate_phone', return_value='3001234567'), \
+             patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle 123'):
+            
+            with pytest.raises(UsuarioServiceError, match="Campos requeridos faltantes"):
+                usuario_service._validar_datos_persona(datos_persona_validos)
+    
+    def test_asignar_rol_especifico_success(self, usuario_service, app_context):
+        """Test: Assign specific role successfully (líneas 210-224)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.set_rol_activo = MagicMock()
+        
+        mock_rol_especifico = MagicMock()
+        mock_rol_especifico.id_rol = 2
+        mock_rol_especifico.nombre_rol = 'Deportista'
+        
+        mock_rol_por_defecto = MagicMock()
+        mock_rol_por_defecto.id_rol = 1
+        
+        with patch('src.services.Auth.usuario_service.Rol') as mock_rol_class, \
+             patch('src.services.Auth.usuario_service.UsuarioRol') as mock_usuario_rol_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_rol_query = MagicMock()
+            mock_rol_query.filter_by.return_value.first.return_value = mock_rol_especifico
+            mock_rol_class.query = mock_rol_query
+            
+            mock_usuario_rol_query = MagicMock()
+            mock_usuario_rol_query.filter_by.return_value.first.return_value = None
+            mock_usuario_rol_class.query = mock_usuario_rol_query
+            
+            mock_db.session.add = MagicMock()
+            
+            usuario_service._asignar_rol_especifico(mock_usuario, 'deportista', mock_rol_por_defecto)
+            
+            mock_db.session.add.assert_called_once()
+            mock_usuario.set_rol_activo.assert_called_once_with(mock_rol_especifico)
+    
+    def test_asignar_rol_especifico_with_default_rol(self, usuario_service):
+        """Test: Assign default role when specific role not found (línea 224)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.set_rol_activo = MagicMock()
+        
+        mock_rol_por_defecto = MagicMock()
+        mock_rol_por_defecto.id_rol = 1
+        
+        with patch('src.services.Auth.usuario_service.Rol') as mock_rol_class:
+            mock_rol_query = MagicMock()
+            mock_rol_query.filter_by.return_value.first.return_value = None
+            mock_rol_class.query = mock_rol_query
+            
+            usuario_service._asignar_rol_especifico(mock_usuario, 'unknown', mock_rol_por_defecto)
+            
+            mock_usuario.set_rol_activo.assert_called_once_with(mock_rol_por_defecto)
+    
+    def test_procesar_rol_opcional_deportista(self, usuario_service):
+        """Test: Process optional deportista role (líneas 227-235)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.set_rol_activo = MagicMock()
+        
+        datos_rol = {'id_categoria': 1}
+        
+        with patch.object(usuario_service, '_crear_registro_rol') as mock_crear, \
+             patch.object(usuario_service, '_asignar_rol_especifico') as mock_asignar:
+            
+            usuario_service._procesar_rol_opcional(mock_usuario, 'deportista', datos_rol, None)
+            
+            mock_crear.assert_called_once_with(mock_usuario, 'deportista', datos_rol)
+            mock_asignar.assert_called_once()
+    
+    def test_procesar_rol_opcional_invalid(self, usuario_service):
+        """Test: Process invalid optional role (línea 229)."""
+        mock_usuario = MagicMock()
+        mock_rol_por_defecto = MagicMock()
+        mock_usuario.set_rol_activo = MagicMock()
+        
+        usuario_service._procesar_rol_opcional(mock_usuario, 'invalid', None, mock_rol_por_defecto)
+        
+        mock_usuario.set_rol_activo.assert_called_once_with(mock_rol_por_defecto)
+    
+    def test_crear_persona_y_usuario_with_rol_opcional(self, usuario_service, datos_persona_validos, datos_usuario_validos, app_context):
+        """Test: Create person and user with optional role (líneas 208-235)."""
+        with patch.object(usuario_service, '_crear_persona') as mock_crear_persona, \
+             patch.object(usuario_service, '_crear_usuario') as mock_crear_usuario, \
+             patch.object(usuario_service, '_asignar_rol_por_defecto') as mock_rol, \
+             patch.object(usuario_service, '_procesar_rol_opcional') as mock_procesar, \
+             patch.object(usuario_service, '_serializar_usuario', return_value={'id_usuario': 1}), \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_persona = MagicMock()
+            mock_persona.id_persona = 1
+            mock_crear_persona.return_value = mock_persona
+            
+            mock_usuario = MagicMock()
+            mock_usuario.id_usuario = 1
+            mock_crear_usuario.return_value = mock_usuario
+            
+            mock_rol_obj = MagicMock()
+            mock_rol.return_value = mock_rol_obj
+            
+            mock_db.session.flush = MagicMock()
+            mock_db.session.commit = MagicMock()
+            
+            datos_rol = {'id_categoria': 1}
+            result = usuario_service._crear_persona_y_usuario(
+                datos_persona_validos,
+                datos_usuario_validos,
+                'deportista',
+                datos_rol
+            )
+            
+            assert result['id_usuario'] == 1
+            mock_procesar.assert_called_once_with(mock_usuario, 'deportista', datos_rol, mock_rol_obj)
+    
+    def test_crear_persona_y_usuario_generic_error(self, usuario_service, datos_persona_validos, datos_usuario_validos, app_context):
+        """Test: Generic error in crear_persona_y_usuario (líneas 276-279)."""
+        with patch.object(usuario_service, '_crear_persona', side_effect=Exception('Generic error')), \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_db.session.rollback = MagicMock()
+            
+            with pytest.raises(UsuarioServiceError, match="Error al crear usuario"):
+                usuario_service._crear_persona_y_usuario(
+                    datos_persona_validos,
+                    datos_usuario_validos
+                )
+            
+            mock_db.session.rollback.assert_called_once()
 

@@ -1,7 +1,7 @@
 services:
   db:
     image: mysql:8
-    container_name: puerta_mysql
+    container_name: puerta-orion-mysql
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -26,7 +26,7 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: puerta_backend
+    container_name: puerta-orion-backend
     restart: unless-stopped
     entrypoint:
       - /bin/sh
@@ -64,7 +64,7 @@ services:
     build:
       context: ./frontend
       target: development
-    container_name: puerta_frontend
+    container_name: puerta-orion-frontend
     restart: unless-stopped
     environment:
       VITE_API_URL: http://localhost:5000

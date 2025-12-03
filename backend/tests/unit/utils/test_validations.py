@@ -6,6 +6,7 @@ de validación de datos de entrada.
 """
 
 import pytest
+from unittest.mock import patch
 from src.utils.validations import (
     normalize_spaces,
     normalize_upper,
@@ -145,6 +146,20 @@ class TestValidateDocument:
         with pytest.raises(ValidationError) as exc_info:
             validate_document("documento", "12345ABC")
         assert "dígitos" in str(exc_info.value).lower()
+    
+    def test_validate_document_only_letters(self):
+        """Test: Error cuando documento solo contiene letras."""
+        with pytest.raises(ValidationError) as exc_info:
+            validate_document("documento", "ABC")
+        assert "dígitos" in str(exc_info.value).lower()
+    
+    def test_validate_document_isdigit_check(self):
+        """Test: Error cuando digits no pasa isdigit() (línea 59)."""
+        # Mock re.sub para retornar una cadena con longitud válida pero que no sea isdigit()
+        with patch('src.utils.validations.re.sub', return_value='abc123'):
+            with pytest.raises(ValidationError) as exc_info:
+                validate_document("documento", "test")
+            assert "dígitos" in str(exc_info.value).lower()
 
 
 @pytest.mark.unit
@@ -177,6 +192,20 @@ class TestValidatePhone:
         with pytest.raises(ValidationError) as exc_info:
             validate_phone("telefono", "12345", min_length=10, max_length=10)
         assert "dígitos" in str(exc_info.value).lower()
+    
+    def test_validate_phone_only_letters(self):
+        """Test: Error cuando teléfono solo contiene letras."""
+        with pytest.raises(ValidationError) as exc_info:
+            validate_phone("telefono", "ABC", required=True)
+        assert "dígitos" in str(exc_info.value).lower()
+    
+    def test_validate_phone_isdigit_check(self):
+        """Test: Error cuando digits no pasa isdigit() (línea 78)."""
+        # Mock re.sub para retornar una cadena con longitud válida pero que no sea isdigit()
+        with patch('src.utils.validations.re.sub', return_value='abc1234567'):
+            with pytest.raises(ValidationError) as exc_info:
+                validate_phone("telefono", "test", required=True)
+            assert "dígitos" in str(exc_info.value).lower()
 
 
 @pytest.mark.unit
