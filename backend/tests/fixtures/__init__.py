@@ -26,7 +26,8 @@ from .model_fixtures import (
     tipo_evento,
     persona,
     usuario,
-    deportista
+    deportista,
+    rol
 )
 from .mock_fixtures import (
     mock_get_current_user,
@@ -50,6 +51,7 @@ __all__ = [
     'persona',
     'usuario',
     'deportista',
+    'rol',
     # Mock fixtures
     'mock_get_current_user',
     'mock_token_required',

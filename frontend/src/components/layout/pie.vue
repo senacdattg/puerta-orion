@@ -123,7 +123,7 @@ const socialLinks = computed(() => {
 })
 
 // Use shared footer actions logic
-const { accionesRapidas } = useFooterActions()
+const { accionesRapidas, userRole } = useFooterActions()
 </script>
 
 

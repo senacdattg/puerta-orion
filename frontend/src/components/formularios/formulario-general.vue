@@ -466,6 +466,26 @@ function limpiarMensajes() {
   mensajeExito.value = ''
 }
 
+// Limpiar formulario
+function limpiarFormulario() {
+  form.value = {
+    nombre1: "",
+    nombre2: "",
+    apellido1: "",
+    apellido2: "",
+    idTipoDocumento: "",
+    numeroDocumento: "",
+    idSexo: "",
+    correo: "",
+    telefono: "",
+    direccion: "",
+    usuario: "",
+    contrasena: "",
+    confirmarContrasena: ""
+  }
+  limpiarMensajes()
+}
+
 // Volver al login
 function volverLogin() {
   router.push('/login')

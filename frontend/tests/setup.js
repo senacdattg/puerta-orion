@@ -78,13 +78,28 @@ config.global.stubs = {
 
 // Mock environment variables
 vi.mock('@/config/environment', () => ({
+  LOG_CONFIG: {
+    enabled: false,
+    level: 'error'
+  },
   API_CONFIG: {
-    baseURL: 'http://localhost:5000'
+    baseURL: 'http://localhost:5000',
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
   },
   CURRENT_CONFIG: {
     apiUrl: 'http://localhost:5000',
     debug: true,
     logLevel: 'debug'
+  },
+  getApiUrl: vi.fn((path = '') => `http://localhost:5000${path}`),
+  APP_ENV_CONFIG: {
+    isDevelopment: false,
+    isProduction: false,
+    isTest: true
   }
 }))
 

@@ -63,7 +63,29 @@ vi.mock('sweetalert2', () => ({
 }))
 
 vi.mock('@/config/environment', () => ({
-  getApiUrl: vi.fn(() => 'http://localhost:5000')
+  getApiUrl: vi.fn(() => 'http://localhost:5000'),
+  LOG_CONFIG: {
+    enabled: false,
+    level: 'error'
+  },
+  API_CONFIG: {
+    baseURL: 'http://localhost:5000',
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  },
+  CURRENT_CONFIG: {
+    apiUrl: 'http://localhost:5000',
+    debug: false,
+    logLevel: 'error'
+  },
+  APP_ENV_CONFIG: {
+    isDevelopment: false,
+    isProduction: false,
+    isTest: true
+  }
 }))
 
 describe('PerfilDeportistaVista', () => {

@@ -237,6 +237,7 @@ from tests.fixtures import (
     persona,
     usuario,
     deportista,
+    rol,
     # Mock fixtures
     mock_get_current_user,
     mock_token_required,
