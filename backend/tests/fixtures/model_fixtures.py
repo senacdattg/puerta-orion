@@ -120,6 +120,22 @@ def usuario(db_session, persona):
 
 
 @pytest.fixture
+def rol(db_session):
+    """Crea un rol de prueba."""
+    try:
+        from src.models.roles_y_permisos.rol import Rol
+        rol_obj = Rol(
+            nombre_rol='SuperAdmin',
+            descripcion='Rol de super administrador'
+        )
+        db_session.add(rol_obj)
+        db_session.commit()
+        return rol_obj
+    except Exception:
+        return MagicMock(id_rol=1, nombre_rol='SuperAdmin')
+
+
+@pytest.fixture
 def deportista(db_session, persona, categoria):
     """Crea un deportista de prueba."""
     try:
@@ -129,7 +145,8 @@ def deportista(db_session, persona, categoria):
             id_categoria=getattr(categoria, 'id_categoria', 1),
             peso=65.5,
             altura=1.75,
-            fecha_nacimiento=date(2000, 1, 15)
+            fecha_nacimiento=date(2000, 1, 15),
+            fecha_ingreso=date.today()
         )
         db_session.add(deportista_obj)
         db_session.commit()

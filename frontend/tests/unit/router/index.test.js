@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import router from '@/router/index'
+import router, { navigationGuard } from '@/router/index'
 import { useAuthStore } from '@/stores/auth'
 
 // Mock store
@@ -110,7 +110,7 @@ describe('Router Navigation Guards', () => {
 
   it('should have deportista routes with role restrictions', () => {
     const deportistaRoutes = router.options.routes.filter(r =>
-      r.name && r.name.includes('deportista')
+      r.name?.includes('deportista')
     )
     expect(deportistaRoutes.length).toBeGreaterThan(0)
     deportistaRoutes.forEach(route => {
@@ -122,7 +122,7 @@ describe('Router Navigation Guards', () => {
 
   it('should have acudiente routes with role restrictions', () => {
     const acudienteRoutes = router.options.routes.filter(r =>
-      r.name && (r.name.includes('acudiente') || r.path?.includes('/acudiente/'))
+      r.name?.includes('acudiente') || r.path?.includes('/acudiente/')
     )
     expect(acudienteRoutes.length).toBeGreaterThan(0)
     // Verificar que al menos una ruta de acudiente tiene el rol requerido
@@ -151,6 +151,170 @@ describe('Router Navigation Guards', () => {
 
     const inicioRoute = router.options.routes.find(r => r.path === '/inicio')
     expect(inicioRoute.redirect).toBe('/home')
+  })
+
+  it('should redirect unauthenticated user to login when accessing protected route', async () => {
+    mockAuthStore.verifyToken.mockResolvedValue(false)
+    mockAuthStore.user = null
+    mockAuthStore.token = null
+
+    const next = vi.fn()
+    const to = { path: '/home', matched: [{ meta: { requiresAuth: true } }] }
+    const from = { path: '/' }
+
+    // Simular el guard ejecutándose
+    await navigationGuard(to, from, next)
+
+    expect(next).toHaveBeenCalledWith('/login')
+  })
+
+  it('should redirect authenticated user with multiple roles to role selection', async () => {
+    mockAuthStore.token = 'some-token'
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = {
+      roles: [
+        { nombre_rol: 'Deportista' },
+        { nombre_rol: 'Acudiente' }
+      ]
+    }
+    mockAuthStore.activeRole = null
+    mockAuthStore.rolesSelector = {
+      Deportista: true,
+      Acudiente: true
+    }
+
+    const next = vi.fn()
+    const to = { path: '/calendario', matched: [{ meta: { requiresAuth: true } }] }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    // Debería redirigir a selección de rol si tiene múltiples roles sin seleccionar
+    expect(next).toHaveBeenCalledWith('/seleccionar-rol')
+  })
+
+  it('should allow access to route with required role', async () => {
+    mockAuthStore.token = 'some-token'
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = {
+      roles: [{ nombre_rol: 'SuperAdmin' }]
+    }
+    mockAuthStore.activeRole = 'SuperAdmin'
+    mockAuthStore.rolesSelector = { SuperAdmin: true }
+
+    const next = vi.fn()
+    const to = {
+      path: '/admin-manager',
+      matched: [{ meta: { requiresAuth: true, requiresRole: ['SuperAdmin', 'Administrador'] } }]
+    }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    expect(next).toHaveBeenCalledWith()
+  })
+
+  it('should deny access to route without required role', async () => {
+    mockAuthStore.token = 'some-token'
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = {
+      roles: [{ nombre_rol: 'Deportista' }]
+    }
+    mockAuthStore.activeRole = 'Deportista'
+    mockAuthStore.rolesSelector = { Deportista: true }
+
+    const next = vi.fn()
+    const to = {
+      path: '/admin-manager',
+      matched: [{ meta: { requiresAuth: true, requiresRole: ['SuperAdmin', 'Administrador'] } }]
+    }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    expect(next).toHaveBeenCalledWith('/seleccionar-rol')
+  })
+
+  it('should check permissions for routes requiring permissions', async () => {
+    mockAuthStore.token = 'some-token'
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = {
+      roles: [{ nombre_rol: 'Administrador' }]
+    }
+    mockAuthStore.activeRole = 'Administrador'
+    mockAuthStore.permissions = ['ver_mensualidad']
+    mockAuthStore.hasPermission.mockReturnValue(true)
+
+    const next = vi.fn()
+    const to = {
+      path: '/mensualidades',
+      matched: [{ meta: { requiresAuth: true, requiresPermission: 'ver_mensualidad' } }]
+    }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    expect(next).toHaveBeenCalledWith()
+  })
+
+  it('should redirect guest user away from guest-only routes when authenticated', async () => {
+    mockAuthStore.token = 'some-token'
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = {
+      roles: [{ nombre_rol: 'Deportista' }]
+    }
+    mockAuthStore.activeRole = 'Deportista'
+    mockAuthStore.rolesSelector = { Deportista: true }
+
+    const next = vi.fn()
+    const to = {
+      path: '/login',
+      matched: [{ meta: { requiresGuest: true } }]
+    }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    // Debería redirigir a la ruta por defecto del rol
+    expect(next).toHaveBeenCalled()
+    expect(next).not.toHaveBeenCalledWith('/login')
+  })
+
+  it('should handle route with no meta requirements', async () => {
+    mockAuthStore.token = 'some-token'
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = {
+      roles: [{ nombre_rol: 'Deportista' }]
+    }
+    mockAuthStore.activeRole = 'Deportista'
+
+    const next = vi.fn()
+    const to = {
+      path: '/some-route',
+      matched: [{ meta: {} }]
+    }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    expect(next).toHaveBeenCalledWith()
+  })
+
+  it('should initialize auth store if user is null but token exists', async () => {
+    mockAuthStore.verifyToken.mockResolvedValue(true)
+    mockAuthStore.user = null
+    mockAuthStore.token = 'some-token'
+
+    const next = vi.fn()
+    const to = {
+      path: '/home',
+      matched: [{ meta: { requiresAuth: true } }]
+    }
+    const from = { path: '/' }
+
+    await navigationGuard(to, from, next)
+
+    expect(mockAuthStore.inicializar).toHaveBeenCalled()
   })
 })
 

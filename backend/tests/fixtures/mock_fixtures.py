@@ -30,7 +30,7 @@ def mock_get_current_user():
         yield user_data
 
 
-@pytest.fixture
+@pytest.fixture(scope='function', autouse=False)
 def mock_token_required():
     """Mock para el decorador token_required que siempre permite acceso."""
     # Mock usuario válido para get_current_user
@@ -102,19 +102,43 @@ def mock_token_required():
         # No establecer g.current_user_obj para evitar MagicMock
     
     # Hacer patch de get_current_user y métodos de validación
-    with patch('src.middleware.auth_decorator.get_current_user', return_value=mock_usuario_data):
-        with patch('src.middleware.auth_decorator.TokenRequired._extraer_token', return_value='mock_token'):
-            with patch('src.middleware.auth_decorator.TokenRequired._validar_token_jwt', return_value=mock_payload):
-                with patch('src.middleware.auth_decorator.TokenRequired._verificar_sesion_activa', return_value=mock_sesion):
-                    with patch('src.middleware.auth_decorator.TokenRequired._obtener_usuario_completo', return_value=mock_usuario):
-                        with patch('src.middleware.auth_decorator.TokenRequired._verificar_roles', return_value=True):
-                            with patch('src.middleware.auth_decorator.TokenRequired._verificar_permisos', return_value=True):
-                                with patch('src.middleware.auth_decorator.TokenRequired._verificar_rol_activo', return_value=True):
-                                    with patch('src.middleware.auth_decorator.TokenRequired._inyectar_datos_usuario', mock_inyectar_datos_usuario):
-                                        with patch('src.middleware.auth_decorator.asegurar_rol_activo_valido', return_value=mock_usuario.rol_activo):
-                                            with patch('src.middleware.auth_decorator.obtener_paneles_autorizados', return_value=[]):
-                                                with patch('src.middleware.auth_decorator.get_user_permissions', return_value=[]):
-                                                    yield
+    # IMPORTANTE: Mockear _process_authenticated_request directamente para evitar problemas de orden de ejecución
+    # Este método es llamado por el decorador y llama a _validate_authentication internamente
+    def mock_process_authenticated_request(self, f, *args, **kwargs):
+        """Mock que ejecuta la función directamente sin validar autenticación."""
+        # Inyectar datos en g antes de ejecutar la función
+        from flask import g
+        g.current_user = mock_usuario_data
+        g.current_session = {
+            'id_sesion': 1,
+            'fecha_inicio': '2024-01-01T00:00:00',
+            'fecha_expiracion': '2024-12-31T23:59:59',
+            'ip_origen': '127.0.0.1'
+        }
+        g.token_payload = mock_payload
+        # Ejecutar la función original directamente
+        return f(*args, **kwargs)
+    
+    # Usar autospec=False para evitar problemas con instancias múltiples del decorador
+    # cuando se ejecutan todos los tests
+    # Hacer patch de todos los métodos necesarios para que el decorador siempre permita acceso
+    # Usar patch con el path completo del método para que se aplique a todas las instancias
+    # Esto es más robusto cuando se ejecutan todos los tests porque funciona con instancias ya creadas
+    with patch('src.middleware.auth_decorator.get_current_user', return_value=mock_usuario_data, autospec=False):
+        with patch('src.middleware.auth_decorator.TokenRequired._extraer_token', return_value='mock_token', autospec=False):
+            with patch('src.middleware.auth_decorator.TokenRequired._validar_token_jwt', return_value=mock_payload, autospec=False):
+                with patch('src.middleware.auth_decorator.TokenRequired._verificar_sesion_activa', return_value=mock_sesion, autospec=False):
+                    with patch('src.middleware.auth_decorator.TokenRequired._obtener_usuario_completo', return_value=mock_usuario, autospec=False):
+                        with patch('src.middleware.auth_decorator.TokenRequired._validate_authentication', return_value=('mock_token', mock_payload, mock_sesion, mock_usuario), autospec=False):
+                            with patch('src.middleware.auth_decorator.TokenRequired._process_authenticated_request', mock_process_authenticated_request, autospec=False):
+                                with patch('src.middleware.auth_decorator.TokenRequired._verificar_roles', return_value=True, autospec=False):
+                                    with patch('src.middleware.auth_decorator.TokenRequired._verificar_permisos', return_value=True, autospec=False):
+                                        with patch('src.middleware.auth_decorator.TokenRequired._verificar_rol_activo', return_value=True, autospec=False):
+                                            with patch('src.middleware.auth_decorator.TokenRequired._inyectar_datos_usuario', mock_inyectar_datos_usuario, autospec=False):
+                                                with patch('src.middleware.auth_decorator.asegurar_rol_activo_valido', return_value=mock_usuario.rol_activo, autospec=False):
+                                                    with patch('src.middleware.auth_decorator.obtener_paneles_autorizados', return_value=[], autospec=False):
+                                                        with patch('src.middleware.auth_decorator.get_user_permissions', return_value=[], autospec=False):
+                                                            yield
 
 
 @pytest.fixture

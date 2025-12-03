@@ -177,18 +177,6 @@ def _initialize_scheduler(app: Flask) -> None:
         app.logger.error("Error inicializando scheduler: %s", str(exc))
 
 
-def _initialize_scheduler(app: Flask) -> None:
-    """Inicializa el scheduler de tareas programadas."""
-    try:
-        from src.utils.scheduler import init_scheduler
-        init_scheduler(app)
-        app.logger.info("Scheduler de tareas programadas inicializado")
-    except ImportError as exc:
-        app.logger.warning("No se pudo inicializar el scheduler: %s", str(exc))
-    except Exception as exc:
-        app.logger.error("Error inicializando scheduler: %s", str(exc))
-
-
 def _register_blueprints(app: Flask) -> None:
     """Registra todos los blueprints de la aplicación."""
     _register_auth_blueprints(app)
