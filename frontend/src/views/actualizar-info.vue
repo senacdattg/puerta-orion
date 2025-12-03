@@ -92,16 +92,25 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="id_tipo_documento">Tipo de Documento *</label>
-                <input
-                  type="text"
+                <select
                   id="id_tipo_documento"
-                  :value="catalogos.tiposDocumento.find(t => (t.id_documento || t.id) === formData.id_tipo_documento)?.nombre_documento || catalogos.tiposDocumento.find(t => (t.id_documento || t.id) === formData.id_tipo_documento)?.nombre || ''"
-                  readonly
-                  disabled
+                  v-model="formData.id_tipo_documento"
+                  required
+                  :readonly="!puedeEditarCampo.tipoDocumento"
+                  :disabled="!puedeEditarCampo.tipoDocumento"
                   class="form-input"
-                  style="background-color: #f5f5f5; cursor: not-allowed;"
+                  :style="!puedeEditarCampo.tipoDocumento ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
                 >
-                <small style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
+                  <option value="">Seleccione un tipo</option>
+                  <option
+                    v-for="tipo in catalogos.tiposDocumento"
+                    :key="tipo.id_documento || tipo.id"
+                    :value="tipo.id_documento || tipo.id"
+                  >
+                    {{ tipo.nombre_documento || tipo.nombre }}
+                  </option>
+                </select>
+                <small v-if="!puedeEditarCampo.tipoDocumento" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
 
               <div class="form-group">
@@ -615,7 +624,7 @@ import { useAuthStore } from '@/stores/auth'
 import authService from '@/services/authService'
 import deportistasService from '@/services/deportistasService'
 import catalogosService from '@/services/catalogosService'
-import { API_CONFIG } from '@/config/environment'
+import { API_CONFIG, LOG_CONFIG } from '@/config/environment'
 import Encabezado from '@/components/layout/encabezado.vue'
 import FooterEnhanced from '@/components/layout/pie.vue'
 import Swal from 'sweetalert2'
@@ -872,10 +881,11 @@ const puedeEditarCampo = computed(() => {
     }
   }
 
-  // Por defecto, permitir edición si no hay rol específico (Administrador, etc.)
+  // Por defecto, permitir edición si no hay rol específico (Administrador, SuperAdmin, etc.)
+  const esAdminOSuperAdmin = rol === 'Administrador' || rol === 'SuperAdmin'
   return {
-    tipoDocumento: false,
-    numeroDocumento: false,
+    tipoDocumento: esAdminOSuperAdmin,
+    numeroDocumento: esAdminOSuperAdmin,
     primerNombre: true,
     segundoNombre: true,
     primerApellido: true,
@@ -1182,12 +1192,10 @@ async function cargarDatosUsuario() {
 
     // Guardar datos iniciales después de cargar
     try {
-      formDataInicial.value = structuredClone(formData.value)
-      formDataDeportistaInicial.value = structuredClone(formDataDeportista.value)
-    } catch {
-      // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
-      formDataInicial.value = JSON.parse(JSON.stringify(formData.value)) // NOSONAR: S7784
-      formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value)) // NOSONAR: S7784
+      formDataInicial.value = clonarObjeto(formData.value)
+      formDataDeportistaInicial.value = clonarObjeto(formDataDeportista.value)
+    } catch (err) {
+      console.error('Error al guardar datos iniciales:', err)
     }
   } catch (err) {
     console.error('Error al cargar datos del usuario:', err)
@@ -1347,30 +1355,50 @@ const confirmarActualizacion = async () => {
   return confirmacion.isConfirmed
 }
 
-const prepararDatosPersona = () => {
-  const datosPersona = {
-    correo_electronico: (formData.value.correo_electronico || '').trim().toLowerCase()
-  }
-
+const agregarDatosContacto = (datosPersona) => {
   if (puedeEditarCampo.value.telefono && formData.value.telefono) {
     datosPersona.telefono = formData.value.telefono.replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
   }
   if (puedeEditarCampo.value.direccion && formData.value.direccion) {
     datosPersona.direccion = sanitizarDireccion(formData.value.direccion)
   }
+}
 
-  if (rolUsuario.value === 'Entrenador') {
+const agregarDatosNombres = (datosPersona) => {
+  if (puedeEditarCampo.value.primerNombre && formData.value.primer_nombre) {
     datosPersona.primer_nombre = sanitizarNombre(formData.value.primer_nombre)
-    datosPersona.primer_apellido = sanitizarNombre(formData.value.primer_apellido)
-    datosPersona.id_sexo = formData.value.id_sexo
-
-    if (formData.value.segundo_nombre) {
-      datosPersona.segundo_nombre = sanitizarNombre(formData.value.segundo_nombre, false)
-    }
-    if (formData.value.segundo_apellido) {
-      datosPersona.segundo_apellido = sanitizarNombre(formData.value.segundo_apellido, false)
-    }
   }
+  if (puedeEditarCampo.value.primerApellido && formData.value.primer_apellido) {
+    datosPersona.primer_apellido = sanitizarNombre(formData.value.primer_apellido)
+  }
+  if (puedeEditarCampo.value.segundoNombre && formData.value.segundo_nombre) {
+    datosPersona.segundo_nombre = sanitizarNombre(formData.value.segundo_nombre, false)
+  }
+  if (puedeEditarCampo.value.segundoApellido && formData.value.segundo_apellido) {
+    datosPersona.segundo_apellido = sanitizarNombre(formData.value.segundo_apellido, false)
+  }
+  if (puedeEditarCampo.value.sexo && formData.value.id_sexo) {
+    datosPersona.id_sexo = formData.value.id_sexo
+  }
+}
+
+const agregarDatosDocumento = (datosPersona) => {
+  if (puedeEditarCampo.value.tipoDocumento && formData.value.id_tipo_documento) {
+    datosPersona.id_tipo_documento = formData.value.id_tipo_documento
+  }
+  if (puedeEditarCampo.value.numeroDocumento && formData.value.documento) {
+    datosPersona.documento = formData.value.documento.replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
+  }
+}
+
+const prepararDatosPersona = () => {
+  const datosPersona = {
+    correo_electronico: (formData.value.correo_electronico || '').trim().toLowerCase()
+  }
+
+  agregarDatosContacto(datosPersona)
+  agregarDatosNombres(datosPersona)
+  agregarDatosDocumento(datosPersona)
 
   return datosPersona
 }
@@ -1486,16 +1514,28 @@ const agregarDatosDiagnostico = (datosDeportistaActualizar) => {
     return
   }
 
+  // Always include diagnostico and tipo_enfermedad when user can edit medical history
+  // Backend expects these fields at root level, not inside datos_deportista or datos_informacion_deportiva
   if (formDataDeportista.value.tiene_enfermedades === true) {
-    if (formDataDeportista.value.tipo_enfermedad) {
-      datosDeportistaActualizar.tipo_enfermedad = formDataDeportista.value.tipo_enfermedad
+    // User has diseases - include tipo_enfermedad and diagnostico
+    // Convert tipo_enfermedad to integer if it exists
+    if (formDataDeportista.value.tipo_enfermedad !== null && formDataDeportista.value.tipo_enfermedad !== undefined) {
+      datosDeportistaActualizar.tipo_enfermedad = Number.parseInt(formDataDeportista.value.tipo_enfermedad, 10)
     }
-    if (formDataDeportista.value.diagnostico && formDataDeportista.value.diagnostico.length > 0) {
+
+    // Always send diagnostico array (even if empty) when tiene_enfermedades is true
+    if (formDataDeportista.value.diagnostico && Array.isArray(formDataDeportista.value.diagnostico) && formDataDeportista.value.diagnostico.length > 0) {
       datosDeportistaActualizar.diagnostico = formDataDeportista.value.diagnostico.map(d => Number.parseInt(d, 10))
+    } else {
+      // If tiene_enfermedades is true but no diagnosticos selected, send empty array
+      datosDeportistaActualizar.diagnostico = []
     }
   } else if (formDataDeportista.value.tiene_enfermedades === false) {
+    // User has no diseases - clear diagnostico and tipo_enfermedad
     datosDeportistaActualizar.diagnostico = []
+    datosDeportistaActualizar.tipo_enfermedad = null
   }
+  // If tiene_enfermedades is null/undefined, don't send anything (user hasn't specified)
 }
 
 const agregarPesoAltura = (datosDeportista) => {
@@ -1512,18 +1552,175 @@ const agregarPesoAltura = (datosDeportista) => {
 }
 
 const actualizarDeportista = async (idDeportista, datosDeportistaActualizar) => {
-  try {
-    const resultadoDeportista = await deportistasService.actualizarDeportista(
-      idDeportista,
-      datosDeportistaActualizar
-    )
-
-    if (!resultadoDeportista.success) {
-      console.warn('Error al actualizar deportista:', resultadoDeportista.message)
-    }
-  } catch (err) {
-    console.error('Error al actualizar datos del deportista:', err)
+  if (LOG_CONFIG.enabled) {
+    console.log('📤 Enviando datos de deportista:', JSON.stringify(datosDeportistaActualizar, null, 2))
   }
+  const resultadoDeportista = await deportistasService.actualizarDeportista(
+    idDeportista,
+    datosDeportistaActualizar
+  )
+
+  if (!resultadoDeportista.success) {
+    const mensajeError = resultadoDeportista.message || resultadoDeportista.error || 'Error al actualizar deportista'
+    if (LOG_CONFIG.enabled) {
+      console.error('❌ Error al actualizar deportista:', mensajeError)
+    }
+    throw new Error(mensajeError)
+  }
+
+  if (LOG_CONFIG.enabled) {
+    console.log('✅ Deportista actualizado correctamente:', resultadoDeportista.data)
+  }
+  return resultadoDeportista
+}
+
+// Helper function to safely clone objects (compatible with Vue reactive objects)
+function clonarObjeto(objeto) {
+  if (!objeto || typeof objeto !== 'object') {
+    return objeto
+  }
+  try {
+    // Use JSON method for simple objects (works with Vue reactive objects)
+    return JSON.parse(JSON.stringify(objeto)) // NOSONAR: S7784 - Safe for simple data structures
+  } catch {
+    // Fallback to manual clone for complex objects
+    const clon = {}
+    for (const key in objeto) {
+      if (Object.hasOwn(objeto, key)) {
+        const valor = objeto[key]
+        if (valor && typeof valor === 'object' && !Array.isArray(valor)) {
+          clon[key] = clonarObjeto(valor)
+        } else {
+          clon[key] = valor
+        }
+      }
+    }
+    return clon
+  }
+}
+
+const validarCambiosYFormulario = async () => {
+  const tieneCambios = verificarCambios()
+  if (!tieneCambios) {
+    await Swal.fire({
+      icon: 'info',
+      title: 'Sin cambios',
+      text: 'No se han realizado modificaciones en tu perfil. No hay nada que guardar.',
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#004AAD'
+    })
+    return false
+  }
+
+  const erroresValidacion = validarFormulario()
+  if (erroresValidacion.length > 0) {
+    await Swal.fire({
+      icon: 'error',
+      title: 'Corrige los errores',
+      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${erroresValidacion.join('<br>')}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    })
+    return false
+  }
+
+  return true
+}
+
+const mostrarLoading = () => {
+  Swal.fire({
+    title: 'Guardando cambios...',
+    text: 'Por favor espera mientras procesamos tu solicitud.',
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    didOpen: () => {
+      Swal.showLoading()
+    }
+  })
+}
+
+const logDatosEnvio = (datosPersona, datosUsuario) => {
+  if (LOG_CONFIG.enabled) {
+    console.log('📤 Enviando datos de persona:', JSON.stringify(datosPersona, null, 2))
+    console.log('📤 Enviando datos de usuario:', JSON.stringify(datosUsuario, null, 2))
+  }
+}
+
+const procesarActualizacionUsuario = async (idUsuario, datosPersona, datosUsuario) => {
+  logDatosEnvio(datosPersona, datosUsuario)
+
+  const resultado = await authService.updateUser(idUsuario, datosPersona, datosUsuario)
+
+  if (LOG_CONFIG.enabled) {
+    console.log('📥 Resultado de actualización de usuario:', resultado)
+  }
+
+  Swal.close()
+
+  if (!resultado.success) {
+    const mensajeError = extraerMensajeError(resultado.error)
+    await Swal.fire({
+      icon: 'error',
+      title: 'Error al actualizar perfil',
+      html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+      confirmButtonText: 'Entendido',
+      confirmButtonColor: '#dc3545'
+    })
+    throw new Error(mensajeError)
+  }
+
+  return resultado
+}
+
+const procesarActualizacionDeportista = async () => {
+  if (!esDeportista.value) {
+    return
+  }
+
+  const idDeportista = authStore.userDetail?.deportista?.id_deportista ||
+                      authStore.user?.deportista?.id_deportista
+
+  if (!idDeportista) {
+    return
+  }
+
+  const datosDeportista = prepararDatosDeportistaBasicos()
+  const datosInfo = prepararDatosInformacionDeportiva()
+
+  const datosDeportistaActualizar = {
+    datos_deportista: datosDeportista,
+    datos_informacion_deportiva: datosInfo
+  }
+
+  limpiarObjetosVacios(datosDeportistaActualizar.datos_deportista)
+  limpiarObjetosVacios(datosDeportistaActualizar.datos_informacion_deportiva)
+
+  agregarDatosDiagnostico(datosDeportistaActualizar)
+  agregarPesoAltura(datosDeportistaActualizar.datos_deportista)
+
+  if (LOG_CONFIG.enabled) {
+    console.log('📤 Payload completo para actualizar deportista:', JSON.stringify(datosDeportistaActualizar, null, 2))
+  }
+
+  await actualizarDeportista(idDeportista, datosDeportistaActualizar)
+}
+
+const mostrarErrorActualizacion = async (err) => {
+  Swal.close()
+
+  if (LOG_CONFIG.enabled) {
+    console.error('❌ Error actualizando información:', err)
+  }
+
+  const mensajeError = err.message || extraerMensajeError(err) || 'Error desconocido al actualizar la información'
+  await Swal.fire({
+    icon: 'error',
+    title: 'Error al actualizar perfil',
+    html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
+    confirmButtonText: 'Entendido',
+    confirmButtonColor: '#dc3545'
+  })
+  return mensajeError
 }
 
 const mostrarExitoYRecargar = async () => {
@@ -1537,25 +1734,39 @@ const mostrarExitoYRecargar = async () => {
     confirmButtonColor: '#004AAD'
   })
 
-  await authStore.loadUserProfileDetail()
-  await authStore.loadUserProfile()
+  // Load updated data from backend
+  const [profileDetailOk, profileOk] = await Promise.all([
+    authStore.loadUserProfileDetail(),
+    authStore.loadUserProfile()
+  ])
 
-  // Actualizar datos iniciales con los nuevos datos guardados
-  try {
-    formDataInicial.value = structuredClone(formData.value)
-    formDataDeportistaInicial.value = structuredClone(formDataDeportista.value)
-  } catch {
-    // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
+  // Verify data was loaded successfully - if it fails, log but continue (user already sees success message)
+  if (!profileDetailOk || !profileOk) {
+    if (LOG_CONFIG.enabled) {
+      console.warn('⚠️ No se pudieron cargar todos los datos actualizados del perfil')
+    }
+    // Note: We continue anyway because the update was successful, just the refresh failed
+    // The watch in perfil.vue will handle updates when data becomes available
+  }
+
+  // Update initial data with the new saved data from backend (not from local formData)
+  // Use data from store which has the latest backend data
+  if (authStore.userDetail) {
     try {
-      formDataInicial.value = structuredClone(formData.value)
-      formDataDeportistaInicial.value = structuredClone(formDataDeportista.value)
-    } catch {
-      // Fallback to JSON method if structuredClone fails (e.g., with Vue reactive objects)
-      formDataInicial.value = JSON.parse(JSON.stringify(formData.value)) // NOSONAR: S7784
-      formDataDeportistaInicial.value = JSON.parse(JSON.stringify(formDataDeportista.value)) // NOSONAR: S7784
+      // Reload form data from the updated store data
+      // This ensures we're using backend data, not local form state
+      formDataInicial.value = clonarObjeto(formData.value)
+      formDataDeportistaInicial.value = clonarObjeto(formDataDeportista.value)
+    } catch (err) {
+      // Log error but don't block navigation - this is non-critical
+      if (LOG_CONFIG.enabled) {
+        console.error('Error al actualizar datos iniciales:', err)
+      }
+      // Error is non-critical, continue with navigation
     }
   }
 
+  // Navigate to profile page - the watch in perfil.vue will update the view
   router.push('/perfil')
 }
 
@@ -1564,30 +1775,8 @@ const actualizarInformacion = async () => {
     return
   }
 
-  // Verificar si hay cambios antes de continuar
-  const tieneCambios = verificarCambios()
-
-  if (!tieneCambios) {
-    await Swal.fire({
-      icon: 'info',
-      title: 'Sin cambios',
-      text: 'No se han realizado modificaciones en tu perfil. No hay nada que guardar.',
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#004AAD'
-    })
-    return
-  }
-
-  // Validar formulario antes de continuar
-  const erroresValidacion = validarFormulario()
-  if (erroresValidacion.length > 0) {
-    await Swal.fire({
-      icon: 'error',
-      title: 'Corrige los errores',
-      html: `<p><strong>Por favor corrige los siguientes errores:</strong></p><p>${erroresValidacion.join('<br>')}</p>`,
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#dc3545'
-    })
+  const puedeContinuar = await validarCambiosYFormulario()
+  if (!puedeContinuar) {
     return
   }
 
@@ -1595,16 +1784,7 @@ const actualizarInformacion = async () => {
     return
   }
 
-  // Mostrar loading mientras se procesa
-  Swal.fire({
-    title: 'Guardando cambios...',
-    text: 'Por favor espera mientras procesamos tu solicitud.',
-    allowOutsideClick: false,
-    allowEscapeKey: false,
-    didOpen: () => {
-      Swal.showLoading()
-    }
-  })
+  mostrarLoading()
 
   guardando.value = true
   error.value = null
@@ -1619,63 +1799,12 @@ const actualizarInformacion = async () => {
     const datosPersona = prepararDatosPersona()
     const datosUsuario = prepararDatosUsuario()
 
-    const resultado = await authService.updateUser(idUsuario, datosPersona, datosUsuario)
-
-    // Cerrar el loading
-    Swal.close()
-
-    if (!resultado.success) {
-      const mensajeError = extraerMensajeError(resultado.error)
-      await Swal.fire({
-        icon: 'error',
-        title: 'Error al actualizar perfil',
-        html: `<p><strong>No se pudieron guardar los cambios.</strong></p><p>${mensajeError}</p>`,
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#dc3545'
-      })
-      error.value = mensajeError
-      return
-    }
-
-    if (esDeportista.value) {
-      const idDeportista = authStore.userDetail?.deportista?.id_deportista ||
-                          authStore.user?.deportista?.id_deportista
-
-      if (idDeportista) {
-        const datosDeportista = prepararDatosDeportistaBasicos()
-        const datosInfo = prepararDatosInformacionDeportiva()
-
-        const datosDeportistaActualizar = {
-          datos_deportista: datosDeportista,
-          datos_informacion_deportiva: datosInfo
-        }
-
-        limpiarObjetosVacios(datosDeportistaActualizar.datos_deportista)
-        limpiarObjetosVacios(datosDeportistaActualizar.datos_informacion_deportiva)
-
-        agregarDatosDiagnostico(datosDeportistaActualizar)
-        agregarPesoAltura(datosDeportistaActualizar.datos_deportista)
-
-        await actualizarDeportista(idDeportista, datosDeportistaActualizar)
-      }
-    }
-
+    await procesarActualizacionUsuario(idUsuario, datosPersona, datosUsuario)
+    await procesarActualizacionDeportista()
     await mostrarExitoYRecargar()
   } catch (err) {
-    // Cerrar el loading si aún está abierto
-    Swal.close()
-
-    console.error('Error actualizando información:', err)
-    const mensajeError = extraerMensajeError(err)
+    const mensajeError = await mostrarErrorActualizacion(err)
     error.value = mensajeError
-
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error al actualizar perfil',
-      html: `<p><strong>Ocurrió un error inesperado.</strong></p><p>${mensajeError}</p>`,
-      confirmButtonText: 'Entendido',
-      confirmButtonColor: '#dc3545'
-    })
   } finally {
     guardando.value = false
   }

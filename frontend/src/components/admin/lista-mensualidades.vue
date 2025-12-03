@@ -284,7 +284,8 @@ import ModalDetalles from './modal-detalles.vue';
 import { API_CONFIG } from '@/config/environment';
 import Swal from 'sweetalert2';
 import { extraerMensajeError } from '@/utils/error-handling';
-import { normalizarDocumento, normalizarMonto, parseMonto, esFechaValida, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { normalizarDocumento, normalizarMonto, parseMonto, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { esFechaValida } from '@/utils/date-utils';
 
 // Props
 const props = defineProps({

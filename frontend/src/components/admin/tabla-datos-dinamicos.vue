@@ -105,8 +105,8 @@ const props = defineProps({
 const emit = defineEmits(['editar-dato', 'crear-nuevo', 'dato-eliminado'])
 
 // Watch para recargar cuando cambie la prop recargar
-watch(() => props.recargar, (nuevoValor) => {
-  if (nuevoValor && temaSeleccionado.value) {
+watch(() => props.recargar, () => {
+  if (temaSeleccionado.value) {
     cargarDatos()
   }
 })

@@ -20,8 +20,15 @@ export function useDynamicDataForm(props, emit, normalizationType = 'standard') 
     nombre: normalizar(props.modelValue?.nombre || '')
   })
 
-  // Watch for changes from parent
+  // Flag to prevent update cycle when emitting changes from child
+  const isUpdatingFromChild = ref(false)
+
+  // Watch for changes from parent (only if not from our own emission)
   watch(() => props.modelValue, (newVal) => {
+    if (isUpdatingFromChild.value) {
+      return
+    }
+
     const nuevoNombre = normalizar(newVal?.nombre || '')
     if (localForm.value.nombre !== nuevoNombre) {
       localForm.value = { nombre: nuevoNombre }
@@ -31,14 +38,20 @@ export function useDynamicDataForm(props, emit, normalizationType = 'standard') 
   // Normalize and emit when input changes
   watch(() => localForm.value.nombre, (nuevoValor) => {
     const normalizado = normalizar(nuevoValor)
+    
+    // If normalization changed the value, update localForm and continue to emit
     if (normalizado !== nuevoValor) {
       localForm.value.nombre = normalizado
-      return
     }
 
     const actual = normalizar(props.modelValue?.nombre || '')
     if (normalizado !== actual) {
+      isUpdatingFromChild.value = true
       emit('update:modelValue', { nombre: normalizado })
+      // Reset flag after emit completes
+      setTimeout(() => {
+        isUpdatingFromChild.value = false
+      }, 0)
     }
   })
 

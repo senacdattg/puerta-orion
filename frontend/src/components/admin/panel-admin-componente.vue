@@ -78,7 +78,7 @@
                 </div>
               </div>
             </div>
-            <TablaUsuarios :search-term="terminoBusqueda" :role-filter="filtroRol" @usuarios-cargados="setUsuarios"
+            <TablaUsuarios ref="tablaUsuariosRef" :search-term="terminoBusqueda" :role-filter="filtroRol" @usuarios-cargados="setUsuarios"
               @usuario-actualizado="actualizarUsuario" />
           </div>
 
@@ -166,6 +166,9 @@ const rolesOptions = ref([{ value: 'todos', label: 'Todos' }]);
 
 // Usuarios para conteos
 const usuariosPanel = ref([]);
+
+// Reference to TablaUsuarios component for reloading
+const tablaUsuariosRef = ref(null);
 
 // Conteos computados
 const totalUsuarios = computed(() => usuariosPanel.value.length);
@@ -495,8 +498,7 @@ async function manejarUsuarioRegistrado(datosUsuario) {
   console.log('Usuario registrado desde admin-manager:', datosUsuario);
   // Cerrar el modal después del registro exitoso
   cerrarModalRegistro();
-  // Aquí puedes agregar lógica adicional como actualizar la lista de usuarios
-  // o mostrar notificaciones
+  
   await Swal.fire({
     icon: 'success',
     title: 'Usuario registrado',
@@ -504,6 +506,11 @@ async function manejarUsuarioRegistrado(datosUsuario) {
     timer: 1500,
     showConfirmButton: false
   });
+  
+  // Recargar la tabla de usuarios
+  if (tablaUsuariosRef.value && typeof tablaUsuariosRef.value.cargarDatos === 'function') {
+    await tablaUsuariosRef.value.cargarDatos();
+  }
 }
 
 // Handlers para eventos del hijo

@@ -542,7 +542,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import catalogosService from '@/services/catalogosService';
 import deportistasService from '@/services/deportistasService';
 import personasService from '@/services/personasService';
-import { getApiUrl } from '@/config/environment';
+import { getApiUrl, LOG_CONFIG } from '@/config/environment';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
 import { extraerMensajeError } from '@/utils/error-handling';
@@ -1258,6 +1258,8 @@ function construirDatosActualizacionDeportista() {
     datos_informacion_deportiva: payloadInformacionDeportiva
   };
 
+  // Always include tipo_enfermedad and diagnostico at root level when there are health changes
+  // Backend expects these fields at root level, not inside datos_deportista or datos_informacion_deportiva
   if (payloadSalud.necesitaActualizacion) {
     if ('tipo_enfermedad' in payloadSalud) {
       datosActualizacion.tipo_enfermedad = payloadSalud.tipo_enfermedad;
@@ -1338,6 +1340,12 @@ async function guardarCambios() {
     await actualizarPersona();
 
     const datosActualizacion = construirDatosActualizacionDeportista();
+    
+    // Log payload for debugging (only in development)
+    if (LOG_CONFIG.enabled && datosActualizacion) {
+      console.log('📤 Payload completo para actualizar deportista:', JSON.stringify(datosActualizacion, null, 2))
+    }
+    
     const respuestaActualizacion = datosActualizacion
       ? await deportistasService.actualizarDeportista(idDeportista.value, datosActualizacion)
       : null;
@@ -1367,7 +1375,9 @@ async function guardarCambios() {
     // Cerrar el loading si aún está abierto
     Swal.close()
 
-    console.error('Error al guardar cambios del deportista:', error);
+    if (LOG_CONFIG.enabled) {
+      console.error('Error al guardar cambios del deportista:', error);
+    }
     const mensajeError = extraerMensajeError(error)
 
     await Swal.fire({
@@ -1467,7 +1477,6 @@ function construirPayloadSalud() {
     return { necesitaActualizacion: false };
   }
 
-  const recomendacion = !!formData.value.recomendacion_medica;
   const tipo = convertirEntero(formData.value.id_tipo_enfermedad);
   const diagnosticosSeleccionados = Array.isArray(formData.value.diagnosticos)
     ? formData.value.diagnosticos
@@ -1475,19 +1484,39 @@ function construirPayloadSalud() {
         .filter(id => id !== null && id !== undefined)
     : [];
 
-  if (!recomendacion) {
-    return {
-      necesitaActualizacion: true,
-      tipo_enfermedad: null,
-      diagnostico: []
-    };
+  // Check if there are changes compared to initial values
+  const tipoInicial = convertirEntero(formDataInicial.value.id_tipo_enfermedad);
+  const diagnosticosIniciales = Array.isArray(formDataInicial.value.diagnosticos)
+    ? formDataInicial.value.diagnosticos
+        .map(id => convertirEntero(id))
+        .filter(id => id !== null && id !== undefined)
+        .sort()
+    : [];
+
+  const diagnosticosActuales = [...diagnosticosSeleccionados].sort();
+  const hayCambiosTipo = tipo !== tipoInicial;
+  const hayCambiosDiagnosticos = JSON.stringify(diagnosticosActuales) !== JSON.stringify(diagnosticosIniciales);
+
+  if (!hayCambiosTipo && !hayCambiosDiagnosticos) {
+    return { necesitaActualizacion: false };
   }
 
-  return {
-    necesitaActualizacion: tipo !== null || diagnosticosSeleccionados.length > 0,
-    ...(puedeEditarTipo && tipo !== null ? { tipo_enfermedad: tipo } : {}),
-    ...(puedeEditarDiagnosticos ? { diagnostico: diagnosticosSeleccionados } : {})
+  // Always send both fields when there are changes (backend expects them at root level)
+  const payload = {
+    necesitaActualizacion: true
   };
+
+  // Send tipo_enfermedad if user can edit it (send null if cleared, send value if set)
+  if (puedeEditarTipo) {
+    payload.tipo_enfermedad = tipo;
+  }
+
+  // Always send diagnostico array if user can edit it (even if empty)
+  if (puedeEditarDiagnosticos) {
+    payload.diagnostico = diagnosticosSeleccionados;
+  }
+
+  return payload;
 }
 
 // Cargar catálogos al montar el componente
@@ -1497,120 +1526,169 @@ onMounted(async () => {
     inicializarFormulario();
     // catalogosCargados se establece dentro de cargarCatalogos()
     // Si ya estamos en modo edición y hay datos, inicializar
-    if (isEditing.value && props.datos) {
+    if (isEditing.value && props.datos && LOG_CONFIG.enabled) {
       console.log('🔄 onMounted: Inicializando formulario en modo edición');
     }
   } catch (error) {
-    console.error('Error crítico al cargar catálogos:', error);
+    if (LOG_CONFIG.enabled) {
+      console.error('Error crítico al cargar catálogos:', error);
+    }
     // Aún así, permitir que se muestre el componente
     catalogosCargados.value = true;
   }
 });
 
-async function cargarCatalogos() {
-  try {
+// Helper functions to reduce cognitive complexity in cargarCatalogos
+function _obtenerEndpointsCatalogos() {
+  return [
+    { url: getApiUrl('/api/deportistas/catalogos/grupos-sanguineos'), name: 'grupos-sanguineos' },
+    { url: getApiUrl('/api/deportistas/catalogos/ciudades-residencia'), name: 'ciudades-residencia' },
+    { url: getApiUrl('/api/deportistas/catalogos/eps'), name: 'eps' },
+    { url: getApiUrl('/api/deportistas/catalogos/deportes'), name: 'deportes' },
+    { url: getApiUrl('/api/deportistas/catalogos/escuelas'), name: 'escuelas' },
+    { url: getApiUrl('/api/deportistas/catalogos/instituciones-registro'), name: 'instituciones-registro' },
+    { url: getApiUrl('/api/deportistas/catalogos/tipos-enfermedad'), name: 'tipos-enfermedad' },
+    { url: getApiUrl('/api/deportistas/catalogos/diagnosticos'), name: 'diagnosticos' },
+    { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
+  ];
+}
+
+function _logBaseUrl() {
+  if (LOG_CONFIG.enabled) {
     console.log('🔗 Base URL para catálogos:', getApiUrl(''));
+  }
+}
 
-    // Cargar todos los catálogos necesarios desde las rutas de deportistas
-    const endpoints = [
-      { url: getApiUrl('/api/deportistas/catalogos/grupos-sanguineos'), name: 'grupos-sanguineos' },
-      { url: getApiUrl('/api/deportistas/catalogos/ciudades-residencia'), name: 'ciudades-residencia' },
-      { url: getApiUrl('/api/deportistas/catalogos/eps'), name: 'eps' },
-      { url: getApiUrl('/api/deportistas/catalogos/deportes'), name: 'deportes' },
-      { url: getApiUrl('/api/deportistas/catalogos/escuelas'), name: 'escuelas' },
-      { url: getApiUrl('/api/deportistas/catalogos/instituciones-registro'), name: 'instituciones-registro' },
-      { url: getApiUrl('/api/deportistas/catalogos/tipos-enfermedad'), name: 'tipos-enfermedad' },
-      { url: getApiUrl('/api/deportistas/catalogos/diagnosticos'), name: 'diagnosticos' },
-      { url: getApiUrl('/api/catalogos/tipos-documento'), name: 'tipos-documento' }
-    ];
-
-    // Obtener token de autenticación
-    const token = localStorage.getItem('token');
-    const headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+async function _cargarEndpointCatalogo(endpoint) {
+  try {
+    if (LOG_CONFIG.enabled) {
+      console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
     }
+    const response = await fetch(endpoint.url);
+    const data = await response.json();
+    if (LOG_CONFIG.enabled) {
+      console.log(`✅ ${endpoint.name} cargado:`, response.ok);
+    }
+    return { name: endpoint.name, ok: response.ok, data };
+  } catch (error) {
+    if (LOG_CONFIG.enabled) {
+      console.error(`❌ Error al cargar ${endpoint.name}:`, error);
+    }
+    return { name: endpoint.name, ok: false, data: null, error: error.message };
+  }
+}
 
-    const resultados = await Promise.all(
-      endpoints.map(async (endpoint) => {
-        try {
-          console.log(`📡 Cargando catálogo: ${endpoint.name} desde ${endpoint.url}`);
-          const response = await fetch(endpoint.url);
-          const data = await response.json();
-          console.log(`✅ ${endpoint.name} cargado:`, response.ok);
-          return { name: endpoint.name, ok: response.ok, data };
-        } catch (error) {
-          console.error(`❌ Error al cargar ${endpoint.name}:`, error);
-          return { name: endpoint.name, ok: false, data: null, error: error.message };
-        }
-      })
-    );
+async function _cargarTodosCatalogos(endpoints) {
+  return await Promise.all(endpoints.map(endpoint => _cargarEndpointCatalogo(endpoint)));
+}
 
-    // También cargar categorías usando el servicio
-    let categorias = [];
-    try {
-      categorias = await catalogosService.getCategorias();
+async function _cargarCategorias() {
+  try {
+    const categorias = await catalogosService.getCategorias();
+    if (LOG_CONFIG.enabled) {
       console.log('✅ Categorías cargadas:', categorias);
-    } catch (error) {
+    }
+    return categorias;
+  } catch (error) {
+    if (LOG_CONFIG.enabled) {
       console.error('❌ Error al cargar categorías:', error);
     }
+    return [];
+  }
+}
 
-    const [sangre, ciudades, eps, deportes, escuelas, instituciones, tiposEnfermedad, diagnosticos, tiposDocumento] = resultados.map(r => r.data);
+function _procesarCatalogo(respuesta, valorPorDefecto = []) {
+  if (!respuesta) {
+    return valorPorDefecto;
+  }
+  if (Array.isArray(respuesta)) {
+    return respuesta;
+  }
+  if (respuesta.success && Array.isArray(respuesta.data)) {
+    return respuesta.data;
+  }
+  if (Array.isArray(respuesta.data)) {
+    return respuesta.data;
+  }
+  return valorPorDefecto;
+}
 
-    // Mapear respuestas - algunas vienen con 'success', otras con 'data' directamente
-    const procesarCatalogo = (respuesta, valorPorDefecto = []) => {
-      if (!respuesta) return valorPorDefecto;
-      if (Array.isArray(respuesta)) return respuesta;
-      if (respuesta.success && Array.isArray(respuesta.data)) return respuesta.data;
-      if (Array.isArray(respuesta.data)) return respuesta.data;
-      return valorPorDefecto;
-    };
+function _asignarCatalogos(resultados, categorias) {
+  const [sangre, ciudades, eps, deportes, escuelas, instituciones, tiposEnfermedad, diagnosticos, tiposDocumento] = resultados.map(r => r.data);
 
-    catalogos.value.tiposSanguineos = procesarCatalogo(sangre);
-    catalogos.value.ciudades = procesarCatalogo(ciudades);
-    catalogos.value.eps = procesarCatalogo(eps);
-    catalogos.value.deportes = procesarCatalogo(deportes);
-    catalogos.value.escuelas = procesarCatalogo(escuelas);
-    catalogos.value.instituciones = procesarCatalogo(instituciones);
-    catalogos.value.categorias = Array.isArray(categorias) ? categorias : [];
-    catalogos.value.tiposEnfermedad = procesarCatalogo(tiposEnfermedad);
-    catalogos.value.diagnosticos = procesarCatalogo(diagnosticos);
-    catalogos.value.tiposDocumento = procesarCatalogo(tiposDocumento);
+  catalogos.value.tiposSanguineos = _procesarCatalogo(sangre);
+  catalogos.value.ciudades = _procesarCatalogo(ciudades);
+  catalogos.value.eps = _procesarCatalogo(eps);
+  catalogos.value.deportes = _procesarCatalogo(deportes);
+  catalogos.value.escuelas = _procesarCatalogo(escuelas);
+  catalogos.value.instituciones = _procesarCatalogo(instituciones);
+  catalogos.value.categorias = Array.isArray(categorias) ? categorias : [];
+  catalogos.value.tiposEnfermedad = _procesarCatalogo(tiposEnfermedad);
+  catalogos.value.diagnosticos = _procesarCatalogo(diagnosticos);
+  catalogos.value.tiposDocumento = _procesarCatalogo(tiposDocumento);
+}
 
-    // Logs de debugging
-    console.log('📋 ========== RESUMEN DE CATÁLOGOS CARGADOS ==========');
-    console.log('📋 Tipos sanguíneos:', catalogos.value.tiposSanguineos.length);
-    console.log('📋 Ciudades:', catalogos.value.ciudades.length);
-    console.log('📋 EPS:', catalogos.value.eps.length);
-    console.log('📋 Deportes:', catalogos.value.deportes.length);
-    console.log('📋 Escuelas:', catalogos.value.escuelas.length);
-    console.log('📋 Instituciones:', catalogos.value.instituciones.length);
-    console.log('📋 Categorías:', catalogos.value.categorias.length);
-    console.log('📋 Tipos de enfermedad:', catalogos.value.tiposEnfermedad.length);
-    console.log('📋 Diagnósticos:', catalogos.value.diagnosticos.length);
-    console.log('📋 Tipos de documento:', catalogos.value.tiposDocumento.length);
+function _logResumenCatalogos() {
+  if (!LOG_CONFIG.enabled) {
+    return;
+  }
+  
+  console.log('📋 ========== RESUMEN DE CATÁLOGOS CARGADOS ==========');
+  console.log('📋 Tipos sanguíneos:', catalogos.value.tiposSanguineos.length);
+  console.log('📋 Ciudades:', catalogos.value.ciudades.length);
+  console.log('📋 EPS:', catalogos.value.eps.length);
+  console.log('📋 Deportes:', catalogos.value.deportes.length);
+  console.log('📋 Escuelas:', catalogos.value.escuelas.length);
+  console.log('📋 Instituciones:', catalogos.value.instituciones.length);
+  console.log('📋 Categorías:', catalogos.value.categorias.length);
+  console.log('📋 Tipos de enfermedad:', catalogos.value.tiposEnfermedad.length);
+  console.log('📋 Diagnósticos:', catalogos.value.diagnosticos.length);
+  console.log('📋 Tipos de documento:', catalogos.value.tiposDocumento.length);
+}
 
-    if (catalogos.value.tiposEnfermedad.length > 0) {
-      console.log('📋 Ejemplo tipo enfermedad:', catalogos.value.tiposEnfermedad[0]);
-    }
-    if (catalogos.value.diagnosticos.length > 0) {
-      console.log('📋 Ejemplo diagnóstico:', catalogos.value.diagnosticos[0]);
-    }
-    if (catalogos.value.tiposDocumento.length > 0) {
-      console.log('📋 Ejemplo tipo documento:', catalogos.value.tiposDocumento[0]);
-    }
+function _logEjemplosCatalogos() {
+  if (!LOG_CONFIG.enabled) {
+    return;
+  }
+  
+  if (catalogos.value.tiposEnfermedad.length > 0) {
+    console.log('📋 Ejemplo tipo enfermedad:', catalogos.value.tiposEnfermedad[0]);
+  }
+  if (catalogos.value.diagnosticos.length > 0) {
+    console.log('📋 Ejemplo diagnóstico:', catalogos.value.diagnosticos[0]);
+  }
+  if (catalogos.value.tiposDocumento.length > 0) {
+    console.log('📋 Ejemplo tipo documento:', catalogos.value.tiposDocumento[0]);
+  }
+}
 
+function _marcarCatalogosCargados() {
+  catalogosCargados.value = true;
+  if (LOG_CONFIG.enabled) {
     console.log('✅ Catálogos cargados completamente');
-    // Marcar como cargado incluso si algunos catálogos fallaron
-    catalogosCargados.value = true;
+  }
+}
+
+// NOSONAR: S3776 - Complexity reduced through helper functions extraction
+async function cargarCatalogos() {
+  try {
+    _logBaseUrl();
+
+    const endpoints = _obtenerEndpointsCatalogos();
+    const resultados = await _cargarTodosCatalogos(endpoints);
+    const categorias = await _cargarCategorias();
+
+    _asignarCatalogos(resultados, categorias);
+    _logResumenCatalogos();
+    _logEjemplosCatalogos();
+    _marcarCatalogosCargados();
   } catch (error) {
-    console.error('Error al cargar catálogos:', error);
+    if (LOG_CONFIG.enabled) {
+      console.error('Error al cargar catálogos:', error);
+    }
     // Aún así, marcar como cargado para que el componente se muestre
     // El perfil puede funcionar sin todos los catálogos
-    catalogosCargados.value = true;
+    _marcarCatalogosCargados();
   }
 }
 
@@ -1784,7 +1862,9 @@ function formatearStringFecha(fecha) {
       return formatearDateADDMYYYY(dateObj);
     }
   } catch (error) {
-    console.warn('Error al formatear fecha:', error);
+    if (LOG_CONFIG.enabled) {
+      console.warn('Error al formatear fecha:', error);
+    }
   }
   return null;
 }
@@ -1825,7 +1905,9 @@ function obtenerTipoEnfermedad(idTipoEnfermedad) {
 
   // Si los catálogos aún no están cargados, retornar null
   if (!catalogosCargados.value || !catalogos.value.tiposEnfermedad || catalogos.value.tiposEnfermedad.length === 0) {
-    console.warn('⚠️ Catálogos de tipos de enfermedad aún no cargados');
+    if (LOG_CONFIG.enabled) {
+      console.warn('⚠️ Catálogos de tipos de enfermedad aún no cargados');
+    }
     return null;
   }
 
@@ -1840,13 +1922,17 @@ function obtenerTipoEnfermedad(idTipoEnfermedad) {
   });
 
   if (!tipo) {
-    console.warn('⚠️ Tipo de enfermedad no encontrado para ID:', idTipoEnfermedad, 'Catálogos disponibles:', catalogos.value.tiposEnfermedad.map(t => ({ id: t.id_tipo_enfermedad || t.id, nombre: t.nombre || t.nombre_tipo_enfermedad })));
+    if (LOG_CONFIG.enabled) {
+      console.warn('⚠️ Tipo de enfermedad no encontrado para ID:', idTipoEnfermedad, 'Catálogos disponibles:', catalogos.value.tiposEnfermedad.map(t => ({ id: t.id_tipo_enfermedad || t.id, nombre: t.nombre || t.nombre_tipo_enfermedad })));
+    }
     return null;
   }
 
   // El backend retorna el campo 'nombre' según el modelo TipoEnfermedad
   const nombre = tipo.nombre || tipo.nombre_tipo_enfermedad || tipo.tipo_enfermedad || tipo.tipo || tipo.descripcion || null;
-  console.log('✅ Tipo de enfermedad encontrado:', { id: idBuscado, nombre });
+  if (LOG_CONFIG.enabled) {
+    console.log('✅ Tipo de enfermedad encontrado:', { id: idBuscado, nombre });
+  }
   return nombre;
 }
 
@@ -1855,7 +1941,9 @@ function obtenerDiagnostico(idDiagnostico) {
 
   // Si los catálogos aún no están cargados, retornar null
   if (!catalogosCargados.value || !catalogos.value.diagnosticos || catalogos.value.diagnosticos.length === 0) {
-    console.warn('⚠️ Catálogos de diagnósticos aún no cargados');
+    if (LOG_CONFIG.enabled) {
+      console.warn('⚠️ Catálogos de diagnósticos aún no cargados');
+    }
     return null;
   }
 
@@ -1876,7 +1964,9 @@ function obtenerDiagnostico(idDiagnostico) {
 
   // El backend retorna el campo 'nombre' según el modelo Diagnostico
   const nombre = diagnostico.nombre || diagnostico.nombre_diagnostico || diagnostico.diagnostico || diagnostico.descripcion || null;
-  console.log('✅ Diagnóstico encontrado:', { id: idBuscado, nombre });
+  if (LOG_CONFIG.enabled) {
+    console.log('✅ Diagnóstico encontrado:', { id: idBuscado, nombre });
+  }
   return nombre;
 }
 

@@ -60,7 +60,7 @@ function obtenerRolPrincipal(roles) {
 }
 
 // Use shared registration logic for age calculations
-const { edadDeportista, esMayorDeEdad } = useUserRegistration()
+const { esMayorDeEdad } = useUserRegistration()
 
 // Verificar si el usuario es deportista
 const esDeportista = computed(() => {
@@ -69,12 +69,6 @@ const esDeportista = computed(() => {
   return nombresRoles.includes('Deportista')
 })
 
-// Verificar si el usuario ya tiene el rol Acudiente
-const yaEsAcudiente = computed(() => {
-  const roles = authStore.user?.roles || []
-  const nombresRoles = roles.map(r => getNombreRolSimple(r) || r).filter(Boolean)
-  return nombresRoles.includes('Acudiente')
-})
 
 const rolesDisponibles = computed(() => {
   const roles = authStore.user?.roles || []

@@ -372,14 +372,15 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { API_CONFIG } from '@/config/environment';
+import { API_CONFIG, LOG_CONFIG } from '@/config/environment';
 import mensualidadesService from '@/services/mensualidadesService';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
 import defaultAvatar from '@/assets/imgs/perfil.png';
 import { useModalScrollLock } from '@/composables/useModalScrollLock';
 import { extraerMensajeError } from '@/utils/error-handling';
-import { normalizarDocumento, normalizarMonto, parseMonto, esFechaValida, normalizarIdMetodoPago, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { normalizarDocumento, normalizarMonto, parseMonto, normalizarIdMetodoPago, MIN_DOCUMENTO, MAX_DOCUMENTO } from '@/utils/normalization-forms';
+import { esFechaValida } from '@/utils/date-utils';
 import { formatoCOP } from '@/utils/formatting';
 
 // Props
@@ -561,7 +562,9 @@ function normalizarValorParaComparacion(valor) {
 // Verificar si hay cambios
 function verificarCambios() {
   if (!formEdicionInicial.value) {
-    console.log('⚠️ [verificarCambios] No hay estado inicial guardado');
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('⚠️ [verificarCambios] No hay estado inicial guardado');
+    }
     return false
   }
 
@@ -576,17 +579,21 @@ function verificarCambios() {
 
     // Comparación más robusta
     if (valorInicial !== valorActual) {
-      console.log(`✅ [verificarCambios] Cambio detectado en campo "${campo}":`, {
-        inicial: valorInicial,
-        actual: valorActual,
-        tipoInicial: typeof valorInicial,
-        tipoActual: typeof valorActual
-      });
+      if (LOG_CONFIG && LOG_CONFIG.enabled) {
+        console.log(`✅ [verificarCambios] Cambio detectado en campo "${campo}":`, {
+          inicial: valorInicial,
+          actual: valorActual,
+          tipoInicial: typeof valorInicial,
+          tipoActual: typeof valorActual
+        });
+      }
       return true
     }
   }
 
-  console.log('ℹ️ [verificarCambios] No se detectaron cambios');
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('ℹ️ [verificarCambios] No se detectaron cambios');
+  }
   return false
 }
 
@@ -662,29 +669,43 @@ function configurarFormularioDesdeProps() {
   // Si estamos editando, guardar estado inicial
   if (editando.value && !formEdicionInicial.value) {
     formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
-    console.log('💾 [configurarFormularioDesdeProps] Guardando estado inicial:', formEdicionInicial.value);
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('💾 [configurarFormularioDesdeProps] Guardando estado inicial:', formEdicionInicial.value);
+    }
   }
 }
 
 configurarFormularioDesdeProps();
 
-watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => {
-  console.log('👀 [watch mensualidad] Watch disparado', {
-    idNueva: nuevaMensualidad?.id || nuevaMensualidad?.id_mensualidad,
-    idAnterior: anteriorMensualidad?.id || anteriorMensualidad?.id_mensualidad,
-    saldoPendienteRawNuevo: nuevaMensualidad?.saldo_pendiente_raw,
-    saldoPendienteRawAnterior: anteriorMensualidad?.saldo_pendiente_raw
-  });
+// Helper functions to reduce cognitive complexity in watch mensualidad
+function _logWatchMensualidad(nuevaMensualidad, anteriorMensualidad) {
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('👀 [watch mensualidad] Watch disparado', {
+      idNueva: nuevaMensualidad?.id || nuevaMensualidad?.id_mensualidad,
+      idAnterior: anteriorMensualidad?.id || anteriorMensualidad?.id_mensualidad,
+      saldoPendienteRawNuevo: nuevaMensualidad?.saldo_pendiente_raw,
+      saldoPendienteRawAnterior: anteriorMensualidad?.saldo_pendiente_raw
+    });
+  }
+}
 
-  // Solo ejecutar si realmente cambió la mensualidad (nueva referencia o cambio en campos clave)
-  if (!anteriorMensualidad || nuevaMensualidad?.id !== anteriorMensualidad?.id) {
+function _detectarCambioId(nuevaMensualidad, anteriorMensualidad) {
+  return !anteriorMensualidad || nuevaMensualidad?.id !== anteriorMensualidad?.id;
+}
+
+function _manejarCambioId() {
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
     console.log('👀 [watch mensualidad] ID cambió, configurando formulario desde props');
-    configurarFormularioDesdeProps();
+  }
+  configurarFormularioDesdeProps();
+}
+
+function _detectarCambioRelevante(nuevaMensualidad, anteriorMensualidad) {
+  if (!anteriorMensualidad) {
+    return false;
   }
 
-  // Recargar abonos cuando se actualiza la mensualidad
-  // También verificar si cambió el saldo pendiente, estado, o monto para forzar recarga
-  const cambioRelevante = anteriorMensualidad && (
+  return (
     nuevaMensualidad?.saldo_pendiente_raw !== anteriorMensualidad?.saldo_pendiente_raw ||
     nuevaMensualidad?.saldo_pendiente !== anteriorMensualidad?.saldo_pendiente ||
     nuevaMensualidad?.monto_pago_raw !== anteriorMensualidad?.monto_pago_raw ||
@@ -692,25 +713,63 @@ watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => 
     nuevaMensualidad?.estado !== anteriorMensualidad?.estado ||
     nuevaMensualidad?.estado_texto !== anteriorMensualidad?.estado_texto
   );
+}
 
-  console.log('👀 [watch mensualidad] Cambio relevante detectado:', cambioRelevante);
-
-  // Si hubo un cambio relevante, actualizar el formulario
-  if (cambioRelevante) {
-    console.log('👀 [watch mensualidad] Configurando formulario desde props debido a cambio relevante');
-    configurarFormularioDesdeProps();
+function _manejarCambioRelevante(cambioRelevante) {
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('👀 [watch mensualidad] Cambio relevante detectado:', cambioRelevante);
   }
 
-  const mensualidadId = obtenerIdMensualidad();
-  if (mensualidadId && (!anteriorMensualidad || cambioRelevante || nuevaMensualidad?.id !== anteriorMensualidad?.id)) {
-    try {
-      const respAb = await mensualidadesService.listarAbonos(mensualidadId);
-      // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
-      // Solo incluir abonos reales con id_abono
-      abonos.value = mapearAbonosDelBackend(respAb.data);
-    } catch {
-      abonos.value = [];
+  if (cambioRelevante) {
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('👀 [watch mensualidad] Configurando formulario desde props debido a cambio relevante');
     }
+    configurarFormularioDesdeProps();
+  }
+}
+
+function _debeRecargarAbonos(anteriorMensualidad, cambioRelevante, nuevaMensualidad) {
+  const mensualidadId = obtenerIdMensualidad();
+  if (!mensualidadId) {
+    return false;
+  }
+
+  return !anteriorMensualidad || cambioRelevante || nuevaMensualidad?.id !== anteriorMensualidad?.id;
+}
+
+async function _recargarAbonos() {
+  const mensualidadId = obtenerIdMensualidad();
+  if (!mensualidadId) {
+    return;
+  }
+
+  try {
+    const respAb = await mensualidadesService.listarAbonos(mensualidadId);
+    // Filtrar abonos "fantasma" (sin id_abono) que el backend puede agregar cuando la mensualidad está pagada
+    // Solo incluir abonos reales con id_abono
+    abonos.value = mapearAbonosDelBackend(respAb.data);
+  } catch {
+    abonos.value = [];
+  }
+}
+
+// NOSONAR: S3776 - Complexity reduced through helper functions extraction
+watch(() => props.mensualidad, async (nuevaMensualidad, anteriorMensualidad) => {
+  _logWatchMensualidad(nuevaMensualidad, anteriorMensualidad);
+
+  // Solo ejecutar si realmente cambió la mensualidad (nueva referencia o cambio en campos clave)
+  if (_detectarCambioId(nuevaMensualidad, anteriorMensualidad)) {
+    _manejarCambioId();
+  }
+
+  // Recargar abonos cuando se actualiza la mensualidad
+  // También verificar si cambió el saldo pendiente, estado, o monto para forzar recarga
+  const cambioRelevante = _detectarCambioRelevante(nuevaMensualidad, anteriorMensualidad);
+  _manejarCambioRelevante(cambioRelevante);
+
+  // Recargar abonos si es necesario
+  if (_debeRecargarAbonos(anteriorMensualidad, cambioRelevante, nuevaMensualidad)) {
+    await _recargarAbonos();
   }
 }, { deep: true, immediate: false });
 
@@ -761,7 +820,9 @@ watch(() => props.modoEdicion, (nuevoModo) => {
   if (nuevoModo && !formEdicionInicial.value) {
     // Guardar estado inicial cuando se activa la edición
     formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
-    console.log('💾 [watch modoEdicion] Guardando estado inicial:', formEdicionInicial.value);
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('💾 [watch modoEdicion] Guardando estado inicial:', formEdicionInicial.value);
+    }
   } else if (!nuevoModo) {
     formEdicionInicial.value = null;
   }
@@ -772,7 +833,9 @@ watch(() => editando.value, (nuevoValor) => {
   if (nuevoValor && !formEdicionInicial.value) {
     // Guardar estado inicial cuando se activa la edición
     formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
-    console.log('💾 [watch editando] Guardando estado inicial:', formEdicionInicial.value);
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('💾 [watch editando] Guardando estado inicial:', formEdicionInicial.value);
+    }
   } else if (!nuevoValor) {
     formEdicionInicial.value = null;
   }
@@ -827,7 +890,9 @@ onMounted(async () => {
   try {
     const mensualidadId = obtenerIdMensualidad();
     if (!mensualidadId) {
-      console.warn('No se pudo obtener el ID de la mensualidad');
+      if (LOG_CONFIG && LOG_CONFIG.enabled) {
+        console.warn('No se pudo obtener el ID de la mensualidad');
+      }
       abonos.value = [];
       return;
     }
@@ -1061,7 +1126,9 @@ function toggleEdicion() {
   // Si inicia edición, guardar estado inicial
   if (editando.value) {
     formEdicionInicial.value = normalizarFormularioParaGuardar(formEdicion.value);
-    console.log('💾 [toggleEdicion] Guardando estado inicial:', formEdicionInicial.value);
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.log('💾 [toggleEdicion] Guardando estado inicial:', formEdicionInicial.value);
+    }
   } else {
     configurarFormularioDesdeProps();
     formEdicionInicial.value = null;
@@ -1266,6 +1333,9 @@ function cancelarNuevoAbono() {
 }
 
 // Helper functions to reduce cognitive complexity in guardarNuevoAbonoDesdeTabla
+// Tolerance for floating point comparison (to avoid precision issues)
+const TOLERANCIA_COMPARACION_MONTO = 0.00001
+
 async function _verificarPermisoAbonar() {
   if (!puedeAbonar.value) {
     await Swal.fire({
@@ -1290,10 +1360,14 @@ function _validarMontoAbono(monto) {
   const totalConNuevoAbono = totalPagadoActual + monto;
   const saldoRestante = Number(saldoPendienteHistNum.value || 0);
 
-  // Single validation: check if the new abono would exceed the total or remaining balance
-  if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + 0.00001) {
+  // Validate independently: check both total and remaining balance
+  // First check: new total should not exceed the total monthly payment
+  if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + TOLERANCIA_COMPARACION_MONTO) {
     errores.push(`El monto excede el valor total de la mensualidad (${formatCOP(valorTotalMensualidad)})`);
-  } else if (monto > saldoRestante + 0.00001) {
+  }
+
+  // Second check: abono amount should not exceed remaining balance
+  if (monto > saldoRestante + TOLERANCIA_COMPARACION_MONTO) {
     errores.push(`El monto excede el saldo pendiente (${formatCOP(saldoRestante)})`);
   }
 
@@ -1315,6 +1389,11 @@ function _validarFechaAbono(fechaAbono) {
   // Date is valid, proceed with validation
   const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
   if (!fechaCreacion) {
+    // If creation date is missing, log warning but still allow (backend should validate)
+    if (LOG_CONFIG && LOG_CONFIG.enabled) {
+      console.warn('⚠️ No se encontró fecha de creación de la mensualidad para validar el abono');
+    }
+    // Don't block the abono if creation date is missing - backend should handle this
     return errores;
   }
 
@@ -1580,18 +1659,23 @@ function obtenerMontoPago(pago) {
 function calcularSaldoPendienteHistorial() {
   // 1) Priorizar el valor proveniente del backend para mantener consistencia con la tarjeta
   const spBackend = props.mensualidad.saldo_pendiente_raw ?? props.mensualidad.saldo_pendiente ?? props.mensualidad.saldoPendiente;
-  console.log('💰 [calcularSaldoPendienteHistorial] Valores:', {
-    saldo_pendiente_raw: props.mensualidad.saldo_pendiente_raw,
-    saldo_pendiente: props.mensualidad.saldo_pendiente,
-    saldoPendiente: props.mensualidad.saldoPendiente,
-    spBackendUsado: spBackend,
-    mensualidadId: obtenerIdMensualidad()
-  });
+
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('💰 [calcularSaldoPendienteHistorial] Valores:', {
+      saldo_pendiente_raw: props.mensualidad.saldo_pendiente_raw,
+      saldo_pendiente: props.mensualidad.saldo_pendiente,
+      saldoPendiente: props.mensualidad.saldoPendiente,
+      spBackendUsado: spBackend,
+      mensualidadId: obtenerIdMensualidad()
+    });
+  }
 
   if (spBackend !== undefined && spBackend !== null && spBackend !== '') {
     const n = Number(spBackend);
     if (!Number.isNaN(n)) {
-      console.log('💰 [calcularSaldoPendienteHistorial] Retornando saldo del backend:', n);
+      if (LOG_CONFIG && LOG_CONFIG.enabled) {
+        console.log('💰 [calcularSaldoPendienteHistorial] Retornando saldo del backend:', n);
+      }
       return Math.max(0, n);
     }
   }
@@ -1600,7 +1684,9 @@ function calcularSaldoPendienteHistorial() {
   const totalMensualidad = Number(props.mensualidad.monto_pago_raw ?? obtenerValorNumericoMensualidad());
   const totalPagado = calcularTotalPagado();
   const saldo = totalMensualidad - totalPagado;
-  console.log('💰 [calcularSaldoPendienteHistorial] Retornando saldo calculado:', saldo, { totalMensualidad, totalPagado });
+  if (LOG_CONFIG && LOG_CONFIG.enabled) {
+    console.log('💰 [calcularSaldoPendienteHistorial] Retornando saldo calculado:', saldo, { totalMensualidad, totalPagado });
+  }
   return Math.max(0, saldo);
 }
 
