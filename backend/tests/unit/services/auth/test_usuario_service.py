@@ -1039,3 +1039,839 @@ class TestUsuarioService:
             
             assert result is None
 
+    def test_obtener_o_crear_rol_usuario_crear(self, usuario_service, app_context):
+        """Test: _obtener_o_crear_rol_usuario cuando debe crear el rol (líneas 484-494)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        mock_rol_nuevo = MagicMock()
+        mock_rol_nuevo.id_rol = 1
+        mock_rol_nuevo.nombre_rol = 'usuario'
+        
+        with patch('src.services.Auth.usuario_service.Rol') as mock_rol_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            # Primera búsqueda devuelve None (rol no existe)
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.side_effect = [None, mock_rol_nuevo]
+            mock_rol_class.query = mock_query
+            
+            # Mock del constructor de Rol
+            mock_rol_class.return_value = mock_rol_nuevo
+            mock_db.session.add = MagicMock()
+            mock_db.session.flush = MagicMock()
+            
+            result = usuario_service._obtener_o_crear_rol_usuario()
+            
+            assert result == mock_rol_nuevo
+            mock_db.session.add.assert_called_once()
+            mock_db.session.flush.assert_called_once()
+
+    def test_obtener_o_crear_rol_usuario_exception(self, usuario_service, app_context):
+        """Test: _obtener_o_crear_rol_usuario cuando ocurre una excepción (líneas 498-500)."""
+        with patch('src.services.Auth.usuario_service.Rol') as mock_rol_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.side_effect = Exception('Database error')
+            mock_rol_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._obtener_o_crear_rol_usuario()
+            assert 'Error al gestionar rol usuario' in str(exc_info.value)
+
+    def test_verificar_credenciales_exception(self, usuario_service, app_context):
+        """Test: verificar_credenciales cuando ocurre una excepción (líneas 556-558)."""
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.side_effect = Exception('Database error')
+            mock_usuario_class.query = mock_query
+            
+            result = usuario_service.verificar_credenciales('testuser', 'password123')
+            
+            assert result is None
+
+    def test_obtener_usuario_por_id_exception(self, usuario_service, app_context):
+        """Test: obtener_usuario_por_id cuando ocurre una excepción (líneas 572-574)."""
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.side_effect = Exception('Database error')
+            mock_usuario_class.query = mock_query
+            
+            result = usuario_service.obtener_usuario_por_id(1)
+            
+            assert result is None
+
+    def test_obtener_usuario_con_roles_exception(self, usuario_service, app_context):
+        """Test: obtener_usuario_con_roles cuando ocurre una excepción (líneas 591-593)."""
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.side_effect = Exception('Database error')
+            mock_usuario_class.query = mock_query
+            
+            result = usuario_service.obtener_usuario_con_roles(1)
+            
+            assert result is None
+
+    def test_actualizar_usuario_persona_no_encontrada(self, usuario_service, app_context):
+        """Test: actualizar_usuario cuando persona no encontrada (líneas 634-635)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.id_persona = 999
+        mock_usuario.estado = True
+        
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class, \
+             patch('src.models.personas.persona.Persona') as mock_persona_class:
+            
+            mock_usuario_query = MagicMock()
+            mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
+            mock_usuario_class.query = mock_usuario_query
+            
+            mock_persona_query = MagicMock()
+            mock_persona_query.get.return_value = None  # Persona no encontrada
+            mock_persona_class.query = mock_persona_query
+            
+            datos_persona = {'primer_nombre': 'Nuevo Nombre'}
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service.actualizar_usuario(1, datos_persona=datos_persona)
+            assert 'Persona con ID 999 no encontrada' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_password(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_usuario cuando se intenta actualizar password (líneas 727-728)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        datos = {'password': 'nuevapassword123'}
+        
+        with pytest.raises(UsuarioServiceError) as exc_info:
+            usuario_service._validar_y_actualizar_usuario(mock_usuario, datos, 1)
+        assert 'La contraseña no se puede actualizar' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_estado(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_usuario cuando se intenta actualizar estado (líneas 731-732)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        datos = {'estado': False}
+        
+        with pytest.raises(UsuarioServiceError) as exc_info:
+            usuario_service._validar_y_actualizar_usuario(mock_usuario, datos, 1)
+        assert 'El estado no se puede actualizar' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_username_corto(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_usuario cuando username es muy corto (líneas 710-711)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        datos = {'usuario': 'ab'}
+        
+        with pytest.raises(UsuarioServiceError) as exc_info:
+            usuario_service._validar_y_actualizar_usuario(mock_usuario, datos, 1)
+        assert 'debe tener al menos 3 caracteres' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_username_largo(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_usuario cuando username es muy largo (líneas 713-714)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        datos = {'usuario': 'a' * 201}
+        
+        with pytest.raises(UsuarioServiceError) as exc_info:
+            usuario_service._validar_y_actualizar_usuario(mock_usuario, datos, 1)
+        assert 'excede la longitud máxima' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_username_duplicado(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_usuario cuando username ya existe (líneas 721-722)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        mock_usuario_existente = MagicMock()
+        mock_usuario_existente.id_usuario = 2
+        
+        datos = {'usuario': 'usuario_existente'}
+        
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.filter.return_value.first.return_value = mock_usuario_existente
+            mock_usuario_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._validar_y_actualizar_usuario(mock_usuario, datos, 1)
+            assert 'Ya existe un usuario con el nombre' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_integrity_error(self, usuario_service, app_context):
+        """Test: actualizar_usuario cuando IntegrityError (líneas 676-679)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.estado = True
+        
+        mock_persona = MagicMock()
+        mock_persona.id_persona = 1
+        mock_persona.primer_nombre = 'Juan'
+        mock_persona.primer_apellido = 'Pérez'
+        
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class, \
+             patch('src.models.personas.persona.Persona') as mock_persona_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_usuario_query = MagicMock()
+            mock_usuario_query.filter_by.return_value.first.return_value = mock_usuario
+            mock_usuario_class.query = mock_usuario_query
+            
+            mock_persona_query = MagicMock()
+            mock_persona_query.get.return_value = mock_persona
+            mock_persona_class.query = mock_persona_query
+            
+            # Mock flush para que falle en commit
+            mock_db.session.flush = MagicMock()
+            mock_db.session.add = MagicMock()
+            mock_db.session.commit.side_effect = IntegrityError('Duplicate', None, None)
+            mock_db.session.rollback = MagicMock()
+            
+            datos_persona = {'primer_nombre': 'Nuevo Nombre'}
+            
+            with patch.object(usuario_service, '_validar_y_actualizar_persona'):
+                with pytest.raises(UsuarioServiceError) as exc_info:
+                    usuario_service.actualizar_usuario(1, datos_persona=datos_persona)
+                assert 'Error de duplicación de datos' in str(exc_info.value)
+
+    def test_validar_y_actualizar_usuario_generic_error(self, usuario_service, app_context):
+        """Test: actualizar_usuario cuando error genérico (líneas 680-683)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.estado = True
+        
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_usuario_query = MagicMock()
+            mock_usuario_query.filter_by.side_effect = Exception('Unexpected error')
+            mock_usuario_class.query = mock_usuario_query
+            
+            mock_db.session.rollback = MagicMock()
+            
+            datos_usuario = {'usuario': 'nuevo_usuario'}
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service.actualizar_usuario(1, datos_usuario=datos_usuario)
+            assert 'Error interno del servidor' in str(exc_info.value)
+
+    def test_actualizar_campo_nombre_con_campo(self, usuario_service, app_context):
+        """Test: _actualizar_campo_nombre cuando el campo está en datos (líneas 739-745)."""
+        mock_persona = MagicMock()
+        mock_persona.primer_nombre = 'Juan'
+        
+        datos = {'primer_nombre': 'Pedro'}
+        campos_actualizados = []
+        
+        with patch('src.services.Auth.usuario_service.validate_name', return_value='Pedro'):
+            usuario_service._actualizar_campo_nombre(mock_persona, datos, 'primer_nombre', campos_actualizados)
+            
+            assert mock_persona.primer_nombre == 'Pedro'
+            assert 'primer_nombre' in campos_actualizados
+
+    def test_actualizar_campo_nombre_sin_campo(self, usuario_service, app_context):
+        """Test: _actualizar_campo_nombre cuando el campo no está en datos (línea 736-737)."""
+        mock_persona = MagicMock()
+        mock_persona.primer_nombre = 'Juan'
+        
+        datos = {}
+        campos_actualizados = []
+        
+        usuario_service._actualizar_campo_nombre(mock_persona, datos, 'primer_nombre', campos_actualizados)
+        
+        assert len(campos_actualizados) == 0
+
+    def test_actualizar_campo_nombre_segundo_nombre(self, usuario_service, app_context):
+        """Test: _actualizar_campo_nombre con segundo_nombre (valor None permitido)."""
+        mock_persona = MagicMock()
+        mock_persona.segundo_nombre = 'Carlos'
+        
+        datos = {'segundo_nombre': ''}
+        campos_actualizados = []
+        
+        with patch('src.services.Auth.usuario_service.validate_name', return_value=None):
+            usuario_service._actualizar_campo_nombre(mock_persona, datos, 'segundo_nombre', campos_actualizados)
+            
+            assert mock_persona.segundo_nombre is None
+            assert 'segundo_nombre' in campos_actualizados
+
+    def test_actualizar_documento_existente(self, usuario_service, app_context):
+        """Test: _actualizar_documento cuando el documento ya existe (líneas 759-760)."""
+        mock_persona = MagicMock()
+        mock_persona.documento = '12345678'
+        mock_persona.id_persona = 1
+        
+        mock_persona_existente = MagicMock()
+        mock_persona_existente.id_persona = 2
+        
+        datos = {'documento': '87654321'}
+        campos_actualizados = []
+        
+        with patch('src.services.Auth.usuario_service.validate_document', return_value='87654321'), \
+             patch('src.services.Auth.usuario_service.Persona') as mock_persona_class:
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.filter.return_value.first.return_value = mock_persona_existente
+            mock_persona_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._actualizar_documento(mock_persona, datos, 1, campos_actualizados)
+            assert 'Ya existe una persona con el documento' in str(exc_info.value)
+
+    def test_actualizar_documento_sin_campo(self, usuario_service, app_context):
+        """Test: _actualizar_documento cuando documento no está en datos (líneas 749-750)."""
+        mock_persona = MagicMock()
+        datos = {}
+        campos_actualizados = []
+        
+        usuario_service._actualizar_documento(mock_persona, datos, 1, campos_actualizados)
+        
+        assert len(campos_actualizados) == 0
+
+    def test_actualizar_email_existente(self, usuario_service, app_context):
+        """Test: _actualizar_email cuando el email ya existe (líneas 778-779)."""
+        mock_persona = MagicMock()
+        mock_persona.correo_electronico = 'viejo@example.com'
+        mock_persona.id_persona = 1
+        
+        mock_persona_existente = MagicMock()
+        mock_persona_existente.id_persona = 2
+        
+        datos = {'correo_electronico': 'nuevo@example.com'}
+        campos_actualizados = []
+        
+        with patch('src.services.Auth.usuario_service.validate_email', return_value='nuevo@example.com'), \
+             patch('src.services.Auth.usuario_service.Persona') as mock_persona_class:
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.filter.return_value.first.return_value = mock_persona_existente
+            mock_persona_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._actualizar_email(mock_persona, datos, 1, campos_actualizados)
+            assert 'Ya existe una persona con el email' in str(exc_info.value)
+
+    def test_actualizar_email_sin_campo(self, usuario_service, app_context):
+        """Test: _actualizar_email cuando correo_electronico no está en datos (líneas 768-769)."""
+        mock_persona = MagicMock()
+        datos = {}
+        campos_actualizados = []
+        
+        usuario_service._actualizar_email(mock_persona, datos, 1, campos_actualizados)
+        
+        assert len(campos_actualizados) == 0
+
+    def test_actualizar_direccion_sin_campo(self, usuario_service, app_context):
+        """Test: _actualizar_direccion cuando direccion no está en datos (líneas 787-788)."""
+        mock_persona = MagicMock()
+        datos = {}
+        campos_actualizados = []
+        
+        usuario_service._actualizar_direccion(mock_persona, datos, campos_actualizados)
+        
+        assert len(campos_actualizados) == 0
+
+    def test_actualizar_direccion_con_campo(self, usuario_service, app_context):
+        """Test: _actualizar_direccion cuando direccion está en datos (líneas 790-794)."""
+        mock_persona = MagicMock()
+        mock_persona.direccion = 'Calle Vieja'
+        
+        datos = {'direccion': 'Calle Nueva'}
+        campos_actualizados = []
+        
+        with patch('src.services.Auth.usuario_service.sanitize_address', return_value='Calle Nueva'):
+            usuario_service._actualizar_direccion(mock_persona, datos, campos_actualizados)
+            
+            assert mock_persona.direccion == 'Calle Nueva'
+            assert 'direccion' in campos_actualizados
+
+    def test_actualizar_telefono_sin_campo(self, usuario_service, app_context):
+        """Test: _actualizar_telefono cuando telefono no está en datos (líneas 798-799)."""
+        mock_persona = MagicMock()
+        datos = {}
+        campos_actualizados = []
+        
+        usuario_service._actualizar_telefono(mock_persona, datos, campos_actualizados)
+        
+        assert len(campos_actualizados) == 0
+
+    def test_actualizar_telefono_con_campo(self, usuario_service, app_context):
+        """Test: _actualizar_telefono cuando telefono está en datos (líneas 801-804)."""
+        mock_persona = MagicMock()
+        mock_persona.telefono = '3001234567'
+        
+        datos = {'telefono': '3007654321'}
+        campos_actualizados = []
+        
+        with patch('src.services.Auth.usuario_service.validate_phone', return_value='3007654321'):
+            usuario_service._actualizar_telefono(mock_persona, datos, campos_actualizados)
+            
+            assert mock_persona.telefono == '3007654321'
+            assert 'telefono' in campos_actualizados
+
+    def test_actualizar_relaciones_persona_tipo_documento(self, usuario_service, app_context):
+        """Test: _actualizar_relaciones_persona con id_tipo_documento (líneas 808-815)."""
+        mock_persona = MagicMock()
+        mock_persona.id_tipo_documento = 1
+        
+        mock_tipo_doc = MagicMock()
+        mock_tipo_doc.id_tipo_documento = 2
+        
+        datos = {'id_tipo_documento': 2}
+        campos_actualizados = []
+        
+        with patch('src.models.catalogos.tipo_documento.TipoDocumento') as mock_tipo_doc_class:
+            mock_query = MagicMock()
+            mock_query.get.return_value = mock_tipo_doc
+            mock_tipo_doc_class.query = mock_query
+            
+            usuario_service._actualizar_relaciones_persona(mock_persona, datos, campos_actualizados)
+            
+            assert mock_persona.id_tipo_documento == 2
+            assert 'id_tipo_documento' in campos_actualizados
+
+    def test_actualizar_relaciones_persona_tipo_documento_no_encontrado(self, usuario_service, app_context):
+        """Test: _actualizar_relaciones_persona cuando tipo_documento no encontrado (líneas 811-812)."""
+        mock_persona = MagicMock()
+        datos = {'id_tipo_documento': 999}
+        campos_actualizados = []
+        
+        with patch('src.models.catalogos.tipo_documento.TipoDocumento') as mock_tipo_doc_class:
+            mock_query = MagicMock()
+            mock_query.get.return_value = None
+            mock_tipo_doc_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._actualizar_relaciones_persona(mock_persona, datos, campos_actualizados)
+            assert 'Tipo de documento con ID 999 no encontrado' in str(exc_info.value)
+
+    def test_actualizar_relaciones_persona_sexo(self, usuario_service, app_context):
+        """Test: _actualizar_relaciones_persona con id_sexo (líneas 817-824)."""
+        mock_persona = MagicMock()
+        mock_persona.id_sexo = 1
+        
+        mock_sexo = MagicMock()
+        mock_sexo.id_sexo = 2
+        
+        datos = {'id_sexo': 2}
+        campos_actualizados = []
+        
+        with patch('src.models.categorias.sexo.Sexo') as mock_sexo_class:
+            mock_query = MagicMock()
+            mock_query.get.return_value = mock_sexo
+            mock_sexo_class.query = mock_query
+            
+            usuario_service._actualizar_relaciones_persona(mock_persona, datos, campos_actualizados)
+            
+            assert mock_persona.id_sexo == 2
+            assert 'id_sexo' in campos_actualizados
+
+    def test_actualizar_relaciones_persona_sexo_no_encontrado(self, usuario_service, app_context):
+        """Test: _actualizar_relaciones_persona cuando sexo no encontrado (líneas 820-821)."""
+        mock_persona = MagicMock()
+        datos = {'id_sexo': 999}
+        campos_actualizados = []
+        
+        with patch('src.models.categorias.sexo.Sexo') as mock_sexo_class:
+            mock_query = MagicMock()
+            mock_query.get.return_value = None
+            mock_sexo_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._actualizar_relaciones_persona(mock_persona, datos, campos_actualizados)
+            assert 'Sexo con ID 999 no encontrado' in str(exc_info.value)
+
+    def test_validar_y_actualizar_persona_estado(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_persona cuando se intenta actualizar estado (líneas 861-862)."""
+        mock_persona = MagicMock()
+        datos = {'estado': False}
+        
+        with pytest.raises(UsuarioServiceError) as exc_info:
+            usuario_service._validar_y_actualizar_persona(mock_persona, datos, 1)
+        assert 'El estado no se puede actualizar' in str(exc_info.value)
+
+    def test_validar_y_actualizar_persona_campos_actualizados(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_persona cuando hay campos actualizados (líneas 864-865)."""
+        mock_persona = MagicMock()
+        mock_persona.primer_nombre = 'Juan'
+        datos = {'primer_nombre': 'Pedro'}
+        
+        with patch.object(usuario_service, '_actualizar_campo_nombre') as mock_actualizar:
+            def side_effect(persona, datos, campo, campos_actualizados):
+                if campo == 'primer_nombre':
+                    campos_actualizados.append('primer_nombre')
+            mock_actualizar.side_effect = side_effect
+            
+            usuario_service._validar_y_actualizar_persona(mock_persona, datos, 1)
+            
+            # Verificar que se llama para cada campo de nombre
+            assert mock_actualizar.call_count == 4
+
+    def test_validar_y_actualizar_persona_sin_campos_actualizados(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_persona cuando no hay campos actualizados (líneas 866-867)."""
+        mock_persona = MagicMock()
+        datos = {'primer_nombre': 'Juan'}  # Mismo valor que ya tiene
+        
+        with patch.object(usuario_service, '_actualizar_campo_nombre'):
+            usuario_service._validar_y_actualizar_persona(mock_persona, datos, 1)
+            
+            # No debería haber error, pero debería registrar warning
+
+    def test_validar_y_actualizar_persona_validation_error(self, usuario_service, app_context):
+        """Test: _validar_y_actualizar_persona cuando hay ValidationError (líneas 856-857)."""
+        from src.utils.validations import ValidationError
+        
+        mock_persona = MagicMock()
+        datos = {'primer_nombre': 'Pedro'}
+        
+        with patch.object(usuario_service, '_actualizar_campo_nombre') as mock_actualizar:
+            mock_actualizar.side_effect = ValidationError('Validation error')
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._validar_y_actualizar_persona(mock_persona, datos, 1)
+            assert 'Validation error' in str(exc_info.value)
+
+    def test_obtener_fecha_nacimiento_persona_con_fecha(self, usuario_service, app_context):
+        """Test: _obtener_fecha_nacimiento_persona cuando hay fecha (líneas 895-896)."""
+        mock_deportista = MagicMock()
+        mock_deportista.fecha_nacimiento = date(2010, 6, 15)
+        
+        with patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = mock_deportista
+            mock_deportista_class.query = mock_query
+            
+            result = usuario_service._obtener_fecha_nacimiento_persona(1)
+            
+            assert result == date(2010, 6, 15)
+
+    def test_obtener_fecha_nacimiento_persona_sin_deportista(self, usuario_service, app_context):
+        """Test: _obtener_fecha_nacimiento_persona cuando no hay deportista (línea 897)."""
+        with patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None
+            mock_deportista_class.query = mock_query
+            
+            result = usuario_service._obtener_fecha_nacimiento_persona(1)
+            
+            assert result is None
+
+    def test_obtener_fecha_nacimiento_persona_sin_fecha(self, usuario_service, app_context):
+        """Test: _obtener_fecha_nacimiento_persona cuando deportista no tiene fecha (línea 897)."""
+        mock_deportista = MagicMock()
+        mock_deportista.fecha_nacimiento = None
+        
+        with patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = mock_deportista
+            mock_deportista_class.query = mock_query
+            
+            result = usuario_service._obtener_fecha_nacimiento_persona(1)
+            
+            assert result is None
+
+    def test_obtener_roles_usuario_sin_roles(self, usuario_service, app_context):
+        """Test: _obtener_roles_usuario cuando usuario no tiene roles (líneas 901-902)."""
+        mock_usuario = MagicMock(spec=[])
+        del mock_usuario.roles
+        
+        result = usuario_service._obtener_roles_usuario(mock_usuario)
+        
+        assert result == []
+
+    def test_obtener_roles_usuario_con_roles(self, usuario_service, app_context):
+        """Test: _obtener_roles_usuario cuando usuario tiene roles (líneas 904-908)."""
+        mock_rol = MagicMock()
+        mock_rol.id_rol = 1
+        mock_rol.nombre_rol = 'admin'
+        mock_rol.descripcion = 'Administrador'
+        
+        mock_usuario = MagicMock()
+        mock_usuario.roles = [mock_rol]
+        
+        result = usuario_service._obtener_roles_usuario(mock_usuario)
+        
+        assert len(result) == 1
+        assert result[0]['id_rol'] == 1
+        assert result[0]['nombre_rol'] == 'admin'
+        assert result[0]['descripcion'] == 'Administrador'
+
+    def test_construir_datos_persona(self, usuario_service, app_context):
+        """Test: _construir_datos_persona (líneas 912-925)."""
+        mock_persona = MagicMock()
+        mock_persona.primer_nombre = 'Juan'
+        mock_persona.segundo_nombre = 'Carlos'
+        mock_persona.primer_apellido = 'Pérez'
+        mock_persona.segundo_apellido = 'García'
+        mock_persona.documento = '12345678'
+        mock_persona.correo_electronico = 'juan@example.com'
+        mock_persona.direccion = 'Calle 123'
+        mock_persona.telefono = '3001234567'
+        mock_persona.id_tipo_documento = 1
+        mock_persona.id_sexo = 1
+        mock_persona.nombre_completo = 'Juan Carlos Pérez García'
+        
+        fecha_nac = date(2010, 6, 15)
+        
+        result = usuario_service._construir_datos_persona(mock_persona, fecha_nac)
+        
+        assert result['primer_nombre'] == 'Juan'
+        assert result['segundo_nombre'] == 'Carlos'
+        assert result['fecha_nacimiento'] == fecha_nac
+        assert result['nombre_completo'] == 'Juan Carlos Pérez García'
+
+    def test_agregar_info_deportista_con_info_deportiva(self, usuario_service, app_context):
+        """Test: _agregar_info_deportista con información deportiva (líneas 943-957)."""
+        mock_deportista = MagicMock()
+        mock_deportista.id_deportista = 1
+        mock_deportista.fecha_nacimiento = date(2010, 6, 15)
+        mock_deportista.id_tipo_sanguineo = 1
+        mock_deportista.id_ciudad_recidencia = 1
+        mock_deportista.id_eps = 1
+        mock_deportista.peso = 50.5
+        mock_deportista.altura = 150.0
+        mock_deportista.id_informacion_deportiva = 1
+        mock_deportista.id_categoria = 1
+        
+        mock_info_deportiva = MagicMock()
+        mock_info_deportiva.practica_otro_deporte = True
+        mock_info_deportiva.participa_escuela = True
+        mock_info_deportiva.recomendacion_medica = True
+        mock_info_deportiva.descripcion_recomendacion = 'Descripción'
+        mock_info_deportiva.id_escuela = 1
+        mock_info_deportiva.id_deporte = 1
+        mock_info_deportiva.id_institucion_registro = 1
+        
+        resultado = {}
+        
+        with patch('src.models.deportistas.informacion_deportiva.InformacionDeportiva') as mock_info_class, \
+             patch('src.models.salud.diagnostico_deportista.DiagnosticoDeportista') as mock_diag_deportista_class, \
+             patch('src.models.salud.diagnostico.Diagnostico') as mock_diagnostico_class:
+            
+            mock_info_query = MagicMock()
+            mock_info_query.filter_by.return_value.first.return_value = mock_info_deportiva
+            mock_info_class.query = mock_info_query
+            
+            mock_diag_query = MagicMock()
+            mock_diag_query.filter_by.return_value.all.return_value = []
+            mock_diag_deportista_class.query = mock_diag_query
+            
+            usuario_service._agregar_info_deportista(resultado, mock_deportista)
+            
+            assert 'deportista' in resultado
+            assert 'informacion_deportiva' in resultado
+            assert resultado['informacion_deportiva']['practica_otro_deporte'] is True
+
+    def test_agregar_info_deportista_con_diagnosticos(self, usuario_service, app_context):
+        """Test: _agregar_info_deportista con diagnósticos (líneas 959-972)."""
+        mock_deportista = MagicMock()
+        mock_deportista.id_deportista = 1
+        mock_deportista.fecha_nacimiento = date(2010, 6, 15)
+        mock_deportista.id_tipo_sanguineo = None
+        mock_deportista.id_ciudad_recidencia = None
+        mock_deportista.id_eps = None
+        mock_deportista.peso = None
+        mock_deportista.altura = None
+        mock_deportista.id_informacion_deportiva = None
+        
+        mock_diagnostico_deportista = MagicMock()
+        mock_diagnostico_deportista.id_diagnostico = 1
+        
+        mock_diagnostico = MagicMock()
+        mock_diagnostico.id_tipo_enfermedad = 2
+        
+        resultado = {}
+        
+        with patch('src.models.deportistas.informacion_deportiva.InformacionDeportiva') as mock_info_class, \
+             patch('src.models.salud.diagnostico_deportista.DiagnosticoDeportista') as mock_diag_deportista_class, \
+             patch('src.models.salud.diagnostico.Diagnostico') as mock_diagnostico_class:
+            
+            mock_info_query = MagicMock()
+            mock_info_query.filter_by.return_value.first.return_value = None
+            mock_info_class.query = mock_info_query
+            
+            mock_diag_deportista_query = MagicMock()
+            mock_diag_deportista_query.filter_by.return_value.all.return_value = [mock_diagnostico_deportista]
+            mock_diag_deportista_class.query = mock_diag_deportista_query
+            
+            mock_diagnostico_query = MagicMock()
+            mock_diagnostico_query.filter_by.return_value.first.return_value = mock_diagnostico
+            mock_diagnostico_class.query = mock_diagnostico_query
+            
+            usuario_service._agregar_info_deportista(resultado, mock_deportista)
+            
+            assert 'deportista' in resultado
+            assert 'diagnostico' in resultado
+            assert resultado['diagnostico'] == [1]
+            assert resultado['tipo_enfermedad'] == 2
+
+    def test_agregar_info_acudiente(self, usuario_service, app_context):
+        """Test: _agregar_info_acudiente (líneas 974-985)."""
+        mock_acudiente = MagicMock()
+        mock_acudiente.id_acudiente = 1
+        
+        mock_relacion = MagicMock()
+        mock_relacion.es_responsable = True
+        
+        resultado = {}
+        
+        with patch('src.models.acudientes.deportista_acudiente.DeportistaAcudiente') as mock_deportista_acudiente_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = mock_relacion
+            mock_deportista_acudiente_class.query = mock_query
+            
+            usuario_service._agregar_info_acudiente(resultado, mock_acudiente)
+            
+            assert 'informacion_acudiente' in resultado
+            assert resultado['informacion_acudiente']['id_acudiente'] == 1
+            assert resultado['informacion_acudiente']['es_respondable'] is True
+
+    def test_agregar_info_acudiente_sin_relacion(self, usuario_service, app_context):
+        """Test: _agregar_info_acudiente sin relación (línea 984)."""
+        mock_acudiente = MagicMock()
+        mock_acudiente.id_acudiente = 1
+        
+        resultado = {}
+        
+        with patch('src.models.acudientes.deportista_acudiente.DeportistaAcudiente') as mock_deportista_acudiente_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None
+            mock_deportista_acudiente_class.query = mock_query
+            
+            usuario_service._agregar_info_acudiente(resultado, mock_acudiente)
+            
+            assert 'informacion_acudiente' in resultado
+            assert resultado['informacion_acudiente']['es_respondable'] is False
+
+    def test_obtener_detalle_completo_usuario_sin_persona(self, usuario_service, app_context):
+        """Test: obtener_detalle_completo_usuario cuando no hay persona (líneas 1009-1015)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.usuario = 'testuser'
+        mock_usuario.id_persona = 999
+        mock_usuario.persona = None
+        
+        with patch.object(usuario_service, '_obtener_usuario_para_detalle', return_value=mock_usuario):
+            result = usuario_service.obtener_detalle_completo_usuario(1)
+            
+            assert result is not None
+            assert result['persona'] is None
+            assert 'error' in result
+            assert result['error'] == 'El usuario no tiene una persona asociada'
+
+    def test_obtener_detalle_completo_usuario_con_deportista_y_acudiente(self, usuario_service, app_context):
+        """Test: obtener_detalle_completo_usuario con deportista y acudiente."""
+        mock_persona = MagicMock()
+        mock_persona.id_persona = 1
+        mock_persona.primer_nombre = 'Juan'
+        mock_persona.primer_apellido = 'Pérez'
+        mock_persona.segundo_nombre = None
+        mock_persona.segundo_apellido = None
+        mock_persona.documento = '12345678'
+        mock_persona.correo_electronico = 'juan@example.com'
+        mock_persona.direccion = None
+        mock_persona.telefono = None
+        mock_persona.id_tipo_documento = 1
+        mock_persona.id_sexo = 1
+        mock_persona.nombre_completo = 'Juan Pérez'
+        
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.usuario = 'testuser'
+        mock_usuario.estado = True
+        mock_usuario.id_persona = 1
+        mock_usuario.persona = mock_persona
+        
+        mock_deportista = MagicMock()
+        mock_deportista.id_deportista = 1
+        
+        mock_acudiente = MagicMock()
+        mock_acudiente.id_acudiente = 1
+        
+        with patch.object(usuario_service, '_obtener_usuario_para_detalle', return_value=mock_usuario), \
+             patch.object(usuario_service, '_obtener_fecha_nacimiento_persona', return_value=date(2010, 6, 15)), \
+             patch.object(usuario_service, '_obtener_roles_usuario', return_value=[]), \
+             patch.object(usuario_service, '_construir_datos_persona', return_value={}), \
+             patch.object(usuario_service, '_agregar_info_deportista'), \
+             patch.object(usuario_service, '_agregar_info_acudiente'), \
+             patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class, \
+             patch('src.services.Auth.usuario_service.Acudiente') as mock_acudiente_class:
+            
+            mock_deportista_query = MagicMock()
+            mock_deportista_query.filter_by.return_value.first.return_value = mock_deportista
+            mock_deportista_class.query = mock_deportista_query
+            
+            mock_acudiente_query = MagicMock()
+            mock_acudiente_query.filter_by.return_value.first.return_value = mock_acudiente
+            mock_acudiente_class.query = mock_acudiente_query
+            
+            result = usuario_service.obtener_detalle_completo_usuario(1)
+            
+            assert result is not None
+            usuario_service._agregar_info_deportista.assert_called_once()
+            usuario_service._agregar_info_acudiente.assert_called_once()
+
+    def test_obtener_detalle_completo_usuario_exception(self, usuario_service, app_context):
+        """Test: obtener_detalle_completo_usuario cuando ocurre una excepción (líneas 1044-1048)."""
+        with patch.object(usuario_service, '_obtener_usuario_para_detalle', side_effect=Exception('Error')):
+            result = usuario_service.obtener_detalle_completo_usuario(1)
+            
+            assert result is None
+
+    def test_serializar_usuario_sin_persona(self, usuario_service, app_context):
+        """Test: _serializar_usuario cuando usuario no tiene persona (líneas 518-519)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.id_persona = 1
+        mock_usuario.usuario = 'testuser'
+        mock_usuario.estado = True
+        mock_usuario.created_at = None
+        mock_usuario.persona = None
+        
+        mock_rol = MagicMock()
+        mock_rol.to_dict.return_value = {'id_rol': 1, 'nombre_rol': 'admin'}
+        mock_usuario.roles = [mock_rol]
+        
+        result = usuario_service._serializar_usuario(mock_usuario)
+        
+        assert result['id_usuario'] == 1
+        assert result['persona'] is None
+
+    def test_serializar_usuario_con_created_at(self, usuario_service, app_context):
+        """Test: _serializar_usuario cuando tiene created_at (línea 534)."""
+        from datetime import datetime
+        
+        mock_persona = MagicMock()
+        mock_persona.nombre_completo = 'Juan Pérez'
+        mock_persona.correo_electronico = 'juan@example.com'
+        mock_persona.documento = '12345678'
+        mock_persona.telefono = '3001234567'
+        
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        mock_usuario.id_persona = 1
+        mock_usuario.usuario = 'testuser'
+        mock_usuario.estado = True
+        mock_usuario.created_at = datetime(2024, 1, 1, 12, 0, 0)
+        mock_usuario.persona = mock_persona
+        mock_usuario.roles = []
+        
+        result = usuario_service._serializar_usuario(mock_usuario)
+        
+        assert result['fecha_creacion'] is not None
+        assert '2024-01-01' in result['fecha_creacion']
+
+    def test_asignar_rol_por_defecto_exception(self, usuario_service, app_context):
+        """Test: _asignar_rol_por_defecto cuando ocurre una excepción (líneas 466-468)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        with patch('src.services.Auth.usuario_service.UsuarioRol') as mock_usuario_rol_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.side_effect = Exception('Database error')
+            mock_usuario_rol_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError) as exc_info:
+                usuario_service._asignar_rol_por_defecto(mock_usuario)
+            assert 'Error al asignar rol por defecto' in str(exc_info.value)
+
