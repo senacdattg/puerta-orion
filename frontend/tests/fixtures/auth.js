@@ -43,12 +43,18 @@ export const mockAdminUser = {
 
 export const mockToken = 'mock-jwt-token-12345'
 
+// nosonar: S2068 - Contraseñas hardcodeadas son aceptables en fixtures de test
+// Estas contraseñas son solo para pruebas unitarias y nunca se usan en producción
+// No representan un riesgo de seguridad ya que están en código de test, no en código de producción
 export const mockLoginCredentials = {
   tipo_documento: 'CC',
   numero_documento: '1234567890',
-  password: 'password123'
+  password: 'password123' // NOSONAR - Test fixture only
 }
 
+// nosonar: S2068 - Contraseñas hardcodeadas son aceptables en fixtures de test
+// Estas contraseñas son solo para pruebas unitarias y nunca se usan en producción
+// No representan un riesgo de seguridad ya que están en código de test, no en código de producción
 export const mockRegisterData = {
   tipo_documento: 'CC',
   numero_documento: '1234567890',
@@ -59,8 +65,8 @@ export const mockRegisterData = {
   fecha_nacimiento: '2000-01-01',
   correo_electronico: 'test@example.com',
   telefono: '1234567890',
-  password: 'password123',
-  confirm_password: 'password123'
+  password: 'password123', // NOSONAR - Test fixture only
+  confirm_password: 'password123' // NOSONAR - Test fixture only
 }
 
 export const mockLoginResponse = {

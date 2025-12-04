@@ -30,7 +30,8 @@ RUN pip install --upgrade pip setuptools wheel \
 # - Solo se copian archivos necesarios para la aplicación
 # - Archivos sensibles como .env, claves privadas, y credenciales están excluidos
 # - El usuario no root (appuser) no tiene acceso a información confidencial
-# nosonar: S6470 - COPY recursivo es seguro gracias a .dockerignore configurado
+# - .dockerignore incluye: .env, .env.*, *.key, *.pem, secrets/, .git/, logs/, instance/
+# nosonar: S6470 - COPY recursivo es seguro gracias a .dockerignore configurado y verificado
 COPY . .
 
 # Preparar entrypoint y cambiar ownership de los archivos al usuario no privilegiado

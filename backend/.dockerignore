@@ -56,6 +56,31 @@ static/uploads/
 .env
 .env.local
 .env.*.local
+.env.*
 config.env.example
 enviroment.example
+
+# Secrets and sensitive files
+*.key
+*.pem
+*.p12
+*.jks
+secrets/
+.secrets
+*.secret
+
+# Coverage and test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+junit.xml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
 
