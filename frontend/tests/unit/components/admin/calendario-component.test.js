@@ -12,7 +12,8 @@ vi.mock('@/services/calendarioService', () => ({
         id_evento: 1,
         nombre: 'Evento Test',
         fecha_evento: '2024-12-31',
-        id_tipo_evento: 1
+        id_tipo_evento: 1,
+        tipo: 'Entrenamiento'
       }
     ]),
     obtenerEventosPorFecha: vi.fn(() => []),
@@ -496,9 +497,9 @@ describe('CalendarioComponent', () => {
       })
 
       wrapper.vm.eventosDelDia = [
-        { id: 1, titulo: 'Evento 1' },
-        { id: 2, titulo: 'Evento 2' },
-        { id: 3, titulo: 'Evento 3' }
+        { id: 1, titulo: 'Evento 1', tipo: 'Evento' },
+        { id: 2, titulo: 'Evento 2', tipo: 'Evento' },
+        { id: 3, titulo: 'Evento 3', tipo: 'Evento' }
       ]
       wrapper.vm.indiceEventoActual = 0
 
@@ -912,7 +913,7 @@ describe('CalendarioComponent', () => {
 
     it('should cerrarSelectorEventos close selector and reset', () => {
       wrapper.vm.selectorEventosVisible = true
-      wrapper.vm.eventosDelDia = [{ id: 1 }]
+      wrapper.vm.eventosDelDia = [{ id: 1, tipo: 'Evento' }]
       wrapper.vm.indiceEventoActual = 1
 
       wrapper.vm.cerrarSelectorEventos()
@@ -935,8 +936,8 @@ describe('CalendarioComponent', () => {
 
     it('should eventoActual return current event', () => {
       wrapper.vm.eventosDelDia = [
-        { id: 1, titulo: 'Evento 1' },
-        { id: 2, titulo: 'Evento 2' }
+        { id: 1, titulo: 'Evento 1', tipo: 'Evento' },
+        { id: 2, titulo: 'Evento 2', tipo: 'Evento' }
       ]
       wrapper.vm.indiceEventoActual = 0
 
@@ -986,8 +987,8 @@ describe('CalendarioComponent', () => {
       })
 
       wrapper.vm.eventosDelDia = [
-        { id: 1, titulo: 'Evento 1' },
-        { id: 2, titulo: 'Evento 2' }
+        { id: 1, titulo: 'Evento 1', tipo: 'Evento' },
+        { id: 2, titulo: 'Evento 2', tipo: 'Evento' }
       ]
       wrapper.vm.indiceEventoActual = 0
     })
@@ -1004,7 +1005,7 @@ describe('CalendarioComponent', () => {
     })
 
     it('should iniciarCarrusel not start when only one event', () => {
-      wrapper.vm.eventosDelDia = [{ id: 1 }]
+      wrapper.vm.eventosDelDia = [{ id: 1, tipo: 'Evento' }]
       wrapper.vm.iniciarCarrusel()
 
       expect(wrapper.vm.intervaloCarrusel).toBeNull()
@@ -1512,11 +1513,11 @@ describe('CalendarioComponent', () => {
 
     it('should seleccionarDia show selector when day has events', async () => {
       const calendarioService = await import('@/services/calendarioService')
-      calendarioService.default.obtenerEventosPorFecha = vi.fn(() => [{ id: 1, titulo: 'Evento 1' }])
+      calendarioService.default.obtenerEventosPorFecha = vi.fn(() => [{ id: 1, titulo: 'Evento 1', tipo: 'Evento' }])
       const dia = {
         esMesActual: true,
         fecha: '2024-12-31',
-        eventos: [{ id: 1, titulo: 'Evento 1' }]
+        eventos: [{ id: 1, titulo: 'Evento 1', tipo: 'Evento' }]
       }
       wrapper.vm.seleccionarDia(dia)
       expect(wrapper.vm.selectorEventosVisible).toBe(true)

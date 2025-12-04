@@ -417,7 +417,7 @@ export default {
       if (valor === null || valor === undefined) return ""
       const texto = valor.toString()
       const permitido = texto.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9.\-\s]/g, "") // NOSONAR: S7781 - replaceAll() no acepta regex
-      const colapsado = permitido.replace(/\s{2,}/g, " ") // NOSONAR: S7781 - replaceAll() no acepta regex
+      const colapsado = permitido.replace(/\s{2,}/g, " ").trim() // NOSONAR: S7781 - replaceAll() no acepta regex
       return colapsado.slice(0, MAX_TITULO)
     },
     normalizarDescripcion(valor = "") {

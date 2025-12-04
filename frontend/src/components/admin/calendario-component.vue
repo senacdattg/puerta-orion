@@ -49,7 +49,7 @@
                     <span class="contador-eventos">{{ dia.eventos.length }}</span>
                     <div class="puntos-eventos">
                         <span v-for="(evento, idx) in dia.eventos.slice(0, 3)" :key="idx"
-                            :class="['punto-evento', `tipo-${evento.tipo.toLowerCase()}`]">
+                            :class="['punto-evento', evento.tipo ? `tipo-${evento.tipo.toLowerCase()}` : 'tipo-evento']">
                         </span>
                     </div>
                 </div>
