@@ -12,9 +12,9 @@ const suppressedMethods = ['log', 'warn', 'info', 'debug']
 
 beforeEach(() => {
   // Suppress console methods during tests
-  suppressedMethods.forEach((method) => {
+  for (const method of suppressedMethods) {
     console[method] = vi.fn()
-  })
+  }
   // Keep console.error for actual errors
   console.error = originalConsole.error
 })
@@ -23,9 +23,9 @@ afterEach(() => {
   cleanup()
   vi.clearAllMocks()
   // Restore console methods after tests
-  suppressedMethods.forEach((method) => {
+  for (const method of suppressedMethods) {
     console[method] = originalConsole[method]
-  })
+  }
 })
 
 // Mock window.matchMedia
