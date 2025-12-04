@@ -681,3 +681,361 @@ class TestUsuarioService:
             
             mock_db.session.rollback.assert_called_once()
 
+    def test_procesar_fecha_nacimiento_deportista_fecha_invalida(self, usuario_service):
+        """Test: Process invalid date format in _procesar_fecha_nacimiento_deportista (línea 354)."""
+        # Test invalid string format that's neither ISO nor an integer
+        with pytest.raises(UsuarioServiceError, match="Formato de fecha de nacimiento inválido"):
+            usuario_service._procesar_fecha_nacimiento_deportista("invalid-date-format")
+
+    def test_procesar_fecha_nacimiento_deportista_none(self, usuario_service):
+        """Test: Process None date in _procesar_fecha_nacimiento_deportista (línea 335)."""
+        result = usuario_service._procesar_fecha_nacimiento_deportista(None)
+        assert result is None
+
+    def test_procesar_fecha_nacimiento_deportista_date_object(self, usuario_service):
+        """Test: Process date object in _procesar_fecha_nacimiento_deportista (línea 340)."""
+        fecha = date(2000, 1, 1)
+        result = usuario_service._procesar_fecha_nacimiento_deportista(fecha)
+        assert result == fecha
+
+    def test_procesar_fecha_nacimiento_deportista_int(self, usuario_service):
+        """Test: Process int year in _procesar_fecha_nacimiento_deportista (línea 343)."""
+        result = usuario_service._procesar_fecha_nacimiento_deportista(2000)
+        assert result == date(2000, 1, 1)
+
+    def test_procesar_fecha_nacimiento_deportista_iso_string(self, usuario_service):
+        """Test: Process ISO string in _procesar_fecha_nacimiento_deportista (línea 348)."""
+        result = usuario_service._procesar_fecha_nacimiento_deportista("2000-06-15")
+        assert result == date(2000, 6, 15)
+
+    def test_procesar_fecha_nacimiento_deportista_year_string(self, usuario_service):
+        """Test: Process year string in _procesar_fecha_nacimiento_deportista (línea 351)."""
+        result = usuario_service._procesar_fecha_nacimiento_deportista("2000")
+        assert result == date(2000, 1, 1)
+
+    def test_crear_deportista_registro_success(self, usuario_service, app_context):
+        """Test: Successful deportista registration (líneas 381-382)."""
+        datos = {
+            'id_categoria': 1,
+            'peso': 70.5,
+            'altura': 1.75,
+            'fecha_nacimiento': date(2000, 1, 1)
+        }
+        
+        with patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None  # No existe
+            mock_deportista_class.query = mock_query
+            
+            mock_deportista = MagicMock()
+            mock_deportista_class.return_value = mock_deportista
+            mock_db.session.add = MagicMock()
+            
+            usuario_service._crear_deportista_registro(1, datos)
+            
+            mock_deportista_class.assert_called_once()
+            mock_db.session.add.assert_called_once_with(mock_deportista)
+
+    def test_crear_deportista_registro_existente(self, usuario_service, app_context):
+        """Test: Deportista registration when already exists (línea 362)."""
+        datos = {'id_categoria': 1}
+        
+        with patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class:
+            mock_query = MagicMock()
+            mock_existing = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = mock_existing  # Ya existe
+            mock_deportista_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError, match="Ya existe un registro de deportista"):
+                usuario_service._crear_deportista_registro(1, datos)
+
+    def test_crear_deportista_registro_sin_categoria(self, usuario_service, app_context):
+        """Test: Deportista registration without categoria (línea 365)."""
+        datos = {}
+        
+        with patch('src.services.Auth.usuario_service.Deportista') as mock_deportista_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None
+            mock_deportista_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError, match="id_categoria.*es obligatorio"):
+                usuario_service._crear_deportista_registro(1, datos)
+
+    def test_crear_acudiente_registro_success(self, usuario_service, app_context):
+        """Test: Successful acudiente registration (líneas 399-400)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        mock_persona = MagicMock()
+        mock_persona.id_persona = 1
+        mock_usuario.persona = mock_persona
+        
+        datos = {'estado': True}
+        
+        with patch('src.services.Auth.usuario_service.Acudiente') as mock_acudiente_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db, \
+             patch('src.services.Auth.usuario_service.puede_registrarse_como_acudiente', return_value=True):
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None  # No existe
+            mock_acudiente_class.query = mock_query
+            
+            mock_acudiente = MagicMock()
+            mock_acudiente_class.return_value = mock_acudiente
+            mock_db.session.add = MagicMock()
+            
+            usuario_service._crear_acudiente_registro(1, mock_usuario, datos)
+            
+            mock_acudiente_class.assert_called_once()
+            mock_db.session.add.assert_called_once_with(mock_acudiente)
+
+    def test_crear_acudiente_registro_existente(self, usuario_service, app_context):
+        """Test: Acudiente registration when already exists (líneas 387-388)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        
+        with patch('src.services.Auth.usuario_service.Acudiente') as mock_acudiente_class:
+            mock_query = MagicMock()
+            mock_existing = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = mock_existing  # Ya existe
+            mock_acudiente_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError, match="Ya existe un registro de acudiente"):
+                usuario_service._crear_acudiente_registro(1, mock_usuario, None)
+
+    def test_crear_acudiente_registro_no_puede_registrarse(self, usuario_service, app_context):
+        """Test: Acudiente registration when cannot register (líneas 390-393)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        mock_persona = MagicMock()
+        mock_persona.id_persona = 1
+        mock_usuario.persona = mock_persona
+        
+        with patch('src.services.Auth.usuario_service.Acudiente') as mock_acudiente_class, \
+             patch('src.services.Auth.usuario_service.puede_registrarse_como_acudiente', return_value=False):
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None  # No existe
+            mock_acudiente_class.query = mock_query
+            
+            with pytest.raises(UsuarioServiceError, match="Para registrarse como acudiente"):
+                usuario_service._crear_acudiente_registro(1, mock_usuario, None)
+
+    def test_crear_acudiente_registro_sin_datos(self, usuario_service, app_context):
+        """Test: Acudiente registration without datos (línea 397)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        mock_persona = MagicMock()
+        mock_persona.id_persona = 1
+        mock_usuario.persona = mock_persona
+        
+        with patch('src.services.Auth.usuario_service.Acudiente') as mock_acudiente_class, \
+             patch('src.services.Auth.usuario_service.db') as mock_db, \
+             patch('src.services.Auth.usuario_service.puede_registrarse_como_acudiente', return_value=True):
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None
+            mock_acudiente_class.query = mock_query
+            
+            mock_acudiente = MagicMock()
+            mock_acudiente_class.return_value = mock_acudiente
+            mock_db.session.add = MagicMock()
+            
+            # Llamar con datos=None
+            usuario_service._crear_acudiente_registro(1, mock_usuario, None)
+            
+            # Verificar que se creó con estado=True por defecto
+            mock_acudiente_class.assert_called_once_with(id_persona=1, estado=True)
+
+    def test_crear_registro_rol_deportista(self, usuario_service, app_context):
+        """Test: Create registro rol for deportista (línea 418)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        datos = {'id_categoria': 1}
+        
+        with patch.object(usuario_service, '_crear_deportista_registro') as mock_crear:
+            usuario_service._crear_registro_rol(mock_usuario, 'deportista', datos)
+            mock_crear.assert_called_once_with(1, datos)
+
+    def test_crear_registro_rol_acudiente(self, usuario_service, app_context):
+        """Test: Create registro rol for acudiente (línea 420)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        datos = {'estado': True}
+        
+        with patch.object(usuario_service, '_crear_acudiente_registro') as mock_crear:
+            usuario_service._crear_registro_rol(mock_usuario, 'acudiente', datos)
+            mock_crear.assert_called_once_with(1, mock_usuario, datos)
+
+    def test_crear_registro_rol_invalido(self, usuario_service, app_context):
+        """Test: Create registro rol with invalid role (líneas 421-422)."""
+        mock_usuario = MagicMock()
+        datos = {}
+        
+        with pytest.raises(UsuarioServiceError, match="Rol inválido: invalid"):
+            usuario_service._crear_registro_rol(mock_usuario, 'invalid', datos)
+
+    def test_crear_registro_rol_exception(self, usuario_service, app_context):
+        """Test: Create registro rol with exception (líneas 426-428)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_persona = 1
+        
+        with patch.object(usuario_service, '_crear_deportista_registro', side_effect=Exception("DB Error")):
+            with pytest.raises(UsuarioServiceError, match="Error al crear registro de deportista"):
+                usuario_service._crear_registro_rol(mock_usuario, 'deportista', {})
+
+    def test_asignar_rol_por_defecto_sin_roles_existentes(self, usuario_service, app_context):
+        """Test: Assign default role when no existing roles (línea 462)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        mock_rol_usuario = MagicMock()
+        mock_rol_usuario.id_rol = 1
+        
+        with patch('src.services.Auth.usuario_service.UsuarioRol') as mock_usuario_rol_class, \
+             patch.object(usuario_service, '_obtener_o_crear_rol_usuario', return_value=mock_rol_usuario) as mock_obtener, \
+             patch('src.services.Auth.usuario_service.db') as mock_db:
+            
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.all.return_value = []  # Sin roles existentes
+            mock_usuario_rol_class.query = mock_query
+            
+            mock_usuario_rol = MagicMock()
+            mock_usuario_rol_class.return_value = mock_usuario_rol
+            mock_db.session.add = MagicMock()
+            
+            result = usuario_service._asignar_rol_por_defecto(mock_usuario)
+            
+            assert result == mock_rol_usuario
+            mock_obtener.assert_called_once()
+            mock_db.session.add.assert_called_once_with(mock_usuario_rol)
+
+    def test_asignar_rol_por_defecto_con_roles_existentes(self, usuario_service, app_context):
+        """Test: Assign default role when roles already exist (líneas 448-451)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        mock_rol_usuario = MagicMock()
+        mock_rol_usuario.id_rol = 1
+        
+        mock_rol_existente = MagicMock()
+        mock_rol_existente.id_rol = 2
+        
+        mock_primer_rol = MagicMock()
+        mock_primer_rol.id_rol = 2
+        
+        with patch('src.services.Auth.usuario_service.UsuarioRol') as mock_usuario_rol_class, \
+             patch('src.services.Auth.usuario_service.Rol') as mock_rol_class:
+            
+            # Mock roles existentes
+            mock_usuario_rol_query = MagicMock()
+            mock_usuario_rol_query.filter_by.return_value.all.return_value = [mock_rol_existente]
+            mock_usuario_rol_class.query = mock_usuario_rol_query
+            
+            # Mock rol 'usuario'
+            mock_rol_query = MagicMock()
+            mock_rol_query.filter_by.return_value.first.return_value = mock_rol_usuario
+            mock_rol_class.query = mock_rol_query
+            
+            # Mock get para obtener primer_rol
+            mock_rol_query.get.return_value = mock_primer_rol
+            
+            result = usuario_service._asignar_rol_por_defecto(mock_usuario)
+            
+            assert result == mock_primer_rol
+
+    def test_asignar_rol_por_defecto_con_rol_usuario_asignado(self, usuario_service, app_context):
+        """Test: Assign default role when usuario role already assigned (línea 448)."""
+        mock_usuario = MagicMock()
+        mock_usuario.id_usuario = 1
+        
+        mock_rol_usuario = MagicMock()
+        mock_rol_usuario.id_rol = 1
+        
+        mock_rol_existente = MagicMock()
+        mock_rol_existente.id_rol = 1  # Mismo que rol_usuario
+        
+        with patch('src.services.Auth.usuario_service.UsuarioRol') as mock_usuario_rol_class, \
+             patch('src.services.Auth.usuario_service.Rol') as mock_rol_class:
+            
+            mock_usuario_rol_query = MagicMock()
+            mock_usuario_rol_query.filter_by.return_value.all.return_value = [mock_rol_existente]
+            mock_usuario_rol_class.query = mock_usuario_rol_query
+            
+            mock_rol_query = MagicMock()
+            mock_rol_query.filter_by.return_value.first.return_value = mock_rol_usuario
+            mock_rol_class.query = mock_rol_query
+            
+            result = usuario_service._asignar_rol_por_defecto(mock_usuario)
+            
+            assert result == mock_rol_usuario
+
+    def test_obtener_usuario_para_detalle_con_usuario_obj(self, usuario_service, app_context):
+        """Test: Get usuario for detail with provided usuario_obj (línea 872)."""
+        mock_usuario = MagicMock()
+        mock_usuario.usuario = 'testuser'
+        mock_usuario.id_usuario = 1
+        mock_usuario.estado = True
+        
+        result = usuario_service._obtener_usuario_para_detalle(1, mock_usuario)
+        
+        assert result == mock_usuario
+
+    def test_obtener_usuario_para_detalle_sin_filtro_estado(self, usuario_service, app_context):
+        """Test: Get usuario for detail without estado filter (líneas 875-877)."""
+        mock_usuario_sin_filtro = MagicMock()
+        mock_usuario_sin_filtro.usuario = 'inactive_user'
+        mock_usuario_sin_filtro.estado = False
+        
+        mock_usuario_activo = MagicMock()
+        mock_usuario_activo.usuario = 'active_user'
+        mock_usuario_activo.estado = True
+        mock_usuario_activo.id_usuario = 1
+        
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            # Primera llamada (sin filtro de estado)
+            mock_query.filter_by.return_value.first.side_effect = [
+                mock_usuario_sin_filtro,  # Sin filtro
+                mock_usuario_activo  # Con filtro estado=True
+            ]
+            mock_usuario_class.query = mock_query
+            
+            result = usuario_service._obtener_usuario_para_detalle(1, None)
+            
+            assert result == mock_usuario_activo
+
+    def test_obtener_usuario_para_detalle_inactivo_pero_valido(self, usuario_service, app_context):
+        """Test: Get inactive usuario but valid token (líneas 881-883)."""
+        mock_usuario_sin_filtro = MagicMock()
+        mock_usuario_sin_filtro.usuario = 'inactive_user'
+        mock_usuario_sin_filtro.estado = False
+        mock_usuario_sin_filtro.id_usuario = 1
+        
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            # Primera llamada (sin filtro) devuelve usuario inactivo
+            # Segunda llamada (con filtro) devuelve None
+            mock_query.filter_by.return_value.first.side_effect = [
+                mock_usuario_sin_filtro,  # Sin filtro
+                None  # Con filtro estado=True (no encontrado)
+            ]
+            mock_usuario_class.query = mock_query
+            
+            result = usuario_service._obtener_usuario_para_detalle(1, None)
+            
+            # Debe usar el usuario inactivo porque tiene token válido
+            assert result == mock_usuario_sin_filtro
+
+    def test_obtener_usuario_para_detalle_no_encontrado(self, usuario_service, app_context):
+        """Test: Get usuario for detail when not found (líneas 886-887)."""
+        with patch('src.services.Auth.usuario_service.Usuario') as mock_usuario_class:
+            mock_query = MagicMock()
+            mock_query.filter_by.return_value.first.return_value = None  # No encontrado
+            mock_usuario_class.query = mock_query
+            
+            result = usuario_service._obtener_usuario_para_detalle(999, None)
+            
+            assert result is None
+
