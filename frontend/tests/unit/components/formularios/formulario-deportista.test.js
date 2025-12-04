@@ -921,15 +921,16 @@ describe('FormularioDeportista', () => {
   })
 
   describe('procesarActualizacion', () => {
-    let wrapper
     let deportistasService
 
     beforeEach(async () => {
       deportistasService = await import('@/services/deportistasService')
       const Swal = await import('sweetalert2')
       Swal.default.fire = vi.fn().mockResolvedValue({ isConfirmed: true })
+    })
 
-      wrapper = mount(FormularioDeportista, {
+    it('should process update successfully', async () => {
+      const wrapper = mount(FormularioDeportista, {
         props: {
           modo: 'actualizar',
           datos: {
@@ -942,9 +943,7 @@ describe('FormularioDeportista', () => {
           }
         }
       })
-    })
 
-    it('should process update successfully', async () => {
       deportistasService.default.actualizarDeportista.mockResolvedValue({
         success: true,
         data: { id_deportista: 1 }
@@ -957,7 +956,18 @@ describe('FormularioDeportista', () => {
     })
 
     it('should return false when idDeportista is missing', async () => {
-      wrapper.setProps({ datos: {} })
+      const wrapper = mount(FormularioDeportista, {
+        props: {
+          modo: 'actualizar',
+          datos: {}
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
 
       const result = await wrapper.vm.procesarActualizacion()
 
@@ -965,6 +975,20 @@ describe('FormularioDeportista', () => {
     })
 
     it('should throw error when update fails', async () => {
+      const wrapper = mount(FormularioDeportista, {
+        props: {
+          modo: 'actualizar',
+          datos: {
+            id_deportista: 1
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+
       deportistasService.default.actualizarDeportista.mockResolvedValue({
         success: false,
         message: 'Update failed'
@@ -974,7 +998,21 @@ describe('FormularioDeportista', () => {
     })
 
     it('should use id from props.datos.id when id_deportista is not available', async () => {
-      wrapper.setProps({ datos: { id: 2 } })
+      const wrapper = mount(FormularioDeportista, {
+        props: {
+          modo: 'actualizar',
+          datos: {
+            id: 2
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+
       deportistasService.default.actualizarDeportista.mockResolvedValue({
         success: true
       })
@@ -1334,7 +1372,75 @@ describe('FormularioDeportista', () => {
   describe('mapearDiagnosticos', () => {
     let wrapper
 
-    beforeEach(() => {
+    it('should map diagnosticos from salud.diagnosticos', async () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            salud: {
+              diagnosticos: [
+                { id_diagnostico: 1 },
+                { id_diagnostico: 2 }
+              ]
+            }
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.mapearDiagnosticos()
+
+      expect(wrapper.vm.form.diagnostico).toEqual([1, 2])
+    })
+
+    it('should map diagnosticos from datos.diagnosticos when salud is not available', async () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            diagnosticos: [
+              { id_diagnostico: 3 },
+              { id_diagnostico: 4 }
+            ]
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.mapearDiagnosticos()
+
+      expect(wrapper.vm.form.diagnostico).toEqual([3, 4])
+    })
+
+    it('should handle numeric diagnosticos', async () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            diagnosticos: [5, 6]
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.mapearDiagnosticos()
+
+      expect(wrapper.vm.form.diagnostico).toEqual([5, 6])
+    })
+
+    it('should not modify diagnostico when no data available', () => {
       wrapper = mount(FormularioDeportista, {
         props: {
           datos: {}
@@ -1345,53 +1451,6 @@ describe('FormularioDeportista', () => {
           }
         }
       })
-    })
-
-    it('should map diagnosticos from salud.diagnosticos', () => {
-      wrapper.setProps({
-        datos: {
-          salud: {
-            diagnosticos: [
-              { id_diagnostico: 1 },
-              { id_diagnostico: 2 }
-            ]
-          }
-        }
-      })
-
-      wrapper.vm.mapearDiagnosticos()
-
-      expect(wrapper.vm.form.diagnostico).toEqual([1, 2])
-    })
-
-    it('should map diagnosticos from datos.diagnosticos when salud is not available', () => {
-      wrapper.setProps({
-        datos: {
-          diagnosticos: [
-            { id_diagnostico: 3 },
-            { id_diagnostico: 4 }
-          ]
-        }
-      })
-
-      wrapper.vm.mapearDiagnosticos()
-
-      expect(wrapper.vm.form.diagnostico).toEqual([3, 4])
-    })
-
-    it('should handle numeric diagnosticos', () => {
-      wrapper.setProps({
-        datos: {
-          diagnosticos: [5, 6]
-        }
-      })
-
-      wrapper.vm.mapearDiagnosticos()
-
-      expect(wrapper.vm.form.diagnostico).toEqual([5, 6])
-    })
-
-    it('should not modify diagnostico when no data available', () => {
       const originalValue = wrapper.vm.form.diagnostico
       wrapper.vm.mapearDiagnosticos()
 
@@ -1402,7 +1461,51 @@ describe('FormularioDeportista', () => {
   describe('mapearTipoEnfermedad', () => {
     let wrapper
 
-    beforeEach(() => {
+    it('should map tipo_enfermedad from salud.tipos_enfermedad_ids', async () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            salud: {
+              tipos_enfermedad_ids: [7]
+            }
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.mapearTipoEnfermedad()
+
+      expect(wrapper.vm.form.tipo_enfermedad).toBe(7)
+      expect(wrapper.vm.form.tiene_enfermedades).toBe(true)
+    })
+
+    it('should map tipo_enfermedad from datos.tipo_enfermedad', async () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            tipo_enfermedad: 8
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+
+      wrapper.vm.mapearTipoEnfermedad()
+
+      expect(wrapper.vm.form.tipo_enfermedad).toBe(8)
+      expect(wrapper.vm.form.tiene_enfermedades).toBe(true)
+    })
+
+    it('should not modify when no data available', () => {
       wrapper = mount(FormularioDeportista, {
         props: {
           datos: {}
@@ -1413,37 +1516,6 @@ describe('FormularioDeportista', () => {
           }
         }
       })
-    })
-
-    it('should map tipo_enfermedad from salud.tipos_enfermedad_ids', () => {
-      wrapper.setProps({
-        datos: {
-          salud: {
-            tipos_enfermedad_ids: [7]
-          }
-        }
-      })
-
-      wrapper.vm.mapearTipoEnfermedad()
-
-      expect(wrapper.vm.form.tipo_enfermedad).toBe(7)
-      expect(wrapper.vm.form.tiene_enfermedades).toBe(true)
-    })
-
-    it('should map tipo_enfermedad from datos.tipo_enfermedad', () => {
-      wrapper.setProps({
-        datos: {
-          tipo_enfermedad: 8
-        }
-      })
-
-      wrapper.vm.mapearTipoEnfermedad()
-
-      expect(wrapper.vm.form.tipo_enfermedad).toBe(8)
-      expect(wrapper.vm.form.tiene_enfermedades).toBe(true)
-    })
-
-    it('should not modify when no data available', () => {
       const originalTipo = wrapper.vm.form.tipo_enfermedad
       wrapper.vm.mapearTipoEnfermedad()
 
@@ -1454,7 +1526,7 @@ describe('FormularioDeportista', () => {
   describe('mapearCamposDirectos', () => {
     let wrapper
 
-    beforeEach(() => {
+    it('should map fields that are empty in form but present in datos', () => {
       wrapper = mount(FormularioDeportista, {
         props: {
           datos: {
@@ -1467,33 +1539,52 @@ describe('FormularioDeportista', () => {
           }
         }
       })
-    })
 
-    it('should map fields that are empty in form but present in datos', () => {
       wrapper.vm.mapearCamposDirectos()
 
       expect(wrapper.vm.form.id_deporte_secundario).toBe(10)
     })
 
     it('should not overwrite existing form values', () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            id_deporte_secundario: 10
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
       wrapper.vm.form.id_deporte_secundario = 20
       wrapper.vm.mapearCamposDirectos()
 
       expect(wrapper.vm.form.id_deporte_secundario).toBe(20)
     })
 
-    it('should handle null, undefined, and empty string values', () => {
-      wrapper.setProps({
-        datos: {
-          id_deporte_secundario: null,
-          fecha_nacimiento: undefined,
-          id_eps: ''
+    it('should handle null, undefined, and empty string values', async () => {
+      wrapper = mount(FormularioDeportista, {
+        props: {
+          datos: {
+            id_deporte_secundario: null,
+            fecha_nacimiento: undefined,
+            id_eps: ''
+          }
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
         }
       })
+      await wrapper.vm.$nextTick()
 
       const originalSecundario = wrapper.vm.form.id_deporte_secundario
       wrapper.vm.mapearCamposDirectos()
 
+      // No debería cambiar porque los valores son null, undefined o ''
       expect(wrapper.vm.form.id_deporte_secundario).toBe(originalSecundario)
     })
   })
