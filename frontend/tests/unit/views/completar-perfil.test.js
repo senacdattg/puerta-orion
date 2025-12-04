@@ -99,7 +99,7 @@ vi.mock('@/config/environment', () => ({
 }))
 
 // Mock fetch globally
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 // Mock router
 const mockRouterPush = vi.fn()
@@ -123,7 +123,7 @@ describe('CompletarPerfil View', () => {
     mockRouterPush.mockClear()
     mockRouterReplace.mockClear()
     vi.clearAllMocks()
-    
+
     // Mock useRouter
     useRouter.mockReturnValue(router)
 
@@ -157,7 +157,7 @@ describe('CompletarPerfil View', () => {
     useUserRegistration.mockReturnValue(mockUseUserRegistration)
 
     // Mock fetch defaults
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ data: [] })
     })
@@ -226,7 +226,7 @@ describe('CompletarPerfil View', () => {
   it('should handle tipo perfil selection', async () => {
     // Resetear el mock antes del test
     mockRouterPush.mockClear()
-    
+
     const wrapper = mount(CompletarPerfil, {
       global: {
         mocks: {
@@ -750,7 +750,7 @@ describe('CompletarPerfil View', () => {
     let wrapper
 
     beforeEach(() => {
-      global.fetch.mockClear()
+      globalThis.fetch.mockClear()
     })
 
     it('should load catalogos successfully', async () => {
@@ -760,7 +760,7 @@ describe('CompletarPerfil View', () => {
       const mockEps = [{ id_eps: 1, nombre_eps: 'Test EPS' }]
 
       // Setup mocks for onMounted (called first) and our direct call
-      global.fetch
+      globalThis.fetch
         // First call (onMounted)
         .mockResolvedValueOnce({
           ok: true,
@@ -800,10 +800,10 @@ describe('CompletarPerfil View', () => {
       // Wait for onMounted to complete
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       // Now call cargarCatalogos directly
       await wrapper.vm.cargarCatalogos()
-      
+
       // Wait for all promises to resolve
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -815,7 +815,7 @@ describe('CompletarPerfil View', () => {
     })
 
     it('should handle catalog loading errors gracefully', async () => {
-      global.fetch.mockRejectedValueOnce(new Error('Network error'))
+      globalThis.fetch.mockRejectedValueOnce(new Error('Network error'))
 
       wrapper = mount(CompletarPerfil, {
         global: {
@@ -835,7 +835,7 @@ describe('CompletarPerfil View', () => {
     })
 
     it('should handle non-ok responses', async () => {
-      global.fetch
+      globalThis.fetch
         .mockResolvedValueOnce({ ok: false })
         .mockResolvedValueOnce({ ok: false })
         .mockResolvedValueOnce({ ok: false })
@@ -858,7 +858,7 @@ describe('CompletarPerfil View', () => {
     })
 
     it('should handle missing data property in response', async () => {
-      global.fetch
+      globalThis.fetch
         .mockResolvedValueOnce({
           ok: true,
           json: async () => ({}) // No data property
@@ -945,7 +945,7 @@ describe('CompletarPerfil View', () => {
       await wrapper.vm.$nextTick()
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      expect(global.fetch).toHaveBeenCalled()
+      expect(globalThis.fetch).toHaveBeenCalled()
     })
   })
 
