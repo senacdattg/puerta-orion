@@ -155,7 +155,10 @@ def _eliminar_archivo_fisico(url_imagen: str) -> None:
 # ============================================================================
 
 @archivos_bp.route('/upload', methods=['POST'])
-@token_required()
+@token_required(
+    required_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+    required_active_roles=['SuperAdmin', 'Administrador', 'Entrenador'],
+)
 def subir_archivo() -> JsonResponse:
     """
     Sube un archivo de imagen y crea el registro asociado.

@@ -10,7 +10,7 @@ Este módulo sigue los principios SRP, KISS, DRY y SOLID.
 """
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple, TYPE_CHECKING
-from flask import Blueprint, Flask, Response, jsonify, request
+from flask import Blueprint, Flask, Response, g, jsonify, request
 from flask_cors import cross_origin
 from ..models.base import db
 from ..models.usuarios.usuario import Usuario
@@ -270,7 +270,7 @@ def obtener_detalle_usuario(id_usuario: int) -> JsonResponse:
 
 # Security: PUT and OPTIONS methods are safe because:
 # - Endpoint is protected with @token_required that validates JWT on each request
-# - Only authenticated users with Administrador/SuperAdmin roles can access
+# - Users can update their own profile, or Administrador/SuperAdmin can update any user
 # - OPTIONS is required for CORS preflight requests
 # - JWT authentication prevents CSRF attacks by requiring a valid token on each request
 # - PUT requires authentication and authorization, not vulnerable to CSRF without token
@@ -278,12 +278,12 @@ ALLOWED_METHODS_UPDATE = ["PUT", "OPTIONS"]
 
 @usuarios_bp.route('/<int:id_usuario>', methods=ALLOWED_METHODS_UPDATE)
 @cross_origin(methods=ALLOWED_METHODS_UPDATE)
-@token_required(
-    required_roles=['Administrador', 'SuperAdmin'],
-    required_active_roles=['Administrador', 'SuperAdmin']
-)  # Habilitar autenticación
+@token_required()  # Require authentication, role check done inside function
 def actualizar_usuario(id_usuario: int) -> JsonResponse:
     """Actualiza los datos de usuario y persona asociados.
+
+    Permite que cualquier usuario autenticado actualice su propio perfil,
+    o que Administrador/SuperAdmin actualicen cualquier usuario.
 
     Args:
         id_usuario: Identificador del usuario a actualizar.
@@ -292,6 +292,26 @@ def actualizar_usuario(id_usuario: int) -> JsonResponse:
         Response: Respuesta JSON con el resultado de la operación.
     """
     try:
+        # Verify authorization: user can update own profile or must be Admin/SuperAdmin
+        usuario_actual_id = g.current_user.get('id_usuario')
+        rol_activo = g.current_user.get('rol_activo', '')
+        roles_usuario = [r.get('nombre_rol', '') for r in g.current_user.get('roles', [])]
+
+        # Check if user is updating their own profile
+        es_propio_perfil = usuario_actual_id == id_usuario
+
+        # Check if user has admin privileges
+        es_admin = rol_activo in ['Administrador', 'SuperAdmin'] or any(
+            r in ['Administrador', 'SuperAdmin'] for r in roles_usuario
+        )
+
+        if not es_propio_perfil and not es_admin:
+            return jsonify({
+                'success': False,
+                'error': 'Roles insuficientes. Solo puedes actualizar tu propio perfil.',
+                'status_code': 403
+            }), 403
+
         data = obtener_json_requerido(
             request,
             mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
@@ -392,13 +412,23 @@ def cambiar_rol_usuario(id_usuario: int) -> JsonResponse:
         )
         roles_solicitados = _normalizar_roles_solicitados(data)
 
-        usuario = _obtener_usuario(id_usuario, solo_activos=True)
-        if not usuario:
+        # Verificar si el usuario existe (activo o inactivo)
+        usuario_existe = Usuario.query.filter_by(id_usuario=id_usuario).first()
+        if not usuario_existe:
             return jsonify({
                 'success': False,
                 'error': f'Usuario con ID {id_usuario} no encontrado',
                 'status_code': 404
             }), 404
+
+        # Verificar si el usuario está activo
+        usuario = _obtener_usuario(id_usuario, solo_activos=True)
+        if not usuario:
+            return jsonify({
+                'success': False,
+                'error': f'No se puede cambiar el rol del usuario con ID {id_usuario} porque está inactivo. Por favor, active el usuario primero.',
+                'status_code': 400
+            }), 400
 
         roles_validos = _filtrar_roles_gestionables(
             roles_solicitados,

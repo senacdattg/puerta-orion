@@ -241,6 +241,24 @@ a:focus-visible {
   align-items: center;
   gap: var(--espaciado-xl);
   flex-wrap: wrap;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .banner-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .banner-actions {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .registration-banner .banner-actions .btn {
+    width: 100%;
+    min-width: 100%;
+  }
 }
 
 .banner-icon {
@@ -267,8 +285,91 @@ a:focus-visible {
 
 .banner-actions {
   display: flex;
-  gap: var(--espaciado-md);
+  gap: 16px;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* Estilos específicos para los botones del banner de registro */
+.registration-banner .banner-actions .btn {
+  min-width: 240px;
+  width: auto;
+  height: auto;
+  min-height: 52px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+  overflow: visible;
+  flex-shrink: 0;
+  word-break: keep-all;
+  text-overflow: clip;
+}
+
+.registration-banner .banner-actions .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.registration-banner .banner-actions .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón Acudiente (azul) */
+.registration-banner .banner-actions .btn-primary {
+  background: #007bff;
+  color: var(--color-blanco);
+}
+
+.registration-banner .banner-actions .btn-primary:hover {
+  background: #0056b3;
+}
+
+/* Iconos dentro de los botones */
+.registration-banner .banner-actions .btn .icon {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.registration-banner .banner-actions .btn-primary .icon {
+  color: var(--color-blanco);
+  font-size: 1.1rem;
+}
+
+/* Botón Deportista (amarillo) */
+.registration-banner .banner-actions .btn-warning {
+  background: #ffc107;
+  color: #000000;
+}
+
+.registration-banner .banner-actions .btn-warning:hover {
+  background: #e0a800;
+}
+
+.registration-banner .banner-actions .btn-warning .icon {
+  color: #000000;
+  font-size: 1.1rem;
 }
 
 /* ===== ESTILOS DEL COMPONENTE admin-dashboard ===== */

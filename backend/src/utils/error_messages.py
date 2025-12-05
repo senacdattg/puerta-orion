@@ -48,6 +48,7 @@ ERROR_RECURSO_NO_ENCONTRADO: Final[str] = 'Recurso no encontrado'
 ERROR_DEPORTISTA_NO_ENCONTRADO: Final[str] = 'Deportista no encontrado'
 ERROR_ACUDIENTE_NO_ENCONTRADO: Final[str] = 'Acudiente no encontrado'
 ERROR_PERSONA_NO_ENCONTRADA: Final[str] = 'Persona no encontrada'
+ERROR_LIMITE_EXCEDIDO: Final[str] = 'Límite excedido'
 
 # ============================================================================
 # MENSAJES DE ÉXITO

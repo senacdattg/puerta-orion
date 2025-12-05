@@ -93,11 +93,14 @@ class UsuariosService {
         body: JSON.stringify({ id_roles: rolesArray })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`)
+        // Si hay un mensaje de error en la respuesta, usarlo
+        const errorMessage = data.error || data.message || `Error ${response.status}: ${response.statusText}`
+        throw new Error(errorMessage)
       }
 
-      const data = await response.json()
       return data
     } catch (error) {
       console.error('Error al cambiar roles de usuario:', error)
