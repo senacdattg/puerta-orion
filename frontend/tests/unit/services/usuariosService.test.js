@@ -203,7 +203,8 @@ describe('UsuariosService', () => {
       globalThis.fetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        statusText: 'Bad Request'
+        statusText: 'Bad Request',
+        json: async () => ({ error: 'Error 400' })
       })
 
       await expect(usuariosService.cambiarRolUsuario(1, [1, 2])).rejects.toThrow('Error 400')

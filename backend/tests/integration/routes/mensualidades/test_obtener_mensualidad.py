@@ -142,6 +142,7 @@ class TestObtenerMensualidad:
         with patch('src.routes.mensualidades_routes.get_current_user') as mock_user:
             mock_user.return_value = {
                 'id_usuario': 1,
+                'rol_activo': 'Deportista',  # Necesario para la validación en línea 811
                 'persona': {'id_persona': 1}
             }
             with patch('src.routes.mensualidades_routes.has_role') as mock_has_role:
