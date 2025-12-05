@@ -32,7 +32,7 @@ RUN pip install --upgrade pip setuptools wheel \
 # - Non-root user (appuser) does not have access to confidential information
 # - All environment variables are passed via docker-compose env_file, not copied
 # The .dockerignore file explicitly excludes: .env, .env.*, *.key, *.pem, secrets/, .git/, logs/, instance/
-# nosonar docker:S6470 - Recursive COPY is safe due to properly configured and verified .dockerignore
+# NOSONAR docker:S6470 - Recursive COPY is safe due to properly configured and verified .dockerignore
 COPY . .
 
 # Preparar entrypoint y cambiar ownership de los archivos al usuario no privilegiado
