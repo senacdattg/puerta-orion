@@ -1333,9 +1333,6 @@ function cancelarNuevoAbono() {
 }
 
 // Helper functions to reduce cognitive complexity in guardarNuevoAbonoDesdeTabla
-// Tolerance for floating point comparison (to avoid precision issues)
-const TOLERANCIA_COMPARACION_MONTO = 0.00001
-
 async function _verificarPermisoAbonar() {
   if (!puedeAbonar.value) {
     await Swal.fire({
@@ -1361,13 +1358,13 @@ function _validarMontoAbono(monto) {
   const saldoRestante = Number(saldoPendienteHistNum.value || 0);
 
   // Validate independently: check both total and remaining balance
-  // First check: new total should not exceed the total monthly payment
-  if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad + TOLERANCIA_COMPARACION_MONTO) {
+  // First check: new total should not exceed the total monthly payment (strict, no tolerance)
+  if (valorTotalMensualidad > 0 && totalConNuevoAbono > valorTotalMensualidad) {
     errores.push(`El monto excede el valor total de la mensualidad (${formatCOP(valorTotalMensualidad)})`);
   }
 
-  // Second check: abono amount should not exceed remaining balance
-  if (monto > saldoRestante + TOLERANCIA_COMPARACION_MONTO) {
+  // Second check: abono amount should not exceed remaining balance (strict, no tolerance)
+  if (monto > saldoRestante) {
     errores.push(`El monto excede el saldo pendiente (${formatCOP(saldoRestante)})`);
   }
 
@@ -1389,11 +1386,8 @@ function _validarFechaAbono(fechaAbono) {
   // Date is valid, proceed with validation
   const fechaCreacion = props.mensualidad.created_at || props.mensualidad.creado || props.mensualidad.fecha_creacion || props.mensualidad.creada_en;
   if (!fechaCreacion) {
-    // If creation date is missing, log warning but still allow (backend should validate)
-    if (LOG_CONFIG && LOG_CONFIG.enabled) {
-      console.warn('⚠️ No se encontró fecha de creación de la mensualidad para validar el abono');
-    }
-    // Don't block the abono if creation date is missing - backend should handle this
+    // If creation date is missing, block the abono - backend should provide this
+    errores.push('No se pudo validar la fecha de creación de la mensualidad. Por favor, recarga la página.');
     return errores;
   }
 

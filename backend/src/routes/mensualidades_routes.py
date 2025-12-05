@@ -58,6 +58,7 @@ ERROR_SALDO_SUPERA_MONTO = 'saldo_pendiente no puede ser mayor al monto de la me
 ERROR_MONTO_ABONADO_SUPERA = 'El monto abonado no puede superar el saldo pendiente'
 ERROR_MONTO_ABONADO_POSITIVO = 'monto_abonado debe ser > 0'
 ERROR_FECHA_ABONO = 'fecha_abono no tiene un formato válido (YYYY-MM-DD)'
+ERROR_FECHA_ABONO_ANTERIOR = 'La fecha del abono no puede ser anterior a la fecha de creación de la mensualidad'
 ERROR_MONTO_ABONO = 'monto debe ser > 0'
 ERROR_ID_ABONO = 'Abono no encontrado'
 ERROR_DOCUMENTO_VALIDACION = 'Persona no encontrada por numero_documento'
@@ -1018,6 +1019,19 @@ def abonar_mensualidad(mensualidad_id: int) -> JsonResponse:
             raise RequestValidationError(ERROR_MONTO_ABONADO_SUPERA, status_code=400)
 
         fecha_abono = _obtener_fecha_abono(data)
+        
+        # Validate: fecha_abono should not be before mensualidad creation date
+        if mensualidad.created_at:
+            fecha_creacion = mensualidad.created_at.date() if hasattr(mensualidad.created_at, 'date') else mensualidad.created_at
+            if isinstance(fecha_creacion, str):
+                from datetime import datetime
+                fecha_creacion = datetime.fromisoformat(fecha_creacion.replace('Z', '+00:00')).date()
+            if fecha_abono < fecha_creacion:
+                raise RequestValidationError(
+                    ERROR_FECHA_ABONO_ANTERIOR,
+                    status_code=400
+                )
+        
         id_metodo_pago = _obtener_id_metodo_pago_abono(data)
 
         meses_cubiertos, sobrante = _calcular_meses_y_sobrante(monto_abonado, monto_base)
