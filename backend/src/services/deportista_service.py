@@ -761,20 +761,31 @@ class DeportistaService:
     @staticmethod
     def _actualizar_diagnosticos(id_deportista: int, diagnosticos: Optional[List[int]], tipo_enfermedad: Optional[int], logger) -> Optional[Dict[str, Any]]:
         """Actualiza los diagnósticos del deportista."""
-        if tipo_enfermedad is None and diagnosticos is None:
+        # Process even if tipo_enfermedad is None but diagnosticos is provided
+        if tipo_enfermedad is None and (diagnosticos is None or len(diagnosticos) == 0):
             return None
         
         from ..models.salud.diagnostico_deportista import DiagnosticoDeportista
         from ..models.salud.diagnostico import Diagnostico
         from datetime import date
         
+        # Always delete existing diagnosticos when updating
         DiagnosticoDeportista.query.filter_by(id_deportista=id_deportista).delete()
         
-        if diagnosticos and len(diagnosticos) > 0:
-            error = DeportistaService._validar_diagnosticos(diagnosticos, tipo_enfermedad)
-            if error:
-                return error
+        # If diagnosticos is provided (even if empty list), process it
+        if diagnosticos is not None:
+            # If empty list, just delete (already done above) and return
+            if len(diagnosticos) == 0:
+                logger.info(f'Diagnósticos eliminados para el deportista {id_deportista}')
+                return None
             
+            # Validate diagnosticos if tipo_enfermedad is provided
+            if tipo_enfermedad is not None:
+                error = DeportistaService._validar_diagnosticos(diagnosticos, tipo_enfermedad)
+                if error:
+                    return error
+            
+            # Create new diagnosticos
             for id_diagnostico in diagnosticos:
                 diagnostico_deportista = DiagnosticoDeportista(
                     id_deportista=id_deportista,

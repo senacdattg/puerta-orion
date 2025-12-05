@@ -1518,9 +1518,11 @@ const agregarDatosDiagnostico = (datosDeportistaActualizar) => {
   // Backend expects these fields at root level, not inside datos_deportista or datos_informacion_deportiva
   if (formDataDeportista.value.tiene_enfermedades === true) {
     // User has diseases - include tipo_enfermedad and diagnostico
-    // Convert tipo_enfermedad to integer if it exists
+    // Convert tipo_enfermedad to integer if it exists, otherwise send null
     if (formDataDeportista.value.tipo_enfermedad !== null && formDataDeportista.value.tipo_enfermedad !== undefined) {
       datosDeportistaActualizar.tipo_enfermedad = Number.parseInt(formDataDeportista.value.tipo_enfermedad, 10)
+    } else {
+      datosDeportistaActualizar.tipo_enfermedad = null
     }
 
     // Always send diagnostico array (even if empty) when tiene_enfermedades is true
@@ -1749,14 +1751,18 @@ const mostrarExitoYRecargar = async () => {
     // The watch in perfil.vue will handle updates when data becomes available
   }
 
-  // Update initial data with the new saved data from backend (not from local formData)
+  // Update initial data with data from store (backend data), not local formData
   // Use data from store which has the latest backend data
   if (authStore.userDetail) {
     try {
-      // Reload form data from the updated store data
+      // Use data from store which has the latest backend data
       // This ensures we're using backend data, not local form state
-      formDataInicial.value = clonarObjeto(formData.value)
-      formDataDeportistaInicial.value = clonarObjeto(formDataDeportista.value)
+      if (authStore.userDetail.persona) {
+        formDataInicial.value = clonarObjeto(authStore.userDetail.persona)
+      }
+      if (authStore.userDetail.deportista) {
+        formDataDeportistaInicial.value = clonarObjeto(authStore.userDetail.deportista)
+      }
     } catch (err) {
       // Log error but don't block navigation - this is non-critical
       if (LOG_CONFIG.enabled) {

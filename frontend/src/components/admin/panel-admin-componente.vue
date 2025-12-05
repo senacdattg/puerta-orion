@@ -137,7 +137,7 @@
   </main>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { API_CONFIG } from '@/config/environment';
 import ModalRegistroUsuario from '@/components/admin/modal-registro-usuario.vue';
 import ModalAnadirDatos from '@/components/admin/modal-anadir-datos.vue';
@@ -498,7 +498,7 @@ async function manejarUsuarioRegistrado(datosUsuario) {
   console.log('Usuario registrado desde admin-manager:', datosUsuario);
   // Cerrar el modal después del registro exitoso
   cerrarModalRegistro();
-  
+
   await Swal.fire({
     icon: 'success',
     title: 'Usuario registrado',
@@ -506,8 +506,11 @@ async function manejarUsuarioRegistrado(datosUsuario) {
     timer: 1500,
     showConfirmButton: false
   });
-  
-  // Recargar la tabla de usuarios
+
+  // Esperar a que el DOM se actualice y luego recargar
+  await nextTick();
+
+  // Recargar la tabla de usuarios con verificación de referencia
   if (tablaUsuariosRef.value && typeof tablaUsuariosRef.value.cargarDatos === 'function') {
     await tablaUsuariosRef.value.cargarDatos();
   }
