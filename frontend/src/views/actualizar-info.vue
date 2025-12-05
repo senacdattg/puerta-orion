@@ -172,16 +172,25 @@
 
             <div class="form-group">
               <label for="id_sexo">Sexo *</label>
-              <input
-                type="text"
+              <select
                 id="id_sexo"
-                :value="catalogos.sexos.find(s => (s.id_sexo || s.id) === formData.id_sexo)?.nombre_sexo || catalogos.sexos.find(s => (s.id_sexo || s.id) === formData.id_sexo)?.nombre || ''"
-                readonly
-                disabled
+                v-model="formData.id_sexo"
+                required
+                :readonly="!puedeEditarCampo.sexo"
+                :disabled="!puedeEditarCampo.sexo"
                 class="form-input"
-                style="background-color: #f5f5f5; cursor: not-allowed;"
+                :style="!puedeEditarCampo.sexo ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
               >
-              <small style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
+                <option value="">Seleccione un sexo</option>
+                <option
+                  v-for="sexo in catalogos.sexos"
+                  :key="sexo.id_sexo || sexo.id"
+                  :value="sexo.id_sexo || sexo.id"
+                >
+                  {{ sexo.nombre_sexo || sexo.nombre }}
+                </option>
+              </select>
+              <small v-if="!puedeEditarCampo.sexo" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
             </div>
           </div>
 
@@ -206,8 +215,8 @@
             </div>
           </div>
 
-          <!-- Información del Deportista (solo si es deportista Y no es acudiente) -->
-          <div v-if="esDeportista && rolUsuario !== 'Acudiente'" class="form-section">
+          <!-- Información del Deportista (solo si el rol activo es Deportista) -->
+          <div v-if="esDeportista" class="form-section">
             <h3>
               <i class="fas fa-running"></i>
               Información del Deportista
@@ -219,13 +228,13 @@
                 <input
                   type="date"
                   id="fecha_nacimiento"
-                  :value="formDataDeportista.fecha_nacimiento"
-                  readonly
-                  disabled
+                  v-model="formDataDeportista.fecha_nacimiento"
+                  :readonly="!puedeEditarCampo.fechaNacimiento"
+                  :disabled="!puedeEditarCampo.fechaNacimiento"
                   class="form-input"
-                  style="background-color: #f5f5f5; cursor: not-allowed;"
+                  :style="!puedeEditarCampo.fechaNacimiento ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
                 >
-                <small style="color: #6c757d; font-size: 0.875rem;">La fecha de nacimiento no se puede modificar</small>
+                <small v-if="!puedeEditarCampo.fechaNacimiento" style="color: #6c757d; font-size: 0.875rem;">La fecha de nacimiento no se puede modificar</small>
               </div>
 
               <div class="form-group">
@@ -260,16 +269,24 @@
 
               <div class="form-group">
                 <label for="id_ciudad_residencia">Ciudad de Residencia *</label>
-                <input
-                  type="text"
+                <select
                   id="id_ciudad_residencia"
-                  :value="catalogosDeportista.ciudades.find(c => c.id_ciudad === formDataDeportista.id_ciudad_residencia)?.nombre_ciudad || ''"
-                  readonly
-                  disabled
+                  v-model.number="formDataDeportista.id_ciudad_residencia"
+                  required
+                  :disabled="!puedeEditarCampo.ciudadResidencia"
                   class="form-input"
-                  style="background-color: #f5f5f5; cursor: not-allowed;"
+                  :style="!puedeEditarCampo.ciudadResidencia ? 'background-color: #f5f5f5; cursor: not-allowed;' : ''"
                 >
-                <small style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
+                  <option value="">Seleccione una ciudad</option>
+                  <option
+                    v-for="ciudad in catalogosDeportista.ciudades"
+                    :key="ciudad.id_ciudad"
+                    :value="ciudad.id_ciudad"
+                  >
+                    {{ ciudad.nombre_ciudad }}
+                  </option>
+                </select>
+                <small v-if="!puedeEditarCampo.ciudadResidencia" style="color: #6c757d; font-size: 0.875rem;">No se puede modificar</small>
               </div>
             </div>
 
@@ -744,10 +761,14 @@ const categoriaNombre = computed(() => {
 })
 
 // Computed para verificar si el usuario es deportista
+// Considera el rol activo: solo es deportista si el rol activo es "Deportista"
 const esDeportista = computed(() => {
-  return authStore.userDetail?.deportista?.id_deportista ||
-         authStore.user?.deportista?.id_deportista ||
-         false
+  const activeRole = authStore.activeRole
+  const tieneDatosDeportista = authStore.userDetail?.deportista?.id_deportista ||
+                                authStore.user?.deportista?.id_deportista
+
+  // Solo es deportista si tiene datos de deportista Y el rol activo es "Deportista"
+  return tieneDatosDeportista && activeRole === 'Deportista'
 })
 
 // Computed para obtener el rol del usuario
@@ -789,31 +810,41 @@ const puedeEditarPesoAltura = computed(() => {
 })
 
 // Computed para verificar qué campos puede editar según el rol
+// Todos los campos son editables para todos los roles, excepto altura y peso
+// Altura y peso solo pueden ser editados por SuperAdmin, Administrador y Entrenador
 const puedeEditarCampo = computed(() => {
   const rol = rolUsuario.value
+  const esAdminOSuperAdmin = rol === 'Administrador' || rol === 'SuperAdmin'
 
+  // Campos base editables para todos los roles
+  const camposBase = {
+    // Datos personales - todos editables
+    tipoDocumento: true,
+    numeroDocumento: true,
+    primerNombre: true,
+    segundoNombre: true,
+    primerApellido: true,
+    segundoApellido: true,
+    sexo: true,
+    correo: true,
+    telefono: true,
+    direccion: true,
+    // Datos deportista - campos administrativos
+    fechaNacimiento: esAdminOSuperAdmin, // Solo Admin/SuperAdmin pueden editar fecha de nacimiento
+    fechaIngreso: false, // Fecha de ingreso no es editable (dato administrativo del sistema)
+    categoria: false, // Categoría se asigna automáticamente según fecha de nacimiento
+    // Altura y peso solo para roles permitidos
+    peso: puedeEditarPesoAltura.value,
+    altura: puedeEditarPesoAltura.value
+  }
+
+  // Campos específicos según rol
   if (rol === 'Deportista') {
     return {
-      // Datos personales
-      tipoDocumento: false,
-      numeroDocumento: false,
-      primerNombre: false,
-      segundoNombre: false,
-      primerApellido: false,
-      segundoApellido: false,
-      sexo: false,
-      correo: true,
-      telefono: true,
-      direccion: true,
-      // Datos deportista
-      fechaNacimiento: false,
-      fechaIngreso: false,
-      categoria: false,
-      tipoSanguineo: false,
-      ciudadResidencia: false,
+      ...camposBase,
+      tipoSanguineo: false, // Tipo sanguíneo no es editable para deportista
+      ciudadResidencia: true, // Deportista puede editar su ciudad de residencia
       eps: true,
-      peso: puedeEditarPesoAltura.value,
-      altura: puedeEditarPesoAltura.value,
       deporte: true,
       institucionRegistro: true,
       participaEscuela: true,
@@ -823,26 +854,11 @@ const puedeEditarCampo = computed(() => {
     }
   } else if (rol === 'Acudiente') {
     return {
-      // Solo puede editar sus propios datos personales
-      tipoDocumento: false,
-      numeroDocumento: false,
-      primerNombre: false,
-      segundoNombre: false,
-      primerApellido: false,
-      segundoApellido: false,
-      sexo: false,
-      correo: true,
-      telefono: true,
-      direccion: true,
-      // No puede editar datos del deportista
-      fechaNacimiento: false,
-      fechaIngreso: false,
-      categoria: false,
+      ...camposBase,
+      // Acudiente no puede editar datos del deportista
       tipoSanguineo: false,
       ciudadResidencia: false,
       eps: false,
-      peso: false,
-      altura: false,
       deporte: false,
       institucionRegistro: false,
       participaEscuela: false,
@@ -852,26 +868,10 @@ const puedeEditarCampo = computed(() => {
     }
   } else if (rol === 'Entrenador') {
     return {
-      // Puede editar  excepto tipo y número de documento
-      tipoDocumento: false,
-      numeroDocumento: false,
-      primerNombre: true,
-      segundoNombre: true,
-      primerApellido: true,
-      segundoApellido: true,
-      sexo: true,
-      correo: true,
-      telefono: true,
-      direccion: true,
-      // Datos deportista
-      fechaNacimiento: false,
-      fechaIngreso: false,
-      categoria: false,
+      ...camposBase,
       tipoSanguineo: true,
       ciudadResidencia: true,
       eps: true,
-      peso: true,
-      altura: true,
       deporte: true,
       institucionRegistro: true,
       participaEscuela: true,
@@ -881,30 +881,16 @@ const puedeEditarCampo = computed(() => {
     }
   }
 
-  // Por defecto, permitir edición si no hay rol específico (Administrador, SuperAdmin, etc.)
-  const esAdminOSuperAdmin = rol === 'Administrador' || rol === 'SuperAdmin'
+  // Por defecto para Administrador, SuperAdmin, etc.
   return {
-    tipoDocumento: esAdminOSuperAdmin,
-    numeroDocumento: esAdminOSuperAdmin,
-    primerNombre: true,
-    segundoNombre: true,
-    primerApellido: true,
-    segundoApellido: true,
-    sexo: true,
-    correo: true,
-    telefono: true,
-    direccion: true,
-    fechaNacimiento: false,
-    fechaIngreso: false,
-    categoria: false,
+    ...camposBase,
     tipoSanguineo: true,
     ciudadResidencia: true,
     eps: true,
-    peso: true,
-    altura: true,
     deporte: true,
     institucionRegistro: true,
     participaEscuela: true,
+    practicaOtroDeporte: true,
     escuela: true,
     antecedentesMedicos: true
   }
@@ -1279,9 +1265,8 @@ function _validarCampoNombre(campo, nombreCampo, errores) {
   }
 }
 
-function _validarNombresEntrenador(errores) {
-  if (rolUsuario.value !== 'Entrenador') return
-
+function _validarNombres(errores) {
+  // Validar nombres para todos los roles si el campo es editable
   if (puedeEditarCampo.value.primerNombre && formData.value.primer_nombre) {
     _validarCampoNombre(formData.value.primer_nombre, 'primer nombre', errores)
   }
@@ -1333,7 +1318,7 @@ function _validarUsuario(errores) {
 // Refactored to reduce cognitive complexity by extracting helper functions
 function validarFormulario() {
   const errores = []
-  _validarNombresEntrenador(errores)
+  _validarNombres(errores)
   _validarCorreo(errores)
   _validarTelefono(errores)
   _validarDocumento(errores)
@@ -1675,6 +1660,7 @@ const procesarActualizacionUsuario = async (idUsuario, datosPersona, datosUsuari
 }
 
 const procesarActualizacionDeportista = async () => {
+  // Solo procesar si el rol activo es "Deportista"
   if (!esDeportista.value) {
     return
   }

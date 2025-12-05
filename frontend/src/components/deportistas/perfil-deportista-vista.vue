@@ -713,6 +713,10 @@ const rolesUsuario = computed(() => {
 const rolActivo = computed(() => {
   const activo = authStore.activeRole;
   if (activo) return activo;
+
+  const userDetailRolActivo = authStore.userDetail?.rol_activo || authStore.user?.rol_activo;
+  if (userDetailRolActivo) return userDetailRolActivo;
+
   const encontrado = PRIORIDAD_ROLES.find(rol => rolesUsuario.value.includes(rol));
   return encontrado || rolesUsuario.value[0] || 'Usuario';
 });
@@ -1340,12 +1344,12 @@ async function guardarCambios() {
     await actualizarPersona();
 
     const datosActualizacion = construirDatosActualizacionDeportista();
-    
+
     // Log payload for debugging (only in development)
     if (LOG_CONFIG.enabled && datosActualizacion) {
       console.log('📤 Payload completo para actualizar deportista:', JSON.stringify(datosActualizacion, null, 2))
     }
-    
+
     const respuestaActualizacion = datosActualizacion
       ? await deportistasService.actualizarDeportista(idDeportista.value, datosActualizacion)
       : null;
@@ -1632,7 +1636,7 @@ function _logResumenCatalogos() {
   if (!LOG_CONFIG.enabled) {
     return;
   }
-  
+
   console.log('📋 ========== RESUMEN DE CATÁLOGOS CARGADOS ==========');
   console.log('📋 Tipos sanguíneos:', catalogos.value.tiposSanguineos.length);
   console.log('📋 Ciudades:', catalogos.value.ciudades.length);
@@ -1650,7 +1654,7 @@ function _logEjemplosCatalogos() {
   if (!LOG_CONFIG.enabled) {
     return;
   }
-  
+
   if (catalogos.value.tiposEnfermedad.length > 0) {
     console.log('📋 Ejemplo tipo enfermedad:', catalogos.value.tiposEnfermedad[0]);
   }

@@ -28,6 +28,9 @@ from src.utils.error_messages import (
     ERROR_CONTENT_TYPE_JSON,
     ERROR_DEPORTISTA_NO_ENCONTRADO,
     ERROR_ID_ENTERO_POSITIVO,
+    ERROR_CAMPO_REQUERIDO,
+    ERROR_RECURSO_NO_ENCONTRADO,
+    ERROR_LIMITE_EXCEDIDO,
 )
 from src.middleware.auth_decorator import token_required, get_current_user
 from src.utils.request_validators import obtener_json_requerido, RequestValidationError
@@ -351,7 +354,7 @@ def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
         # Validar que se proporcionen todos los datos requeridos
         if not id_parentesco:
             return HttpResponseBuilder.bad_request(
-                error='Campo requerido',
+                error=ERROR_CAMPO_REQUERIDO,
                 message='Se requiere id_parentesco'
             )
         
@@ -397,7 +400,7 @@ def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
         parentesco = Parentesco.query.filter_by(id_parentesco=int(id_parentesco)).first()
         if not parentesco:
             return HttpResponseBuilder.not_found(
-                error='Recurso no encontrado',
+                error=ERROR_RECURSO_NO_ENCONTRADO,
                 message=f'No se encontró un parentesco con ID {id_parentesco}'
             )
         
@@ -420,7 +423,7 @@ def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
         
         if deportistas_acudiente >= 3:
             return HttpResponseBuilder.bad_request(
-                error='Límite excedido',
+                error=ERROR_LIMITE_EXCEDIDO,
                 message=f'Un acudiente solo puede estar asociado a máximo 3 deportistas. '
                         f'Este acudiente ya tiene {deportistas_acudiente} deportista(s) asociado(s).'
             )
@@ -432,7 +435,7 @@ def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
         
         if acudientes_deportista >= 3:
             return HttpResponseBuilder.bad_request(
-                error='Límite excedido',
+                error=ERROR_LIMITE_EXCEDIDO,
                 message=f'Un deportista solo puede estar asociado a máximo 3 acudientes. '
                         f'Este deportista ya tiene {acudientes_deportista} acudiente(s) asociado(s).'
             )
@@ -469,6 +472,180 @@ def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
         logger.error(f"Error inesperado al asociar acudiente con deportista: {str(e)}")
         logger.error(traceback.format_exc())
         return handle_exception(e, logger, "asociar acudiente con deportista")
+
+
+@deportistas_bp.route('/<int:id_deportista>/acudientes/asociar', methods=['POST'])
+@token_required()
+def asociar_acudiente_a_deportista(id_deportista: int) -> JsonResponse:
+    """
+    Asocia un acudiente existente a un deportista.
+    
+    POST /api/deportistas/<id_deportista>/acudientes/asociar
+    
+    Permite que un deportista asocie un acudiente a su perfil.
+    Valida que:
+    - El deportista existe y corresponde al usuario autenticado
+    - El acudiente existe
+    - El deportista no tenga más de 3 acudientes asociados
+    - El acudiente no tenga más de 3 deportistas asociados
+    - No exista ya esta relación
+    
+    Body JSON:
+    {
+        "id_acudiente": 1,              // OBLIGATORIO: ID del acudiente
+        "id_parentesco": 1,              // OBLIGATORIO: ID del tipo de parentesco
+        "es_responsable": false          // OBLIGATORIO: Si es responsable legal (bool)
+    }
+    
+    Returns:
+        Información de la relación creada o error.
+    """
+    try:
+        datos = obtener_json_requerido(
+            request,
+            mensaje_tipo=ERROR_CONTENT_TYPE_JSON,
+            mensaje_vacio='Los datos de la relación son requeridos'
+        )
+        
+        # Obtener usuario autenticado del contexto
+        user = get_current_user()
+        
+        if not user:
+            return HttpResponseBuilder.unauthorized(
+                message='Usuario no encontrado en el contexto'
+            )
+        
+        # Obtener datos del JSON
+        id_acudiente = datos.get('id_acudiente')
+        id_parentesco = datos.get('id_parentesco')
+        es_responsable = datos.get('es_responsable', False)
+        
+        # Validar que se proporcionen todos los datos requeridos
+        if not id_acudiente:
+            return HttpResponseBuilder.bad_request(
+                error=ERROR_CAMPO_REQUERIDO,
+                message='Se requiere id_acudiente'
+            )
+        
+        if not id_parentesco:
+            return HttpResponseBuilder.bad_request(
+                error=ERROR_CAMPO_REQUERIDO,
+                message='Se requiere id_parentesco'
+            )
+        
+        # Importar modelos necesarios
+        from src.models.acudientes.acudiente import Acudiente
+        from src.models.acudientes.deportista_acudiente import DeportistaAcudiente
+        from src.models.deportistas.deportista import Deportista
+        from src.models.acudientes.parentesco import Parentesco
+        
+        # Validar que el deportista existe
+        deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
+        if not deportista:
+            return HttpResponseBuilder.not_found(
+                error=ERROR_DEPORTISTA_NO_ENCONTRADO,
+                message=f'No se encontró un deportista con ID {id_deportista}'
+            )
+        
+        # Validar que el usuario autenticado es el dueño del deportista
+        id_persona_usuario = user.get('persona', {}).get('id_persona')
+        if not id_persona_usuario or deportista.id_persona != id_persona_usuario:
+            return HttpResponseBuilder.forbidden(
+                error='Acceso denegado',
+                message='Solo puedes asociar acudientes a tu propio perfil de deportista'
+            )
+        
+        # Validar que el acudiente existe
+        acudiente = Acudiente.query.filter_by(id_acudiente=id_acudiente).first()
+        if not acudiente:
+            return HttpResponseBuilder.not_found(
+                error=ERROR_RECURSO_NO_ENCONTRADO,
+                message=f'No se encontró un acudiente con ID {id_acudiente}'
+            )
+        
+        # Validar que el deportista no se esté acudiendo a sí mismo
+        if deportista.id_persona == acudiente.id_persona:
+            return HttpResponseBuilder.bad_request(
+                error='Validación fallida',
+                message='Un deportista no puede acudirse a sí mismo'
+            )
+        
+        # Validar que el parentesco existe
+        parentesco = Parentesco.query.filter_by(id_parentesco=int(id_parentesco)).first()
+        if not parentesco:
+            return HttpResponseBuilder.not_found(
+                error=ERROR_RECURSO_NO_ENCONTRADO,
+                message=f'No se encontró un parentesco con ID {id_parentesco}'
+            )
+        
+        # Validar que no exista ya esta relación
+        relacion_existente = DeportistaAcudiente.query.filter_by(
+            id_deportista=id_deportista,
+            id_acudiente=id_acudiente
+        ).first()
+        
+        if relacion_existente:
+            return HttpResponseBuilder.bad_request(
+                error='Relación duplicada',
+                message='Ya existe una relación entre este acudiente y este deportista'
+            )
+        
+        # Validar que el deportista no tenga más de 3 acudientes asociados
+        acudientes_deportista = DeportistaAcudiente.query.filter_by(
+            id_deportista=id_deportista
+        ).count()
+        
+        if acudientes_deportista >= 3:
+            return HttpResponseBuilder.bad_request(
+                error=ERROR_LIMITE_EXCEDIDO,
+                message=f'Un deportista solo puede estar asociado a máximo 3 acudientes. '
+                        f'Este deportista ya tiene {acudientes_deportista} acudiente(s) asociado(s).'
+            )
+        
+        # Validar que el acudiente no tenga más de 3 deportistas asociados
+        deportistas_acudiente = DeportistaAcudiente.query.filter_by(
+            id_acudiente=id_acudiente
+        ).count()
+        
+        if deportistas_acudiente >= 3:
+            return HttpResponseBuilder.bad_request(
+                error=ERROR_LIMITE_EXCEDIDO,
+                message=f'Un acudiente solo puede estar asociado a máximo 3 deportistas. '
+                        f'Este acudiente ya tiene {deportistas_acudiente} deportista(s) asociado(s).'
+            )
+        
+        # Crear la relación DeportistaAcudiente
+        deportista_acudiente = DeportistaAcudiente(
+            id_deportista=id_deportista,
+            id_acudiente=id_acudiente,
+            id_parentesco=int(id_parentesco),
+            es_responsable=bool(es_responsable),
+            fecha_registro=date.today()
+        )
+        
+        db.session.add(deportista_acudiente)
+        db.session.commit()
+        
+        logger.info(f'Relación creada: Deportista {id_deportista} - Acudiente {id_acudiente}')
+        
+        return HttpResponseBuilder.created(
+            data={
+                'id_deportista_acudiente': deportista_acudiente.id_deportista_acudiente,
+                'id_deportista': deportista_acudiente.id_deportista,
+                'id_acudiente': deportista_acudiente.id_acudiente,
+                'id_parentesco': deportista_acudiente.id_parentesco,
+                'es_responsable': deportista_acudiente.es_responsable,
+                'fecha_registro': deportista_acudiente.fecha_registro.isoformat() if deportista_acudiente.fecha_registro else None
+            },
+            message='Acudiente asociado exitosamente al deportista'
+        )
+        
+    except RequestValidationError as e:
+        return HttpResponseBuilder.bad_request(error=str(e))
+    except Exception as e:
+        logger.error(f"Error inesperado al asociar acudiente a deportista: {str(e)}")
+        logger.error(traceback.format_exc())
+        return handle_exception(e, logger, "asociar acudiente a deportista")
 
 
 @deportistas_bp.route('/<int:id_deportista>/acudientes', methods=['GET'])

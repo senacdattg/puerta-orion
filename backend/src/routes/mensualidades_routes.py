@@ -299,14 +299,18 @@ def _importar_modelos_acudiente() -> Optional[Tuple[Any, Any, Any]]:
 
 
 def _resolver_acceso_roles(persona_id_param: Optional[int], page: int, per_page: int) -> Tuple[Optional[int], Optional[List[int]], Optional[JsonResponse]]:
-    """Determina restricciones de acceso según roles del usuario autenticado."""
+    """Determina restricciones de acceso según el rol activo del usuario autenticado."""
     user = get_current_user()
+    if not user:
+        return persona_id_param, None, None
 
-    if has_role('Deportista') and user and user.get('persona'):
+    rol_activo = user.get('rol_activo', '')
+    
+    if rol_activo == 'Deportista' and user.get('persona'):
         persona_deportista = user['persona'].get('id_persona')
         return persona_deportista, None, None
 
-    if has_role('Acudiente') and not persona_id_param:
+    if rol_activo == 'Acudiente' and not persona_id_param:
         acudidos = _obtener_personas_acudidas(user)
         if not acudidos:
             return None, [], _respuesta_lista_vacia(page, per_page)
@@ -801,11 +805,16 @@ def obtener_mensualidad(mensualidad_id: int) -> JsonResponse:
         return jsonify({'success': False, 'error': ERROR_MENSUALIDAD_NO_ENCONTRADA}), 404
 
     user = get_current_user()
-    if has_role('Deportista') and user and user.get('persona'):
+    if not user:
+        return jsonify({'success': False, 'error': ERROR_NO_AUTORIZADO}), 403
+    
+    rol_activo = user.get('rol_activo', '')
+    
+    if rol_activo == 'Deportista' and user.get('persona'):
         if mensualidad.id_persona != user['persona'].get('id_persona'):
             return jsonify({'success': False, 'error': ERROR_NO_AUTORIZADO}), 403
 
-    if has_role('Acudiente'):
+    if rol_activo == 'Acudiente':
         persona_id_param = request.args.get('persona_id', type=int)
         if persona_id_param and mensualidad.id_persona != persona_id_param:
             return jsonify({'success': False, 'error': ERROR_NO_AUTORIZADO}), 403

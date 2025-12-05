@@ -291,7 +291,10 @@
                     v-for="acudiente in acudientesDeportista"
                     :key="acudiente.id_acudiente"
                     class="acudiente-item"
-                    style="padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;"
+                    style="padding: 12px; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background-color 0.2s;"
+                    @click="verDetalleAcudiente(acudiente)"
+                    @mouseenter="$event.currentTarget.style.backgroundColor = '#f8f9fa'"
+                    @mouseleave="$event.currentTarget.style.backgroundColor = ''"
                   >
                     <div>
                       <strong>{{ acudiente.nombre_completo || acudiente.persona?.nombre_completo }}</strong>
@@ -300,6 +303,7 @@
                         <span v-if="acudiente.es_responsable" class="badge badge-success" style="margin-left: 10px;">Responsable</span>
                       </p>
                     </div>
+                    <i class="fas fa-eye" style="color: #6c757d; margin-left: 10px;"></i>
                   </div>
                 </div>
 
@@ -323,7 +327,7 @@
 
     <!-- Modal para asignar acudiente -->
     <div v-if="mostrarModalAsignarAcudiente" class="modal-overlay" @click.self="cerrarModalAsignarAcudiente">
-      <div class="modal-content">
+      <div class="modal-content modal-sm">
         <div class="modal-header">
           <h2>Asignar Acudiente</h2>
           <button class="btn-cerrar-modal" @click="cerrarModalAsignarAcudiente">
@@ -337,8 +341,10 @@
               <input
                 id="buscar-acudiente-input"
                 type="text"
+                inputmode="numeric"
+                pattern="[0-9]*"
                 v-model="busquedaAcudiente"
-                @input="buscarAcudientes"
+                @input="manejarBusquedaAcudiente"
                 placeholder="Ingrese número de cédula..."
                 class="input-text"
               />
@@ -399,6 +405,57 @@
       </div>
     </div>
 
+    <!-- Modal para ver información del acudiente -->
+    <div v-if="mostrarModalDetalleAcudiente" class="modal-overlay modal-deportistas-overlay" @click.self="cerrarModalDetalleAcudiente">
+      <div class="modal-content modal-deportistas" @click.stop>
+        <div class="modal-header">
+          <h2>📋 Información del Acudiente</h2>
+          <button class="btn-cerrar-modal" @click="cerrarModalDetalleAcudiente">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body" v-if="acudienteSeleccionadoDetalle">
+          <div class="info-section">
+            <div class="info-item">
+              <span class="info-label">Nombre completo:</span>
+              <span class="info-value">{{ acudienteSeleccionadoDetalle.nombre_completo || acudienteSeleccionadoDetalle.persona?.nombre_completo || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Correo electrónico:</span>
+              <span class="info-value">{{ acudienteSeleccionadoDetalle.correo_electronico || acudienteSeleccionadoDetalle.persona?.correo_electronico || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Teléfono:</span>
+              <span class="info-value">{{ acudienteSeleccionadoDetalle.telefono || acudienteSeleccionadoDetalle.persona?.telefono || '—' }}</span>
+            </div>
+          </div>
+
+          <div class="info-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+            <div class="card-header" style="margin-bottom: 15px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #495057;">👨‍👩‍👧 Información de Relación</h3>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Parentesco:</span>
+              <span class="info-value">{{ acudienteSeleccionadoDetalle.parentesco || acudienteSeleccionadoDetalle.parentesco_nombre || '—' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Es responsable:</span>
+              <span class="info-value">
+                <span v-if="acudienteSeleccionadoDetalle.es_responsable" class="badge badge-success" style="background-color: #0f5132; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.875em; font-weight: 600;">Sí</span>
+                <span v-else class="badge badge-secondary" style="background-color: #495057; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.875em; font-weight: 600;">No</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="cerrarModalDetalleAcudiente">
+            <i class="fas fa-times"></i>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <FooterEnhanced />
   </main>
 </template>
@@ -441,6 +498,10 @@ const parentescos = ref([])
 const idParentesco = ref('')
 const esResponsable = ref(false)
 const asociando = ref(false)
+
+// Modal para ver detalle del acudiente
+const mostrarModalDetalleAcudiente = ref(false)
+const acudienteSeleccionadoDetalle = ref(null)
 
 // Catálogos para mapear IDs a nombres legibles
 const catalogos = ref({
@@ -730,10 +791,63 @@ function cerrarModalAsignarAcudiente() {
   esResponsable.value = false
 }
 
-async function buscarAcudientes() {
-  const busqueda = busquedaAcudiente.value.trim()
+function verDetalleAcudiente(acudiente) {
+  acudienteSeleccionadoDetalle.value = acudiente
+  mostrarModalDetalleAcudiente.value = true
+}
 
-  if (!busqueda || busqueda.length < 2) {
+function cerrarModalDetalleAcudiente() {
+  mostrarModalDetalleAcudiente.value = false
+  acudienteSeleccionadoDetalle.value = null
+}
+
+function manejarBusquedaAcudiente(event) {
+  const valorNormalizado = (event?.target?.value ?? busquedaAcudiente.value ?? '').replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
+  busquedaAcudiente.value = valorNormalizado
+  buscarAcudientes()
+}
+
+function _procesarRespuestaBusqueda(response, busqueda) {
+  if (response.ok) {
+    return response.json().then(result => {
+      if (result.success && result.data) {
+        acudientesEncontrados.value = [result.data]
+        return true
+      }
+      acudientesEncontrados.value = []
+      if (busqueda.length >= 8) {
+        return Swal.fire({
+          icon: 'info',
+          title: 'Sin coincidencias',
+          text: result.message || 'No encontramos un acudiente con ese documento.'
+        })
+      }
+      return false
+    })
+  }
+  acudientesEncontrados.value = []
+  return Promise.resolve(false)
+}
+
+function _manejarErrorBusqueda(error, busqueda) {
+  console.error('Error al buscar acudientes:', error)
+  acudientesEncontrados.value = []
+  if (busqueda.length >= 8) {
+    return Swal.fire({
+      icon: 'error',
+      title: 'Error de búsqueda',
+      text: 'Ocurrió un problema al buscar acudientes. Intenta nuevamente.'
+    })
+  }
+  return Promise.resolve()
+}
+
+async function buscarAcudientes() {
+  const busqueda = busquedaAcudiente.value.trim().replace(/\D/g, '') // NOSONAR: S7781 - replaceAll no acepta regex
+
+  // Validar que tenga al menos 6 dígitos antes de buscar
+  const MIN_DOCUMENTO = 6
+  if (!busqueda || busqueda.length < MIN_DOCUMENTO) {
     acudientesEncontrados.value = []
     return
   }
@@ -745,29 +859,9 @@ async function buscarAcudientes() {
       }
     })
 
-    if (response.ok) {
-      const result = await response.json()
-      if (result.success && result.data) {
-        acudientesEncontrados.value = [result.data]
-      } else {
-        acudientesEncontrados.value = []
-        await Swal.fire({
-          icon: 'info',
-          title: 'Sin coincidencias',
-          text: result.message || 'No encontramos un acudiente con ese documento.'
-        })
-      }
-    } else {
-      acudientesEncontrados.value = []
-    }
+    await _procesarRespuestaBusqueda(response, busqueda)
   } catch (error) {
-    console.error('Error al buscar acudientes:', error)
-    acudientesEncontrados.value = []
-    await Swal.fire({
-      icon: 'error',
-      title: 'Error de búsqueda',
-      text: 'Ocurrió un problema al buscar acudientes. Intenta nuevamente.'
-    })
+    await _manejarErrorBusqueda(error, busqueda)
   }
 }
 
@@ -796,13 +890,14 @@ async function asociarAcudiente() {
 
   asociando.value = true
   try {
+    const idDeportista = detalle.value.deportista.id_deportista
     const datos = {
-      id_deportista: detalle.value.deportista.id_deportista,
+      id_acudiente: acudienteSeleccionado.value.id_acudiente,
       id_parentesco: Number.parseInt(idParentesco.value, 10),
       es_responsable: esResponsable.value
     }
 
-    const response = await fetch(`${baseURL}/api/deportistas/asociar-acudiente`, {
+    const response = await fetch(`${baseURL}/api/deportistas/${idDeportista}/acudientes/asociar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${authStore.token}`,
@@ -810,6 +905,23 @@ async function asociarAcudiente() {
       },
       body: JSON.stringify(datos)
     })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      let errorMessage = 'Ocurrió un error al asociar el acudiente.'
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorMessage = errorJson.error || errorJson.message || errorMessage
+      } catch {
+        // Si no es JSON, usar el texto del error o un mensaje genérico
+        if (response.status === 404) {
+          errorMessage = 'El endpoint no fue encontrado. Verifica la configuración del servidor.'
+        } else if (response.status >= 500) {
+          errorMessage = 'Error del servidor. Intenta nuevamente más tarde.'
+        }
+      }
+      throw new Error(errorMessage)
+    }
 
     const result = await response.json()
 
@@ -996,6 +1108,31 @@ const getRolId = (rol) => {
 
 .info-row .info-label {
   flex-shrink: 0;
+}
+
+/* Estilos para el modal de información del acudiente */
+.info-section {
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.info-value {
+  color: #212529;
+  flex: 1;
+  text-align: right;
 }
 </style>
 
