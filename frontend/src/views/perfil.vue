@@ -808,13 +808,13 @@ function manejarBusquedaAcudiente(event) {
 }
 
 function _procesarRespuestaBusqueda(response, busqueda) {
-  if (response.ok) {
+    if (response.ok) {
     return response.json().then(result => {
       if (result.success && result.data) {
         acudientesEncontrados.value = [result.data]
         return true
       }
-      acudientesEncontrados.value = []
+        acudientesEncontrados.value = []
       if (busqueda.length >= 8) {
         return Swal.fire({
           icon: 'info',
@@ -825,13 +825,13 @@ function _procesarRespuestaBusqueda(response, busqueda) {
       return false
     })
   }
-  acudientesEncontrados.value = []
+      acudientesEncontrados.value = []
   return Promise.resolve(false)
-}
+    }
 
 function _manejarErrorBusqueda(error, busqueda) {
-  console.error('Error al buscar acudientes:', error)
-  acudientesEncontrados.value = []
+    console.error('Error al buscar acudientes:', error)
+    acudientesEncontrados.value = []
   if (busqueda.length >= 8) {
     return Swal.fire({
       icon: 'error',

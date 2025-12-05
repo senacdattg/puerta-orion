@@ -826,15 +826,15 @@ const puedeEditarCampo = computed(() => {
     primerApellido: true,
     segundoApellido: true,
     sexo: true,
-    correo: true,
-    telefono: true,
-    direccion: true,
+      correo: true,
+      telefono: true,
+      direccion: true,
     // Datos deportista - campos administrativos
     fechaNacimiento: esAdminOSuperAdmin, // Solo Admin/SuperAdmin pueden editar fecha de nacimiento
     fechaIngreso: false, // Fecha de ingreso no es editable (dato administrativo del sistema)
     categoria: false, // Categoría se asigna automáticamente según fecha de nacimiento
     // Altura y peso solo para roles permitidos
-    peso: puedeEditarPesoAltura.value,
+      peso: puedeEditarPesoAltura.value,
     altura: puedeEditarPesoAltura.value
   }
 
