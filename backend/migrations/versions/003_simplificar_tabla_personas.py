@@ -7,6 +7,20 @@ Create Date: 2025-09-30 15:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+import sys
+import os
+
+# Add migrations/helpers to path for helper imports
+migrations_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+helpers_path = os.path.join(migrations_path, 'helpers')
+if helpers_path not in sys.path:
+    sys.path.insert(0, helpers_path)
+
+from _helpers_table_modification import (
+    drop_foreign_keys_for_columns,
+    drop_columns_safe,
+    drop_column_safe
+)
 
 
 # revision identifiers, used by Alembic.
@@ -14,6 +28,46 @@ revision = '003_simplificar_personas'
 down_revision = '002_actualizar_deportista'
 branch_labels = None
 depends_on = None
+
+TABLE_NAME = 'puerta_orion_personas'
+COLUMNS_TO_DROP = ['id_mensualidad', 'id_ciudad', 'id_eps', 'id_institucion', 'id_tipo_sangre']
+
+
+def _get_table_inspector():
+    """Get SQLAlchemy inspector for database operations."""
+    from sqlalchemy import inspect
+    bind = op.get_bind()
+    return inspect(bind)
+
+
+def _table_exists(inspector) -> bool:
+    """Check if the personas table exists."""
+    return TABLE_NAME in inspector.get_table_names()
+
+
+def _get_existing_columns(inspector) -> set:
+    """Get set of existing column names in the personas table."""
+    columns = inspector.get_columns(TABLE_NAME)
+    return {col['name'] for col in columns}
+
+
+def _get_foreign_keys(inspector) -> list:
+    """Get all foreign keys for the personas table."""
+    return inspector.get_foreign_keys(TABLE_NAME)
+
+
+def _alter_direccion_column(existing_columns: set) -> None:
+    """Alter direccion column length if it exists."""
+    if 'direccion' not in existing_columns:
+        return
+    
+    try:
+        op.alter_column(TABLE_NAME, 'direccion',
+            existing_type=sa.String(length=150),
+            type_=sa.String(length=50),
+            existing_nullable=False)
+    except Exception:
+        pass  # Ignore if modification fails
 
 
 def upgrade():
@@ -34,57 +88,22 @@ def upgrade():
     - Actualizar longitud de direccion: VARCHAR(150) → VARCHAR(50)
     - Mantener: id_tipo_documento, id_sexo
     """
+    inspector = _get_table_inspector()
     
-    from sqlalchemy import inspect
-    
-    bind = op.get_bind()
-    inspector = inspect(bind)
-    
-    # Verificar que la tabla existe
-    if 'puerta_orion_personas' not in inspector.get_table_names():
+    if not _table_exists(inspector):
         return
     
-    # Obtener todas las columnas existentes
-    existing_columns = {col['name'] for col in inspector.get_columns('puerta_orion_personas')}
+    existing_columns = _get_existing_columns(inspector)
+    foreign_keys = _get_foreign_keys(inspector)
+    columns_to_drop_set = set(COLUMNS_TO_DROP)
     
-    # Obtener todas las FKs de la tabla personas
-    fks = inspector.get_foreign_keys('puerta_orion_personas')
+    drop_foreign_keys_for_columns(TABLE_NAME, foreign_keys, columns_to_drop_set)
+    drop_columns_safe(TABLE_NAME, COLUMNS_TO_DROP, existing_columns)
     
-    # Eliminar las FKs de las columnas que queremos eliminar
-    columnas_a_eliminar = ['id_mensualidad', 'id_ciudad', 'id_eps', 'id_institucion', 'id_tipo_sangre']
-    
-    for fk in fks:
-        # Si la FK referencia a una de las columnas que queremos eliminar
-        if fk['constrained_columns'] and fk['constrained_columns'][0] in columnas_a_eliminar:
-            try:
-                op.drop_constraint(fk['name'], 'puerta_orion_personas', type_='foreignkey')
-            except Exception:
-                pass  # Ignorar si la constraint no existe
-    
-    # Ahora eliminar las columnas solo si existen
-    for columna in columnas_a_eliminar:
-        if columna in existing_columns:
-            try:
-                op.drop_column('puerta_orion_personas', columna)
-            except Exception:
-                pass  # Ignorar si la columna no existe
-    
-    # Eliminar fecha_nacimiento (sin FK) solo si existe
     if 'fecha_nacimiento' in existing_columns:
-        try:
-            op.drop_column('puerta_orion_personas', 'fecha_nacimiento')
-        except Exception:
-            pass  # Ignorar si la columna no existe
+        drop_column_safe(TABLE_NAME, 'fecha_nacimiento')
     
-    # Actualizar longitud del campo direccion solo si existe
-    if 'direccion' in existing_columns:
-        try:
-            op.alter_column('puerta_orion_personas', 'direccion',
-                existing_type=sa.String(length=150),
-                type_=sa.String(length=50),
-                existing_nullable=False)
-        except Exception:
-            pass  # Ignorar si no se puede modificar
+    _alter_direccion_column(existing_columns)
 
 
 def downgrade():
