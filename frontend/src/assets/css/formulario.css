@@ -246,38 +246,57 @@
 .panel-opciones {
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 24px;
+  flex-wrap: wrap;
 }
 
 /* --- Botón sí/no --- */
 .boton-si-no {
-  min-width: 120px;
-  padding: var(--espaciado-md) var(--espaciado-xl);
+  min-width: 140px;
+  padding: 14px 28px;
   border: 2px solid var(--color-info);
-  border-radius: var(--radio-borde-pequeno);
+  border-radius: 8px;
   background-color: var(--color-blanco);
   color: var(--color-info);
   font-size: var(--tamano-fuente-base);
   font-weight: var(--peso-fuente-semibold);
   cursor: pointer;
-  transition: var(--transicion);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
 }
 
 .boton-si-no:hover:not(:disabled) {
   background-color: var(--color-info-badge-bg);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2); /* Sombra específica - mantener hardcodeado */
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.25);
+  border-color: var(--color-info-hover);
+}
+
+.boton-si-no:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.2);
 }
 
 .boton-si-no.activo {
   background-color: var(--color-info);
   color: var(--color-blanco);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4); /* Sombra específica - mantener hardcodeado */
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+  border-color: var(--color-info);
+  font-weight: var(--peso-fuente-bold);
+}
+
+.boton-si-no.activo:hover:not(:disabled) {
+  background-color: var(--color-info-hover);
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.5);
 }
 
 .boton-si-no:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+  transform: none;
 }
 
 /* ===== ESTILOS DEL COMPONENTE panel-recomendacion ===== */
@@ -794,6 +813,54 @@
   }
 }
 
+/* ===== ESTILOS DEL COMPONENTE boton-formulario ===== */
+
+/* --- Botón principal del formulario (Registrar/Actualizar) --- */
+.boton-formulario {
+  min-width: 150px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.2);
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-azul-oscuro) 100%);
+  color: var(--color-blanco);
+}
+
+.boton-formulario:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.3);
+  background: linear-gradient(135deg, var(--color-azul-oscuro) 0%, var(--color-primario) 100%);
+}
+
+.boton-formulario:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 71, 171, 0.2);
+}
+
+.boton-formulario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+
+/* --- Iconos dentro de botones --- */
+.boton-formulario i {
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
 .boton-formulario:disabled,
 .boton-secundario:disabled {
   opacity: 0.6;
@@ -807,18 +874,75 @@ select:disabled {
 }
 
 .boton-secundario {
-  background-color: var(--color-gris);
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
   color: var(--color-blanco);
   border: none;
-  padding: var(--espaciado-md) var(--espaciado-lg);
-  border-radius: var(--radio-borde-pequeno);
+  padding: 14px 28px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: var(--tamano-fuente-sm);
-  transition: background-color var(--transicion);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 150px;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
 }
 
 .boton-secundario:hover:not(:disabled) {
-  background-color: var(--color-gris-oscuro);
+  background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.boton-secundario:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+}
+
+.boton-secundario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.boton-primario {
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-azul-oscuro) 100%);
+  color: var(--color-blanco);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 150px;
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.2);
+}
+
+.boton-primario:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.3);
+  background: linear-gradient(135deg, var(--color-azul-oscuro) 0%, var(--color-primario) 100%);
+}
+
+.boton-primario:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 71, 171, 0.2);
+}
+
+.boton-primario:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* ===== ESTILOS DEL COMPONENTE file-input ===== */
@@ -868,6 +992,19 @@ select:disabled {
   cursor: not-allowed;
 }
 
+/* ===== ESTILOS ESPECÍFICOS PARA BOTONES DEL FORMULARIO DE DEPORTISTA ===== */
+
+/* --- Contenedor de botones del formulario --- */
+.formulario-datos .botones-formulario {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 28px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-gris-200);
+}
+
 /* ===== RESPONSIVE ===== */
 
 /* --- Responsive para file-input --- */
@@ -875,5 +1012,25 @@ select:disabled {
   .file-button {
     font-size: 0.9rem;
     padding: 10px 14px;
+  }
+
+  .formulario-datos .botones-formulario {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formulario-datos .botones-formulario .boton-formulario,
+  .formulario-datos .botones-formulario .boton-primario,
+  .formulario-datos .botones-formulario .boton-secundario {
+    width: 100%;
+  }
+
+  .panel-opciones {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .boton-si-no {
+    width: 100%;
   }
 }

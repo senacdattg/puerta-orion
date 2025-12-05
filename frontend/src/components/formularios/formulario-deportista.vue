@@ -270,36 +270,33 @@
 
       <!-- Botones de acción -->
       <!-- Solo mostrar en modo ver un botón para cerrar -->
-      <div v-if="modo === 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
+      <div v-if="modo === 'ver'" class="botones-formulario">
         <button
           type="button"
-          class="boton-formulario"
-          style="width: 150px; background: #6c757d;"
+          class="boton-formulario boton-secundario"
           @click="cancelar"
         >
           Cerrar
         </button>
       </div>
-      <div v-else-if="modo !== 'ver'" class="botones-formulario" style="justify-content: center; gap: 10px; margin-top: 20px;">
+      <div v-else-if="modo !== 'ver'" class="botones-formulario">
         <button
           v-if="modo === 'registrar'"
           type="button"
-          class="boton-formulario"
-          style="width: 150px; background: #6c757d;"
+          class="boton-formulario boton-secundario"
           @click="volverAtras"
           :disabled="isSubmitting"
         >
-          <i class="fas fa-arrow-left" style="margin-right: 5px;"></i>
+          <i class="fas fa-arrow-left"></i>
           Volver
         </button>
-        <button type="submit" class="boton-formulario" :disabled="isSubmitting" style="width: 150px;">
+        <button type="submit" class="boton-formulario boton-primario" :disabled="isSubmitting">
           {{ isSubmitting ? 'Enviando...' : obtenerTextoBoton() }}
         </button>
         <button
           v-if="modo === 'actualizar'"
           type="button"
-          class="boton-formulario"
-          style="width: 120px;"
+          class="boton-formulario boton-secundario"
           @click="cancelar"
         >
           Cancelar

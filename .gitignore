@@ -57,6 +57,7 @@ desktop.ini
 *.backup
 *~.nib
 *.swp
+tmp/
 
 # ============ BUILD / DIST ============
 dist/
