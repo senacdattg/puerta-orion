@@ -10,7 +10,7 @@ WORKDIR /app
 # Security: npm scripts are required for native dependency compilation (rollup, etc.)
 # --ignore-scripts cannot be used here as build tools need to compile native binaries
 # All packages are from trusted sources (npm registry) and verified during installation
-# nosonar: S6505 - npm scripts are necessary for native dependency compilation
+# nosonar docker:S6505 - npm scripts are necessary for native dependency compilation
 COPY package*.json ./
 RUN npm install
 
@@ -18,7 +18,7 @@ RUN npm install
 # Security: This package requires scripts to install platform-specific native binaries
 # The package is from npm registry and scripts are necessary for proper installation
 # --ignore-scripts cannot be used as the binary installation requires script execution
-# nosonar: S6505 - Scripts required to install native binaries for Rollup
+# nosonar docker:S6505 - Scripts required to install native binaries for Rollup
 RUN npm install --no-save @rollup/rollup-linux-x64-musl
 
 # Development stage
