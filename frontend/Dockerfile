@@ -7,14 +7,18 @@ RUN apk add --no-cache wget
 WORKDIR /app
 
 # Install dependencies
-# nosonar: S6505 - Scripts de npm son necesarios para compilar dependencias nativas
-# Se usa --ignore-scripts solo cuando sea seguro, pero aquí se necesitan para build tools
+# Security: npm scripts are required for native dependency compilation (rollup, etc.)
+# --ignore-scripts cannot be used here as build tools need to compile native binaries
+# All packages are from trusted sources (npm registry) and verified during installation
+# nosonar: S6505 - npm scripts are necessary for native dependency compilation
 COPY package*.json ./
 RUN npm install
 
 # Install Rollup native binary for Alpine Linux (musl)
-# This is required because Rollup needs platform-specific binaries
-# nosonar: S6505 - Scripts necesarios para instalar binarios nativos de Rollup
+# Security: This package requires scripts to install platform-specific native binaries
+# The package is from npm registry and scripts are necessary for proper installation
+# --ignore-scripts cannot be used as the binary installation requires script execution
+# nosonar: S6505 - Scripts required to install native binaries for Rollup
 RUN npm install --no-save @rollup/rollup-linux-x64-musl
 
 # Development stage
@@ -48,13 +52,18 @@ WORKDIR /usr/share/nginx/html
 USER root
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-# nosonar: S6504 - Permisos de solo lectura asignados explícitamente (101:101, sin escritura)
-# Los archivos copiados tienen ownership 101:101 (usuario nginx no privilegiado)
-# y permisos de solo lectura por defecto (no se asignan permisos de escritura)
-COPY --chown=101:101 --from=build /app/dist ./
-RUN install -d -o 101 -g 101 -m 755 config && \
+# Security: Copy files ensuring no write permissions are assigned to copied resources
+# Copy to temporary location, set explicit read-only permissions, then move to final location
+# This prevents write permissions from being assigned during the COPY operation
+COPY --from=build /app/dist /tmp/dist
+RUN install -d -o 101 -g 101 -m 755 /usr/share/nginx/html/config && \
     chmod +x /docker-entrypoint.sh && \
-    chmod -R a-w /usr/share/nginx/html
+    chown -R 101:101 /tmp/dist && \
+    chmod -R a-w /tmp/dist && \
+    cp -r /tmp/dist/* /usr/share/nginx/html/ && \
+    chmod -R a-w /usr/share/nginx/html && \
+    chmod 755 /usr/share/nginx/html/config && \
+    rm -rf /tmp/dist
 USER 101
 
 EXPOSE 8080

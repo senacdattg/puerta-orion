@@ -24,14 +24,15 @@ COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel \
  && pip install -r requirements.txt
 
-# Copiar archivos de la aplicación
-# NOTA DE SEGURIDAD: COPY recursivo es seguro porque:
-# - .dockerignore está configurado para excluir archivos sensibles (.env, .git, secrets, etc.)
-# - Solo se copian archivos necesarios para la aplicación
-# - Archivos sensibles como .env, claves privadas, y credenciales están excluidos
-# - El usuario no root (appuser) no tiene acceso a información confidencial
-# - .dockerignore incluye: .env, .env.*, *.key, *.pem, secrets/, .git/, logs/, instance/
-# nosonar: S6470 - COPY recursivo es seguro gracias a .dockerignore configurado y verificado
+# Copy application files
+# Security: Recursive COPY is safe because:
+# - .dockerignore is configured to exclude sensitive files (.env, .git, secrets, etc.)
+# - Only necessary application files are copied (verified .dockerignore patterns)
+# - Sensitive files (.env, *.key, *.pem, secrets/, .git/, logs/, instance/) are excluded
+# - Non-root user (appuser) does not have access to confidential information
+# - All environment variables are passed via docker-compose env_file, not copied
+# The .dockerignore file explicitly excludes: .env, .env.*, *.key, *.pem, secrets/, .git/, logs/, instance/
+# nosonar: S6470 - Recursive COPY is safe due to properly configured and verified .dockerignore
 COPY . .
 
 # Preparar entrypoint y cambiar ownership de los archivos al usuario no privilegiado
