@@ -35,13 +35,17 @@ def upgrade():
     - Mantener: id_tipo_documento, id_sexo
     """
     
-    # En MySQL, debemos eliminar explícitamente las constraints FK antes de las columnas
-    # Intentaremos con diferentes posibles nombres de constraints
-    
     from sqlalchemy import inspect
     
     bind = op.get_bind()
     inspector = inspect(bind)
+    
+    # Verificar que la tabla existe
+    if 'puerta_orion_personas' not in inspector.get_table_names():
+        return
+    
+    # Obtener todas las columnas existentes
+    existing_columns = {col['name'] for col in inspector.get_columns('puerta_orion_personas')}
     
     # Obtener todas las FKs de la tabla personas
     fks = inspector.get_foreign_keys('puerta_orion_personas')
@@ -51,21 +55,36 @@ def upgrade():
     
     for fk in fks:
         # Si la FK referencia a una de las columnas que queremos eliminar
-        if fk['constrained_columns'][0] in columnas_a_eliminar:
-            op.drop_constraint(fk['name'], 'puerta_orion_personas', type_='foreignkey')
+        if fk['constrained_columns'] and fk['constrained_columns'][0] in columnas_a_eliminar:
+            try:
+                op.drop_constraint(fk['name'], 'puerta_orion_personas', type_='foreignkey')
+            except Exception:
+                pass  # Ignorar si la constraint no existe
     
-    # Ahora eliminar las columnas
+    # Ahora eliminar las columnas solo si existen
     for columna in columnas_a_eliminar:
-        op.drop_column('puerta_orion_personas', columna)
+        if columna in existing_columns:
+            try:
+                op.drop_column('puerta_orion_personas', columna)
+            except Exception:
+                pass  # Ignorar si la columna no existe
     
-    # Eliminar fecha_nacimiento (sin FK)
-    op.drop_column('puerta_orion_personas', 'fecha_nacimiento')
+    # Eliminar fecha_nacimiento (sin FK) solo si existe
+    if 'fecha_nacimiento' in existing_columns:
+        try:
+            op.drop_column('puerta_orion_personas', 'fecha_nacimiento')
+        except Exception:
+            pass  # Ignorar si la columna no existe
     
-    # Actualizar longitud del campo direccion
-    op.alter_column('puerta_orion_personas', 'direccion',
-        existing_type=sa.String(length=150),
-        type_=sa.String(length=50),
-        existing_nullable=False)
+    # Actualizar longitud del campo direccion solo si existe
+    if 'direccion' in existing_columns:
+        try:
+            op.alter_column('puerta_orion_personas', 'direccion',
+                existing_type=sa.String(length=150),
+                type_=sa.String(length=50),
+                existing_nullable=False)
+        except Exception:
+            pass  # Ignorar si no se puede modificar
 
 
 def downgrade():

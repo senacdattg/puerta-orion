@@ -124,7 +124,3 @@ def get_standard_timestamp_columns() -> List[sa.Column]:
         sa.Column('updated_at', sa.DateTime(), nullable=False),
     ]
 
-
-
-
-

@@ -25,7 +25,16 @@ def upgrade():
     # Verificamos si la columna ya existe para hacer la migración idempotente
     conn = op.get_bind()
     inspector = sa.inspect(conn)
+    
+    # Verificar si la tabla existe
+    if 'puerta_orion_sexo' not in inspector.get_table_names():
+        return
+    
     columns = [col['name'] for col in inspector.get_columns('puerta_orion_sexo')]
+    
+    # Si la columna 'nombre' ya existe y 'sexo' no existe, la migración ya se aplicó
+    if 'nombre' in columns and 'sexo' not in columns:
+        return
     
     # Solo agregar la columna si no existe
     if 'nombre' not in columns:
@@ -33,23 +42,25 @@ def upgrade():
             batch_op.add_column(sa.Column('nombre', sa.String(length=150), nullable=True))
     
     # Migrar datos: convertir valores booleanos/tinyint a texto
-    # Si sexo = 1 o True -> "Masculino", si sexo = 0 o False -> "Femenino"
-    op.execute("""
-        UPDATE puerta_orion_sexo 
-        SET nombre = CASE 
-            WHEN sexo = 1 THEN 'Masculino'
-            WHEN sexo = 0 THEN 'Femenino'
-            WHEN sexo = 2 THEN 'Otro'
-            ELSE 'No especificado'
-        END
-        WHERE nombre IS NULL OR nombre = ''
-    """)
+    # Solo si la columna 'sexo' existe
+    if 'sexo' in columns:
+        op.execute("""
+            UPDATE puerta_orion_sexo 
+            SET nombre = CASE 
+                WHEN sexo = 1 THEN 'Masculino'
+                WHEN sexo = 0 THEN 'Femenino'
+                WHEN sexo = 2 THEN 'Otro'
+                ELSE 'No especificado'
+            END
+            WHERE nombre IS NULL OR nombre = ''
+        """)
     
     # Ahora hacemos la columna NOT NULL y eliminamos la columna antigua si existe
     with op.batch_alter_table('puerta_orion_sexo', schema=None) as batch_op:
-        batch_op.alter_column('nombre',
-                              existing_type=sa.String(length=150),
-                              nullable=False)
+        if 'nombre' in columns or 'nombre' in [col['name'] for col in inspector.get_columns('puerta_orion_sexo')]:
+            batch_op.alter_column('nombre',
+                                  existing_type=sa.String(length=150),
+                                  nullable=False)
         if 'sexo' in columns:
             batch_op.drop_column('sexo')
 

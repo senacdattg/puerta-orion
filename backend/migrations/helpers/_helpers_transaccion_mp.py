@@ -43,9 +43,3 @@ def drop_transaccion_mercadopago_table():
     """Drops the puerta_orion_transaccion_mercadopago table."""
     op.drop_table('puerta_orion_transaccion_mercadopago')
 
-
-
-
-
-
-

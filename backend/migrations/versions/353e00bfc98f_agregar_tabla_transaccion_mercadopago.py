@@ -11,10 +11,11 @@ from sqlalchemy.dialects import mysql
 import sys
 import os
 
-# Add migrations/versions to path for helper imports
-migrations_path = os.path.dirname(os.path.abspath(__file__))
-if migrations_path not in sys.path:
-    sys.path.insert(0, migrations_path)
+# Add migrations/helpers to path for helper imports
+migrations_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+helpers_path = os.path.join(migrations_path, 'helpers')
+if helpers_path not in sys.path:
+    sys.path.insert(0, helpers_path)
 
 from _helpers_transaccion_mp import create_transaccion_mercadopago_table, drop_transaccion_mercadopago_table
 
