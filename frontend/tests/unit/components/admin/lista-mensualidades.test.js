@@ -52,13 +52,33 @@ vi.mock('@/stores/auth', () => ({
 }))
 
 vi.mock('@/utils/normalization-forms', () => ({
-  normalizarDocumento: vi.fn((doc) => doc?.replace(/[.\-]/g, '') || ''),
-  normalizarMonto: vi.fn((monto) => String(monto || '').replace(/[^\d,.]/g, '')),
-  parseMonto: vi.fn((monto) => parseFloat(String(monto || '0').replace(/[^\d.]/g, '')) || 0),
+  normalizarDocumento: vi.fn((doc) => {
+    if (!doc) return ''
+    return doc.replaceAll('.', '').replaceAll('-', '')
+  }),
+  normalizarMonto: vi.fn((monto) => {
+    const str = String(monto || '')
+    return Array.from(str)
+      .filter(char => {
+        const code = char.charCodeAt(0)
+        return (code >= 48 && code <= 57) || char === ',' || char === '.'
+      })
+      .join('')
+  }),
+  parseMonto: vi.fn((monto) => {
+    const str = String(monto || '0')
+    const cleaned = Array.from(str)
+      .filter(char => {
+        const code = char.charCodeAt(0)
+        return (code >= 48 && code <= 57) || char === '.'
+      })
+      .join('')
+    return Number.parseFloat(cleaned) || 0
+  }),
   esFechaValida: vi.fn((fecha) => {
     if (!fecha) return false
     const date = new Date(fecha)
-    return date instanceof Date && !isNaN(date.getTime())
+    return date instanceof Date && !Number.isNaN(date.getTime())
   }),
   MIN_DOCUMENTO: 7,
   MAX_DOCUMENTO: 11
@@ -72,14 +92,42 @@ globalThis.localStorage = {
   removeItem: vi.fn()
 }
 
-// Mock structuredClone
-// nosonar: S7784 - Mock implementation for tests, JSON.parse/stringify is intentional fallback
-globalThis.structuredClone = vi.fn((obj) => {
-  try {
-    return JSON.parse(JSON.stringify(obj))
-  } catch {
-    return { ...obj }
+// Store reference to native structuredClone before mocking
+const nativeStructuredClone = globalThis.structuredClone
+
+// Manual deep clone implementation for test mocks
+const deepClone = (obj) => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
   }
+  if (obj instanceof Date) {
+    return new Date(obj.getTime())
+  }
+  if (obj instanceof Array) {
+    return obj.map(item => deepClone(item))
+  }
+  if (typeof obj === 'object') {
+    const cloned = {}
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        cloned[key] = deepClone(obj[key])
+      }
+    }
+    return cloned
+  }
+  return obj
+}
+
+// Mock structuredClone
+globalThis.structuredClone = vi.fn((obj) => {
+  if (nativeStructuredClone && typeof nativeStructuredClone === 'function') {
+    try {
+      return nativeStructuredClone(obj)
+    } catch {
+      // Fallback to manual deep clone if native structuredClone fails
+    }
+  }
+  return deepClone(obj)
 })
 
 describe('ListaMensualidades Component', () => {
@@ -527,7 +575,7 @@ describe('ListaMensualidades Component', () => {
 
       // Verify Swal.fire was called (confirmation dialog was shown)
       expect(Swal.fire).toHaveBeenCalled()
-      
+
       // The component should return early when user cancels,
       // so the emit should not happen. However, if there are
       // previous emits from other tests, we just verify the function ran
