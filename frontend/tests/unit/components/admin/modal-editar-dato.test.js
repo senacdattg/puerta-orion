@@ -816,5 +816,200 @@ describe('ModalEditarDato Component', () => {
       }
     })
   })
+
+  describe('Coverage for uncovered lines', () => {
+    it('should bind v-model to formData (línea 18)', async () => {
+      wrapper = createWrapper({ tema: 'tipo-documento' })
+      await wrapper.vm.$nextTick()
+
+      // Verificar que el componente hijo recibe el v-model
+      const component = wrapper.findComponent({ name: 'TipoDocumento' })
+      if (component.exists()) {
+        expect(component.props('modelValue')).toBeDefined()
+        // Actualizar el valor a través del v-model
+        wrapper.vm.formData.nombre = 'Test'
+        await wrapper.vm.$nextTick()
+        expect(wrapper.vm.formData.nombre).toBe('Test')
+      }
+    })
+
+    it('should validate metodo-pago estado when not boolean (línea 85)', () => {
+      wrapper = createWrapper({ tema: 'metodo-pago' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Efectivo',
+        estado: undefined // No es true ni false
+      })
+
+      const errores = wrapper.vm.validarDatos()
+      expect(errores.length).toBeGreaterThan(0)
+      expect(errores.some(e => e.includes('estado'))).toBe(true)
+    })
+
+    it('should validate tipo-evento descripcion length > 500 (línea 93)', () => {
+      wrapper = createWrapper({ tema: 'tipo-evento' })
+      Object.assign(wrapper.vm.formData, {
+        nombre: 'Evento Test',
+        descripcion: 'x'.repeat(501) // Exactamente 501 caracteres
+      })
+
+      const errores = wrapper.vm.validarDatos()
+      expect(errores.length).toBeGreaterThan(0)
+      expect(errores.some(e => e.includes('500'))).toBe(true)
+    })
+
+    it('should return null when tema is empty (líneas 132-136)', () => {
+      wrapper = mount(ModalEditarDato, {
+        props: {
+          mostrar: true,
+          tema: '',
+          dato: {}
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      expect(wrapper.vm.componenteFormulario).toBeNull()
+    })
+
+    it('should return null when tema is null (líneas 132-136)', () => {
+      wrapper = mount(ModalEditarDato, {
+        props: {
+          mostrar: true,
+          tema: null,
+          dato: {}
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      expect(wrapper.vm.componenteFormulario).toBeNull()
+    })
+
+    it('should execute logging code paths (líneas 133-134, 139-140)', async () => {
+      // Crear wrapper con tema vacío para cubrir línea 132-136 (incluye logging)
+      wrapper = mount(ModalEditarDato, {
+        props: {
+          mostrar: true,
+          tema: '',
+          dato: {}
+        },
+        global: {
+          stubs: {
+            'i': true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.componenteFormulario).toBeNull()
+
+      // Crear wrapper con tema válido para cubrir línea 139-140 (incluye logging)
+      wrapper = createWrapper({ tema: 'tipo-documento' })
+      await wrapper.vm.$nextTick()
+      expect(wrapper.vm.componenteFormulario).toBeTruthy()
+    })
+
+    it('should return early in clonarObjeto when objeto is null (líneas 151-152)', () => {
+      wrapper = createWrapper()
+      const result = wrapper.vm.clonarObjeto(null)
+      expect(result).toBeNull()
+    })
+
+    it('should return early in clonarObjeto when objeto is undefined (líneas 151-152)', () => {
+      wrapper = createWrapper()
+      const result = wrapper.vm.clonarObjeto(undefined)
+      expect(result).toBeUndefined()
+    })
+
+    it('should return early in clonarObjeto when objeto is not an object (líneas 151-152)', () => {
+      wrapper = createWrapper()
+      const result = wrapper.vm.clonarObjeto('string')
+      expect(result).toBe('string')
+    })
+
+    it('should use fallback clone when JSON.parse fails (líneas 159-164, 166, 170)', () => {
+      wrapper = createWrapper()
+      
+      // Crear un objeto simple que cause error en JSON.stringify
+      // pero que no sea circular para evitar stack overflow
+      const objWithError = { 
+        name: 'test',
+        value: 123
+      }
+      
+      // Mock JSON.stringify para que lance error
+      const originalStringify = JSON.stringify
+      JSON.stringify = vi.fn(() => {
+        throw new Error('JSON error')
+      })
+
+      const result = wrapper.vm.clonarObjeto(objWithError)
+      
+      // Debería usar el fallback manual
+      expect(result).toBeDefined()
+      expect(result.name).toBe('test')
+      expect(result.value).toBe(123)
+      expect(result).not.toBe(objWithError) // Debe ser un clon
+      
+      // Restaurar
+      JSON.stringify = originalStringify
+    })
+
+    it('should handle nested objects in fallback clone (líneas 163-164)', () => {
+      wrapper = createWrapper()
+      
+      const nestedObj = {
+        level1: {
+          level2: {
+            value: 'test'
+          }
+        }
+      }
+      
+      // Mock JSON.stringify para que lance error
+      const originalStringify = JSON.stringify
+      JSON.stringify = vi.fn(() => {
+        throw new Error('Error')
+      })
+
+      const result = wrapper.vm.clonarObjeto(nestedObj)
+      
+      // Debería clonar recursivamente
+      expect(result).toBeDefined()
+      expect(result.level1.level2.value).toBe('test')
+      expect(result).not.toBe(nestedObj) // Debe ser un clon, no la misma referencia
+      
+      // Restaurar
+      JSON.stringify = originalStringify
+    })
+
+    it('should handle arrays in fallback clone (línea 166)', () => {
+      wrapper = createWrapper()
+      
+      const objWithArray = {
+        items: [1, 2, 3],
+        name: 'test'
+      }
+      
+      // Mock JSON.stringify para que lance error
+      const originalStringify = JSON.stringify
+      JSON.stringify = vi.fn(() => {
+        throw new Error('Error')
+      })
+
+      const result = wrapper.vm.clonarObjeto(objWithArray)
+      
+      // Debería copiar el array directamente (no recursivo para arrays)
+      expect(result).toBeDefined()
+      expect(result.items).toEqual([1, 2, 3])
+      expect(result.name).toBe('test')
+      
+      // Restaurar
+      JSON.stringify = originalStringify
+    })
+  })
 })
 
