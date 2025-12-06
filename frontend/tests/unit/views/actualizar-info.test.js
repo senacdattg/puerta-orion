@@ -721,6 +721,41 @@ describe('ActualizarInfo View', () => {
       // The function should show a message or return early
       expect(wrapper.exists()).toBe(true)
     })
+
+    it('should return early when guardando is true (línea 1767)', async () => {
+      wrapper.vm.guardando = true
+      const authService = await import('@/services/authService')
+      authService.default.updateUser = vi.fn()
+
+      await wrapper.vm.actualizarInformacion()
+      await wrapper.vm.$nextTick()
+
+      // No debe llamar a updateUser cuando guardando es true
+      expect(authService.default.updateUser).not.toHaveBeenCalled()
+    })
+
+    it('should return early when user cancels confirmation (línea 1776)', async () => {
+      const Swal = await import('sweetalert2')
+      Swal.default.fire = vi.fn().mockResolvedValue({ isConfirmed: false })
+
+      wrapper.vm.formData = {
+        primer_nombre: 'Juan',
+        correo_electronico: 'test@example.com'
+      }
+      wrapper.vm.formDataInicial = {
+        primer_nombre: 'Old',
+        correo_electronico: 'test@example.com'
+      }
+
+      const authService = await import('@/services/authService')
+      authService.default.updateUser = vi.fn()
+
+      await wrapper.vm.actualizarInformacion()
+      await wrapper.vm.$nextTick()
+
+      // No debe llamar a updateUser cuando el usuario cancela
+      expect(authService.default.updateUser).not.toHaveBeenCalled()
+    })
   })
 
   describe('Cancel Action', () => {
@@ -775,6 +810,23 @@ describe('ActualizarInfo View', () => {
       await wrapper.vm.cancelar()
 
       expect(Swal.default.fire).toHaveBeenCalled()
+    })
+
+    it('should navigate to profile when user confirms cancel with changes (línea 1822)', async () => {
+      const Swal = await import('sweetalert2')
+      Swal.default.fire = vi.fn().mockResolvedValue({ isConfirmed: true })
+
+      wrapper.vm.formData = {
+        primer_nombre: 'New Name'
+      }
+      wrapper.vm.formDataInicial = {
+        primer_nombre: 'Old Name'
+      }
+
+      await wrapper.vm.cancelar()
+
+      expect(Swal.default.fire).toHaveBeenCalled()
+      expect(mockRouter.push).toHaveBeenCalledWith('/perfil')
     })
   })
 
@@ -1992,6 +2044,53 @@ describe('ActualizarInfo View', () => {
     })
   })
 
+  describe('Input Field Coverage - Primer Nombre', () => {
+    let wrapper
+
+    beforeEach(async () => {
+      wrapper = mount(ActualizarInfo, {
+        global: {
+          stubs: {
+            Encabezado: true,
+            Pie: true
+          }
+        }
+      })
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 200))
+      wrapper.vm.isLoading = false
+      await wrapper.vm.$nextTick()
+    })
+
+    it('should apply disabled style when primerNombre is not editable (línea 34)', async () => {
+      // Para cubrir la línea 34 cuando puedeEditarCampo.primerNombre es false
+      // Necesitamos forzar que el computed retorne false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, primerNombre: false }
+      
+      // Usar Object.defineProperty para sobrescribir el computed
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      // Forzar actualización del componente
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const primerNombreInput = wrapper.find('#primer_nombre')
+      if (primerNombreInput.exists()) {
+        const style = primerNombreInput.attributes('style') || ''
+        // Cuando primerNombre es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
+      }
+    })
+  })
+
   describe('Input Field Coverage - Segundo Nombre', () => {
     let wrapper
 
@@ -2011,17 +2110,27 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should apply disabled style when segundoNombre is not editable (línea 50)', async () => {
-      // Para cubrir la línea 50, necesitamos que el estilo condicional se evalúe
-      // La línea se ejecuta siempre durante el renderizado, incluso si el resultado es ''
+      // Para cubrir la línea 50 cuando puedeEditarCampo.segundoNombre es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, segundoNombre: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       const segundoNombreInput = wrapper.find('#segundo_nombre')
       if (segundoNombreInput.exists()) {
-        // La línea 50 se ejecuta siempre durante el renderizado
-        // Verificamos que el campo existe y la estructura está presente
-        expect(segundoNombreInput.exists()).toBe(true)
-        // El estilo condicional se evalúa siempre, incluso si el resultado es ''
-        // Esto cubre la línea 50
-        const style = segundoNombreInput.attributes('style')
-        expect(style !== undefined).toBe(true)
+        const style = segundoNombreInput.attributes('style') || ''
+        // Cuando segundoNombre es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
       }
     })
 
@@ -2072,15 +2181,27 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should apply disabled style when primerApellido is not editable (línea 69)', async () => {
-      // Para cubrir la línea 69, necesitamos que el estilo condicional se evalúe
-      // La línea se ejecuta siempre durante el renderizado
+      // Para cubrir la línea 69 cuando puedeEditarCampo.primerApellido es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, primerApellido: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       const primerApellidoInput = wrapper.find('#primer_apellido')
       if (primerApellidoInput.exists()) {
-        // La línea 69 se ejecuta siempre durante el renderizado
-        expect(primerApellidoInput.exists()).toBe(true)
-        // El estilo condicional se evalúa siempre, incluso si el resultado es ''
-        const style = primerApellidoInput.attributes('style')
-        expect(style !== undefined).toBe(true)
+        const style = primerApellidoInput.attributes('style') || ''
+        // Cuando primerApellido es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
       }
     })
 
@@ -2131,15 +2252,27 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should apply disabled style when segundoApellido is not editable (línea 85)', async () => {
-      // Para cubrir la línea 85, necesitamos que el estilo condicional se evalúe
-      // La línea se ejecuta siempre durante el renderizado
+      // Para cubrir la línea 85 cuando puedeEditarCampo.segundoApellido es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, segundoApellido: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       const segundoApellidoInput = wrapper.find('#segundo_apellido')
       if (segundoApellidoInput.exists()) {
-        // La línea 85 se ejecuta siempre durante el renderizado
-        expect(segundoApellidoInput.exists()).toBe(true)
-        // El estilo condicional se evalúa siempre, incluso si el resultado es ''
-        const style = segundoApellidoInput.attributes('style')
-        expect(style !== undefined).toBe(true)
+        const style = segundoApellidoInput.attributes('style') || ''
+        // Cuando segundoApellido es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
       }
     })
 
@@ -2194,15 +2327,27 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should apply disabled style when tipoDocumento is not editable (línea 102)', async () => {
-      // Para cubrir la línea 102, necesitamos que el estilo condicional se evalúe
-      // La línea se ejecuta siempre durante el renderizado
+      // Para cubrir la línea 102 cuando puedeEditarCampo.tipoDocumento es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, tipoDocumento: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       const tipoDocumentoSelect = wrapper.find('#id_tipo_documento')
       if (tipoDocumentoSelect.exists()) {
-        // La línea 102 se ejecuta siempre durante el renderizado
-        expect(tipoDocumentoSelect.exists()).toBe(true)
-        // El estilo condicional se evalúa siempre, incluso si el resultado es ''
-        const style = tipoDocumentoSelect.attributes('style')
-        expect(style !== undefined).toBe(true)
+        const style = tipoDocumentoSelect.attributes('style') || ''
+        // Cuando tipoDocumento es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
       }
     })
 
@@ -2245,15 +2390,27 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should apply disabled style when numeroDocumento is not editable (línea 127)', async () => {
-      // Para cubrir la línea 127, necesitamos que el estilo condicional se evalúe
-      // La línea se ejecuta siempre durante el renderizado
+      // Para cubrir la línea 127 cuando puedeEditarCampo.numeroDocumento es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, numeroDocumento: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       const documentoInput = wrapper.find('#documento')
       if (documentoInput.exists()) {
-        // La línea 127 se ejecuta siempre durante el renderizado
-        expect(documentoInput.exists()).toBe(true)
-        // El estilo condicional se evalúa siempre, incluso si el resultado es ''
-        const style = documentoInput.attributes('style')
-        expect(style !== undefined).toBe(true)
+        const style = documentoInput.attributes('style') || ''
+        // Cuando numeroDocumento es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
       }
     })
 
@@ -2444,15 +2601,27 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should apply disabled style when sexo is not editable (línea 182)', async () => {
-      // Para cubrir la línea 182, necesitamos que el estilo condicional se evalúe
-      // La línea se ejecuta siempre durante el renderizado
+      // Para cubrir la línea 182 cuando puedeEditarCampo.sexo es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, sexo: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
       const sexoSelect = wrapper.find('#id_sexo')
       if (sexoSelect.exists()) {
-        // La línea 182 se ejecuta siempre durante el renderizado
-        expect(sexoSelect.exists()).toBe(true)
-        // El estilo condicional se evalúa siempre, incluso si el resultado es ''
-        const style = sexoSelect.attributes('style')
-        expect(style !== undefined).toBe(true)
+        const style = sexoSelect.attributes('style') || ''
+        // Cuando sexo es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
       }
     })
 
@@ -2466,18 +2635,23 @@ describe('ActualizarInfo View', () => {
     })
 
     it('should show "No se puede modificar" message when sexo is not editable (línea 193)', async () => {
-      // Para cubrir la línea 193, necesitamos que el v-if se evalúe
-      // La línea se ejecuta siempre durante el renderizado, incluso si la condición es false
-      const sexoSelect = wrapper.find('#id_sexo')
-      if (sexoSelect.exists()) {
-        // La línea 193 se ejecuta siempre durante el renderizado
-        // El v-if se evalúa siempre, incluso si el resultado es false
-        expect(sexoSelect.exists()).toBe(true)
-        // Verificar que la estructura del template está presente
-        // Esto asegura que la línea 193 se ejecuta durante el renderizado
-        const html = wrapper.html()
-        expect(html).toBeDefined()
-      }
+      // Para cubrir la línea 193 cuando puedeEditarCampo.sexo es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, sexo: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const text = wrapper.text()
+      // Cuando sexo es false, debe mostrar el mensaje
+      expect(text).toContain('No se puede modificar')
     })
   })
 
