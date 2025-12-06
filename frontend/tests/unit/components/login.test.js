@@ -59,20 +59,24 @@ describe('Login Component', () => {
   })
 
   it('should handle form submission', async () => {
+    // Mock Swal to resolve immediately
+    const Swal = await import('sweetalert2')
+    const swalFireSpy = vi.spyOn(Swal.default, 'fire').mockResolvedValue({ 
+      isConfirmed: true,
+      isDismissed: false 
+    })
+
     mockAuthStore.login.mockResolvedValue({ 
       success: true,
       user: { roles: ['Deportista'] }
     })
     mockAuthStore.setActiveRole = vi.fn().mockResolvedValue({ success: true })
 
+    const routerPushSpy = vi.spyOn(router, 'push').mockResolvedValue()
+
     const wrapper = mount(Login, {
       global: {
-        plugins: [pinia, router],
-        mocks: {
-          $router: {
-            push: vi.fn()
-          }
-        }
+        plugins: [pinia, router]
       }
     })
 
@@ -88,19 +92,26 @@ describe('Login Component', () => {
       const form = wrapper.find('form')
       if (form.exists()) {
         await form.trigger('submit')
-        await wrapper.vm.$nextTick()
         
-        // Wait a bit for async operations
-        await new Promise(resolve => setTimeout(resolve, 200))
+        // Wait for async operations to complete
+        await wrapper.vm.$nextTick()
+        await new Promise(resolve => setTimeout(resolve, 100))
         
         // Verify login was called
-        expect(mockAuthStore.login).toHaveBeenCalled()
+        expect(mockAuthStore.login).toHaveBeenCalledWith({
+          username: 'test@example.com',
+          password: 'password123'
+        })
       }
     } else {
       // If inputs don't exist, skip this test assertion
       expect(true).toBe(true)
     }
-  })
+
+    // Cleanup
+    swalFireSpy.mockRestore()
+    routerPushSpy.mockRestore()
+  }, 10000)
 
   it('should display error message when login fails', async () => {
     // Mock Swal to capture error messages

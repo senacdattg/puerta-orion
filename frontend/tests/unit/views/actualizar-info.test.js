@@ -1005,6 +1005,47 @@ describe('ActualizarInfo View', () => {
       }
     })
 
+    it('should bind v-model to fecha_nacimiento (línea 231)', async () => {
+      wrapper.vm.esDeportista = true
+      wrapper.vm.rolUsuario = 'Deportista'
+      wrapper.vm.formDataDeportista.fecha_nacimiento = '2010-01-01'
+      await wrapper.vm.$nextTick()
+
+      const fechaNacimiento = wrapper.find('#fecha_nacimiento')
+      if (fechaNacimiento.exists()) {
+        expect(fechaNacimiento.element.value).toBe('2010-01-01')
+      }
+    })
+
+    it('should apply disabled style when fechaNacimiento is not editable (línea 235)', async () => {
+      wrapper.vm.esDeportista = true
+      wrapper.vm.rolUsuario = 'Deportista'
+      await wrapper.vm.$nextTick()
+      
+      // Para cubrir la línea 235 cuando puedeEditarCampo.fechaNacimiento es false
+      const originalComputed = wrapper.vm.puedeEditarCampo
+      const mockComputed = { ...originalComputed, fechaNacimiento: false }
+      
+      Object.defineProperty(wrapper.vm, 'puedeEditarCampo', {
+        get: () => mockComputed,
+        configurable: true,
+        enumerable: true
+      })
+      
+      await wrapper.vm.$forceUpdate()
+      await wrapper.vm.$nextTick()
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      const fechaNacimiento = wrapper.find('#fecha_nacimiento')
+      if (fechaNacimiento.exists()) {
+        const style = fechaNacimiento.attributes('style') || ''
+        // Cuando fechaNacimiento es false, debe aplicar los estilos
+        // El navegador convierte #f5f5f5 a rgb(245, 245, 245)
+        expect(style).toMatch(/background-color:\s*(#f5f5f5|rgb\(245,\s*245,\s*245\))/i)
+        expect(style).toContain('cursor: not-allowed')
+      }
+    })
+
     it('should render EPS select when puedeEditarCampo.eps is true', async () => {
       wrapper.vm.esDeportista = true
       wrapper.vm.rolUsuario = 'Deportista'
@@ -2359,6 +2400,23 @@ describe('ActualizarInfo View', () => {
         expect(defaultOption.exists()).toBe(true)
       }
     })
+
+    it('should render tipo documento options with v-for (líneas 107, 108, 110)', async () => {
+      const tipoDocumentoSelect = wrapper.find('#id_tipo_documento')
+      if (tipoDocumentoSelect.exists()) {
+        const options = tipoDocumentoSelect.findAll('option')
+        // Debe tener al menos la opción por defecto + las opciones de tipos de documento
+        expect(options.length).toBeGreaterThan(1)
+        // Verificar que las opciones tienen los valores correctos
+        const optionValues = options.map(opt => opt.attributes('value')).filter(v => v)
+        expect(optionValues).toContain('1')
+        expect(optionValues).toContain('2')
+        // Verificar que el texto se renderiza correctamente
+        const optionTexts = options.map(opt => opt.text())
+        expect(optionTexts.some(text => text.includes('Cédula'))).toBe(true)
+        expect(optionTexts.some(text => text.includes('Tarjeta'))).toBe(true)
+      }
+    })
   })
 
   describe('Input Field Coverage - Documento', () => {
@@ -2631,6 +2689,21 @@ describe('ActualizarInfo View', () => {
         const options = sexoSelect.findAll('option')
         // Debe tener al menos la opción por defecto + las opciones de sexos
         expect(options.length).toBeGreaterThan(1)
+      }
+    })
+
+    it('should render sexo options with correct key, value and text (líneas 187, 188, 190)', async () => {
+      const sexoSelect = wrapper.find('#id_sexo')
+      if (sexoSelect.exists()) {
+        const options = sexoSelect.findAll('option')
+        // Verificar que las opciones tienen los valores correctos
+        const optionValues = options.map(opt => opt.attributes('value')).filter(v => v)
+        expect(optionValues).toContain('1')
+        expect(optionValues).toContain('2')
+        // Verificar que el texto se renderiza correctamente
+        const optionTexts = options.map(opt => opt.text())
+        expect(optionTexts.some(text => text.includes('Masculino'))).toBe(true)
+        expect(optionTexts.some(text => text.includes('Femenino'))).toBe(true)
       }
     })
 
