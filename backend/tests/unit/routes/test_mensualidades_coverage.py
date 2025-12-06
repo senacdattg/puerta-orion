@@ -1422,28 +1422,42 @@ class TestMensualidadesCoverage:
         mock_mensualidad_anterior.fecha_vencimiento = date(2024, 12, 31)
         mock_mensualidad_anterior.monto_pago = 50000.0
         
+        # Create mock for db.session.query chain
+        # The chain is: query(...).filter(...).distinct().all()
+        mock_all_result = [(1,)]
+        mock_distinct_result = MagicMock()
+        mock_distinct_result.all = MagicMock(return_value=mock_all_result)
+        mock_filter_result = MagicMock()
+        mock_filter_result.distinct = MagicMock(return_value=mock_distinct_result)
+        mock_query_result = MagicMock()
+        mock_query_result.filter = MagicMock(return_value=mock_filter_result)
+        
+        # Create mock for db.session
+        mock_session = MagicMock()
+        mock_session.query.return_value = mock_query_result
+        mock_session.add = MagicMock()
+        mock_session.commit = MagicMock()
+        mock_session.rollback = MagicMock()
+        
+        # Create mock for db
+        mock_db = MagicMock()
+        mock_db.session = mock_session
+        
         with patch('src.routes.mensualidades_routes._obtener_id_metodo_pago_ninguno', return_value=1), \
-             patch('src.routes.mensualidades_routes.db.session.query') as mock_query, \
+             patch('src.routes.mensualidades_routes.db', mock_db), \
              patch('src.routes.mensualidades_routes._contar_mensualidades_vencidas_sin_pagar', return_value=2), \
              patch('src.routes.mensualidades_routes._obtener_mensualidad_mas_reciente_vencida', return_value=mock_mensualidad_anterior), \
              patch('src.routes.mensualidades_routes._add_months', return_value=date(2025, 1, 31)) as mock_add_months, \
              patch('src.routes.mensualidades_routes.Mensualidad.query') as mock_mensualidad_query, \
-             patch('src.routes.mensualidades_routes.db') as mock_db, \
              patch('src.routes.mensualidades_routes.logger'):
-            
-            # Mock db.session.query to return a chain that ends with [(1,)]
-            mock_query.return_value.filter.return_value.distinct.return_value.all.return_value = [(1,)]
             
             # Mock the query for existe_duplicada
             mock_mensualidad_query.filter.return_value.first.return_value = None
             
-            mock_db.session.add = MagicMock()
-            mock_db.session.commit = MagicMock()
-            
             resultado = _renovar_mensualidades_automaticamente()
             assert resultado['success'] is True
             assert resultado['renovadas'] == 1
-            mock_db.session.add.assert_called_once()
+            mock_session.add.assert_called_once()
             # Verificar que _add_months fue llamado (puede ser con cualquier fecha ya que está mockeado)
             assert mock_add_months.called
 
