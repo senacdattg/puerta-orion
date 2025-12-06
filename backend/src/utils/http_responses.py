@@ -156,6 +156,18 @@ class HttpResponseBuilder:
         )
     
     @staticmethod
+    def forbidden(
+        error: Optional[str] = None,
+        message: Optional[str] = None
+    ) -> JsonResponse:
+        """Construye una respuesta 403 (Forbidden)."""
+        return HttpResponseBuilder.error(
+            error=error or 'Acceso denegado',
+            message=message,
+            status_code=403
+        )
+    
+    @staticmethod
     def internal_server_error(
         error: Optional[str] = None,
         message: Optional[str] = None
