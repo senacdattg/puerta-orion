@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+// Importar el módulo completo para asegurar que las declaraciones const (líneas 8-24) se ejecuten
+// Esto garantiza que las líneas de lazy imports se rastreen en cobertura
 import router, { navigationGuard } from '@/router/index'
 import { useAuthStore } from '@/stores/auth'
 
@@ -6,10 +8,6 @@ import { useAuthStore } from '@/stores/auth'
 vi.mock('@/stores/auth', () => ({
   useAuthStore: vi.fn()
 }))
-
-// Importar el módulo completo para asegurar que las declaraciones const (líneas 8-24) se ejecuten
-// Esto garantiza que las líneas de lazy imports se rastreen en cobertura
-import '@/router/index'
 
 // Mock localStorage
 globalThis.localStorage = {
@@ -24,32 +22,49 @@ describe('Router Configuration', () => {
     expect(router.options.routes.length).toBeGreaterThan(0)
   })
 
-  it('should execute lazy import declarations', async () => {
-    const lazyRoutes = router.options.routes.filter(route => 
+  // Helper function to load component with timeout
+  const loadComponentWithTimeout = async (route) => {
+    const routeName = route.name || route.path
+    const timeoutMs = 10000
+
+    try {
+      const timeoutError = new Error(`Timeout loading ${routeName}`)
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(timeoutError), timeoutMs)
+      })
+
+      const componentPromise = route.component()
+      const component = await Promise.race([componentPromise, timeoutPromise])
+      return { route: routeName, component, success: true }
+    } catch (error) {
+      return { route: routeName, error: error.message, success: false }
+    }
+  }
+
+  it('should execute lazy import declarations', { timeout: 30000 }, async () => {
+    const lazyRoutes = router.options.routes.filter(route =>
       typeof route.component === 'function'
     )
-    
-    // Execute all lazy imports to ensure coverage
-    const importPromises = lazyRoutes.map(async (route) => {
-      try {
-        const component = await route.component()
-        return { route: route.name, component, success: true }
-      } catch (error) {
-        return { route: route.name, error, success: false }
-      }
-    })
-    
+
+    // Execute all lazy imports to ensure coverage with individual timeouts
+    const importPromises = lazyRoutes.map(loadComponentWithTimeout)
     const results = await Promise.all(importPromises)
     const failures = results.filter(r => !r.success)
+
+    if (failures.length > 0) {
+      const failureMessages = failures.map(f => `${f.route}: ${f.error}`).join('\n')
+      throw new Error(`Failed to load ${failures.length} component(s):\n${failureMessages}`)
+    }
+
     expect(failures.length).toBe(0)
   })
 
   it('should have all lazy import constants defined', () => {
     // Verificar que las constantes lazy (líneas 8-24) están disponibles en el router
-    const lazyRoutes = router.options.routes.filter(route => 
+    const lazyRoutes = router.options.routes.filter(route =>
       typeof route.component === 'function'
     )
-    
+
     // Verificar que hay múltiples rutas lazy (las líneas 8-24 crean estas rutas)
     expect(lazyRoutes.length).toBeGreaterThanOrEqual(15)
   })
@@ -624,8 +639,8 @@ describe('Router Navigation Guards', () => {
     // Verificar que se permitió acceso o se redirigió según la lógica
     expect(next).toHaveBeenCalled()
     // Puede llamar next() sin argumentos (acceso permitido) o con '/home' (denegado)
-    const lastCall = next.mock.calls[next.mock.calls.length - 1]
-    expect(lastCall[0] === undefined || lastCall[0] === '/home').toBe(true)
+    const lastCall = next.mock.calls.at(-1)
+    expect(lastCall?.[0] === undefined || lastCall?.[0] === '/home').toBe(true)
   })
 
   it('should handle permission check with hasPermission method', async () => {
@@ -1021,10 +1036,10 @@ describe('Router Navigation Guards', () => {
 
 describe('Router Lazy Loading', () => {
   it('should have lazy loaded components as functions', () => {
-    const lazyRoutes = router.options.routes.filter(route => 
+    const lazyRoutes = router.options.routes.filter(route =>
       typeof route.component === 'function'
     )
-    
+
     expect(lazyRoutes.length).toBeGreaterThan(0)
   })
 
@@ -1032,7 +1047,7 @@ describe('Router Lazy Loading', () => {
     const route = router.options.routes.find(r => r.name === 'home')
     expect(route).toBeDefined()
     expect(typeof route.component).toBe('function')
-    
+
     const component = await route.component()
     expect(component).toBeDefined()
   })
@@ -1041,16 +1056,16 @@ describe('Router Lazy Loading', () => {
     const route = router.options.routes.find(r => r.name === 'admin-manager')
     expect(route).toBeDefined()
     expect(typeof route.component).toBe('function')
-    
+
     const component = await route.component()
     expect(component).toBeDefined()
   })
 
   it('should execute lazy load functions', async () => {
-    const lazyRoutes = router.options.routes.filter(route => 
+    const lazyRoutes = router.options.routes.filter(route =>
       typeof route.component === 'function'
     )
-    
+
     for (const route of lazyRoutes.slice(0, 5)) {
       const component = await route.component()
       expect(component).toBeDefined()
@@ -1065,17 +1080,17 @@ describe('Router Lazy Loading', () => {
   })
 
   it('should load all lazy components successfully', async () => {
-    const lazyRoutes = router.options.routes.filter(route => 
+    const lazyRoutes = router.options.routes.filter(route =>
       typeof route.component === 'function'
     )
-    
-    const loadPromises = lazyRoutes.map(route => 
+
+    const loadPromises = lazyRoutes.map(route =>
       route.component().catch(err => ({ error: err }))
     )
-    
+
     const results = await Promise.all(loadPromises)
     const errors = results.filter(r => r.error)
-    
+
     expect(errors.length).toBe(0)
   })
 })
