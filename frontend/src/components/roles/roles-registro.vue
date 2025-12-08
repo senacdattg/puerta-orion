@@ -8,7 +8,7 @@
 
       <div class="tarjetas">
         <div
-          v-for="rol in todosRoles"
+          v-for="rol in rolesFiltrados"
           :key="rol.id_rol || rol.id || rol.nombre_rol"
           :class="['sub-contenedor', {
             'rol-disponible': tieneRol(rol),
@@ -88,6 +88,32 @@ const rolesUsuario = computed(() => {
     return rolesMapeados
   }
   return props.usuarioRoles.map(r => obtenerNombreRol(r))
+})
+
+// Filtrar roles para mostrar solo los seleccionables
+const rolesFiltrados = computed(() => {
+  const nombresRoles = new Set(rolesUsuario.value.map(r => obtenerNombreRol(r)))
+
+  // Si tiene Deportista y Acudiente, excluir Usuario
+  const tieneDeportista = nombresRoles.has('Deportista')
+  const tieneAcudiente = nombresRoles.has('Acudiente')
+  const debeExcluirUsuario = tieneDeportista && tieneAcudiente
+
+  return todosRoles.value.filter(rol => {
+    const nombreRol = obtenerNombreRol(rol)
+
+    // Excluir SuperAdmin siempre
+    if (nombreRol === 'SuperAdmin') {
+      return false
+    }
+
+    // Si debe excluir Usuario y el rol es Usuario, no mostrarlo
+    if (debeExcluirUsuario && (nombreRol === 'Usuario' || nombreRol === 'usuario')) {
+      return false
+    }
+
+    return true
+  })
 })
 
 // Verificar si el usuario tiene un rol específico
