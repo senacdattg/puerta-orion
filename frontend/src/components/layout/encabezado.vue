@@ -21,7 +21,7 @@
 
     <div class="header-center">
       <h2 class="welcome-message">
-        Bienvenido, {{ nombreUsuario }} 👋
+        Bienvenid@, {{ nombreUsuario }} 👋
       </h2>
     </div>
 
@@ -373,6 +373,10 @@ watch(() => authStore.user, (newUser, oldUser) => {
 
 // Watcher para sincronizar offsets cuando cambia la ruta (navegación entre páginas)
 watch(() => route.path, async () => {
+  // Cerrar el menú lateral cuando se navega a una nueva ruta
+  if (menuVisible.value) {
+    closeMenu()
+  }
   await nextTick()
   applyLayoutOffsets()
 })

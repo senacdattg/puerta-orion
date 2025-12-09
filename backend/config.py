@@ -46,11 +46,31 @@ class Config:
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
+    # Database connection pool configuration for performance
+    # Prevents connection exhaustion and improves handling of concurrent requests
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,  # Number of connections to maintain persistently
+        'max_overflow': 20,  # Maximum overflow connections (total max = pool_size + max_overflow)
+        'pool_timeout': 30,  # Seconds to wait before giving up on getting a connection
+        'pool_recycle': 3600,  # Recycle connections after 1 hour (prevents stale connections)
+        'pool_pre_ping': True,  # Verify connections before using them (prevents errors with stale connections)
+        'echo': False,  # Set to True for SQL query logging (useful for debugging)
+    }
+    
     # Configuración de CORS
     cors_origins_env = os.environ.get('CORS_ORIGINS', '')
-    CORS_ORIGINS = [
-        origin.strip() for origin in cors_origins_env.split(',') if origin.strip()
-    ]
+    if cors_origins_env:
+        CORS_ORIGINS = [
+            origin.strip() for origin in cors_origins_env.split(',') if origin.strip()
+        ]
+    else:
+        # Default CORS origins for development if not specified
+        CORS_ORIGINS = [
+            'http://localhost:5173',
+            'http://localhost:8080',
+            'http://localhost:3000',
+            'http://localhost:4173'
+        ]
     CORS_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS']
     CORS_HEADERS = ['Content-Type', 'Authorization']
     CORS_SUPPORTS_CREDENTIALS = True

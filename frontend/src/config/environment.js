@@ -97,7 +97,7 @@ export const API_CONFIG = {
 
 export const LOG_CONFIG = {
   level: CURRENT_CONFIG.logLevel,
-  enabled: CURRENT_CONFIG.debug
+  enabled: false  // Logs deshabilitados en todos los entornos
 };
 
 export const APP_ENV_CONFIG = {

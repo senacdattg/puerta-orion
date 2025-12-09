@@ -1004,7 +1004,6 @@ onMounted(async () => {
 
 watch(() => authStore.userDetail, (nuevo) => {
   if (LOG_CONFIG.enabled) {
-    console.log('👀 Watch detectado cambio en userDetail:', nuevo)
   }
   if (nuevo) {
     detalle.value = nuevo
@@ -1017,7 +1016,6 @@ watch(() => authStore.userDetail, (nuevo) => {
 
 watch(() => authStore.user, (nuevo) => {
   if (LOG_CONFIG.enabled) {
-    console.log('👀 Watch detectado cambio en user:', nuevo)
   }
   if (nuevo) {
     usuario.value = nuevo
@@ -1026,7 +1024,6 @@ watch(() => authStore.user, (nuevo) => {
 
 // Observar cambios en el rol activo para cargar/ocultar información según el rol
 watch(() => authStore.activeRole, async (nuevoRol) => {
-  console.log('👀 Watch detectado cambio en activeRole:', nuevoRol)
   // Si cambia a Deportista y hay información de deportista, cargar acudientes
   if (nuevoRol === 'Deportista' && detalle.value?.deportista?.id_deportista) {
     await cargarAcudientesDeportista()
@@ -1069,16 +1066,19 @@ const getNombreRol = (rol) => {
 }
 
 const getNombreRolCompleto = (rol) => {
+  const nombreRol = getNombreRol(rol)
+  // SuperAdmin se muestra como Administrador en la vista
+  const rolNormalizado = nombreRol === 'SuperAdmin' ? 'Administrador' : nombreRol
+  
   const nombres = {
     'Deportista': '🏃 Deportista',
     'Acudiente': '👨‍👩‍👧 Acudiente',
     'Entrenador': '⚽ Entrenador',
     'Administrador': '👤 Administrador',
-    'SuperAdmin': '👑 Super Admin',
     'Usuario': '👤 Usuario',
     'usuario': '👤 Usuario'
   }
-  return nombres[getNombreRol(rol)] || getNombreRol(rol)
+  return nombres[rolNormalizado] || rolNormalizado
 }
 
 const getRolId = (rol) => {

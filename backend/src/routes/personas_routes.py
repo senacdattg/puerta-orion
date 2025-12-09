@@ -397,4 +397,5 @@ def activar_persona(persona_id: int) -> JsonResponse:
 def registrar_personas_routes(app: Flask) -> None:
     """Registra las rutas de personas en la aplicación Flask."""
     app.register_blueprint(personas_bp)
-    logger.info("Rutas de personas registradas exitosamente")
+    # Removed logger.info for performance
+    # logger.info("Rutas de personas registradas exitosamente")

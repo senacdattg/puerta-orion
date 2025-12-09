@@ -85,7 +85,8 @@ def _verificar_permiso_en_roles(roles_a_evaluar: list, permiso_obj: Permiso, usu
         ).first()
         
         if rol_permiso:
-            logger.info(f"Usuario {usuario.usuario} tiene permiso '{permiso}' a través del rol '{rol.nombre_rol}'")
+            # Removed logger.info for performance - these logs execute on every request
+            # logger.info(f"Usuario {usuario.usuario} tiene permiso '{permiso}' a través del rol '{rol.nombre_rol}'")
             return True
     
     return False
@@ -115,7 +116,8 @@ def check_permission(usuario: Usuario, permiso: str, use_active_role: bool = Fal
         
         roles_a_evaluar = _determinar_roles_a_evaluar(usuario, use_active_role)
         if not roles_a_evaluar:
-            logger.info(f"Usuario {usuario.usuario} no tiene roles asignados")
+            # Removed logger.info for performance - these logs execute on every request
+            # logger.info(f"Usuario {usuario.usuario} no tiene roles asignados")
             return False
         
         permiso_obj = Permiso.query.filter_by(nombre=permiso).first()
@@ -126,7 +128,8 @@ def check_permission(usuario: Usuario, permiso: str, use_active_role: bool = Fal
         if _verificar_permiso_en_roles(roles_a_evaluar, permiso_obj, usuario, permiso):
             return True
         
-        logger.info(f"Usuario {usuario.usuario} no tiene permiso '{permiso}'")
+        # Removed logger.info for performance - these logs execute on every request
+        # logger.info(f"Usuario {usuario.usuario} no tiene permiso '{permiso}'")
         return False
         
     except Exception as e:
@@ -166,7 +169,8 @@ def get_user_permissions(usuario: Usuario) -> list:
                 if permiso.nombre not in permisos:  # Evitar duplicados
                     permisos.append(permiso.nombre)
         
-        logger.info(f"Usuario {usuario.usuario} tiene {len(permisos)} permisos únicos")
+        # Removed logger.info for performance - these logs execute on every request
+        # logger.info(f"Usuario {usuario.usuario} tiene {len(permisos)} permisos únicos")
         return permisos
         
     except Exception as e:

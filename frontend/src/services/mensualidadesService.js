@@ -17,7 +17,6 @@ class MensualidadesApi {
   async _request (path, options = {}, logLabel = 'MensualidadesApi') {
     const url = `${this.baseURL}${path}`
     try {
-      console.log(`🔄 ${logLabel}: fetch ->`, url)
       const token = authService.getToken?.()
       const res = await fetch(url, {
         headers: {
@@ -27,7 +26,6 @@ class MensualidadesApi {
         },
         ...options
       })
-      console.log(`📡 ${logLabel}: response`, res.status, res.statusText)
       if (!res.ok) {
         let errorMessage = `${res.status} ${res.statusText}`
         try {

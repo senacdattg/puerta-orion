@@ -25,7 +25,6 @@ class CatalogosService {
   async _fetchCatalog(endpoint, catalogName) {
     try {
       const url = `${this.baseURL}${endpoint}`
-      console.log(`🔄 Obteniendo ${catalogName} desde:`, url)
 
       const response = await fetch(url, {
         method: 'GET',
@@ -35,8 +34,6 @@ class CatalogosService {
         }
       })
 
-      console.log(`📡 Respuesta ${catalogName}:`, response.status, response.statusText)
-
       if (!response.ok) {
         const errorText = await response.text()
         console.error(`❌ Error del servidor ${catalogName}:`, errorText)
@@ -44,7 +41,6 @@ class CatalogosService {
       }
 
       const data = await response.json()
-      console.log(`📦 Datos ${catalogName} recibidos:`, data)
 
       // Handle different response formats
       if (data.success && Array.isArray(data.data)) {
@@ -90,8 +86,6 @@ class CatalogosService {
    */
   async getCatalogosCompletos() {
     try {
-      console.log('🔄 CatalogosService: Obteniendo catálogos completos desde:', `${this.baseURL}/api/catalogos/catalogos-completos`);
-
       const response = await fetch(`${this.baseURL}/api/catalogos/catalogos-completos`, {
         method: 'GET',
         headers: {
@@ -100,8 +94,6 @@ class CatalogosService {
         }
       });
 
-      console.log('📡 CatalogosService: Respuesta catálogos completos:', response.status, response.statusText);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ CatalogosService: Error del servidor catálogos completos:', errorText);
@@ -109,7 +101,6 @@ class CatalogosService {
       }
 
       const data = await response.json();
-      console.log('📦 CatalogosService: Datos catálogos completos recibidos:', data);
 
       // El backend devuelve { success: true, data: { tipos_documento: [...], sexos: [...] } }
       // Retornamos el objeto completo para que cargarCatalogosFormulario pueda acceder correctamente
@@ -132,10 +123,7 @@ class CatalogosService {
    */
   async cargarCatalogosFormulario() {
     try {
-      console.log('🔄 CatalogosService: Cargando catálogos completos...');
-
       const response = await this.getCatalogosCompletos()
-      console.log('📦 CatalogosService: Respuesta completa recibida:', response);
 
       // El backend devuelve { success: true, data: { tipos_documento: [...], sexos: [...] } }
       // Necesitamos acceder a response.data, no directamente a response
@@ -143,16 +131,11 @@ class CatalogosService {
         ? response.data
         : response;
 
-      console.log('📦 CatalogosService: Catálogos extraídos:', catalogos);
-
       const resultado = {
         tiposDocumento: catalogos?.tipos_documento ?? [], // NOSONAR: S6582
         sexos: catalogos?.sexos ?? [] // NOSONAR: S6582
       };
 
-      console.log('✅ CatalogosService: Resultado procesado:', resultado);
-      console.log('✅ CatalogosService: Tipos documento:', resultado.tiposDocumento.length);
-      console.log('✅ CatalogosService: Sexos:', resultado.sexos.length);
       return resultado;
     } catch (error) {
       console.error('❌ CatalogosService: Error al cargar catálogos:', error)

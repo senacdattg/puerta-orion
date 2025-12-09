@@ -89,9 +89,7 @@ class CatalogosService:
         """
         try:
             tipos = TipoDocumento.query.all()
-            self.logger.info(f"Tipos de documento encontrados: {len(tipos)}")
-            for tipo in tipos:
-                self.logger.info(f"  - ID: {tipo.id_documento}, Nombre: {tipo.nombre_documento}")
+            # Removed logger.info for performance
 
             return [
                 {
@@ -117,9 +115,7 @@ class CatalogosService:
         """
         try:
             sexos = Sexo.query.all()
-            self.logger.info(f"Sexos encontrados: {len(sexos)}")
-            for sexo in sexos:
-                self.logger.info(f"  - ID: {sexo.id_sexo}, Nombre: {sexo.nombre}")
+            # Removed logger.info for performance
 
             return [
                 {
@@ -142,9 +138,7 @@ class CatalogosService:
         """
         try:
             categorias = Categoria.query.filter_by(estado=True).all()
-            self.logger.info(f"Categorías encontradas: {len(categorias)}")
-            for categoria in categorias:
-                self.logger.info(f"  - ID: {categoria.id_categoria}, Nombre: {categoria.nombre_categoria}, Estado: {categoria.estado}")
+            # Removed logger.info for performance
 
             return [
                 {
@@ -168,10 +162,12 @@ class CatalogosService:
         try:
             if id_tipo_enfermedad:
                 diagnosticos = Diagnostico.query.filter_by(id_tipo_enfermedad=id_tipo_enfermedad).all()
-                self.logger.info(f"Diagnósticos encontrados para tipo enfermedad {id_tipo_enfermedad}: {len(diagnosticos)}")
+                # Removed logger.info for performance
+            # self.logger.info(f"Diagnósticos encontrados para tipo enfermedad {id_tipo_enfermedad}: {len(diagnosticos)}")
             else:
                 diagnosticos = Diagnostico.query.all()
-                self.logger.info(f"Diagnósticos encontrados: {len(diagnosticos)}")
+                # Removed logger.info for performance
+            # self.logger.info(f"Diagnósticos encontrados: {len(diagnosticos)}")
             
             return {
                 'success': True,
@@ -195,7 +191,8 @@ class CatalogosService:
         """
         try:
             tipos = TipoEnfermedad.query.all()
-            self.logger.info(f"Tipos de enfermedad encontrados: {len(tipos)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"Tipos de enfermedad encontrados: {len(tipos)}")
             
             tipos_data = []
             for tipo in tipos:
@@ -223,7 +220,8 @@ class CatalogosService:
         """Obtiene todos los grupos sanguíneos disponibles."""
         try:
             grupos = GrupoSanguineo.query.all()
-            self.logger.info(f"Grupos sanguíneos encontrados: {len(grupos)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"Grupos sanguíneos encontrados: {len(grupos)}")
             
             return {
                 'success': True,
@@ -242,7 +240,8 @@ class CatalogosService:
         """Obtiene todas las ciudades de residencia disponibles."""
         try:
             ciudades = CiudadResidencia.query.all()
-            self.logger.info(f"Ciudades de residencia encontradas: {len(ciudades)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"Ciudades de residencia encontradas: {len(ciudades)}")
             
             return {
                 'success': True,
@@ -261,7 +260,8 @@ class CatalogosService:
         """Obtiene todas las EPS disponibles."""
         try:
             eps_list = EPS.query.filter_by(estado=True).all()
-            self.logger.info(f"EPS encontradas: {len(eps_list)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"EPS encontradas: {len(eps_list)}")
             
             return {
                 'success': True,
@@ -280,7 +280,8 @@ class CatalogosService:
         """Obtiene todos los deportes disponibles."""
         try:
             deportes = Deporte.query.all()
-            self.logger.info(f"Deportes encontrados: {len(deportes)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"Deportes encontrados: {len(deportes)}")
             
             return {
                 'success': True,
@@ -299,7 +300,8 @@ class CatalogosService:
         """Obtiene todas las escuelas deportivas disponibles."""
         try:
             escuelas = Escuela.query.all()
-            self.logger.info(f"Escuelas encontradas: {len(escuelas)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"Escuelas encontradas: {len(escuelas)}")
             
             return {
                 'success': True,
@@ -318,7 +320,8 @@ class CatalogosService:
         """Obtiene todas las instituciones de registro disponibles."""
         try:
             instituciones = InstitucionRegistro.query.all()
-            self.logger.info(f"Instituciones de registro encontradas: {len(instituciones)}")
+            # Removed logger.info for performance
+            # self.logger.info(f"Instituciones de registro encontradas: {len(instituciones)}")
             
             return {
                 'success': True,

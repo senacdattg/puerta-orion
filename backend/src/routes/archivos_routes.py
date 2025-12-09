@@ -285,5 +285,6 @@ def arreglar_urls() -> JsonResponse:
 def registrar_archivos_routes(app: Flask) -> None:
     """Registra las rutas de archivos en la aplicación Flask."""
     app.register_blueprint(archivos_bp)
-    logger.info('Rutas de archivos registradas exitosamente')
+    # Removed logger.info for performance
+    # logger.info('Rutas de archivos registradas exitosamente')
 

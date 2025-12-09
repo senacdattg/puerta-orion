@@ -52,11 +52,11 @@
             />
 
             <div class="botones-formulario" style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-              <button type="button" class="boton-formulario btn-volver" @click="volverPaso1" style="width: 150px; background-color: #6c757d; color: white;">
+              <button type="button" class="boton-formulario btn-volver" @click="volverPaso1">
                 <i class="fas fa-arrow-left"></i>
                 Volver
               </button>
-              <button type="submit" class="boton-formulario" style="width: 150px;">Guardar</button>
+              <button type="submit" class="boton-formulario btn-guardar">Guardar</button>
             </div>
           </section>
         </form>

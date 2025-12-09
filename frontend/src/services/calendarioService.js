@@ -136,53 +136,14 @@ class CalendarioService {
       return [];
     }
 
-    console.log('🔄 Mapeando eventos...');
     this.eventos = eventosArray.map(evento => {
       const eventoMapeado = this.mapearEventoBackendAFrontend(evento);
-      console.log('📅 Evento mapeado:', {
-        original: evento,
-        mapeado: eventoMapeado
-      });
       return eventoMapeado;
     });
-    console.log('✅ Total eventos mapeados:', this.eventos.length);
-    if (this.eventos.length > 0) {
-      console.log('📅 Primer evento mapeado:', this.eventos[0]);
-    }
     return this.eventos;
   }
 
-  /**
-   * Helper: Logs de respuesta del servidor
-   */
-  _logRespuestaServidor(response, url) {
-    console.log('🔄 Intentando cargar eventos desde:', url);
-    console.log('📡 Respuesta del servidor:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-      url: response.url
-    });
-  }
 
-  /**
-   * Helper: Logs de datos recibidos
-   */
-  _logDatosRecibidos(data, eventosArray) {
-    console.log('📦 Datos recibidos del backend (completo):', JSON.stringify(data, null, 2));
-    console.log('📊 Estructura de respuesta:', {
-      success: data.success,
-      hasData: !!data.data,
-      dataType: Array.isArray(data.data) ? 'array' : typeof data.data,
-      dataLength: Array.isArray(data.data) ? data.data.length : 'N/A',
-      keys: data.data ? Object.keys(data.data) : 'N/A',
-      fullData: data
-    });
-    console.log('📋 Eventos extraídos:', eventosArray.length);
-    if (eventosArray.length > 0) {
-      console.log('📋 Primer evento crudo:', eventosArray[0]);
-    }
-  }
 
   /**
    * Obtener todos los eventos desde el backend
@@ -196,7 +157,6 @@ class CalendarioService {
         headers: this.getAuthHeaders()
       });
 
-      this._logRespuestaServidor(response, url);
 
       if (!response.ok) {
         await this._manejarErrorRespuesta(response, url);
@@ -204,7 +164,6 @@ class CalendarioService {
 
       const data = await response.json();
       const eventosArray = this._extraerEventosDeRespuesta(data);
-      this._logDatosRecibidos(data, eventosArray);
 
       if (eventosArray.length > 0) {
         return this._procesarEventosExtraidos(eventosArray);
@@ -242,9 +201,6 @@ class CalendarioService {
         return fechaEvento === fechaNormalizada;
       });
 
-      if (eventosFiltrados.length > 0) {
-        console.log(`✅ Encontrados ${eventosFiltrados.length} eventos para fecha ${fecha}:`, eventosFiltrados);
-      }
       return eventosFiltrados;
     } catch (error) {
       console.error('Error al obtener eventos por fecha:', error);
@@ -273,14 +229,12 @@ class CalendarioService {
    */
   async obtenerEventosProximos() {
     try {
-      console.log('🔄 Obteniendo eventos próximos desde:', `${this.baseURL}/eventos/proximos`);
 
       const response = await fetch(`${this.baseURL}/eventos/proximos`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       });
 
-      console.log('📡 Respuesta eventos próximos:', response.status, response.statusText);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -295,17 +249,13 @@ class CalendarioService {
       }
 
       const data = await response.json();
-      console.log('📦 Datos eventos próximos recibidos:', data);
 
       if (data.success && data.data) {
-        console.log('✅ Eventos próximos encontrados:', data.data.length);
         // Mapear eventos del backend al formato del frontend
         const eventosMapeados = data.data.map(evento => {
           const eventoMapeado = this.mapearEventoBackendAFrontend(evento);
-          console.log('📅 Evento mapeado:', eventoMapeado);
           return eventoMapeado;
         });
-        console.log('✅ Total eventos mapeados:', eventosMapeados.length);
         return eventosMapeados;
       }
 
@@ -335,14 +285,6 @@ class CalendarioService {
         console.error('⚠️ Formato de hora_fin inválido:', eventoBackend.hora_fin);
         throw new Error('Formato de hora de fin inválido. Debe ser HH:MM');
       }
-
-      console.log('📤 Enviando evento al backend:', {
-        nombre: eventoBackend.nombre,
-        fecha: eventoBackend.fecha_evento,
-        hora_inicio: eventoBackend.hora_inicio,
-        hora_fin: eventoBackend.hora_fin,
-        categoria: eventoBackend.id_categoria
-      });
 
       const response = await fetch(`${this.baseURL}/eventos/calendario`, {
         method: 'POST',
@@ -483,7 +425,6 @@ class CalendarioService {
    */
   async cargarCategorias() {
     try {
-      console.log('🔄 Cargando categorías desde:', `${this.baseURL}/catalogos/categorias`);
 
       const response = await fetch(`${this.baseURL}/catalogos/categorias`, {
         method: 'GET',
@@ -493,8 +434,6 @@ class CalendarioService {
         }
       });
 
-      console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Error del servidor:', errorText);
@@ -502,11 +441,9 @@ class CalendarioService {
       }
 
       const data = await response.json();
-      console.log('📦 Datos recibidos:', data);
 
       if (data.success && data.data) {
         this.categorias = data.data;
-        console.log('✅ Categorías cargadas exitosamente:', this.categorias.length);
         return this.categorias;
       }
 

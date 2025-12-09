@@ -256,7 +256,6 @@ function manejarBusqueda(event) {
 
 onMounted(async () => {
   // Recargar el perfil del usuario para obtener información actualizada
-  console.log('🔄 Recargando perfil del usuario...')
   await authStore.loadUserProfile()
 
   // Esperar un momento para que se actualice el perfil
@@ -267,16 +266,10 @@ onMounted(async () => {
 
 const cargarAcudidos = async () => {
   try {
-    console.log('🔍 Usuario autenticado:', authStore.user)
-    console.log('🔍 Token:', authStore.token ? 'Token existe' : 'No hay token')
-
     // Obtener el ID del acudiente desde el usuario autenticado
     const acudienteId = authStore.user?.acudiente?.id_acudiente
-    console.log('🔍 ID del acudiente:', acudienteId)
 
     if (!acudienteId) {
-      console.error('❌ No se encontró ID del acudiente en el usuario autenticado')
-      console.log('💡 Info del usuario:', JSON.stringify(authStore.user, null, 2))
       acudidos.value = []
       return
     }
@@ -284,7 +277,6 @@ const cargarAcudidos = async () => {
     const baseURL = getApiBaseUrl()
     const endpoint = `/deportistas/acudientes/${acudienteId}/deportistas`
     const url = `${baseURL}${endpoint}`
-    console.log(`🌐 Llamando al endpoint: ${url}`)
 
     // Llamar al backend para obtener los deportistas asociados
     const response = await fetch(url, {
@@ -294,8 +286,6 @@ const cargarAcudidos = async () => {
         'Authorization': `Bearer ${authStore.token}`
       }
     })
-
-    console.log('📡 Estado de la respuesta:', response.status)
 
     // Verificar si la respuesta es JSON válido
     let result
@@ -307,12 +297,8 @@ const cargarAcudidos = async () => {
       console.error('❌ Respuesta no es JSON:', text.substring(0, 200))
       throw new Error(`Error del servidor: ${response.status} ${response.statusText}`)
     }
-    console.log('📦 Datos recibidos:', result)
-
     if (response.ok && result.success) {
       acudidos.value = result.data || []
-      console.log(`✅ ${acudidos.value.length} deportista(s) cargado(s)`)
-      console.log('📋 Deportistas:', acudidos.value)
     } else {
       console.error('❌ Error al cargar deportistas:', result.message)
       acudidos.value = []
@@ -408,7 +394,6 @@ const abrirModalAcudir = async () => {
   // Cargar parentescos
   try {
     parentescos.value = await catalogosService.getParentescos()
-    console.log('✅ Parentescos cargados:', parentescos.value)
   } catch (error) {
     console.error('❌ Error al cargar parentescos:', error)
     await Swal.fire({
@@ -450,7 +435,6 @@ const buscarDeportistas = async () => {
     if (respuesta?.success && respuesta.encontrado) {
       const deportista = respuesta.data
       deportistasEncontrados.value = [deportista]
-      console.log('✅ Deportista encontrado por documento:', deportista)
     } else {
       deportistasEncontrados.value = []
 
@@ -465,7 +449,6 @@ const buscarDeportistas = async () => {
         })
       } else {
         const mensaje = respuesta?.message || 'No se encontró un deportista con ese documento.'
-        console.log('ℹ️', mensaje)
       }
     }
   } catch (error) {
@@ -483,7 +466,6 @@ const buscarDeportistas = async () => {
 
 const seleccionarDeportista = (deportista) => {
   deportistaSeleccionado.value = deportista
-  console.log('✅ Deportista seleccionado:', deportista)
 }
 
 const asociarDeportista = async () => {
@@ -519,14 +501,11 @@ const asociarDeportista = async () => {
       es_responsable: esResponsable.value
     }
 
-    console.log('🔄 Asociando deportista con datos:', datos)
-
     // Primero intentar asociar como acudiente existente
     let response = await authService.asociarAcudienteDeportista(datos)
 
     // Si falla porque no es acudiente, intentar completar perfil
     if (!response.success && response.error && response.error.includes('no está registrado como acudiente')) {
-      console.log('🔄 Usuario no es acudiente, completando perfil...')
       response = await authService.completarPerfilAcudiente(datos)
     }
 

@@ -585,21 +585,14 @@ export default {
     },
 
     async mounted() {
-        console.log('🔍 Calendario montado con rol:', this.rol);
 
         // Cargar permisos del usuario desde el backend
         try {
             await this.authStore.loadUserPermissions();
-            console.log('✅ Permisos cargados desde el backend:', this.authStore.permissions);
         } catch (error) {
             console.error('❌ Error cargando permisos:', error);
         }
 
-        console.log('🔍 Permisos del usuario:', {
-            puedeCrear: this.puedeCrear,
-            puedeEditar: this.puedeEditar,
-            puedeEliminar: this.puedeEliminar
-        });
         await this.inicializarComponente();
     },
 
@@ -1046,11 +1039,19 @@ export default {
             this.fechaBloqueada = false;
         },
 
-        abrirModalDesdeSelector() {
-            // Cerrar el selector y abrir el modal de creación
+        async abrirModalDesdeSelector() {
+            // Cerrar el selector
             this.selectorEventosVisible = false;
-            this.abrirModal({ fecha: this.nuevoEvento.fecha, bloquear: true });
-            // La fecha ya está guardada en nuevoEvento.fecha desde mostrarSelectorEventos
+            
+            // Preguntar si quiere crear otro evento para este mismo día
+            const fechaActual = this.nuevoEvento.fecha;
+            const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+            
+            if (quiereAgregarOtro) {
+                // Abrir el modal de creación con la fecha bloqueada
+                this.abrirModal({ fecha: fechaActual, bloquear: true });
+            }
+            // Si no quiere agregar otro, simplemente no hacer nada (el selector ya se cerró)
         },
 
         editarEvento(evento) {
@@ -1339,12 +1340,12 @@ export default {
                     // El evento ya está en la cache local, así que el calendario ya se actualizó
                 }
 
-                const fechaActual = this.nuevoEvento.fecha;
-                const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
-
-                if (!quiereAgregarOtro) {
-                    this.cerrarModal();
-                }
+                // Actualizar estado inicial después de guardar exitosamente para evitar
+                // que se muestre el modal de "¿Descartar cambios?" al cerrar
+                this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
+                
+                // Cerrar el modal después de crear el evento exitosamente
+                this.cerrarModal();
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
@@ -1417,8 +1418,18 @@ export default {
                     this.cargando = true;
                     await calendarioService.eliminarEvento(this.eventoSeleccionado.id);
                     this.actualizarCalendario();
-                    this.cerrarModal();
-                    this.mostrarNotificacion('Evento eliminado exitosamente', 'success');
+                    
+                    // Limpiar el estado del selector antes de cerrar el modal
+                    // para evitar que se restaure el selector después de eliminar
+                    this.selectorEventosVisibleAntes = false;
+                    this.fechaSelectorGuardada = null;
+                    
+                    // Cerrar el modal sin restaurar el selector
+                    this.modalVisible = false;
+                    this.fechaBloqueada = false;
+                    this.limpiarFormulario();
+                    this.nuevoEventoInicial = null;
+                    this.selectorEventosVisible = false;
                 } catch (error) {
                     console.error('Error al eliminar evento:', error);
                     this.mostrarNotificacion(error.message || 'Error al eliminar el evento', 'error');
@@ -1455,7 +1466,7 @@ export default {
 
         mostrarNotificacion(mensaje, tipo) {
             // Implementar sistema de notificaciones
-            console.log(`${tipo}: ${mensaje}`);
+            // Los mensajes de éxito ya se muestran con Swal.fire en las funciones correspondientes
         },
 
         obtenerNombreTipoEvento(idTipoEvento) {

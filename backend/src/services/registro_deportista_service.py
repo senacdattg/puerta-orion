@@ -116,7 +116,8 @@ class RegistroDeportistaService:
             ).first()
             
             if categoria:
-                logger.info(f'Categoría calculada para edad {edad}: {categoria.nombre_categoria}')
+                # Removed logger.info for performance
+                # logger.info(f'Categoría calculada para edad {edad}: {categoria.nombre_categoria}')
                 return categoria.id_categoria
             else:
                 logger.warning(f'No se encontró categoría para edad {edad}')
@@ -390,7 +391,8 @@ class RegistroDeportistaService:
         db.session.add(informacion)
         db.session.flush()
         logger = RegistroDeportistaService._obtener_logger()
-        logger.info(f'Información deportiva creada: ID {informacion.id_informacion_deportiva}')
+        # Removed logger.info for performance
+        # logger.info(f'Información deportiva creada: ID {informacion.id_informacion_deportiva}')
         return informacion.id_informacion_deportiva
 
     @staticmethod
@@ -408,7 +410,8 @@ class RegistroDeportistaService:
             db.session.add(diagnostico_deportista)
         
         logger = RegistroDeportistaService._obtener_logger()
-        logger.info(f'{len(diagnosticos)} diagnóstico(s) asociados al deportista {deportista.id_deportista}')
+        # Removed logger.info for performance
+        # logger.info(f'{len(diagnosticos)} diagnóstico(s) asociados al deportista {deportista.id_deportista}')
 
     @staticmethod
     def _asociar_acudientes(deportista: Deportista, acudientes_data: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
@@ -471,7 +474,8 @@ class RegistroDeportistaService:
             )
             db.session.add(deportista_acudiente)
         
-        logger.info(f'{len(acudientes_data)} acudiente(s) asociados al deportista {deportista.id_deportista}')
+        # Removed logger.info for performance
+        # logger.info(f'{len(acudientes_data)} acudiente(s) asociados al deportista {deportista.id_deportista}')
         return None
 
     @staticmethod
@@ -497,7 +501,8 @@ class RegistroDeportistaService:
             )
             db.session.add(usuario_rol)
             logger = RegistroDeportistaService._obtener_logger()
-            logger.info(f'Rol de Deportista asignado al usuario ID: {usuario.id_usuario}')
+            # Removed logger.info for performance
+        # logger.info(f'Rol de Deportista asignado al usuario ID: {usuario.id_usuario}')
 
     @staticmethod
     def registrar_deportista_nuevo(datos: Dict[str, Any]) -> Dict[str, Any]:
@@ -597,7 +602,8 @@ class RegistroDeportistaService:
             deportista_completo = Deportista.query.filter_by(id_deportista=deportista.id_deportista).first()
             categoria_info = deportista_completo.categoria
             
-            logger.info(f'Deportista registrado exitosamente: ID {deportista.id_deportista}')
+            # Removed logger.info for performance
+        # logger.info(f'Deportista registrado exitosamente: ID {deportista.id_deportista}')
             
             return {
                 'success': True,
@@ -815,8 +821,11 @@ class RegistroDeportistaService:
                     'status_code': 400
                 }
             
-            # Buscar el deportista con todas sus relaciones
-            deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
+            # Buscar el deportista con todas sus relaciones - use eager loading to prevent N+1
+            from sqlalchemy.orm import joinedload
+            deportista = Deportista.query.options(
+                joinedload(Deportista.categoria)
+            ).filter_by(id_deportista=id_deportista).first()
             
             if not deportista:
                 return {
@@ -830,7 +839,8 @@ class RegistroDeportistaService:
             salud_data = RegistroDeportistaService._construir_datos_salud(id_deportista)
             datos_deportista_adicionales = RegistroDeportistaService._construir_datos_adicionales(deportista)
             
-            logger.info(f'Información completa obtenida para deportista ID {id_deportista}')
+            # Removed logger.info for performance
+        # logger.info(f'Información completa obtenida para deportista ID {id_deportista}')
             
             return {
                 'success': True,

@@ -71,12 +71,13 @@ class GestorLogs:
             backupCount=5
         )
         
-        # Handler para consola en desarrollo
-        if self.aplicacion.config['DEBUG']:
-            manejador_consola = logging.StreamHandler()
-            manejador_consola.setLevel(logging.DEBUG)
-            manejador_consola.setFormatter(self._obtener_formateador())
-            registrador.addHandler(manejador_consola)
+        # Handler para consola en desarrollo - deshabilitado para mejor rendimiento
+        # Descomentar solo si necesitas debugging
+        # if self.aplicacion.config['DEBUG']:
+        #     manejador_consola = logging.StreamHandler()
+        #     manejador_consola.setLevel(logging.ERROR)  # Solo errores en consola
+        #     manejador_consola.setFormatter(self._obtener_formateador())
+        #     registrador.addHandler(manejador_consola)
         
         manejador_archivo.setFormatter(self._obtener_formateador())
         registrador.addHandler(manejador_archivo)

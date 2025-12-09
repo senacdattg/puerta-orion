@@ -145,7 +145,8 @@ def _eliminar_archivo_fisico(nombre_archivo: str) -> None:
         return
     try:
         ruta_archivo.unlink()
-        logger.info("Archivo físico eliminado: %s", ruta_archivo)
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info("Archivo físico eliminado: %s", ruta_archivo)
     except Exception as exc:  # pragma: no cover
         logger.error("Error eliminando archivo físico %s: %s", ruta_archivo, str(exc))
 
@@ -265,7 +266,8 @@ def crear_imagen() -> JsonResponse:
         db.session.add(nueva_imagen)
         db.session.commit()
 
-        logger.info("Imagen creada: %s - %s", nueva_imagen.id_galeria, nueva_imagen.titulo)
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info("Imagen creada: %s - %s", nueva_imagen.id_galeria, nueva_imagen.titulo)
         return _build_response(
             True,
             data=_serializar_imagen(nueva_imagen),
@@ -324,7 +326,8 @@ def actualizar_imagen(id_galeria: int) -> JsonResponse:
 
         db.session.commit()
 
-        logger.info("Imagen actualizada: %s - %s", imagen.id_galeria, imagen.titulo)
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info("Imagen actualizada: %s - %s", imagen.id_galeria, imagen.titulo)
         return _build_response(
             True,
             data=_serializar_imagen(imagen),
@@ -362,7 +365,8 @@ def eliminar_imagen(id_galeria: int) -> JsonResponse:
         db.session.delete(imagen)
         db.session.commit()
 
-        logger.info("Imagen eliminada: %s - %s", id_galeria, imagen.titulo)
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info("Imagen eliminada: %s - %s", id_galeria, imagen.titulo)
         return _build_response(
             True,
             message='Imagen y archivo eliminados exitosamente',
@@ -399,8 +403,19 @@ def eliminar_imagen(id_galeria: int) -> JsonResponse:
 def obtener_catalogos() -> JsonResponse:
     """Obtiene catálogos necesarios para la galería."""
     try:
-        tipos_evento = [tipo.to_dict() for tipo in TipoEvento.query.all()]
-        categorias = [cat.to_dict() for cat in Categoria.query.filter_by(estado=True).all()]
+        from ..utils.cache import get_or_set
+        
+        # Use cache for static catalog data (1 hour TTL)
+        tipos_evento = get_or_set(
+            'galeria_tipos_evento',
+            lambda: [tipo.to_dict() for tipo in TipoEvento.query.all()],
+            max_age_seconds=3600
+        )
+        categorias = get_or_set(
+            'galeria_categorias',
+            lambda: [cat.to_dict() for cat in Categoria.query.filter_by(estado=True).all()],
+            max_age_seconds=3600
+        )
 
         return _build_response(
             True,
@@ -422,4 +437,5 @@ def obtener_catalogos() -> JsonResponse:
 def registrar_galeria_routes(app: Flask) -> None:
     """Registra las rutas de galería en la aplicación Flask."""
     app.register_blueprint(galeria_bp)
-    logger.info("Rutas de galería registradas exitosamente")
+    # Removed logger.info for performance
+    # logger.info("Rutas de galería registradas exitosamente")

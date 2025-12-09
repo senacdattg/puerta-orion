@@ -88,17 +88,17 @@ def _configure_cors(app: Flask) -> Sequence[str]:
             "CORS soportaba credenciales, pero se deshabilitó por orígenes no seguros."
         )
 
+    # Ensure we have default origins if none configured
     if not configured_origins:
-        app.logger.warning(
-            "No se definieron orígenes específicos para CORS; se usará '*' sin credenciales."
-        )
+        configured_origins = ['http://localhost:5173', 'http://localhost:8080', 'http://localhost:3000']
+        app.logger.info(f"Usando orígenes CORS por defecto: {configured_origins}")
 
     CORS(
         app,
-        origins=configured_origins or "*",
-        methods=app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS']),
+        origins=configured_origins,
+        methods=app.config.get('CORS_METHODS', ['GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'OPTIONS']),
         allow_headers=app.config.get('CORS_HEADERS', ['Content-Type', 'Authorization']),
-        supports_credentials=supports_credentials,
+        supports_credentials=supports_credentials if configured_origins else False,
     )
 
     effective_origins = tuple(configured_origins or ['*'])
@@ -108,7 +108,21 @@ def _configure_cors(app: Flask) -> Sequence[str]:
 
 
 def _register_preflight_handler(app: Flask) -> None:
-    """Registra un handler seguro para solicitudes OPTIONS."""
+    """Registra handlers para CORS y preflight requests."""
+    
+    @app.after_request
+    def after_request(response: Response) -> Response:
+        """Add CORS headers to all responses if Flask-CORS didn't add them."""
+        # Only add headers if Flask-CORS didn't already add them
+        if 'Access-Control-Allow-Origin' not in response.headers:
+            origin = request.headers.get('Origin')
+            if origin:
+                allowed_origin = _select_origin_for_response(app, origin)
+                if allowed_origin:
+                    response.headers['Access-Control-Allow-Origin'] = allowed_origin
+                    if app.config.get('EFFECTIVE_CORS_SUPPORTS_CREDENTIALS', False):
+                        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
 
     @app.before_request
     def handle_preflight() -> Response | None:
@@ -138,16 +152,25 @@ def _register_preflight_handler(app: Flask) -> None:
         response.headers['Access-Control-Max-Age'] = '3600'
         response.status_code = 200
 
-        app.logger.info("OPTIONS preflight handled for: %s", request.path)
+        # Removed logger.info for performance
         return response
 
 
 def _select_origin_for_response(app: Flask, request_origin: str | None) -> str | None:
     """Determina qué origin devolver en el preflight."""
-    if request_origin:
-        return request_origin
-
     effective_origins: Sequence[str] = app.config.get('EFFECTIVE_CORS_ORIGINS', ())
+    
+    # If specific origin requested, check if it's allowed
+    if request_origin:
+        if '*' in effective_origins:
+            return request_origin
+        if request_origin in effective_origins:
+            return request_origin
+        # Fallback to first allowed origin if requested origin not in list
+        if effective_origins:
+            return effective_origins[0] if effective_origins[0] != '*' else request_origin
+    
+    # If no origin requested but we have allowed origins, return first one
     if effective_origins:
         first_origin = effective_origins[0]
         if first_origin == '*':

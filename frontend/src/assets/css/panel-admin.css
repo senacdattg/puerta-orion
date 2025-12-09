@@ -705,12 +705,13 @@ select:hover {
 }
 
 /* --- Badge de SuperAdmin --- */
+/* SuperAdmin usa el mismo estilo que Administrador (rojo) */
 .badge.badge-admin.badge-superadmin,
 .badge.badge-detalle.badge-admin.badge-superadmin {
-  background: linear-gradient(135deg, var(--color-rol-superadmin) 0%, var(--color-rol-superadmin) 100%) !important;
+  background: linear-gradient(135deg, var(--color-peligro) 0%, var(--color-peligro) 100%) !important;
   color: var(--color-blanco) !important;
-  border-color: var(--color-rol-superadmin) !important;
-  box-shadow: 0 2px 6px rgba(142, 68, 173, 0.4) !important;
+  border-color: var(--color-peligro) !important;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4) !important;
 }
 
 /* --- Badge de Administrador --- */

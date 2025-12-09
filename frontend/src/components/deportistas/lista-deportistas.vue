@@ -177,7 +177,6 @@ async function cargarCategorias() {
   cargandoCategorias.value = true;
   try {
     const categoriasData = await catalogosService.getCategorias();
-    console.log('📦 Categorías recibidas del backend:', categoriasData);
 
     // El backend ya devuelve solo categorías activas (estado=True)
     // Ordenarlas por nombre
@@ -192,9 +191,7 @@ async function cargarCategorias() {
           const nombreB = b.nombre_categoria || '';
           return nombreA.localeCompare(nombreB);
         });
-      console.log('✅ Categorías procesadas y cargadas:', categorias.value);
     } else {
-      console.warn('⚠️ Las categorías no son un array:', categoriasData);
       categorias.value = [];
     }
   } catch (error) {

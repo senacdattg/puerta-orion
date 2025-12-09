@@ -309,7 +309,6 @@ function obtenerSelectorRoles(authStore) {
 // Función auxiliar para manejar rutas que requieren autenticación
 function manejarRutaRequiereAuth(isAuthenticated, next) {
   if (!isAuthenticated) {
-    console.log('🔒 Redirigiendo a login: usuario no autenticado')
     next('/login')
     return true
   }
@@ -324,13 +323,11 @@ function manejarRutaRequiereGuest(isAuthenticated, authStore, selectorRoles, nex
   const roleNames = obtenerNombresRoles(rawRoles)
 
   if (roleNames.length > 1 && !authStore.activeRole) {
-    console.log('🔄 Usuario con múltiples roles, redirigiendo a selección de rol')
     next('/seleccionar-rol')
     return true
   }
 
   const defaultRoute = getDefaultRouteForRole(rawRoles, authStore.activeRole)
-  console.log('🔄 Redirigiendo usuario autenticado:', defaultRoute)
   next(defaultRoute)
   return true
 }
@@ -345,22 +342,16 @@ function verificarRolActivo(activeRole, requiredRoles) {
 function manejarRutaRequiereRol(authStore, selectorRoles, requiredRoles, to, next) {
   if (authStore.activeRole) {
     if (verificarRolActivo(authStore.activeRole, requiredRoles)) {
-      console.log('✅ Acceso autorizado con rol activo:', authStore.activeRole)
       next()
       return
     }
-    console.log('🚫 Acceso denegado: rol activo no coincide. Requerido:', requiredRoles, 'Rol activo:', authStore.activeRole)
     next('/seleccionar-rol')
     return
   }
 
   const userRoles = selectorRoles.length ? selectorRoles : (authStore.user?.roles || [])
-  console.log('🔍 Verificando rol para:', to.path)
-  console.log('🔍 Roles requeridos:', requiredRoles)
-  console.log('🔍 Roles del usuario:', userRoles)
 
   if (!hasRequiredRole(userRoles, requiredRoles)) {
-    console.log('🚫 Acceso denegado: rol insuficiente. Requerido:', requiredRoles, 'Usuario:', userRoles)
     const roleNames = obtenerNombresRoles(selectorRoles.length ? selectorRoles : (authStore.user?.roles || []))
     if (roleNames.length > 1) {
       next('/seleccionar-rol')
@@ -370,7 +361,6 @@ function manejarRutaRequiereRol(authStore, selectorRoles, requiredRoles, to, nex
     return
   }
 
-  console.log('✅ Acceso autorizado para:', to.path)
   next()
 }
 
@@ -399,7 +389,6 @@ async function manejarRutaRequierePermiso(authStore, requiredPermission, next) {
               (authStore.hasPermission?.(requiredPermission))
 
   if (!has) {
-    console.log('🚫 Acceso denegado: permiso insuficiente. Requerido:', requiredPermission)
     next('/home')
     return true
   }
@@ -413,7 +402,6 @@ function validarAccesoMensualidades(to, authStore, next) {
 
   const active = authStore.activeRole
   if (!esSuperAdminOAdministrador(active) && ['Entrenador', 'Usuario'].includes(active)) {
-    console.log('🚫 Acceso denegado a mensualidades por rol (Entrenador/Usuario)')
     next('/home')
     return true
   }
@@ -431,7 +419,6 @@ function validarSeleccionRol(requiresAuth, isAuthenticated, to, authStore, next)
   const roleNames = obtenerNombresRoles(userRoles)
 
   if (roleNames.length > 1 && !authStore.activeRole) {
-    console.log('🔄 Usuario con múltiples roles sin seleccionar, redirigiendo a selección')
     next('/seleccionar-rol')
     return true
   }
@@ -454,7 +441,6 @@ async function refrescarOpcionesRol(authStore, isAuthenticated) {
   if (isAuthenticated && !Object.keys(authStore.rolesSelector || {}).length) {
     const tieneRolActivo = authStore.activeRole || localStorage.getItem('activeRole')
     if (tieneRolActivo) {
-      console.log(`🔄 [router] Hay rol activo guardado (${tieneRolActivo}), refrescando opciones pero manteniendo el rol`)
     }
     await authStore.refreshRoleOptions?.()
     // Verificar si el refresh cambió el rol y restaurarlo si es necesario
@@ -466,7 +452,6 @@ async function refrescarOpcionesRol(authStore, isAuthenticated) {
         return String(r)
       })
       if (nombresRoles.some(r => r === tieneRolActivo || r.toLowerCase() === tieneRolActivo.toLowerCase())) {
-        console.log(`🔄 [router] Restaurando rol activo después de refresh: ${tieneRolActivo}`)
         await authStore.setActiveRole?.(tieneRolActivo)
       }
     }

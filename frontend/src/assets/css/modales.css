@@ -1569,6 +1569,35 @@ body.modal-open * {
   box-shadow: 0 2px 8px rgba(0, 71, 171, 0.2);
   font-family: 'Poppins', sans-serif;
   min-width: 150px;
+  width: 150px;
+}
+
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .botones-formulario .btn-volver {
+  background: #6c757d;
+  color: var(--color-blanco);
+  border: none;
+  border-radius: 8px;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.2);
+  font-family: 'Poppins', sans-serif;
+  min-width: 150px;
+  width: 150px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .botones-formulario .btn-volver:hover {
+  background: #5a6268;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
 .modal-content[class*="modal-"]:not(.perfil-modal):not(.modal-content-detalle) .modal-body .formulario-datos .boton-formulario:hover {

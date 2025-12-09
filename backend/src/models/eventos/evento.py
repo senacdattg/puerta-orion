@@ -37,6 +37,7 @@ class Evento(BaseModel):
     
     # Relaciones
     categoria = relationship('Categoria', lazy=True, overlaps="eventos")
+    tipo_evento = relationship('TipoEvento', lazy=True, overlaps="eventos")
     
     def __repr__(self):
         """

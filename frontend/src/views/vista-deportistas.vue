@@ -98,7 +98,6 @@ function editarDeportista(deportista) {
 }
 
 async function verDeportista(deportista) {
-  console.log('Ver detalles de deportista:', deportista);
   // Siempre abrir en modo ver - solo visualización
   modoFormulario.value = 'ver';
 
@@ -109,11 +108,9 @@ async function verDeportista(deportista) {
 
     // El backend puede devolver 'status: success' o 'success: true'
     if ((response.status === 'success' || response.success) && response.data) {
-      console.log('Datos completos del deportista:', response.data);
       // Usar los datos completos del backend
       deportistaEditando.value = response.data;
     } else {
-      console.warn('No se recibieron datos completos, usando datos básicos:', deportista);
       // Si falla, usar los datos que ya tenemos
       deportistaEditando.value = deportista;
     }
@@ -128,12 +125,10 @@ async function verDeportista(deportista) {
 
 function eliminarDeportista() {
   // Función deshabilitada - solo se puede ver la información
-  console.log('Eliminación deshabilitada - solo modo visualización');
 }
 
 async function agregarDeportista() {
   // Función deshabilitada - solo modo visualización
-  console.log('Agregar deportista deshabilitado - solo modo visualización');
   await Swal.fire({
     icon: 'info',
     title: 'Funcionalidad no disponible',

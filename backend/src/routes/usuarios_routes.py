@@ -161,7 +161,7 @@ def _actualizar_roles_gestionables(id_usuario: int, roles_validos: Iterable[Rol]
             continue
 
         nombre_lower = rol_obj.nombre_rol.lower()
-        if nombre_lower in ROLES_PERMITIDOS or nombre_lower in {'superadmin', 'super_admin'}:
+        if nombre_lower in ROLES_PERMITIDOS:
             db.session.delete(usuario_rol)
 
     for rol in roles_validos:
@@ -604,4 +604,5 @@ def registrar_usuarios_routes(app: Flask) -> None:
         app: Instancia de la aplicación Flask.
     """
     app.register_blueprint(usuarios_bp)
-    logger.info("Rutas de usuarios registradas exitosamente")
+    # Removed logger.info for performance
+    # logger.info("Rutas de usuarios registradas exitosamente")

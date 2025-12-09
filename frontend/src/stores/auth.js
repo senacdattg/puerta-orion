@@ -197,14 +197,11 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.getUserPermissions()
       if (response.success) {
         permissions.value = response.permisos || []
-        console.log('🔍 Permisos cargados desde BD:', permissions.value)
       } else {
-        console.warn('⚠️ No se pudieron cargar permisos específicos, usando permisos por rol')
         // Fallback a permisos basados en roles si no se pueden cargar permisos específicos
         setPermissionsByRole()
       }
     } catch (error) {
-      console.warn('⚠️ Error cargando permisos específicos:', error.message)
       // Fallback a permisos basados en roles
       setPermissionsByRole()
     }
@@ -214,7 +211,6 @@ export const useAuthStore = defineStore('auth', () => {
   const loadPermissionsForRole = async (roleName) => {
     try {
       if (!roleName) {
-        console.warn('⚠️ No se proporcionó nombre de rol para cargar permisos')
         permissions.value = []
         return
       }
@@ -222,13 +218,10 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.getRolePermissions(roleName)
       if (response.success) {
         permissions.value = response.permisos || []
-        console.log(`🔍 Permisos cargados para rol "${roleName}":`, permissions.value)
       } else {
-        console.warn(`⚠️ No se pudieron cargar permisos para el rol "${roleName}"`)
         permissions.value = []
       }
     } catch (error) {
-      console.warn(`⚠️ Error cargando permisos del rol "${roleName}":`, error.message)
       permissions.value = []
     }
   }
@@ -270,18 +263,15 @@ export const useAuthStore = defineStore('auth', () => {
 
       // Si el backend tiene un rol activo, usarlo SIEMPRE (viene del servidor después de login/cambio)
       if (rolBackend && nombresRoles.some(r => r === rolBackend || r.toLowerCase() === rolBackend.toLowerCase())) {
-        console.log(`✅ [refreshRoleOptions] Usando rol activo del backend: ${rolBackend}`)
         activeRole.value = rolBackend
         localStorage.setItem('activeRole', rolBackend)
         await loadPermissionsForRole(rolBackend)
       } else if (rolActivoActual && rolActivoEsValido) {
         // Si no hay rol del backend pero hay uno válido en el store, mantenerlo
-        console.log(`✅ [refreshRoleOptions] Manteniendo rol activo del store: ${rolActivoActual}`)
         localStorage.setItem('activeRole', rolActivoActual)
         await loadPermissionsForRole(rolActivoActual)
       } else {
         // No hay rol válido, limpiar
-        console.log(`🧹 [refreshRoleOptions] No hay rol activo válido, limpiando`)
         activeRole.value = null
         localStorage.removeItem('activeRole')
         permissions.value = []
@@ -335,7 +325,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     permissions.value = permisos
-    console.log('🔍 Permisos establecidos por rol:', permissions.value)
   }
 
   const loadUserProfile = async () => {
@@ -363,16 +352,13 @@ export const useAuthStore = defineStore('auth', () => {
 
         // Si el backend tiene un rol activo, usarlo SIEMPRE (viene del servidor después de login/cambio)
         if (rolBackend && nombresRoles.some(r => r === rolBackend || r.toLowerCase() === rolBackend.toLowerCase())) {
-          console.log(`✅ Usando rol activo del backend en loadUserProfile: ${rolBackend}`)
           activeRole.value = rolBackend
           localStorage.setItem('activeRole', rolBackend)
         } else if (activeRole.value && nombresRoles.some(r => r === activeRole.value || r.toLowerCase() === activeRole.value.toLowerCase())) {
           // Si no hay rol del backend pero hay uno en el store válido, mantenerlo
-          console.log(`✅ Manteniendo rol activo del store: ${activeRole.value}`)
           localStorage.setItem('activeRole', activeRole.value)
         } else {
           // No hay rol válido, limpiar
-          console.log(`🧹 No hay rol activo válido, limpiando`)
           activeRole.value = null
           localStorage.removeItem('activeRole')
         }
@@ -407,17 +393,13 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       isLoading.value = true
-      console.log('🔄 Iniciando carga de detalle del perfil...')
 
       const response = await authService.getProfileDetail()
-      console.log('📥 Respuesta del servicio:', response)
 
       if (response?.success) {
         userDetail.value = extraerUserDetail(response)
-        console.log('✅ userDetail actualizado:', userDetail.value)
 
         if (response.warning) {
-          console.warn('⚠️ Advertencia al cargar detalle:', response.warning)
         }
         return true
       }
@@ -428,7 +410,6 @@ export const useAuthStore = defineStore('auth', () => {
       return manejarErrorCargaPerfil(err)
     } finally {
       isLoading.value = false
-      console.log('🏁 Carga de detalle finalizada')
     }
   }
 
@@ -589,7 +570,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const manejarMantenerRolGuardado = async (rolActivoGuardado, roleName) => {
-    console.log(`⚠️ [setActiveRole] Intento de cambiar rol de "${rolActivoGuardado}" a "${roleName}", pero "${rolActivoGuardado}" fue seleccionado explícitamente. Manteniendo "${rolActivoGuardado}"`)
     if (activeRole.value !== rolActivoGuardado) {
       activeRole.value = rolActivoGuardado
       await loadPermissionsForRole(rolActivoGuardado)
@@ -646,7 +626,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const activarRolEnBackend = async (roleName) => {
-    console.log(`🔄 [setActiveRole] Cambiando rol activo a: ${roleName}`)
 
     const response = await authService.activateRole(roleName)
     if (!response.success) {
@@ -667,7 +646,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     activeRole.value = rolFinal
     localStorage.setItem('activeRole', rolFinal)
-    console.log(`✅ [setActiveRole] Rol activo establecido: ${rolFinal} (solicitado: ${roleName}, backend: ${rolBackend})`)
 
     await loadPermissionsForRole(rolFinal)
     actualizarUsuarioConNuevoRol(rolFinal, selector, panelBackend)

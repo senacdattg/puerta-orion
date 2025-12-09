@@ -174,15 +174,18 @@ const tablaUsuariosRef = ref(null);
 const totalUsuarios = computed(() => usuariosPanel.value.length);
 
 // Contar usuarios por cada rol dinámicamente
+// SuperAdmin se cuenta como Administrador
 const conteosPorRol = computed(() => {
   const conteos = {};
   for (const usuario of usuariosPanel.value) {
     if (usuario.roles) {
       for (const rol of usuario.roles) {
-        if (!conteos[rol.nombre_rol]) {
-          conteos[rol.nombre_rol] = 0;
+        // Normalizar: SuperAdmin se cuenta como Administrador
+        const nombreRol = rol.nombre_rol === 'SuperAdmin' ? 'Administrador' : rol.nombre_rol;
+        if (!conteos[nombreRol]) {
+          conteos[nombreRol] = 0;
         }
-        conteos[rol.nombre_rol]++;
+        conteos[nombreRol]++;
       }
     }
   }
@@ -210,6 +213,7 @@ const tarjetasStats = computed(() => {
   ];
 
   // Agregar una tarjeta por cada rol encontrado
+  // SuperAdmin no se muestra como tarjeta separada, se cuenta dentro de Administrador
   for (const [nombreRol, count] of Object.entries(conteosPorRol.value)) {
     // Determinar icono y clase según el rol específico
     let iconClass = 'fas fa-user'; // Por defecto
@@ -217,10 +221,8 @@ const tarjetasStats = computed(() => {
 
     const rolLower = nombreRol.toLowerCase();
 
-    if (rolLower.includes('superadmin')) {
-      iconClass = 'fas fa-crown';
-      statClass = 'stat-icon--superadmin';
-    } else if (rolLower.includes('administrador')) {
+    // SuperAdmin ya está normalizado a Administrador en conteosPorRol, no necesita caso separado
+    if (rolLower.includes('administrador')) {
       iconClass = 'fas fa-user-shield';
       statClass = 'stat-icon--administrador';
     } else if (rolLower.includes('entrenador')) {
@@ -299,11 +301,9 @@ function abrirModalDatosConTema(tema) {
 }
 
 function abrirModalEdicion({ tema, dato }) {
-  console.log('abrirModalEdicion llamado con:', { tema, dato })
   temaEdicion.value = tema;
   datoEdicion.value = dato;
   mostrarModalEdicion.value = true;
-  console.log('Estado después de abrir:', { temaEdicion: temaEdicion.value, mostrarModalEdicion: mostrarModalEdicion.value })
 }
 
 function cerrarModalEdicion() {
@@ -495,7 +495,6 @@ function obtenerNombreEntidadLegible(entidad) {
 }
 
 async function manejarUsuarioRegistrado(datosUsuario) {
-  console.log('Usuario registrado desde admin-manager:', datosUsuario);
   // Cerrar el modal después del registro exitoso
   cerrarModalRegistro();
 

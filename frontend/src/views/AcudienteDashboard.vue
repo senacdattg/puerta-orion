@@ -94,7 +94,6 @@ const navigateTo = (route) => {
 }
 
 onMounted(() => {
-  console.log('✅ AcudienteDashboard montado')
 })
 </script>
 
