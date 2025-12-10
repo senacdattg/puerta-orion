@@ -46,7 +46,7 @@ RUN npm run build
 # Production stage - serve with nginx
 FROM nginxinc/nginx-unprivileged:1.25-alpine AS production
 
-ENV VITE_API_URL=http://backend:5000
+ENV VITE_API_URL=http://backend:5012
 WORKDIR /usr/share/nginx/html
 
 USER root

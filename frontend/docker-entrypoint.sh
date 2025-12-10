@@ -18,11 +18,11 @@ cat <<EOF > "${RUNTIME_FILE}"
 
   if (!apiUrl || apiUrl === "auto" || apiUrl === "undefined" || apiUrl === "null") {
     if (isLocalhost) {
-      apiUrl = "http://localhost:5000";
+      apiUrl = "http://localhost:5012";
     } else if (hostname) {
       apiUrl = protocol + "//" + hostname;
     } else {
-      apiUrl = "http://localhost:5000";
+      apiUrl = "http://localhost:5012";
     }
   }
 

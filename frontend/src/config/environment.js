@@ -1,7 +1,7 @@
 // Configuración del entorno de la aplicación
 // Siguiendo el principio SRP - este archivo solo maneja configuración del entorno
 
-const LOCAL_API_FALLBACK = 'http://localhost:5000';
+const LOCAL_API_FALLBACK = 'http://localhost:5012';
 
 const ENV_CONFIG = {
   development: {

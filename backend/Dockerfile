@@ -2,8 +2,7 @@ FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    FLASK_RUN_HOST=0.0.0.0 \
-    FLASK_RUN_PORT=5000
+    FLASK_RUN_HOST=0.0.0.0
 
 WORKDIR /app
 
@@ -43,6 +42,6 @@ RUN sed -i 's/\r$//' ./entrypoint.sh \
 # Cambiar a usuario no privilegiado antes de exponer puertos
 USER appuser
 
-EXPOSE 5000
+EXPOSE 5012
 
 ENTRYPOINT ["./entrypoint.sh"]

@@ -20,6 +20,7 @@ class Config:
     HOST = os.environ.get('HOST', '0.0.0.0')
     PORT = int(os.environ.get('PORT', 5000))
     FLASK_RUN_RELOAD = os.environ.get('FLASK_RUN_RELOAD', 'True').lower() == 'true'
+    BASE_STATIC_URL = os.environ.get('BASE_STATIC_URL', f'http://localhost:{PORT}')
     
     # Configuración de la base de datos
     # Intentar DATABASE_URL primero, luego construir desde variables individuales
