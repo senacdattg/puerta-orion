@@ -1396,12 +1396,46 @@ export default {
                 try {
                     this.cargando = true;
                     await calendarioService.eliminarEvento(this.eventoSeleccionado.id);
+
+                    // Actualizar el calendario
                     this.actualizarCalendario();
-                    this.cerrarModal();
-                    this.mostrarNotificacion('Evento eliminado exitosamente', 'success');
+
+                    // Intentar recargar eventos del servidor
+                    try {
+                        await calendarioService.cargarEventos();
+                        this.actualizarCalendario();
+                    } catch (recargaError) {
+                        console.warn('⚠️ Error al recargar eventos, pero el evento ya fue eliminado:', recargaError.message);
+                    }
+
+                    // Cerrar todos los modales sin restaurar el selector
+                    this.modalVisible = false;
+                    this.selectorEventosVisible = false;
+                    this.selectorEventosVisibleAntes = false;
+                    this.fechaBloqueada = false;
+                    this.fechaSelectorGuardada = null;
+                    this.limpiarFormulario();
+                    this.nuevoEventoInicial = null;
+                    this.eventoSeleccionado = null;
+
+                    // Mostrar mensaje de éxito
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Evento eliminado exitosamente!',
+                        text: 'El evento se ha eliminado correctamente del sistema.',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#004AAD'
+                    });
                 } catch (error) {
                     console.error('Error al eliminar evento:', error);
-                    this.mostrarNotificacion(error.message || 'Error al eliminar el evento', 'error');
+                    const mensajeError = this.extraerMensajeError(error);
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error al eliminar evento',
+                        html: `<p><strong>No se pudo eliminar el evento.</strong></p><p>${mensajeError}</p>`,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#dc3545'
+                    });
                 } finally {
                     this.cargando = false;
                 }
