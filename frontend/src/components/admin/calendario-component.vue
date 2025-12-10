@@ -230,6 +230,7 @@
                                     type="date"
                                     required
                                     class="input-edicion"
+                                    :min="modoEdicion ? undefined : obtenerFechaActual()"
                                     :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
                                     :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
                                 />
@@ -898,25 +899,62 @@ export default {
             this.actualizarCalendario();
         },
 
-        seleccionarDia(dia) {
+        esFechaPasada(fecha) {
+            if (!fecha) return false;
+            const fechaActual = this.obtenerFechaActual();
+            return fecha < fechaActual;
+        },
+
+        async validarFechaAntesDeAbrir(fecha) {
+            if (this.esFechaPasada(fecha)) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Fecha no válida',
+                    text: 'No se pueden crear eventos en fechas pasadas. Por favor, selecciona una fecha de hoy en adelante.',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#004AAD'
+                });
+                return false;
+            }
+            return true;
+        },
+
+        async seleccionarDia(dia) {
             if (!dia.esMesActual) return;
 
             if (dia.eventos && dia.eventos.length > 0) {
                 // Si hay eventos, mostrar selector que permite ver/editar o agregar nuevo
+                // Permitir ver eventos incluso si la fecha es pasada
                 this.eventosDelDia = dia.eventos;
                 this.mostrarSelectorEventos(dia.fecha);
             } else if (this.puedeCrear) {
+                // Si no hay eventos y puede crear, validar que la fecha no sea pasada
+                if (dia.fecha) {
+                    const fechaValida = await this.validarFechaAntesDeAbrir(dia.fecha);
+                    if (!fechaValida) {
+                        return;
+                    }
+                }
                 this.abrirModal({ fecha: dia.fecha, bloquear: true });
             }
             // Si no tiene permisos de creación y no hay eventos, no hace nada
         },
 
-        agregarEventoADia(dia, event) {
+        async agregarEventoADia(dia, event) {
             // Prevenir que el click en el botón también active seleccionarDia
             if (event) {
                 event.stopPropagation();
             }
             if (!dia.esMesActual || !this.puedeCrear) return;
+
+            // Validar si la fecha es pasada antes de abrir el modal
+            if (dia.fecha) {
+                const fechaValida = await this.validarFechaAntesDeAbrir(dia.fecha);
+                if (!fechaValida) {
+                    return;
+                }
+            }
+
             this.abrirModal({ fecha: dia.fecha, bloquear: true });
         },
 
@@ -1029,6 +1067,8 @@ export default {
         },
 
         mostrarSelectorEventos(fecha = null) {
+            // Permitir ver eventos incluso si la fecha es pasada
+            // La validación se hará al intentar agregar un nuevo evento
             this.selectorEventosVisible = true;
             this.indiceEventoActual = 0; // Resetear al primer evento
             this.pausarCarrusel = false; // Reiniciar el carrusel
@@ -1048,7 +1088,15 @@ export default {
             this.fechaBloqueada = false;
         },
 
-        abrirModalDesdeSelector() {
+        async abrirModalDesdeSelector() {
+            // Validar si la fecha es pasada antes de abrir el modal
+            if (this.nuevoEvento.fecha) {
+                const fechaValida = await this.validarFechaAntesDeAbrir(this.nuevoEvento.fecha);
+                if (!fechaValida) {
+                    return;
+                }
+            }
+
             // Cerrar el selector y abrir el modal de creación
             this.selectorEventosVisible = false;
             this.abrirModal({ fecha: this.nuevoEvento.fecha, bloquear: true });
@@ -1116,6 +1164,27 @@ export default {
             return this.nuevoEvento.fecha ? null : 'Debe especificar una fecha';
         },
 
+        validarFechaNoPasada() {
+            // Solo validar fechas pasadas cuando se está creando un nuevo evento, no al editar
+            if (this.modoEdicion) {
+                return null;
+            }
+
+            if (!this.nuevoEvento.fecha) {
+                return null; // La validación de fecha vacía se maneja en validarFecha()
+            }
+
+            const fechaActual = this.obtenerFechaActual();
+            const fechaEvento = this.nuevoEvento.fecha;
+
+            // Comparar fechas en formato YYYY-MM-DD (permite comparación lexicográfica)
+            if (fechaEvento < fechaActual) {
+                return 'No se pueden crear eventos en fechas pasadas. La fecha debe ser hoy o una fecha futura.';
+            }
+
+            return null;
+        },
+
         validarHoraInicio() {
             if (this.nuevoEvento.horaInicio || this.nuevoEvento.hora) {
                 return null;
@@ -1150,6 +1219,7 @@ export default {
                 this.validarTitulo(),
                 this.validarTipoEvento(),
                 this.validarFecha(),
+                this.validarFechaNoPasada(),
                 this.validarHoraInicio(),
                 this.validarHoras(),
                 this.validarCategoria(),

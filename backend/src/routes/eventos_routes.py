@@ -904,6 +904,15 @@ def _validar_fecha_y_horas(data: Dict[str, Any]) -> Tuple[Optional[date], Option
     if not fecha_evento:
         return None, None, None, _build_response(False, error='Formato de fecha inválido. Use YYYY-MM-DD', status_code=400)
     
+    # Validar que la fecha no sea pasada (solo para creación de eventos)
+    fecha_actual = date.today()
+    if fecha_evento < fecha_actual:
+        return None, None, None, _build_response(
+            False,
+            error='No se pueden crear eventos en fechas pasadas. La fecha debe ser hoy o una fecha futura.',
+            status_code=400,
+        )
+    
     hora_inicio = _parse_time(data['hora_inicio'])
     if not hora_inicio:
         return None, None, None, _build_response(
