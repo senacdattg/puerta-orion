@@ -980,24 +980,26 @@ export default {
         // Use shared error extraction utility
         extraerMensajeError,
 
-        async cerrarModal() {
-            // Verificar si hay cambios sin guardar
-            const tieneCambios = this.verificarCambios()
+        async cerrarModal(omitirVerificacion = false) {
+            // Verificar si hay cambios sin guardar (solo si no se omite la verificación)
+            if (!omitirVerificacion) {
+                const tieneCambios = this.verificarCambios()
 
-            if (tieneCambios) {
-                const result = await Swal.fire({
-                    icon: 'question',
-                    title: '¿Descartar cambios?',
-                    text: '¿Estás seguro de que deseas cerrar? Los cambios sin guardar se perderán.',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, cerrar',
-                    cancelButtonText: 'Continuar',
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d'
-                })
+                if (tieneCambios) {
+                    const result = await Swal.fire({
+                        icon: 'question',
+                        title: '¿Descartar cambios?',
+                        text: '¿Estás seguro de que deseas cerrar? Los cambios sin guardar se perderán.',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, cerrar',
+                        cancelButtonText: 'Continuar',
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d'
+                    })
 
-                if (!result.isConfirmed) {
-                    return
+                    if (!result.isConfirmed) {
+                        return
+                    }
                 }
             }
 
@@ -1274,28 +1276,6 @@ export default {
             }
         },
 
-        async preguntarAgregarOtroEvento(fechaActual) {
-            const confirmacion = await Swal.fire({
-                icon: 'question',
-                title: '¿Agregar otro evento?',
-                text: '¿Quieres crear otro evento para este mismo día?',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, agregar',
-                cancelButtonText: 'No',
-                confirmButtonColor: '#004AAD',
-                cancelButtonColor: '#6c757d'
-            });
-
-            if (confirmacion.isConfirmed) {
-                this.limpiarFormulario();
-                this.nuevoEvento.fecha = fechaActual;
-                // Guardar estado inicial para el nuevo formulario
-                this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
-                return true;
-            }
-            return false;
-        },
-
         async crearNuevoEvento() {
             if (!(await this.validarPermisosCreacion())) {
                 return;
@@ -1339,12 +1319,12 @@ export default {
                     // El evento ya está en la cache local, así que el calendario ya se actualizó
                 }
 
-                const fechaActual = this.nuevoEvento.fecha;
-                const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+                // Limpiar el formulario y resetear estado para evitar la alerta de cambios sin guardar
+                this.limpiarFormulario();
+                this.nuevoEventoInicial = null;
 
-                if (!quiereAgregarOtro) {
-                    this.cerrarModal();
-                }
+                // Cerrar el modal sin verificar cambios (ya se guardó exitosamente)
+                this.cerrarModal(true);
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
