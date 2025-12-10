@@ -755,8 +755,10 @@ class CalendarioService {
    */
   _validarRangoHoras(evento) {
     if (!evento.horaInicio || !evento.horaFin) return [];
-    if (evento.horaFin <= evento.horaInicio) {
-      return ['La hora de fin debe ser posterior a la hora de inicio'];
+    // Permitir eventos que cruzan la medianoche (horaFin < horaInicio es válido)
+    // Solo rechazar si las horas son iguales (duración cero)
+    if (evento.horaFin === evento.horaInicio) {
+      return ['La hora de fin debe ser diferente a la hora de inicio'];
     }
     return [];
   }

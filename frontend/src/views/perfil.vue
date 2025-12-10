@@ -461,7 +461,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { API_CONFIG, LOG_CONFIG } from '@/config/environment'
@@ -476,6 +476,9 @@ defineOptions({
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Inyectar el método para cerrar el menú lateral
+const closeSidebarMenu = inject('closeSidebarMenu', null)
 const usuario = ref(null)
 const detalle = ref(null)
 
@@ -1031,6 +1034,10 @@ watch(() => authStore.activeRole, async (nuevoRol) => {
 })
 
 const editarPerfil = () => {
+  // Cerrar el menú lateral antes de navegar
+  if (closeSidebarMenu) {
+    closeSidebarMenu()
+  }
   router.push('/actualizar-info')
 }
 

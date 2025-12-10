@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Swal from 'sweetalert2'
@@ -224,6 +224,9 @@ function closeMenu() {
   menuVisible.value = false
   applyLayoutOffsets()
 }
+
+// Exponer closeMenu para que otros componentes puedan cerrar el menú
+provide('closeSidebarMenu', closeMenu)
 
 function isActiveRoute(path) {
   const currentPath = route.path

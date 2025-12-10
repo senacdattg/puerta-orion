@@ -10,7 +10,7 @@ Responsabilidad:
 El módulo aplica principios SRP, DRY, KISS, POO y Clean Code.
 """
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 import traceback
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -135,11 +135,20 @@ def _validar_solapamiento_horario(
             eventos = [ev for ev in eventos if ev.id_evento != id_evento_excluir]
 
         inicio_nuevo = datetime.combine(fecha_evento, hora_inicio)
-        fin_nuevo = datetime.combine(fecha_evento, hora_fin)
+        # Si hora_fin < hora_inicio, el evento cruza la medianoche (termina al día siguiente)
+        if hora_fin < hora_inicio:
+            fin_nuevo = datetime.combine(fecha_evento + timedelta(days=1), hora_fin)
+        else:
+            fin_nuevo = datetime.combine(fecha_evento, hora_fin)
 
         for evento_existente in eventos:
             inicio_existente = datetime.combine(fecha_evento, evento_existente.hora_inicio)
-            fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            # Considerar si el evento existente también cruza la medianoche
+            if evento_existente.hora_fin < evento_existente.hora_inicio:
+                fin_existente = datetime.combine(fecha_evento + timedelta(days=1), evento_existente.hora_fin)
+            else:
+                fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            
             if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
                 mensaje = _construir_mensaje_solapamiento(
                     evento_existente=evento_existente,
@@ -456,9 +465,11 @@ def _actualizar_horas_evento(evento: Evento, data: Dict[str, Any]) -> Optional[J
             )
         evento.hora_fin = hora_fin
 
-    if evento.hora_fin <= evento.hora_inicio:
+    # Permitir eventos que cruzan la medianoche (hora_fin < hora_inicio es válido)
+    # Solo rechazar si las horas son iguales (duración cero)
+    if evento.hora_fin == evento.hora_inicio:
         return HttpResponseBuilder.bad_request(
-            error='La hora de fin debe ser posterior a la hora de inicio'
+            error='La hora de fin debe ser diferente a la hora de inicio'
         )
     return None
 
@@ -912,8 +923,10 @@ def _validar_fecha_y_horas(data: Dict[str, Any]) -> Tuple[Optional[date], Option
             status_code=400,
         )
     
-    if hora_fin <= hora_inicio:
-        return None, None, None, _build_response(False, error='La hora de fin debe ser posterior a la hora de inicio', status_code=400)
+    # Permitir eventos que cruzan la medianoche (hora_fin < hora_inicio es válido)
+    # Solo rechazar si las horas son iguales (duración cero)
+    if hora_fin == hora_inicio:
+        return None, None, None, _build_response(False, error='La hora de fin debe ser diferente a la hora de inicio', status_code=400)
     
     return fecha_evento, hora_inicio, hora_fin, None
 

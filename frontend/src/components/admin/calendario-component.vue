@@ -1138,8 +1138,12 @@ export default {
         },
 
         validarRangoHoras() {
-            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
-                return 'La hora de fin debe ser posterior a la hora de inicio';
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin) {
+                // Permitir eventos que cruzan la medianoche (horaFin < horaInicio es válido)
+                // Solo rechazar si las horas son iguales (duración cero)
+                if (this.nuevoEvento.horaFin === this.nuevoEvento.horaInicio) {
+                    return 'La hora de fin debe ser diferente a la hora de inicio';
+                }
             }
             return null;
         },
