@@ -41,8 +41,9 @@ if [ "${RUN_SEEDERS:-true}" = "true" ]; then
 fi
 
 echo "Arrancando el servidor..."
+PORT=${PORT:-5000}
 if [ "${FLASK_ENV}" = "development" ]; then
-  exec flask run --host=0.0.0.0 --port=5000 --reload
+  exec flask run --host=0.0.0.0 --port=${PORT} --reload
 else
-  exec gunicorn aplicacion:app --bind 0.0.0.0:5000
+  exec gunicorn aplicacion:app --bind 0.0.0.0:${PORT}
 fi

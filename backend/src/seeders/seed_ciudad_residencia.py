@@ -22,24 +22,31 @@ def run():
     existentes = 0
     
     for ciudad_data in ciudades:
-        # Verificar si la ciudad ya existe por nombre
+        # Verificar si existe por ID o por nombre (para evitar duplicados)
         ciudad_existente = CiudadResidencia.query.filter_by(
-            nombre_ciudad=ciudad_data['nombre_ciudad']
+            id_ciudad=ciudad_data['id_ciudad']
         ).first()
         
         if not ciudad_existente:
-            ciudad = CiudadResidencia(**ciudad_data)
-            db.session.add(ciudad)
-            insertados += 1
+            # También verificar por nombre
+            ciudad_por_nombre = CiudadResidencia.query.filter_by(
+                nombre_ciudad=ciudad_data['nombre_ciudad']
+            ).first()
+            
+            if not ciudad_por_nombre:
+                ciudad = CiudadResidencia(**ciudad_data)
+                db.session.add(ciudad)
+                insertados += 1
+                print(f"  ✅ Insertado: {ciudad_data['nombre_ciudad']}")
+            else:
+                existentes += 1
+                print(f"  ⏭️  Ya existe: {ciudad_data['nombre_ciudad']}")
         else:
             existentes += 1
+            print(f"  ⏭️  Ya existe: {ciudad_data['nombre_ciudad']}")
     
     db.session.commit()
-    
-    print("✅ Seeder CiudadResidencia completado:")
-    print(f"   - Ciudades insertadas: {insertados}")
-    print(f"   - Ciudades existentes: {existentes}")
-    print(f"   - Total procesadas: {len(ciudades)}")
+    print(f"✅ Seeder CiudadResidencia completado: {insertados} insertados, {existentes} ya existían.\n")
     
     return insertados, existentes
 

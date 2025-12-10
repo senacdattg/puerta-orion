@@ -310,7 +310,7 @@ if __name__ == '__main__':
     
     try:
         app.run(
-            host='0.0.0.0', port=5000, debug=True
+            host=config_obj.HOST, port=config_obj.PORT, debug=config_obj.DEBUG
         )
     finally:
         shutdown_handler()
