@@ -124,7 +124,6 @@ const cargarEventos = async () => {
     // Obtener solo eventos próximos (futuros)
     const eventosCalendario = await calendarioService.obtenerEventosProximos()
 
-    console.log('📅 Eventos próximos recibidos:', eventosCalendario)
 
     // Mapear eventos del calendario al formato esperado por el componente
     eventos.value = eventosCalendario.map(evento => {
@@ -135,7 +134,6 @@ const cargarEventos = async () => {
       // Validar que la fecha sea válida
       // Prefer Number.isNaN over isNaN for robust number validation
       if (Number.isNaN(fecha.getTime())) {
-        console.warn('⚠️ Fecha inválida para evento:', evento)
         return null
       }
 
@@ -147,7 +145,6 @@ const cargarEventos = async () => {
       // Filtrar eventos pasados: solo incluir eventos de hoy en adelante
       // Si el evento es de ayer o antes, no incluirlo
       if (fechaEvento < hoy) {
-        console.log('📅 Evento pasado excluido:', evento.titulo || evento.nombre, fechaStr)
         return null
       }
 
@@ -174,7 +171,6 @@ const cargarEventos = async () => {
       }
     }).filter(evento => evento !== null) // Filtrar eventos con fechas inválidas o pasadas
 
-    console.log('✅ Eventos procesados (futuros únicamente):', eventos.value.length, eventos.value)
 
     // Ordenar eventos: activos primero, luego próximos (por fecha)
     eventos.value.sort((a, b) => {

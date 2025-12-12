@@ -66,7 +66,6 @@ class DeportistasService {
       }
 
       const data = await response.json()
-      console.log('Respuesta del backend:', data)
       // Normalizar la respuesta para que tenga 'success' además de 'status'
       if (data.status === 'success') {
         data.success = true
@@ -178,14 +177,11 @@ class DeportistasService {
       const qs = new URLSearchParams()
       if (documento) qs.set('documento', documento)
       
-      console.log(`🔄 DeportistasApi.buscarDeportistaPorDocumentoParaAcudiente: fetch -> ${baseURL}/deportistas/acudientes/buscar-deportista?${qs.toString()}`)
-      
       const response = await fetch(`${baseURL}/deportistas/acudientes/buscar-deportista?${qs.toString()}`, {
         method: 'GET',
         headers: this.getAuthHeaders()
       })
 
-      console.log(`📡 DeportistasApi.buscarDeportistaPorDocumentoParaAcudiente: response ${response.status} ${response.statusText}`)
       
       const text = await response.text()
       let data = {}

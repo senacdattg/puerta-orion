@@ -55,19 +55,19 @@ function getAccionesPorRol(role) {
     Usuario: [
       { texto: 'Calendario', link: '/calendario', icono: 'fas fa-calendar' },
       { texto: 'Galería', link: '/galeria', icono: 'fas fa-images' },
-      { texto: 'Mi Perfil', link: '/ver-general', icono: 'fas fa-user' }
+      { texto: 'Mi Perfil', link: '/perfil', icono: 'fas fa-user' }
     ],
     Entrenador: [
       { texto: 'Calendario', link: '/calendario', icono: 'fas fa-calendar' },
       { texto: 'Deportistas', link: '/deportistas', icono: 'fas fa-users' },
-      { texto: 'Mi Perfil', link: '/ver-general', icono: 'fas fa-user' },
+      { texto: 'Mi Perfil', link: '/perfil', icono: 'fas fa-user' },
       { texto: 'Galería', link: '/galeria', icono: 'fas fa-images' }
     ],
     Acudiente: [
-      { texto: 'Mis Deportistas', link: '/ver-acudidos', icono: 'fas fa-child' },
+      { texto: 'Mis Deportistas', link: '/acudiente/ver-acudidos', icono: 'fas fa-child' },
       { texto: 'Mensualidades', link: '/mensualidades', icono: 'fas fa-wallet' },
       { texto: 'Calendario', link: '/calendario', icono: 'fas fa-calendar' },
-      { texto: 'Mi Perfil', link: '/ver-general', icono: 'fas fa-user' }
+      { texto: 'Mi Perfil', link: '/perfil', icono: 'fas fa-user' }
     ],
     Deportista: [
       { texto: 'Mi Perfil', link: '/perfil', icono: 'fas fa-user' },

@@ -21,7 +21,7 @@
 
     <div class="header-center">
       <h2 class="welcome-message">
-        Bienvenido, {{ nombreUsuario }} 👋
+        Bienvenid@, {{ nombreUsuario }} 👋
       </h2>
     </div>
 
@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, onUpdated, computed, watch, nextTick, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Swal from 'sweetalert2'
@@ -224,6 +224,9 @@ function closeMenu() {
   menuVisible.value = false
   applyLayoutOffsets()
 }
+
+// Exponer closeMenu para que otros componentes puedan cerrar el menú
+provide('closeSidebarMenu', closeMenu)
 
 function isActiveRoute(path) {
   const currentPath = route.path
@@ -373,6 +376,10 @@ watch(() => authStore.user, (newUser, oldUser) => {
 
 // Watcher para sincronizar offsets cuando cambia la ruta (navegación entre páginas)
 watch(() => route.path, async () => {
+  // Cerrar el menú lateral cuando se navega a una nueva ruta
+  if (menuVisible.value) {
+    closeMenu()
+  }
   await nextTick()
   applyLayoutOffsets()
 })

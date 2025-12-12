@@ -135,7 +135,7 @@ export const ROUTES_BY_ROLE = {
   [ROLES.ADMINISTRADOR]: ['/admin-manager', '/home'],
   [ROLES.ENTRENADOR]: ['/home', '/deportistas', '/mensualidades'],
   [ROLES.DEPORTISTA]: ['/home', '/perfil', '/eventos', '/mensualidades'],
-  [ROLES.ACUDIENTE]: ['/home', '/perfil', '/ver-acudidos', '/eventos'],
+  [ROLES.ACUDIENTE]: ['/home', '/perfil', '/acudiente/ver-acudidos', '/eventos'],
   [ROLES.USUARIO]: ['/home', '/completar-perfil']
 }
 

@@ -39,7 +39,7 @@
                 :key="rol.id_rol"
                 :class="['badge', roleColor(rol.nombre_rol), `badge-${rol.nombre_rol.toLowerCase()}`]"
               >
-                {{ rol.nombre_rol }}
+                {{ rol.nombre_rol === 'SuperAdmin' ? 'Administrador' : rol.nombre_rol }}
               </span>
               <span v-if="!user.roles || user.roles.length === 0" class="badge badge-none">Sin rol</span>
             </div>
@@ -213,7 +213,7 @@
                 :key="rol.id_rol"
                 :class="['badge', 'badge-detalle', roleColor(rol.nombre_rol), `badge-${rol.nombre_rol.toLowerCase()}`]"
               >
-                {{ rol.nombre_rol }}
+                {{ rol.nombre_rol === 'SuperAdmin' ? 'Administrador' : rol.nombre_rol }}
               </span>
               <span v-if="!usuarioDetalle.roles || usuarioDetalle.roles.length === 0" class="badge badge-detalle badge-none">
                 Sin roles asignados
@@ -1704,7 +1704,8 @@ const extraerMensajeErrorRoles = extraerMensajeError
 function roleColor(role) {
   switch (role) {
     case "SuperAdmin":
-      return "badge-admin badge-superadmin";
+      // SuperAdmin usa el mismo color que Administrador (rojo)
+      return "badge-admin badge-administrador";
     case "Administrador":
       return "badge-admin badge-administrador";
     case "Entrenador":

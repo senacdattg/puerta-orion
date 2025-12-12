@@ -6,11 +6,11 @@
   let apiUrl;
 
   if (isLocalhost) {
-    apiUrl = 'http://localhost:5000';
+    apiUrl = 'http://localhost:5012';
   } else if (hostname) {
     apiUrl = protocol + '//' + hostname;
   } else {
-    apiUrl = 'http://localhost:5000';
+    apiUrl = 'http://localhost:5012';
   }
 
   globalThis.RUNTIME_CONFIG = {

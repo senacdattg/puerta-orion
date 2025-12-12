@@ -10,12 +10,13 @@ Responsabilidad:
 El módulo aplica principios SRP, DRY, KISS, POO y Clean Code.
 """
 
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 import traceback
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from flask import Blueprint, Flask, Response, request
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload, selectinload
 
 from ..middleware.auth_decorator import get_current_user, token_required
 from ..models.acudientes.acudiente import Acudiente
@@ -134,11 +135,20 @@ def _validar_solapamiento_horario(
             eventos = [ev for ev in eventos if ev.id_evento != id_evento_excluir]
 
         inicio_nuevo = datetime.combine(fecha_evento, hora_inicio)
-        fin_nuevo = datetime.combine(fecha_evento, hora_fin)
+        # Si hora_fin < hora_inicio, el evento cruza la medianoche (termina al día siguiente)
+        if hora_fin < hora_inicio:
+            fin_nuevo = datetime.combine(fecha_evento + timedelta(days=1), hora_fin)
+        else:
+            fin_nuevo = datetime.combine(fecha_evento, hora_fin)
 
         for evento_existente in eventos:
             inicio_existente = datetime.combine(fecha_evento, evento_existente.hora_inicio)
-            fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            # Considerar si el evento existente también cruza la medianoche
+            if evento_existente.hora_fin < evento_existente.hora_inicio:
+                fin_existente = datetime.combine(fecha_evento + timedelta(days=1), evento_existente.hora_fin)
+            else:
+                fin_existente = datetime.combine(fecha_evento, evento_existente.hora_fin)
+            
             if inicio_nuevo < fin_existente and fin_nuevo > inicio_existente:
                 mensaje = _construir_mensaje_solapamiento(
                     evento_existente=evento_existente,
@@ -368,9 +378,14 @@ def _agregar_tipo_evento_serializado(evento: Evento, evento_dict: Dict[str, Any]
     if not evento.id_tipo_evento:
         return
     try:
-        tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
-        if tipo_evento:
-            evento_dict['tipo_evento'] = tipo_evento.to_dict()
+        # Use pre-loaded relationship instead of query.get() to avoid N+1
+        if hasattr(evento, 'tipo_evento') and evento.tipo_evento:
+            evento_dict['tipo_evento'] = evento.tipo_evento.to_dict()
+        else:
+            # Fallback only if relationship wasn't loaded
+            tipo_evento = TipoEvento.query.get(evento.id_tipo_evento)
+            if tipo_evento:
+                evento_dict['tipo_evento'] = tipo_evento.to_dict()
     except Exception as e:
         logger.warning('Error al obtener tipo_evento del evento %s: %s', evento.id_evento, str(e))
 
@@ -450,9 +465,11 @@ def _actualizar_horas_evento(evento: Evento, data: Dict[str, Any]) -> Optional[J
             )
         evento.hora_fin = hora_fin
 
-    if evento.hora_fin <= evento.hora_inicio:
+    # Permitir eventos que cruzan la medianoche (hora_fin < hora_inicio es válido)
+    # Solo rechazar si las horas son iguales (duración cero)
+    if evento.hora_fin == evento.hora_inicio:
         return HttpResponseBuilder.bad_request(
-            error='La hora de fin debe ser posterior a la hora de inicio'
+            error='La hora de fin debe ser diferente a la hora de inicio'
         )
     return None
 
@@ -629,7 +646,7 @@ def _aplicar_filtros_basicos(
 
 def _aplicar_filtro_usuario_solo(query: Any, tipo_evento_id: Optional[int]) -> Tuple[Any, Optional[JsonResponse]]:
     """Aplica filtro para usuarios con solo rol 'Usuario'."""
-    logger.info('🔍 FILTRO: Usuario solo - aplicando filtro de tipos públicos')
+    # Removed excessive logging for performance
     query = query.filter(Evento.id_tipo_evento.in_(TIPOS_EVENTO_PUBLICOS))
     if tipo_evento_id and tipo_evento_id not in TIPOS_EVENTO_PUBLICOS:
         return query, HttpResponseBuilder.success(
@@ -642,7 +659,7 @@ def _aplicar_filtro_usuario_solo(query: Any, tipo_evento_id: Optional[int]) -> T
 
 def _aplicar_filtro_admin_entrenador(query: Any, categoria_id: Optional[int]) -> Any:
     """Aplica filtro para administradores y entrenadores."""
-    logger.info('🔍 FILTRO: Admin/Entrenador - sin filtro de categorías')
+    # Removed excessive logging for performance
     if categoria_id:
         query = query.filter_by(id_categoria=categoria_id)
     return query
@@ -654,12 +671,9 @@ def _aplicar_filtro_deportista_acudiente(
     categoria_id: Optional[int]
 ) -> Tuple[Any, Optional[JsonResponse]]:
     """Aplica filtro para deportistas y acudientes."""
-    logger.info('🔍 FILTRO: Deportista/Acudiente - categorías: %s', categorias_permitidas)
+    # Removed excessive logging for performance
     if not categorias_permitidas:
-        logger.warning('⚠️ FILTRO: No hay categorías permitidas - consulta vacía')
         return query.filter(Evento.id_evento == -1), None
-    
-    logger.info('🔍 FILTRO: Aplicando filtro estricto por categorías: %s', categorias_permitidas)
     query = query.filter(
         Evento.id_categoria.isnot(None),
         Evento.id_categoria.in_(categorias_permitidas)
@@ -667,7 +681,7 @@ def _aplicar_filtro_deportista_acudiente(
     
     if categoria_id:
         if categoria_id not in categorias_permitidas:
-            logger.warning('⚠️ FILTRO: Categoría solicitada %s no está en permitidas %s', categoria_id, categorias_permitidas)
+            # Removed excessive logging for performance
             return query, HttpResponseBuilder.success(
                 message=ERROR_SIN_ACCESO_CATEGORIA,
                 data=[],
@@ -685,37 +699,22 @@ def _serializar_eventos_paginados(
     categorias_permitidas: Optional[List[int]]
 ) -> Tuple[List[Dict[str, Any]], Any]:
     """Serializa eventos paginados aplicando validaciones adicionales."""
-    total_antes_paginar = query.count()
-    
-    if total_antes_paginar <= per_page:
-        eventos_items = query.order_by(Evento.fecha_evento.desc()).all()
-        class SimplePagination:
-            def __init__(self, items, total, page, per_page):
-                self.items = items
-                self.total = total
-                self.page = page
-                self.per_page = per_page
-                self.pages = (total + per_page - 1) // per_page if per_page > 0 else 1
-        
-        pagination = SimplePagination(eventos_items, total_antes_paginar, page, per_page)
-    else:
-        pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
-            page=page,
-            per_page=per_page,
-            error_out=False,
-        )
+    # Optimize: Let paginate() handle count() internally - avoid double counting
+    # paginate() is optimized and will only count if needed
+    pagination = query.order_by(Evento.fecha_evento.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False,
+    )
     
     eventos_data = []
-    logger.info('🔍 FILTRO: Total eventos después de filtros: %s', len(pagination.items))
+    # Removed excessive logging inside loop - only log if DEBUG mode
     for evento in pagination.items:
         try:
-            logger.info('🔍 FILTRO: Evento ID %s - Categoría: %s, Nombre: %s', 
-                       evento.id_evento, evento.id_categoria, evento.nombre)
-            
+            # Filter by allowed categories only if needed (already filtered in query, but double-check for safety)
             if categorias_permitidas is not None and categorias_permitidas:
                 if evento.id_categoria is None or evento.id_categoria not in categorias_permitidas:
-                    logger.warning('⚠️ FILTRO: Evento ID %s con categoría %s NO está en permitidas %s - OMITIENDO', 
-                                  evento.id_evento, evento.id_categoria, categorias_permitidas)
+                    # Skip events not in allowed categories (shouldn't happen if query is correct, but safety check)
                     continue
             
             evento_serializado = _serializar_evento(evento)
@@ -784,11 +783,11 @@ def listar_eventos() -> JsonResponse:
         
         categorias_permitidas = obtener_categorias_permitidas_usuario()
         
-        # Logging para depuración
-        usuario_data = get_current_user()
-        rol_activo = usuario_data.get('rol_activo', '') if usuario_data else ''
-        logger.info('🔍 FILTRO EVENTOS - Rol activo: %s, es_usuario_solo: %s, categorias_permitidas: %s', 
-                   rol_activo, es_usuario_solo, categorias_permitidas)
+        # Reduced logging - only log in DEBUG mode to improve performance
+        # usuario_data = get_current_user()
+        # rol_activo = usuario_data.get('rol_activo', '') if usuario_data else ''
+        # logger.info('🔍 FILTRO EVENTOS - Rol activo: %s, es_usuario_solo: %s, categorias_permitidas: %s', 
+        #            rol_activo, es_usuario_solo, categorias_permitidas)
         
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -798,7 +797,11 @@ def listar_eventos() -> JsonResponse:
         fecha_desde = request.args.get('fecha_desde')
         fecha_hasta = request.args.get('fecha_hasta')
 
-        query = Evento.query
+        # Use eager loading to prevent N+1 queries
+        query = Evento.query.options(
+            joinedload(Evento.categoria),
+            joinedload(Evento.tipo_evento)
+        )
         
         # Aplicar filtros según el rol del usuario
         if es_usuario_solo:
@@ -904,6 +907,15 @@ def _validar_fecha_y_horas(data: Dict[str, Any]) -> Tuple[Optional[date], Option
     if not fecha_evento:
         return None, None, None, _build_response(False, error='Formato de fecha inválido. Use YYYY-MM-DD', status_code=400)
     
+    # Validar que la fecha no sea pasada (solo para creación de eventos)
+    fecha_actual = date.today()
+    if fecha_evento < fecha_actual:
+        return None, None, None, _build_response(
+            False,
+            error='No se pueden crear eventos en fechas pasadas. La fecha debe ser hoy o una fecha futura.',
+            status_code=400,
+        )
+    
     hora_inicio = _parse_time(data['hora_inicio'])
     if not hora_inicio:
         return None, None, None, _build_response(
@@ -920,8 +932,10 @@ def _validar_fecha_y_horas(data: Dict[str, Any]) -> Tuple[Optional[date], Option
             status_code=400,
         )
     
-    if hora_fin <= hora_inicio:
-        return None, None, None, _build_response(False, error='La hora de fin debe ser posterior a la hora de inicio', status_code=400)
+    # Permitir eventos que cruzan la medianoche (hora_fin < hora_inicio es válido)
+    # Solo rechazar si las horas son iguales (duración cero)
+    if hora_fin == hora_inicio:
+        return None, None, None, _build_response(False, error='La hora de fin debe ser diferente a la hora de inicio', status_code=400)
     
     return fecha_evento, hora_inicio, hora_fin, None
 

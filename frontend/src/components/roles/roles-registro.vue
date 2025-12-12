@@ -20,7 +20,7 @@
           <div class="icono-rol">
             <i :class="obtenerIcono(rol)"></i>
           </div>
-          <h1 class="sub-titulo">{{ obtenerNombreRol(rol) }}</h1>
+          <h1 class="sub-titulo">{{ obtenerNombreRolParaMostrar(rol) }}</h1>
           <div v-if="!tieneRol(rol)" class="badge-no-disponible">No disponible</div>
         </div>
       </div>
@@ -79,12 +79,17 @@ function obtenerNombreRol(rol) {
   return rol.nombre_rol || rol.nombre || rol.rol || 'Sin nombre'
 }
 
+// Obtener nombre del rol para mostrar (SuperAdmin se muestra como Administrador)
+function obtenerNombreRolParaMostrar(rol) {
+  const nombre = obtenerNombreRol(rol)
+  return nombre === 'SuperAdmin' ? 'Administrador' : nombre
+}
+
 // Obtener roles del usuario
 const rolesUsuario = computed(() => {
   if (esSeleccionRol.value && authStore.user?.roles) {
     // Mapear todos los roles del usuario, incluyendo 'Usuario'
     const rolesMapeados = authStore.user.roles.map(r => obtenerNombreRol(r))
-    console.log('📋 Roles del usuario disponibles:', rolesMapeados)
     return rolesMapeados
   }
   return props.usuarioRoles.map(r => obtenerNombreRol(r))
@@ -162,12 +167,13 @@ async function seleccionarRol(rol) {
       ? rolActivoFinal
       : nombreRol
 
-    console.log(`✅ Rol activo establecido: ${rolParaUsar} (seleccionado: ${nombreRol}, backend devolvió: ${rolActivoFinal})`)
 
+    // Mostrar nombre normalizado en el mensaje (SuperAdmin se muestra como Administrador)
+    const rolParaMostrar = rolParaUsar === 'SuperAdmin' ? 'Administrador' : rolParaUsar
     await Swal.fire({
       icon: 'success',
       title: 'Rol seleccionado',
-      text: `Ingresarás con el rol ${rolParaUsar}.`,
+      text: `Ingresarás con el rol ${rolParaMostrar}.`,
       timer: 1200,
       timerProgressBar: true,
       showConfirmButton: false
@@ -206,7 +212,6 @@ function redirigirSegunRol(rolNombre) {
       break
   }
 
-  console.log(`🔄 Redirigiendo a ${rutaDestino} para rol: ${rolNormalizado}`)
   router.push(rutaDestino)
 }
 
@@ -232,8 +237,6 @@ async function cargarRoles() {
 
     if (response.success && response.data) {
       todosRoles.value = response.data
-      console.log('✅ Todos los roles cargados:', todosRoles.value)
-      console.log('📋 Roles del usuario:', rolesUsuario.value)
     } else {
       error.value = 'No se pudieron cargar los roles'
       await Swal.fire({

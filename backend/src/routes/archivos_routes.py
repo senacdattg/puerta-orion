@@ -35,7 +35,7 @@ logger = obtener_registrador('aplicacion')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'}
 MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 UPLOAD_PATH = Path('static') / 'uploads' / 'galeria'
-BASE_IMAGE_URL_DEFAULT = 'http://localhost:5000'
+BASE_IMAGE_URL_DEFAULT = 'http://localhost:5012'
 
 
 # ============================================================================
@@ -285,5 +285,6 @@ def arreglar_urls() -> JsonResponse:
 def registrar_archivos_routes(app: Flask) -> None:
     """Registra las rutas de archivos en la aplicación Flask."""
     app.register_blueprint(archivos_bp)
-    logger.info('Rutas de archivos registradas exitosamente')
+    # Removed logger.info for performance
+    # logger.info('Rutas de archivos registradas exitosamente')
 

@@ -452,7 +452,8 @@ def asociar_acudiente_deportista(id_deportista: int) -> JsonResponse:
         db.session.add(deportista_acudiente)
         db.session.commit()
         
-        logger.info(f'Relación creada: Acudiente {acudiente.id_acudiente} - Deportista {id_deportista}')
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f'Relación creada: Acudiente {acudiente.id_acudiente} - Deportista {id_deportista}')
         
         return HttpResponseBuilder.created(
             data={
@@ -626,7 +627,8 @@ def asociar_acudiente_a_deportista(id_deportista: int) -> JsonResponse:
         db.session.add(deportista_acudiente)
         db.session.commit()
         
-        logger.info(f'Relación creada: Deportista {id_deportista} - Acudiente {id_acudiente}')
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f'Relación creada: Deportista {id_deportista} - Acudiente {id_acudiente}')
         
         return HttpResponseBuilder.created(
             data={
@@ -667,7 +669,8 @@ def obtener_acudientes_por_deportista(id_deportista: int) -> JsonResponse:
         from ..models.acudientes.acudiente import Acudiente
         from ..models.deportistas.deportista import Deportista
         
-        logger.info(f"Buscando acudientes para deportista ID: {id_deportista}")
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Buscando acudientes para deportista ID: {id_deportista}")
         
         # Validar que el deportista existe
         deportista = Deportista.query.filter_by(id_deportista=id_deportista).first()
@@ -679,7 +682,8 @@ def obtener_acudientes_por_deportista(id_deportista: int) -> JsonResponse:
         
         # Obtener todas las relaciones deportista-acudiente para este deportista
         relaciones = DeportistaAcudiente.query.filter_by(id_deportista=id_deportista).all()
-        logger.info(f"Relaciones encontradas: {len(relaciones)}")
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Relaciones encontradas: {len(relaciones)}")
         
         if not relaciones:
             return HttpResponseBuilder.success(
@@ -714,7 +718,8 @@ def obtener_acudientes_por_deportista(id_deportista: int) -> JsonResponse:
             }
             acudientes_data.append(acudiente_dict)
         
-        logger.info(f"Total acudientes procesados: {len(acudientes_data)}")
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Total acudientes procesados: {len(acudientes_data)}")
         
         return HttpResponseBuilder.success(
             data=acudientes_data,
@@ -803,7 +808,8 @@ def obtener_deportistas_por_acudiente(id_acudiente: int) -> JsonResponse:
     from ..models.deportistas.deportista import Deportista
 
     try:
-        logger.info(f"Buscando deportistas para acudiente ID: {id_acudiente}")
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Buscando deportistas para acudiente ID: {id_acudiente}")
 
         # Validación de ID de acudiente
         if not _is_valid_acudiente_id(id_acudiente):
@@ -814,7 +820,8 @@ def obtener_deportistas_por_acudiente(id_acudiente: int) -> JsonResponse:
             )
 
         relaciones = DeportistaAcudiente.query.filter_by(id_acudiente=id_acudiente).all()
-        logger.info(f"Relaciones encontradas: {len(relaciones)}")
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Relaciones encontradas: {len(relaciones)}")
 
         if not relaciones:
             logger.warning(f"No se encontraron relaciones para acudiente {id_acudiente}")
@@ -825,7 +832,8 @@ def obtener_deportistas_por_acudiente(id_acudiente: int) -> JsonResponse:
 
         deportistas_data: List[Dict[str, Any]] = []
         for relacion in relaciones:
-            logger.info(f"Procesando relación - Deportista ID: {relacion.id_deportista}, Acudiente ID: {relacion.id_acudiente}")
+            # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Procesando relación - Deportista ID: {relacion.id_deportista}, Acudiente ID: {relacion.id_acudiente}")
             deportista = Deportista.query.filter_by(id_deportista=relacion.id_deportista).first()
             if not deportista:
                 logger.warning(f"Deportista {relacion.id_deportista} no encontrado")
@@ -834,10 +842,12 @@ def obtener_deportistas_por_acudiente(id_acudiente: int) -> JsonResponse:
                 logger.warning(f"Deportista {relacion.id_deportista} no tiene persona asociada")
                 continue
             deportista_dict = _serialize_deportista(deportista, relacion)
-            logger.info(f"Datos del deportista: {deportista_dict}")
+            # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Datos del deportista: {deportista_dict}")
             deportistas_data.append(deportista_dict)
 
-        logger.info(f"Total deportistas procesados: {len(deportistas_data)}")
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(f"Total deportistas procesados: {len(deportistas_data)}")
         return HttpResponseBuilder.success(
             data=deportistas_data,
             message=f"Se encontraron {len(deportistas_data)} deportista(s) asociado(s)"

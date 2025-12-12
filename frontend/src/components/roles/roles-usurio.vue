@@ -100,7 +100,7 @@ async function cambiarRol() {
 }
 
 function accionBoton() {
-  router.push('/ver-general')
+  router.push('/perfil')
 }
 
 onMounted(() => {

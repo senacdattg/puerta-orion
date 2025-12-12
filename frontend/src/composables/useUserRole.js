@@ -7,6 +7,15 @@ import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
 /**
+ * Normaliza un rol para mostrar: SuperAdmin se muestra como Administrador
+ * @param {string} role - Nombre del rol
+ * @returns {string} - Rol normalizado para visualización
+ */
+export function normalizeRoleForDisplay(role) {
+  return role === 'SuperAdmin' ? 'Administrador' : role
+}
+
+/**
  * Configuración de elementos de navegación con sus roles permitidos
  */
 export const navigationConfig = [
@@ -100,6 +109,11 @@ export function useUserRole() {
     }
     const roles = availableRoles.value
     return roles.length > 0 ? roles[0] : 'Usuario'
+  })
+
+  // Rol normalizado para mostrar en la interfaz (SuperAdmin se muestra como Administrador)
+  const userRoleDisplay = computed(() => {
+    return normalizeRoleForDisplay(userRole.value)
   })
 
   const isAdminOrCoach = computed(() => {
@@ -199,6 +213,7 @@ export function useUserRole() {
   return {
     // Propiedades computadas
     userRole,
+    userRoleDisplay,  // Rol normalizado para mostrar (SuperAdmin se muestra como Administrador)
     isAdminOrCoach,
     isDeportista,
     isAcudiente,

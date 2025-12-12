@@ -11,7 +11,7 @@ services:
       # MYSQL_USER: ${MYSQL_USER:-root}
       # MYSQL_PASSWORD: ${MYSQL_PASSWORD:-123456}
     ports:
-      - "3306:3306"
+      - "3012:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -38,21 +38,22 @@ services:
       FLASK_ENV: development
       FLASK_RUN_RELOAD: "true"
       RUN_SEEDERS: "true"
+      PORT: "5012"
       DB_HOST: ${DB_HOST:-db}
       DB_PORT: ${DB_PORT:-3306}
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-123456}
       DB_NAME: ${DB_NAME:-puerta_orion}
-      CORS_ORIGINS: http://localhost:5173,http://localhost:8080,http://frontend,http://frontend:80,http://frontend:8080,http://frontend:5173
+      CORS_ORIGINS: http://localhost:3000,http://localhost:5012,http://localhost:5173,http://localhost:8080,http://frontend,http://frontend:80,http://frontend:8080,http://frontend:5173
     ports:
-      - "5000:5000"
+      - "5012:5012"
     volumes:
       - ./backend:/app
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:5012/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -67,7 +68,7 @@ services:
     container_name: puerta-orion-frontend
     restart: unless-stopped
     environment:
-      VITE_API_URL: http://localhost:5000
+      VITE_API_URL: http://localhost:5012
     ports:
       - "5173:5173"
     volumes:

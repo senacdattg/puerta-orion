@@ -814,6 +814,7 @@ const puedeEditarPesoAltura = computed(() => {
 // Altura y peso solo pueden ser editados por SuperAdmin, Administrador y Entrenador
 const puedeEditarCampo = computed(() => {
   const rol = rolUsuario.value
+  // SuperAdmin se trata como Administrador
   const esAdminOSuperAdmin = rol === 'Administrador' || rol === 'SuperAdmin'
 
   // Campos base editables para todos los roles

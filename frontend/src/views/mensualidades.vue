@@ -49,9 +49,7 @@ async function cargarMensualidades() {
   loading.value = true;
   errorMsg.value = '';
   try {
-    console.log('🔄 [Mensualidades] Iniciando carga de mensualidades...');
     const res = await mensualidadesService.list();
-    console.log('📥 [Mensualidades] Respuesta del servicio:', res);
 
     if (!res) {
       throw new Error('No se recibió respuesta del servidor');
@@ -62,9 +60,7 @@ async function cargarMensualidades() {
     }
 
     const items = res.data || [];
-    console.log('📊 [Mensualidades] Items recibidos:', items.length);
     mensualidades.value = items.map(mapMensualidadToCard);
-    console.log('✅ [Mensualidades] Mensualidades cargadas exitosamente:', mensualidades.value.length);
   } catch (e) {
     console.error('❌ [Mensualidades] Error al cargar:', e);
     errorMsg.value = e?.message || 'Error cargando mensualidades';

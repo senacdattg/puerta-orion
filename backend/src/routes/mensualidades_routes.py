@@ -15,6 +15,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from flask import Blueprint, Flask, Response, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import String, cast, extract, or_
+from sqlalchemy.orm import joinedload
 
 from ..middleware.auth_decorator import get_current_user, has_role, permission_required
 from ..models.base import db
@@ -224,11 +225,14 @@ def _normalizar_documento_persona(documento: Any) -> Optional[str]:
 
 def _adjuntar_info_persona_dict(mensualidad_obj: Mensualidad, destino_dict: Dict[str, Any]) -> Dict[str, Any]:
     """Agrega información de persona asociada a la respuesta serializada."""
+    # Use pre-loaded relationship (from eager loading) - avoid query in loop
     persona_rel = getattr(mensualidad_obj, 'persona', None)
     persona_nombre = _extraer_nombre_persona(persona_rel)
     persona_documento = _extraer_documento_persona(persona_rel)
 
+    # Only query as last resort if relationship wasn't loaded (shouldn't happen with eager loading)
     if (persona_nombre is None or persona_documento is None) and Persona is not None:
+        # This fallback should rarely execute if eager loading is working correctly
         persona_db = db.session.get(Persona, getattr(mensualidad_obj, 'id_persona', None))
         if persona_db is not None:
             persona_nombre = persona_nombre or _extraer_nombre_persona(persona_db)
@@ -681,13 +685,14 @@ def _actualizar_vencimiento_y_saldo_post_abono(
     # This balance is more reliable than reading mensualidad.saldo_pendiente directly
     saldo_float = float(saldo_actual)
     
-    logger.info(
-        "Actualizando saldo pendiente: mensualidad_id=%s, saldo_actual=%s, monto_abonado=%s, nuevo_saldo=%s",
-        mensualidad.id_mensualidad,
-        saldo_float,
-        monto_abonado,
-        max(0.0, saldo_float - monto_abonado)
-    )
+    # Removed logger.info for performance - uncomment for debugging if needed
+    # logger.info(
+    #     "Actualizando saldo pendiente: mensualidad_id=%s, saldo_actual=%s, monto_abonado=%s, nuevo_saldo=%s",
+    #     mensualidad.id_mensualidad,
+    #     saldo_float,
+    #     monto_abonado,
+    #     max(0.0, saldo_float - monto_abonado)
+    # )
     
     # Calculate new balance: current balance minus amount paid
     nuevo_saldo = max(0.0, saldo_float - monto_abonado)
@@ -758,7 +763,11 @@ def listar_mensualidades() -> JsonResponse:
         estado = request.args.get('estado')
         activo = request.args.get('activo', type=int)
 
-        query = Mensualidad.query
+        # Use eager loading to prevent N+1 queries
+        query = Mensualidad.query.options(
+            joinedload(Mensualidad.persona),
+            joinedload(Mensualidad.metodo_pago)
+        )
         if persona_id is not None:
             query = query.filter(Mensualidad.id_persona == persona_id)
         elif acudido_ids:
@@ -1015,14 +1024,15 @@ def abonar_mensualidad(mensualidad_id: int) -> JsonResponse:
         monto_base = _obtener_monto_base(mensualidad)
         saldo_actual = _obtener_saldo_actual(mensualidad, monto_base)
 
-        logger.info(
-            "Registrando abono: mensualidad_id=%s, monto_base=%s, saldo_actual=%s, monto_abonado=%s, saldo_pendiente_bd=%s",
-            mensualidad_id,
-            monto_base,
-            saldo_actual,
-            monto_abonado,
-            mensualidad.saldo_pendiente
-        )
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(
+        #     "Registrando abono: mensualidad_id=%s, monto_base=%s, saldo_actual=%s, monto_abonado=%s, saldo_pendiente_bd=%s",
+        #     mensualidad_id,
+        #     monto_base,
+        #     saldo_actual,
+        #     monto_abonado,
+        #     mensualidad.saldo_pendiente
+        # )
 
         if saldo_actual >= 0 and monto_abonado > saldo_actual + 1e-6:
             raise RequestValidationError(ERROR_MONTO_ABONADO_SUPERA, status_code=400)
@@ -1063,21 +1073,23 @@ def abonar_mensualidad(mensualidad_id: int) -> JsonResponse:
         _actualizar_estado_y_fecha_pago(mensualidad, fecha_abono if mensualidad.saldo_pendiente == 0 else None)
 
         # Verificar el saldo antes del commit
-        logger.info(
-            "Antes del commit: mensualidad_id=%s, saldo_pendiente=%s",
-            mensualidad_id,
-            mensualidad.saldo_pendiente
-        )
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(
+        #     "Antes del commit: mensualidad_id=%s, saldo_pendiente=%s",
+        #     mensualidad_id,
+        #     mensualidad.saldo_pendiente
+        # )
         
         db.session.commit()
         
         # Refrescar después del commit para asegurar que tenemos el valor final
         db.session.refresh(mensualidad)
-        logger.info(
-            "Después del commit: mensualidad_id=%s, saldo_pendiente=%s",
-            mensualidad_id,
-            mensualidad.saldo_pendiente
-        )
+        # Removed logger.info for performance - uncomment for debugging if needed
+        # logger.info(
+        #     "Después del commit: mensualidad_id=%s, saldo_pendiente=%s",
+        #     mensualidad_id,
+        #     mensualidad.saldo_pendiente
+        # )
         # Usar _serializar_mensualidad para incluir todos los campos necesarios (created_at, estado_texto, persona_nombre, etc.)
         return jsonify({
             'success': True,
@@ -1369,7 +1381,8 @@ def renovar_mensualidades_automaticamente() -> JsonResponse:
 def registrar_mensualidades_routes(app: Flask) -> None:
     """Registra las rutas de mensualidades en la aplicación Flask."""
     app.register_blueprint(mensualidades_bp)
-    logger.info("Rutas de mensualidades registradas exitosamente")
+    # Removed logger.info for performance
+    # logger.info("Rutas de mensualidades registradas exitosamente")
 
 
 

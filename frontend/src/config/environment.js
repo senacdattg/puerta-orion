@@ -1,7 +1,7 @@
 // Configuración del entorno de la aplicación
 // Siguiendo el principio SRP - este archivo solo maneja configuración del entorno
 
-const LOCAL_API_FALLBACK = 'http://localhost:5000';
+const LOCAL_API_FALLBACK = 'http://localhost:5012';
 
 const ENV_CONFIG = {
   development: {
@@ -97,7 +97,7 @@ export const API_CONFIG = {
 
 export const LOG_CONFIG = {
   level: CURRENT_CONFIG.logLevel,
-  enabled: CURRENT_CONFIG.debug
+  enabled: false  // Logs deshabilitados en todos los entornos
 };
 
 export const APP_ENV_CONFIG = {

@@ -192,7 +192,8 @@ class DeportistaService:
             db.session.add(deportista)
             db.session.commit()
 
-            logger.info(f'Deportista creado exitosamente: ID {deportista.id_deportista}')
+            # Removed logger.info for performance
+            # logger.info(f'Deportista creado exitosamente: ID {deportista.id_deportista}')
 
             return {
                 'success': True,
@@ -388,7 +389,8 @@ class DeportistaService:
 
             db.session.commit()
 
-            logger.info(f'Deportista actualizado exitosamente: ID {id_deportista}')
+            # Removed logger.info for performance
+            # logger.info(f'Deportista actualizado exitosamente: ID {id_deportista}')
 
             return {
                 'success': True,
@@ -776,7 +778,8 @@ class DeportistaService:
         if diagnosticos is not None:
             # If empty list, just delete (already done above) and return
             if len(diagnosticos) == 0:
-                logger.info(f'Diagnósticos eliminados para el deportista {id_deportista}')
+                # Removed logger.info for performance
+            # logger.info(f'Diagnósticos eliminados para el deportista {id_deportista}')
                 return None
             
             # Validate diagnosticos if tipo_enfermedad is provided
@@ -793,7 +796,8 @@ class DeportistaService:
                     fecha=date.today()
                 )
                 db.session.add(diagnostico_deportista)
-            logger.info(f'{len(diagnosticos)} diagnóstico(s) actualizados para el deportista {id_deportista}')
+            # Removed logger.info for performance
+            # logger.info(f'{len(diagnosticos)} diagnóstico(s) actualizados para el deportista {id_deportista}')
         
         return None
 
@@ -918,7 +922,8 @@ class DeportistaService:
                 return error_actualizacion
             
             db.session.commit()
-            logger.info(f'Deportista actualizado completamente: ID {id_deportista}')
+            # Removed logger.info for performance
+            # logger.info(f'Deportista actualizado completamente: ID {id_deportista}')
             
             respuesta = DeportistaService._construir_respuesta_actualizacion(deportista)
             return {

@@ -461,7 +461,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { API_CONFIG, LOG_CONFIG } from '@/config/environment'
@@ -476,6 +476,9 @@ defineOptions({
 
 const router = useRouter()
 const authStore = useAuthStore()
+
+// Inyectar el método para cerrar el menú lateral
+const closeSidebarMenu = inject('closeSidebarMenu', null)
 const usuario = ref(null)
 const detalle = ref(null)
 
@@ -1004,7 +1007,6 @@ onMounted(async () => {
 
 watch(() => authStore.userDetail, (nuevo) => {
   if (LOG_CONFIG.enabled) {
-    console.log('👀 Watch detectado cambio en userDetail:', nuevo)
   }
   if (nuevo) {
     detalle.value = nuevo
@@ -1017,7 +1019,6 @@ watch(() => authStore.userDetail, (nuevo) => {
 
 watch(() => authStore.user, (nuevo) => {
   if (LOG_CONFIG.enabled) {
-    console.log('👀 Watch detectado cambio en user:', nuevo)
   }
   if (nuevo) {
     usuario.value = nuevo
@@ -1026,7 +1027,6 @@ watch(() => authStore.user, (nuevo) => {
 
 // Observar cambios en el rol activo para cargar/ocultar información según el rol
 watch(() => authStore.activeRole, async (nuevoRol) => {
-  console.log('👀 Watch detectado cambio en activeRole:', nuevoRol)
   // Si cambia a Deportista y hay información de deportista, cargar acudientes
   if (nuevoRol === 'Deportista' && detalle.value?.deportista?.id_deportista) {
     await cargarAcudientesDeportista()
@@ -1034,6 +1034,10 @@ watch(() => authStore.activeRole, async (nuevoRol) => {
 })
 
 const editarPerfil = () => {
+  // Cerrar el menú lateral antes de navegar
+  if (closeSidebarMenu) {
+    closeSidebarMenu()
+  }
   router.push('/actualizar-info')
 }
 
@@ -1069,16 +1073,19 @@ const getNombreRol = (rol) => {
 }
 
 const getNombreRolCompleto = (rol) => {
+  const nombreRol = getNombreRol(rol)
+  // SuperAdmin se muestra como Administrador en la vista
+  const rolNormalizado = nombreRol === 'SuperAdmin' ? 'Administrador' : nombreRol
+  
   const nombres = {
     'Deportista': '🏃 Deportista',
     'Acudiente': '👨‍👩‍👧 Acudiente',
     'Entrenador': '⚽ Entrenador',
     'Administrador': '👤 Administrador',
-    'SuperAdmin': '👑 Super Admin',
     'Usuario': '👤 Usuario',
     'usuario': '👤 Usuario'
   }
-  return nombres[getNombreRol(rol)] || getNombreRol(rol)
+  return nombres[rolNormalizado] || rolNormalizado
 }
 
 const getRolId = (rol) => {

@@ -115,14 +115,12 @@ class AuthService {
 
       clearTimeout(timeoutId)
 
-      console.log('📥 Respuesta recibida - Status:', response.status, response.statusText)
 
       // Verificar si la respuesta es JSON válido
       let data
       const contentType = response.headers.get('content-type')
       if (contentType?.includes('application/json')) {
         data = await response.json()
-        console.log('📦 Datos recibidos:', data)
       } else {
         const text = await response.text()
         console.error('❌ Respuesta no es JSON:', text)
@@ -135,7 +133,6 @@ class AuthService {
         throw new Error(errorMsg)
       }
 
-      console.log('✅ Registro exitoso')
       return { success: true, data: data.data }
     } catch (error) {
       console.error('❌ Error en registro:', error)
@@ -390,7 +387,6 @@ class AuthService {
         console.warn('⚠️ Advertencia al obtener detalle:', data.warning)
       }
 
-      console.log('✅ Detalle del perfil obtenido:', data)
       return { success: true, ...data }
     } catch (error) {
       // No loguear errores de token expirado como errores críticos

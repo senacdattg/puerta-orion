@@ -421,14 +421,12 @@ function cerrarModalDetalleCompleto() {
 }
 
 function abrirModalEnModoEdicion(mensualidad) {
-  console.log('Abriendo modal en modo edición para:', mensualidad);
   mensualidadSeleccionada.value = mensualidad;
   modalDetalleEnEdicion.value = true;
   modalDetalleCompletoVisible.value = true;
 }
 
 async function guardarCambiosMensualidad(mensualidadActualizada) {
-  console.log('Guardando cambios de mensualidad:', mensualidadActualizada);
 
     // El array de mensualidades se actualizará en el componente padre a través del emit 'editar'
     // Por ahora, solo actualizamos mensualidadSeleccionada para el modal
@@ -437,13 +435,6 @@ async function guardarCambiosMensualidad(mensualidadActualizada) {
     const idActualizada = mensualidadActualizada.id || mensualidadActualizada.id_mensualidad;
     const idSeleccionada = mensualidadSeleccionada.value?.id || mensualidadSeleccionada.value?.id_mensualidad;
 
-    console.log('🔄 [guardarCambiosMensualidad] Comparando IDs:', {
-      idActualizada,
-      idSeleccionada,
-      modalAbierto: modalDetalleCompletoVisible.value,
-      saldoPendienteRaw: mensualidadActualizada.saldo_pendiente_raw,
-      saldoPendiente: mensualidadActualizada.saldo_pendiente
-    });
 
     // Actualizar la mensualidad seleccionada en el modal si el modal está abierto
     // Comparar IDs de forma más flexible
@@ -465,15 +456,7 @@ async function guardarCambiosMensualidad(mensualidadActualizada) {
         // NOSONAR: S6781 - JSON.parse/stringify is needed as fallback when structuredClone fails
         mensualidadActualizadaClon = JSON.parse(JSON.stringify(mensualidadActualizada)); // NOSONAR
       }
-      console.log('✅ [guardarCambiosMensualidad] Actualizando mensualidad seleccionada con saldo_pendiente_raw:', mensualidadActualizadaClon.saldo_pendiente_raw);
       mensualidadSeleccionada.value = mensualidadActualizadaClon;
-  } else {
-    console.warn('⚠️ [guardarCambiosMensualidad] No se actualizó mensualidad seleccionada', {
-      idActualizada,
-      idSeleccionada,
-      modalAbierto: modalDetalleCompletoVisible.value,
-      idsCoinciden
-    });
   }
 
   // Emitir al padre para actualizar la lista de mensualidades

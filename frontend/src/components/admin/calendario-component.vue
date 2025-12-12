@@ -230,6 +230,7 @@
                                     type="date"
                                     required
                                     class="input-edicion"
+                                    :min="modoEdicion ? undefined : obtenerFechaActual()"
                                     :disabled="fechaBloqueada || (!puedeCrear && !modoEdicion)"
                                     :readonly="fechaBloqueada || (!puedeCrear && !modoEdicion)"
                                 />
@@ -585,21 +586,14 @@ export default {
     },
 
     async mounted() {
-        console.log('🔍 Calendario montado con rol:', this.rol);
 
         // Cargar permisos del usuario desde el backend
         try {
             await this.authStore.loadUserPermissions();
-            console.log('✅ Permisos cargados desde el backend:', this.authStore.permissions);
         } catch (error) {
             console.error('❌ Error cargando permisos:', error);
         }
 
-        console.log('🔍 Permisos del usuario:', {
-            puedeCrear: this.puedeCrear,
-            puedeEditar: this.puedeEditar,
-            puedeEliminar: this.puedeEliminar
-        });
         await this.inicializarComponente();
     },
 
@@ -898,25 +892,62 @@ export default {
             this.actualizarCalendario();
         },
 
-        seleccionarDia(dia) {
+        esFechaPasada(fecha) {
+            if (!fecha) return false;
+            const fechaActual = this.obtenerFechaActual();
+            return fecha < fechaActual;
+        },
+
+        async validarFechaAntesDeAbrir(fecha) {
+            if (this.esFechaPasada(fecha)) {
+                await Swal.fire({
+                    icon: 'warning',
+                    title: 'Fecha no válida',
+                    text: 'No se pueden crear eventos en fechas pasadas. Por favor, selecciona una fecha de hoy en adelante.',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#004AAD'
+                });
+                return false;
+            }
+            return true;
+        },
+
+        async seleccionarDia(dia) {
             if (!dia.esMesActual) return;
 
             if (dia.eventos && dia.eventos.length > 0) {
                 // Si hay eventos, mostrar selector que permite ver/editar o agregar nuevo
+                // Permitir ver eventos incluso si la fecha es pasada
                 this.eventosDelDia = dia.eventos;
                 this.mostrarSelectorEventos(dia.fecha);
             } else if (this.puedeCrear) {
+                // Si no hay eventos y puede crear, validar que la fecha no sea pasada
+                if (dia.fecha) {
+                    const fechaValida = await this.validarFechaAntesDeAbrir(dia.fecha);
+                    if (!fechaValida) {
+                        return;
+                    }
+                }
                 this.abrirModal({ fecha: dia.fecha, bloquear: true });
             }
             // Si no tiene permisos de creación y no hay eventos, no hace nada
         },
 
-        agregarEventoADia(dia, event) {
+        async agregarEventoADia(dia, event) {
             // Prevenir que el click en el botón también active seleccionarDia
             if (event) {
                 event.stopPropagation();
             }
             if (!dia.esMesActual || !this.puedeCrear) return;
+
+            // Validar si la fecha es pasada antes de abrir el modal
+            if (dia.fecha) {
+                const fechaValida = await this.validarFechaAntesDeAbrir(dia.fecha);
+                if (!fechaValida) {
+                    return;
+                }
+            }
+
             this.abrirModal({ fecha: dia.fecha, bloquear: true });
         },
 
@@ -980,24 +1011,26 @@ export default {
         // Use shared error extraction utility
         extraerMensajeError,
 
-        async cerrarModal() {
-            // Verificar si hay cambios sin guardar
-            const tieneCambios = this.verificarCambios()
+        async cerrarModal(omitirVerificacion = false) {
+            // Verificar si hay cambios sin guardar (solo si no se omite la verificación)
+            if (!omitirVerificacion) {
+                const tieneCambios = this.verificarCambios()
 
-            if (tieneCambios) {
-                const result = await Swal.fire({
-                    icon: 'question',
-                    title: '¿Descartar cambios?',
-                    text: '¿Estás seguro de que deseas cerrar? Los cambios sin guardar se perderán.',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, cerrar',
-                    cancelButtonText: 'Continuar',
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d'
-                })
+                if (tieneCambios) {
+                    const result = await Swal.fire({
+                        icon: 'question',
+                        title: '¿Descartar cambios?',
+                        text: '¿Estás seguro de que deseas cerrar? Los cambios sin guardar se perderán.',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, cerrar',
+                        cancelButtonText: 'Continuar',
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d'
+                    })
 
-                if (!result.isConfirmed) {
-                    return
+                    if (!result.isConfirmed) {
+                        return
+                    }
                 }
             }
 
@@ -1027,6 +1060,8 @@ export default {
         },
 
         mostrarSelectorEventos(fecha = null) {
+            // Permitir ver eventos incluso si la fecha es pasada
+            // La validación se hará al intentar agregar un nuevo evento
             this.selectorEventosVisible = true;
             this.indiceEventoActual = 0; // Resetear al primer evento
             this.pausarCarrusel = false; // Reiniciar el carrusel
@@ -1046,7 +1081,15 @@ export default {
             this.fechaBloqueada = false;
         },
 
-        abrirModalDesdeSelector() {
+        async abrirModalDesdeSelector() {
+            // Validar si la fecha es pasada antes de abrir el modal
+            if (this.nuevoEvento.fecha) {
+                const fechaValida = await this.validarFechaAntesDeAbrir(this.nuevoEvento.fecha);
+                if (!fechaValida) {
+                    return;
+                }
+            }
+
             // Cerrar el selector y abrir el modal de creación
             this.selectorEventosVisible = false;
             this.abrirModal({ fecha: this.nuevoEvento.fecha, bloquear: true });
@@ -1114,6 +1157,27 @@ export default {
             return this.nuevoEvento.fecha ? null : 'Debe especificar una fecha';
         },
 
+        validarFechaNoPasada() {
+            // Solo validar fechas pasadas cuando se está creando un nuevo evento, no al editar
+            if (this.modoEdicion) {
+                return null;
+            }
+
+            if (!this.nuevoEvento.fecha) {
+                return null; // La validación de fecha vacía se maneja en validarFecha()
+            }
+
+            const fechaActual = this.obtenerFechaActual();
+            const fechaEvento = this.nuevoEvento.fecha;
+
+            // Comparar fechas en formato YYYY-MM-DD (permite comparación lexicográfica)
+            if (fechaEvento < fechaActual) {
+                return 'No se pueden crear eventos en fechas pasadas. La fecha debe ser hoy o una fecha futura.';
+            }
+
+            return null;
+        },
+
         validarHoraInicio() {
             if (this.nuevoEvento.horaInicio || this.nuevoEvento.hora) {
                 return null;
@@ -1137,8 +1201,12 @@ export default {
         },
 
         validarRangoHoras() {
-            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin && this.nuevoEvento.horaFin <= this.nuevoEvento.horaInicio) {
-                return 'La hora de fin debe ser posterior a la hora de inicio';
+            if (this.nuevoEvento.horaInicio && this.nuevoEvento.horaFin) {
+                // Permitir eventos que cruzan la medianoche (horaFin < horaInicio es válido)
+                // Solo rechazar si las horas son iguales (duración cero)
+                if (this.nuevoEvento.horaFin === this.nuevoEvento.horaInicio) {
+                    return 'La hora de fin debe ser diferente a la hora de inicio';
+                }
             }
             return null;
         },
@@ -1148,6 +1216,7 @@ export default {
                 this.validarTitulo(),
                 this.validarTipoEvento(),
                 this.validarFecha(),
+                this.validarFechaNoPasada(),
                 this.validarHoraInicio(),
                 this.validarHoras(),
                 this.validarCategoria(),
@@ -1274,28 +1343,6 @@ export default {
             }
         },
 
-        async preguntarAgregarOtroEvento(fechaActual) {
-            const confirmacion = await Swal.fire({
-                icon: 'question',
-                title: '¿Agregar otro evento?',
-                text: '¿Quieres crear otro evento para este mismo día?',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, agregar',
-                cancelButtonText: 'No',
-                confirmButtonColor: '#004AAD',
-                cancelButtonColor: '#6c757d'
-            });
-
-            if (confirmacion.isConfirmed) {
-                this.limpiarFormulario();
-                this.nuevoEvento.fecha = fechaActual;
-                // Guardar estado inicial para el nuevo formulario
-                this.nuevoEventoInicial = this.clonarObjeto(this.nuevoEvento);
-                return true;
-            }
-            return false;
-        },
-
         async crearNuevoEvento() {
             if (!(await this.validarPermisosCreacion())) {
                 return;
@@ -1339,12 +1386,12 @@ export default {
                     // El evento ya está en la cache local, así que el calendario ya se actualizó
                 }
 
-                const fechaActual = this.nuevoEvento.fecha;
-                const quiereAgregarOtro = await this.preguntarAgregarOtroEvento(fechaActual);
+                // Limpiar el formulario y resetear estado para evitar la alerta de cambios sin guardar
+                this.limpiarFormulario();
+                this.nuevoEventoInicial = null;
 
-                if (!quiereAgregarOtro) {
-                    this.cerrarModal();
-                }
+                // Cerrar el modal sin verificar cambios (ya se guardó exitosamente)
+                this.cerrarModal(true);
             } catch (error) {
                 // Cerrar el loading si aún está abierto
                 Swal.close()
@@ -1416,12 +1463,46 @@ export default {
                 try {
                     this.cargando = true;
                     await calendarioService.eliminarEvento(this.eventoSeleccionado.id);
+
+                    // Actualizar el calendario
                     this.actualizarCalendario();
-                    this.cerrarModal();
-                    this.mostrarNotificacion('Evento eliminado exitosamente', 'success');
+
+                    // Intentar recargar eventos del servidor
+                    try {
+                        await calendarioService.cargarEventos();
+                        this.actualizarCalendario();
+                    } catch (recargaError) {
+                        console.warn('⚠️ Error al recargar eventos, pero el evento ya fue eliminado:', recargaError.message);
+                    }
+
+                    // Cerrar todos los modales sin restaurar el selector
+                    this.modalVisible = false;
+                    this.selectorEventosVisible = false;
+                    this.selectorEventosVisibleAntes = false;
+                    this.fechaBloqueada = false;
+                    this.fechaSelectorGuardada = null;
+                    this.limpiarFormulario();
+                    this.nuevoEventoInicial = null;
+                    this.eventoSeleccionado = null;
+
+                    // Mostrar mensaje de éxito
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Evento eliminado exitosamente!',
+                        text: 'El evento se ha eliminado correctamente del sistema.',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#004AAD'
+                    });
                 } catch (error) {
                     console.error('Error al eliminar evento:', error);
-                    this.mostrarNotificacion(error.message || 'Error al eliminar el evento', 'error');
+                    const mensajeError = this.extraerMensajeError(error);
+                    await Swal.fire({
+                        icon: 'error',
+                        title: 'Error al eliminar evento',
+                        html: `<p><strong>No se pudo eliminar el evento.</strong></p><p>${mensajeError}</p>`,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#dc3545'
+                    });
                 } finally {
                     this.cargando = false;
                 }
@@ -1455,7 +1536,7 @@ export default {
 
         mostrarNotificacion(mensaje, tipo) {
             // Implementar sistema de notificaciones
-            console.log(`${tipo}: ${mensaje}`);
+            // Los mensajes de éxito ya se muestran con Swal.fire en las funciones correspondientes
         },
 
         obtenerNombreTipoEvento(idTipoEvento) {

@@ -312,6 +312,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import catalogosService from '@/services/catalogosService';
 import deportistasService from '@/services/deportistasService';
+import { getApiUrl } from '@/config/environment';
 import Swal from 'sweetalert2';
 
 const route = useRoute();
@@ -417,7 +418,7 @@ async function cargarCatalogos() {
     catalogos.value.sexos = catalogosBasicos.sexos || [];
 
     // Catálogos específicos de deportistas
-    const baseURL = 'http://localhost:5000';
+    const baseURL = getApiUrl();
     const endpoints = [
       '/api/deportistas/catalogos/grupos-sanguineos',
       '/api/deportistas/catalogos/ciudades-residencia',
@@ -715,9 +716,10 @@ async function procesarActualizacion() {
 async function procesarRegistro(token) {
   const datosEnvio = construirDatosRegistro();
   console.log('📤 Datos a registrar:', datosEnvio);
-  console.log('🌐 Enviando a: http://localhost:5000/api/deportistas/registrar');
+  const apiUrl = getApiUrl('/api/deportistas/registrar');
+  console.log('🌐 Enviando a:', apiUrl);
 
-  const response = await fetch('http://localhost:5000/api/deportistas/registrar', {
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

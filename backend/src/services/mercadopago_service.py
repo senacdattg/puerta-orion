@@ -46,7 +46,8 @@ class MercadoPagoService:
         # Inicializar SDK de Mercado Pago
         self.sdk = mercadopago.SDK(self.access_token)
         
-        logger.info(f"MercadoPagoService inicializado en modo: {self.environment}")
+        # Removed logger.info for performance
+        # logger.info(f"MercadoPagoService inicializado en modo: {self.environment}")
 
     # Utilidad para sumar meses sin dependencias externas
     @staticmethod
@@ -174,7 +175,8 @@ class MercadoPagoService:
                 db.session.add(transaccion)
                 db.session.commit()
                 
-                logger.info(f"Preferencia creada exitosamente: {preference['id']}")
+                # Removed logger.info for performance
+        # logger.info(f"Preferencia creada exitosamente: {preference['id']}")
                 
                 return {
                     "success": True,
@@ -223,7 +225,8 @@ class MercadoPagoService:
                     transaccion.actualizar_estado(nuevo_estado, payment)
                     db.session.commit()
                     
-                    logger.info(f"Pago verificado: {payment_id} - Estado: {nuevo_estado}")
+                    # Removed logger.info for performance
+        # logger.info(f"Pago verificado: {payment_id} - Estado: {nuevo_estado}")
                 
                 return {
                     "success": True,
@@ -291,7 +294,8 @@ class MercadoPagoService:
         self._crear_abono_mensualidad(mensualidad, monto_abonado, fecha_abono)
         calculo = self._aplicar_abono_mensualidad(mensualidad, monto_abonado)
         db.session.commit()
-        logger.info(f"Mensualidad {mensualidad.id_mensualidad} actualizada por webhook MP: {calculo}")
+        # Removed logger.info for performance
+        # logger.info(f"Mensualidad {mensualidad.id_mensualidad} actualizada por webhook MP: {calculo}")
 
     def _es_pago_mensualidad_aprobado(self, estado: str, metadata: Dict[str, Any]) -> bool:
         """Verifica si es un pago de mensualidad aprobado."""
@@ -318,7 +322,8 @@ class MercadoPagoService:
                 logger.error(f"Error aplicando abono de mensualidad por webhook: {str(ex)}")
                 db.session.rollback()
         
-        logger.info(f"Webhook procesado exitosamente: {payment_id}")
+        # Removed logger.info for performance
+        # logger.info(f"Webhook procesado exitosamente: {payment_id}")
         return {"success": True, "message": "Webhook procesado"}
 
     def procesar_webhook(self, datos_webhook: Dict[str, Any]) -> Dict[str, Any]:
