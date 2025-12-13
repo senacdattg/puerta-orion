@@ -1,0 +1,233 @@
+/* ===== ESTILOS COMPARTIDOS PARA LISTADOS ===== */
+/* Estilos compartidos para listados con filtros, tarjetas y estados */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS DE FILTROS Y BÚSQUEDA ===== */
+
+/* --- Contenedor de filtros y búsqueda --- */
+.contenedor-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-muy-claro);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Buscador --- */
+.buscador {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+}
+
+/* --- Entrada de búsqueda --- */
+.entrada-busqueda {
+  width: 100%;
+  padding: 1rem 3rem 1rem 1.5rem;
+  border: none;
+  border-radius: var(--radio-borde, 12px);
+  font-size: 1rem;
+  background: var(--color-blanco);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion, all 0.3s ease);
+}
+
+.entrada-busqueda:focus {
+  outline: none;
+  box-shadow: var(--sombra-media);
+  transform: translateY(-2px);
+}
+
+/* --- Icono de búsqueda --- */
+.icono-busqueda {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  color: var(--color-gris-600);
+}
+
+/* --- Contenedor de filtros --- */
+.filtros {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* --- Select de filtro --- */
+.filtro-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid transparent;
+  border-radius: var(--radio-borde, 12px);
+  background: var(--color-blanco);
+  color: var(--color-gris-700-alt);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transicion, all 0.3s ease);
+  box-shadow: var(--sombra-suave);
+}
+
+.filtro-select:focus {
+  outline: none;
+  border-color: var(--color-secundario);
+  box-shadow: var(--sombra-media);
+}
+
+/* ===== ESTILOS DE ESTADÍSTICAS ===== */
+
+/* --- Contenedor de estadísticas --- */
+.estadisticas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+/* --- Estadísticas ordenadas (centradas) --- */
+.estadisticas.ordenadas {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
+  justify-content: center;
+}
+
+/* --- Tarjeta de estadística --- */
+.stat-card {
+  background: var(--color-blanco);
+  padding: 16px 12px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion, all 0.3s ease);
+  border: 2px solid transparent;
+  width: 220px;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Layout de la tarjeta de estadística --- */
+.estadisticas .stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Número de la estadística --- */
+.stat-numero {
+  display: block;
+  font-size: 36px;
+  font-weight: bold;
+  color: var(--color-primario);
+  margin-bottom: 0.5rem;
+}
+
+/* --- Etiqueta de la estadística --- */
+.stat-label {
+  font-size: 13px;
+  color: var(--color-gris-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+/* ===== ESTILOS DE SEPARADORES ===== */
+
+/* --- Línea separadora --- */
+.linea-abajo {
+  width: 100%;
+  height: 1px;
+  background: var(--color-gris-medio);
+  opacity: 0.6;
+  margin: 12px 0;
+}
+
+/* ===== ESTILOS DE GRILLAS PRINCIPALES ===== */
+
+/* --- Grillas de listados (tarjetas, deportistas, mensualidades) --- */
+.cuadricula-tarjetas,
+.grid-deportistas,
+.grid-mensualidades {
+  --listado-grid-min: 280px;
+  --listado-grid-gap: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--listado-grid-min), 1fr));
+  gap: var(--listado-grid-gap);
+  width: 100%;
+  padding: 0 15px;
+}
+
+/* ===== ESTILOS DE TARJETAS COMUNES ===== */
+/* NOTA: Los estilos base de tarjetas (.tarjeta, .tarjeta-deportista, .tarjeta-mensualidad)
+   se movieron a components/cards.css para evitar duplicación.
+   Este archivo ahora solo contiene estilos específicos de listados.
+*/
+
+/* ===== ESTILOS DE ESTADO SIN RESULTADOS ===== */
+
+/* --- Contenedor sin resultados --- */
+.sin-resultados {
+  text-align: center;
+  padding: 2rem;
+  background: var(--color-blanco);
+  border-radius: 16px;
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Estado sin resultados mejorado (con card) --- */
+.sin-resultados.mejorado {
+  display: flex;
+  justify-content: center;
+}
+
+/* --- Card del estado vacío --- */
+.sin-resultados.mejorado .empty-card {
+  width: 100%;
+  max-width: 900px;
+  background: var(--color-blanco);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--sombra-suave);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- Icono del estado vacío --- */
+.empty-icon {
+  font-size: 36px;
+  opacity: 0.75;
+}
+
+/* --- Título del estado vacío --- */
+.empty-title {
+  margin: 0;
+  font-size: 20px;
+  color: var(--color-azul-alt);
+}
+
+/* --- Subtítulo del estado vacío --- */
+.empty-sub {
+  margin: 0;
+  color: var(--color-gris-600);
+  font-size: 14px;
+}
+
+/* --- Acciones del estado vacío --- */
+.empty-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+

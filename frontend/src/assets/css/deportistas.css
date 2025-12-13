@@ -1,0 +1,2091 @@
+/* ===== ESTILOS PARA DEPORTISTAS - VERSIÓN MODERNA ===== */
+
+/* Importamos las variables base para mantener consistencia (DRY) */
+@import './base/variables.css';
+@import './components/botones.css';
+@import './listados.css';
+
+/* ===== ESTILOS DEL COMPONENTE lista-deportistas ===== */
+
+/* --- Contenedor principal --- */
+.lista-deportistas {
+  padding: var(--espaciado-xl);
+  background: var(--color-fondo-seccion);
+  min-height: 100vh;
+}
+
+/* --- Tarjetas de estadísticas --- */
+#statCard { border: none !important; }
+#statCard:hover {
+  transform: scale(1.04);
+  border: 2px solid var(--color-secundario-oro) !important;
+  box-shadow: var(--sombra-media);
+}
+
+/* ===== ESTILOS DEL COMPONENTE tarjeta-deportista ===== */
+
+/* --- Grid de tarjetas --- */
+.grid-deportistas {
+  --listado-grid-min: 320px;
+  --listado-grid-gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* --- Tarjeta individual --- */
+.tarjeta-deportista {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: 1.5rem;
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.tarjeta-deportista:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--sombra-fuerte);
+  border-color: var(--color-secundario);
+}
+
+.tarjeta-deportista::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+/* --- Imagen del deportista --- */
+.imagen-deportista {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.imagen-deportista img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--color-secundario);
+  box-shadow: var(--sombra-media);
+  transition: var(--transicion);
+}
+
+.tarjeta-deportista:hover .imagen-deportista img {
+  transform: scale(1.1);
+  border-color: var(--color-primario);
+}
+
+/* --- Contenido de la tarjeta --- */
+.contenido-deportista {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.nombre-deportista {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 0.5rem;
+}
+
+.categoria-deportista {
+  color: var(--color-gris);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+/* --- Estado del deportista --- */
+.estado-deportista {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.estado-deportista.activo {
+  background: var(--color-exito);
+  color: var(--color-blanco);
+}
+
+.estado-deportista.activo:hover:not(:disabled) {
+  background: var(--color-exito);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.estado-deportista.inactivo {
+  background: var(--color-gris);
+  color: var(--color-blanco);
+}
+
+.estado-deportista.inactivo:hover:not(:disabled) {
+  background: var(--color-gris);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.estado-deportista.suspendido {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.estado-deportista:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- Acciones de la tarjeta --- */
+.acciones-deportista {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transicion);
+}
+
+.tarjeta-deportista:hover .acciones-deportista {
+  opacity: 1;
+}
+
+/* --- Botones de acción (reutilizan estilos de botones compartidos) --- */
+.boton-accion {
+  /* Estilos combinados de .btn, .btn-circle, .btn-sm */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid transparent;
+  border-radius: var(--radio-borde-circular);
+  transition: var(--transicion);
+  white-space: nowrap;
+  width: 36px;
+  height: 36px;
+  min-height: auto;
+}
+
+.boton-accion:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.25); /* Sombra específica con color primario - mantener hardcodeado */
+}
+
+.boton-accion:disabled,
+.boton-accion.disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.boton-accion.editar {
+  background-color: var(--color-info);
+  border-color: var(--color-info);
+  color: var(--color-blanco);
+}
+
+.boton-accion.editar:hover:not(:disabled) {
+  background-color: var(--color-info-hover);
+  border-color: var(--color-info-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+}
+
+.boton-accion.eliminar {
+  background-color: var(--color-peligro);
+  border-color: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.boton-accion.eliminar:hover:not(:disabled) {
+  background-color: var(--color-peligro-hover);
+  border-color: var(--color-peligro-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Botón limpiar (reutiliza estilos de botones compartidos) --- */
+.boton-limpiar {
+  /* Estilos combinados de .btn y .btn-primary */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-medio);
+  line-height: 1.5;
+  text-align: center;
+  text-decoration: none;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid var(--color-primario);
+  border-radius: var(--radio-borde);
+  transition: var(--transicion);
+  white-space: nowrap;
+  min-height: 44px;
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+.boton-limpiar:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.25); /* Sombra específica con color primario - mantener hardcodeado */
+}
+
+.boton-limpiar:hover:not(:disabled) {
+  background-color: var(--color-primario-hover);
+  border-color: var(--color-primario-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-media);
+}
+
+.boton-limpiar:disabled,
+.boton-limpiar.disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ===== ESTILOS DEL COMPONENTE modal-deportistas ===== */
+/* Los estilos del modal están en modales.css bajo .modal-content.modal-deportistas */
+
+/* --- Botón cerrar específico para otros componentes (no relacionado con el modal principal) --- */
+.btn-cerrar-deportista {
+  background: var(--color-peligro);
+  border: none;
+  color: var(--color-gris-oscuro);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radio-borde-circular);
+  cursor: pointer;
+  font-size: var(--tamano-fuente-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transicion);
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 10;
+}
+
+.btn-cerrar-deportista:hover {
+  background: var(--color-peligro);
+  color: black;
+  transform: scale(1.1);
+}
+
+/* --- Overlay del modal --- */
+/* Modal de deportistas usa las clases globales del modal en modales.css */
+
+/* --- Mensaje de error --- */
+.mensaje-error {
+  background: var(--color-fondo-error-claro);
+  border: 1px solid var(--color-borde-error-claro);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem;
+  text-align: center;
+  color: var(--color-peligro);
+}
+
+.btn-reintentar {
+  background: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btn-reintentar:hover {
+  background: var(--color-primario-hover);
+}
+
+/* ===== ESTILOS DEL COMPONENTE ver-acudidos ===== */
+
+/* --- Página principal --- */
+.ver-acudidos-page {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, var(--color-azul-muy-claro) 0%, var(--color-fondo-azul-claro) 100%);
+  padding: 2rem 1rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ver-acudidos-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+  flex: 1;
+}
+
+/* Hacer que el footer se salga del padding del main y se comporte como footer */
+.ver-acudidos-page .footer-enhanced {
+  margin-left: -1rem !important;
+  margin-right: -1rem !important;
+  width: calc(100% + 2rem) !important;
+  margin-top: auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* --- Header de la página --- */
+.ver-acudidos-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.ver-acudidos-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-gris-900-alt);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.ver-acudidos-subtitle {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Action Header --- */
+.action-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--espaciado-xl);
+}
+
+.btn-create-new {
+  background: var(--color-secundario);
+  color: var(--color-primario);
+  border: 2px solid var(--color-primario);
+  padding: 1.2rem 3rem;
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: var(--transicion);
+  box-shadow: 0 4px 6px rgba(247, 214, 0, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.btn-create-new:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(247, 214, 0, 0.4); /* Sombra específica - mantener hardcodeado */
+  background: var(--color-advertencia);
+}
+
+.btn-create-new i {
+  font-size: 1.3rem;
+}
+
+/* --- Grid de acudidos --- */
+.acudidos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+.acudido-card {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-media);
+  overflow: hidden;
+  transition: transform var(--transicion);
+}
+
+.acudido-card:hover {
+  transform: translateY(-4px);
+}
+
+/* --- Header de la tarjeta de acudido --- */
+.card-header {
+  background: var(--color-primario);
+  color: var(--color-blanco);
+  border-bottom: 3px solid var(--color-secundario);
+  padding: var(--espaciado-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+}
+
+.acudido-avatar {
+  width: 3rem;
+  height: 3rem;
+  background: rgba(255, 255, 255, 0.2); /* Fondo semitransparente - mantener hardcodeado */
+  border-radius: var(--radio-borde-circular);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--tamano-fuente-xl);
+  color: var(--color-blanco);
+}
+
+.acudido-info h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: var(--tamano-fuente-xl);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-blanco);
+}
+
+.acudido-info p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9); /* Texto semitransparente - mantener hardcodeado */
+  font-size: var(--tamano-fuente-sm);
+}
+
+.card-content {
+  padding: 1.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Item de información --- */
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--color-gris);
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Botones de acción --- */
+.btn-action {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.btn-view {
+  background: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+.btn-view:hover {
+  background: var(--color-azul-oscuro);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--espaciado-xxl) var(--espaciado-xl);
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-media);
+}
+
+.empty-icon {
+  font-size: 4rem;
+  color: var(--color-gris);
+  margin-bottom: var(--espaciado-md);
+}
+
+.empty-state h3 {
+  font-size: var(--tamano-fuente-xxl);
+  color: var(--color-gris-oscuro);
+  margin: 0 0 var(--espaciado-sm) 0;
+}
+
+.empty-state p {
+  color: var(--color-gris);
+  margin: 0 0 var(--espaciado-xl) 0;
+}
+
+.btn-primary {
+  background: var(--color-secundario);
+  color: var(--color-primario);
+  border: 2px solid var(--color-primario);
+  padding: 0.75rem var(--espaciado-lg);
+  border-radius: var(--radio-borde-pequeno);
+  font-weight: var(--peso-fuente-bold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  transition: var(--transicion);
+  box-shadow: 0 2px 4px rgba(247, 214, 0, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(247, 214, 0, 0.4); /* Sombra específica - mantener hardcodeado */
+  background: var(--color-advertencia);
+}
+
+/* ===== ESTILOS DEL COMPONENTE modal (compartido con otras vistas) ===== */
+/* (Estilos compartidos para modales de deportistas y acudientes) */
+
+/* --- Overlay del modal --- */
+/* NOTA: Los estilos base de modales (.modal-overlay, .modal-content, .modal-header)
+   se movieron a components/modals.css para evitar duplicación.
+   Solo se mantienen aquí los estilos específicos como .modal-content.modal-perfil
+*/
+
+.btn-cerrar-modal {
+  background: none;
+  border: none;
+  font-size: var(--tamano-fuente-xxl);
+  color: var(--color-gris);
+  cursor: pointer;
+  padding: var(--espaciado-sm);
+  transition: color var(--transicion);
+}
+
+.btn-cerrar-modal:hover {
+  color: var(--color-peligro);
+}
+
+/* --- Body del modal --- */
+.modal-body {
+  padding: 1.5rem;
+}
+
+/* --- Búsqueda de deportista dentro del modal --- */
+.busqueda-deportista {
+  margin-bottom: 1.5rem;
+}
+
+.busqueda-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.busqueda-deportista .form-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.input-busqueda {
+  position: relative;
+  min-width: 25px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.input-busqueda .input-text {
+  width: 100%;
+  padding: 0.875rem 3.75rem 0.875rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.input-busqueda i {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-gris);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cargando-busqueda {
+  margin-top: 0.75rem;
+  color: var(--color-gris);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cargando-busqueda i {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* --- Lista de deportistas en el modal --- */
+.deportistas-lista {
+  margin-bottom: 1.5rem;
+}
+
+.lista-titulo {
+  margin: 0 0 1rem 0;
+  color: var(--color-gris-oscuro);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.deportistas-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.deportistas-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.deportistas-grid::-webkit-scrollbar-track {
+  background: var(--color-gris-claro);
+  border-radius: 3px;
+}
+
+.deportistas-grid::-webkit-scrollbar-thumb {
+  background: var(--color-gris);
+  border-radius: 3px;
+}
+
+.deportistas-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gris-oscuro);
+}
+
+.deportista-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--color-blanco);
+}
+
+.deportista-item:hover {
+  border-color: var(--color-primario);
+  background: var(--color-gris-50);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.deportista-item.seleccionado {
+  border-color: var(--color-primario);
+  background: linear-gradient(135deg, rgba(0, 71, 171, 0.1) 0%, rgba(0, 71, 171, 0.05) 100%);
+  box-shadow: 0 2px 8px rgba(0, 71, 171, 0.2);
+}
+
+.deportista-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.deportista-nombre {
+  color: var(--color-gris-oscuro);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.deportista-detalles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.deportista-detalles .detalle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-gris);
+  font-size: 0.875rem;
+}
+
+.deportista-detalles .detalle-item i {
+  width: 14px;
+  font-size: 0.75rem;
+  color: var(--color-primario);
+}
+
+.icono-seleccionado {
+  color: var(--color-primario);
+  font-size: 1.25rem;
+  margin-left: 0.5rem;
+}
+
+.sin-resultados-busqueda {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--color-gris);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sin-resultados-busqueda i {
+  font-size: 2rem;
+  color: var(--color-gris);
+  opacity: 0.5;
+}
+
+.sin-resultados-busqueda p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* --- Formulario de asociación --- */
+.formulario-asociacion {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+}
+
+.separador {
+  height: 2px;
+  background: linear-gradient(to right, transparent, var(--color-gris-claro), transparent);
+  margin: 1.5rem 0;
+}
+
+.formulario-titulo {
+  margin: 0 0 1.25rem 0;
+  color: var(--color-gris-oscuro);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.formulario-asociacion .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.formulario-asociacion .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.formulario-asociacion .form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  font-size: 0.9rem;
+}
+
+.required {
+  color: var(--color-peligro);
+}
+
+.formulario-asociacion .select-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background: var(--color-blanco);
+  color: var(--color-gris-oscuro);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.formulario-asociacion .select-input:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
+}
+
+/* NOTA: Los estilos de .form-group, .form-group label y .select-input
+   se movieron a components/forms.css para evitar duplicación.
+   Este archivo ahora solo contiene estilos específicos de deportistas.
+*/
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: normal;
+  font-size: 0.9rem;
+  color: var(--color-gris-oscuro);
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+  accent-color: var(--color-primario);
+}
+
+.checkbox-label:hover {
+  color: var(--color-primario);
+}
+
+/* --- Footer del modal --- */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 2px solid var(--color-gris-200);
+}
+
+.btn-cancelar {
+  padding: 0.75rem var(--espaciado-lg);
+  border: 2px solid var(--color-gris);
+  border-radius: var(--radio-borde-pequeno);
+  background: var(--color-blanco);
+  color: var(--color-gris);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.btn-cancelar:hover {
+  background: var(--color-gris-claro);
+  border-color: var(--color-gris-oscuro);
+}
+
+.btn-confirmar {
+  padding: 0.75rem var(--espaciado-lg);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  background: var(--color-primario);
+  color: var(--color-blanco);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.btn-confirmar:hover:not(:disabled) {
+  background: var(--color-azul-oscuro);
+}
+
+.btn-confirmar:disabled {
+  background: var(--color-gris-medio);
+  cursor: not-allowed;
+}
+
+/* --- Contenido principal de tarjetas (compartido) --- */
+.contenido-principal-tarjetas {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- Banner informativo --- */
+.info-banner {
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
+}
+
+.info-banner i {
+  font-size: 1.5rem;
+}
+
+.info-banner p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.asignar-acudido-page {
+  min-height: 100vh;
+  background-color: var(--color-gris-claro);
+  padding: var(--espaciado-xl) var(--espaciado-md);
+}
+
+.asignar-acudido-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* --- Header de la página --- */
+.asignar-acudido-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.asignar-acudido-title {
+  font-size: var(--tamano-fuente-xxxl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-oscuro);
+  margin: 0 0 var(--espaciado-sm) 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaciado-sm);
+}
+
+.asignar-acudido-subtitle {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Caja de búsqueda --- */
+.search-box {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto 2rem auto;
+}
+
+.search-box i {
+  position: absolute;
+  left: var(--espaciado-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-gris);
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem var(--espaciado-md) 0.75rem 2.5rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+  transition: border-color var(--transicion);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-rol-deportista);
+}
+
+/* --- Lista de deportistas --- */
+.deportistas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.deportista-card {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-media);
+  overflow: hidden;
+  transition: var(--transicion);
+}
+
+.deportista-card.asignado {
+  border-left: 4px solid var(--color-exito);
+}
+
+.deportista-card:hover {
+  transform: translateY(-2px);
+}
+
+
+.deportista-avatar {
+  width: 3rem;
+  height: 3rem;
+  background: var(--color-rol-deportista);
+  color: var(--color-blanco);
+  border-radius: var(--radio-borde-circular);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--tamano-fuente-xl);
+}
+
+/* --- Información del deportista --- */
+.deportista-info h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: var(--tamano-fuente-xl);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-oscuro);
+}
+
+.deportista-info p {
+  margin: 0;
+  color: var(--color-gris);
+  font-size: var(--tamano-fuente-sm);
+}
+
+.card-status {
+  display: flex;
+  align-items: center;
+}
+
+/* --- Estado del deportista --- */
+.status-asignado {
+  color: var(--color-exito);
+  font-weight: var(--peso-fuente-semibold);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.status-disponible {
+  color: var(--color-gris);
+  font-weight: var(--peso-fuente-semibold);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.info-item i {
+  width: 1rem;
+  color: var(--color-rol-deportista);
+}
+
+/* --- Acciones de la tarjeta --- */
+.card-actions {
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  background: var(--color-gris-claro);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-assign,
+.btn-unassign {
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: var(--transicion);
+}
+
+.btn-assign {
+  background: var(--color-rol-deportista);
+  color: var(--color-blanco);
+}
+
+.btn-assign:hover:not(:disabled) {
+  background: var(--color-exito-oscuro);
+}
+
+.btn-assign:disabled {
+  background: var(--color-gris);
+  cursor: not-allowed;
+}
+
+.btn-unassign {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.btn-unassign:hover {
+  background: var(--color-peligro-hover);
+}
+
+/* --- Botones de acción --- */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-create,
+.btn-search-existing {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-create {
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
+  color: white;
+}
+
+.btn-create:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-search-existing {
+  background: white;
+  color: var(--color-morado-claro);
+  border: 2px solid var(--color-morado-claro);
+}
+
+.btn-search-existing:hover {
+  background: var(--color-chip-primary-bg);
+  transform: translateY(-2px);
+}
+
+.btn-create i,
+.btn-search-existing i {
+  font-size: 1.3rem;
+}
+
+/* --- Responsive del componente asignar-acudido --- */
+@media (max-width: 768px) {
+  .asignar-acudido-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .asignar-acudido-title {
+    font-size: 2rem;
+  }
+
+  .card-status {
+    justify-content: center;
+  }
+}
+
+/* ===== RESPONSIVE COMPARTIDO ===== */
+
+/* --- Responsive del componente ver-acudidos --- */
+@media (max-width: 768px) {
+  .ver-acudidos-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .ver-acudidos-title {
+    font-size: 2rem;
+  }
+
+  .btn-create-new {
+    width: 100%;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+  }
+
+  .acudidos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-actions {
+    flex-direction: column;
+  }
+
+  .modal-content {
+    max-width: 95%;
+    max-height: 95vh;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .btn-cancelar,
+  .btn-confirmar {
+    width: 100%;
+  }
+}
+
+/* ===== ESTILOS DEL COMPONENTE asignar-acudiente ===== */
+
+/* --- Página principal --- */
+.asignar-acudiente-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 2rem 1rem;
+}
+
+.asignar-acudiente-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.asignar-acudiente-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.asignar-acudiente-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-gris-900-alt);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.asignar-acudiente-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Acudiente actual --- */
+.current-acudiente {
+  margin-bottom: 2rem;
+}
+
+.current-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border-left: 4px solid #28a745;
+}
+
+/* --- Sin acudiente --- */
+.no-acudiente {
+  margin-bottom: 2rem;
+}
+
+.no-acudiente-content {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.no-acudiente-icon {
+  font-size: 4rem;
+  color: var(--color-gris);
+  margin-bottom: 1rem;
+}
+
+.no-acudiente-content h3 {
+  font-size: 1.5rem;
+  color: var(--color-gris-900-alt);
+  margin: 0 0 0.5rem 0;
+}
+
+.no-acudiente-content p {
+  color: var(--color-gris);
+  margin: 0 0 2rem 0;
+}
+
+/* --- Botón asignar (estilos compartidos) --- */
+.btn-assign:hover {
+  background: #1ba085;
+}
+
+/* --- Sección de búsqueda --- */
+.search-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* --- Lista de acudientes --- */
+.acudientes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* --- Tarjeta de acudiente --- */
+.acudiente-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.acudiente-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Avatar del acudiente --- */
+.acudiente-avatar {
+  width: 3rem;
+  height: 3rem;
+  background: var(--color-rol-deportista);
+  color: var(--color-blanco);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.acudiente-info {
+  flex: 1;
+}
+
+.acudiente-info h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-gris-900-alt);
+}
+
+.acudiente-info p {
+  margin: 0;
+  color: var(--color-gris);
+  font-size: 0.9rem;
+}
+
+.btn-change,
+.btn-select {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.btn-change {
+  background: var(--color-rol-entrenador);
+  color: var(--color-blanco);
+}
+
+.btn-change:hover {
+  background: #e8650e;
+}
+
+.btn-select {
+  background: var(--color-rol-deportista);
+  color: var(--color-blanco);
+}
+
+.btn-select:hover:not(:disabled) {
+  background: #1ba085;
+}
+
+.btn-select:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* --- Responsive del componente asignar-acudiente --- */
+@media (max-width: 768px) {
+  .asignar-acudiente-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .asignar-acudiente-title {
+    font-size: 2rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+
+  .card-actions {
+    justify-content: center;
+  }
+}
+
+/* ===== ESTILOS DEL COMPONENTE CardDeportista ===== */
+
+/* --- Tarjeta del deportista --- */
+.card-deportista {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espaciado-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  border: 1px solid rgba(0, 74, 173, 0.1);
+  min-height: 120px;
+  overflow: hidden;
+}
+
+.card-deportista::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: #FFD600;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-deportista.clickable {
+  cursor: pointer;
+}
+
+.card-deportista.clickable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px rgba(0, 74, 173, 0.2);
+  border-color: #004AAD;
+}
+
+.card-deportista.clickable:hover::before {
+  transform: scaleY(1);
+}
+
+/* --- Icono de la tarjeta --- */
+.card-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radio-borde);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: var(--tamano-fuente-xxl);
+  color: #004AAD;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-deportista.clickable:hover .card-icon {
+  transform: scale(1.1) rotate(5deg);
+  color: #003d8f;
+}
+
+/* --- Título de la tarjeta --- */
+.card-title {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-oscuro);
+  margin: 0 0 var(--espaciado-xs) 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+.card-description {
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris);
+  margin: 0 0 var(--espaciado-sm) 0;
+  line-height: 1.5;
+}
+
+/* --- Valor de la tarjeta --- */
+.card-value {
+  font-size: var(--tamano-fuente-xl);
+  font-weight: var(--peso-fuente-bold);
+  color: #004AAD;
+  margin-top: var(--espaciado-xs);
+}
+
+.card-arrow {
+  position: absolute;
+  top: var(--espaciado-md);
+  right: var(--espaciado-md);
+  color: rgba(108, 117, 125, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.6;
+}
+
+.card-deportista.clickable:hover .card-arrow {
+  color: #004AAD;
+  transform: translateX(6px);
+  opacity: 1;
+}
+
+/* ===== ESTILOS DEL COMPONENTE perfil-deportista-vista ===== */
+/* El modal de deportistas usa las clases globales del modal (modal-header, modal-body, etc.) */
+/* Los estilos específicos están en modales.css bajo .modal-content.modal-deportistas */
+
+/* --- Contenedor del perfil dentro del modal --- */
+/* Los estilos del modal (header, body, btn-cerrar) están en modales.css */
+.perfil-deportista-vista {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.btn-cerrar:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* --- Contenido del perfil --- */
+.perfil-content {
+  padding: 2rem;
+}
+
+.perfil-deportista-vista .perfil-card {
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  max-width: 100%;
+}
+
+/* --- Header de tarjeta dentro del perfil --- */
+.perfil-deportista-vista .card-header {
+  background: linear-gradient(135deg, #004AAD 0%, #003d8f 100%);
+  padding: 1rem 1.5rem;
+  margin: 0;
+}
+
+.perfil-deportista-vista .card-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: white !important;
+}
+
+.perfil-deportista-vista .card-header h4 {
+  margin: 1rem 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #004AAD;
+}
+
+/* --- Contenido de la tarjeta --- */
+.perfil-deportista-vista .card-content {
+  padding: 1.25rem 1.5rem;
+}
+
+/* --- Grid de información --- */
+.perfil-deportista-vista .info-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.perfil-deportista-vista .info-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  align-items: start;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+.perfil-deportista-vista .info-row:hover {
+  background-color: #f8f9fa;
+  margin: 0 -1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-radius: 6px;
+}
+
+.perfil-deportista-vista .info-row:last-child {
+  border-bottom: none;
+}
+
+/* --- Label de la fila de información --- */
+.perfil-deportista-vista .info-row label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+.perfil-deportista-vista .info-row span {
+  color: var(--color-gris);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  min-height: 2.5rem;
+}
+
+.perfil-deportista-vista .medidas-aviso {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #856404;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.perfil-deportista-vista .medidas-aviso::before {
+  content: "⚠️";
+  font-size: 1rem;
+}
+
+/* --- Editor de diagnósticos --- */
+.perfil-deportista-vista .diagnosticos-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.perfil-deportista-vista .checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 500;
+  color: #495057;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.perfil-deportista-vista .checkbox-line:hover {
+  background-color: #ffffff;
+}
+
+.perfil-deportista-vista .checkbox-line input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  cursor: pointer;
+  accent-color: #004AAD;
+  flex-shrink: 0;
+}
+
+.diagnosticos-vacio {
+  color: var(--color-gris);
+  font-style: italic;
+}
+
+/* --- Subsección de información --- */
+.perfil-deportista-vista .info-subsection {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #dee2e6;
+}
+
+.perfil-deportista-vista .info-subsection h4 {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #004AAD;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* --- Badges de estado --- */
+.badge-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-muted {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.badge-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badge-info {
+  background: var(--color-info);
+  color: var(--color-blanco);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* --- Acciones del perfil (footer dentro del modal) --- */
+.perfil-deportista-vista .perfil-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2.5rem;
+  margin-top: 0;
+  border-top: 2px solid #e9ecef;
+  background: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.btn-cerrar-perfil {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cerrar-perfil:hover {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Botón editar perfil --- */
+.btn-editar-perfil {
+  background: #004AAD;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 1rem;
+}
+
+.btn-editar-perfil:hover {
+  background: #003d8f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-editar-perfil i {
+  margin-right: 0.5rem;
+}
+
+/* --- Botón guardar perfil --- */
+.btn-guardar-perfil {
+  background: var(--color-exito);
+  color: var(--color-blanco);
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-right: 1rem;
+}
+
+.btn-guardar-perfil:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-guardar-perfil:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-guardar-perfil i {
+  margin-right: 0.5rem;
+}
+
+.btn-cancelar-perfil {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancelar-perfil:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-cancelar-perfil:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Input editable --- */
+.perfil-deportista-vista .input-editable {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background-color: #ffffff;
+  color: #495057;
+  font-family: inherit;
+}
+
+.perfil-deportista-vista .input-editable:focus {
+  outline: none;
+  border-color: #004AAD;
+  box-shadow: 0 0 0 3px rgba(0, 74, 173, 0.1);
+  background-color: #ffffff;
+}
+
+.perfil-deportista-vista .input-editable:disabled {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+  color: var(--color-gris);
+  border-color: #dee2e6;
+}
+
+.perfil-deportista-vista .input-editable::placeholder {
+  color: #adb5bd;
+}
+
+/* --- Select editable --- */
+.perfil-deportista-vista .info-row select.input-editable {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23495057' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.perfil-deportista-vista .info-row select.input-editable:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23004AAD' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+}
+
+.perfil-deportista-vista .info-row textarea.input-editable {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input-with-unit .input-editable {
+  flex: 1;
+}
+
+.unit {
+  color: var(--color-gris);
+  font-size: 0.9rem;
+  min-width: 30px;
+}
+
+.readonly-field {
+  color: var(--color-gris);
+  font-style: italic;
+}
+
+/* --- Grupo de radio buttons --- */
+.perfil-deportista-vista .radio-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+}
+
+.perfil-deportista-vista .radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.perfil-deportista-vista .radio-option:hover {
+  background-color: #f8f9fa;
+}
+
+.perfil-deportista-vista .radio-option input[type="radio"] {
+  cursor: pointer;
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #004AAD;
+}
+
+.cargando {
+  padding: 3rem;
+  text-align: center;
+  color: var(--color-gris);
+}
+
+/* --- Responsive del componente perfil-deportista-vista --- */
+@media (max-width: 768px) {
+  .perfil-deportista-vista .card-content {
+    padding: 1rem;
+  }
+
+  .perfil-deportista-vista .info-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    padding: 0.875rem 0;
+  }
+
+  .perfil-deportista-vista .info-row:hover {
+    margin: 0 -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .perfil-deportista-vista .info-row label {
+    min-height: auto;
+    margin-bottom: 0.25rem;
+  }
+
+  .perfil-deportista-vista .info-row span {
+    min-height: auto;
+  }
+
+  .perfil-deportista-vista .radio-group {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .perfil-deportista-vista .card-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .perfil-deportista-vista .card-header h3 {
+    font-size: 1.1rem;
+  }
+
+  /* Los estilos de padding del modal-body están en modales.css */
+}
+
+/* --- Responsive del componente CardDeportista --- */
+@media (max-width: 768px) {
+  .card-deportista {
+    padding: var(--espaciado-md);
+    min-height: 100px;
+  }
+
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    font-size: var(--tamano-fuente-xl);
+  }
+
+  .card-title {
+    font-size: var(--tamano-fuente-base);
+  }
+
+  .card-description {
+    font-size: var(--tamano-fuente-xs);
+  }
+}
+
+/* --- Responsive del componente lista-deportistas --- */
+@media (max-width: 768px) {
+  .lista-deportistas {
+    padding: 1rem;
+  }
+
+  .contenedor-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .buscador {
+    min-width: auto;
+  }
+
+  .filtros {
+    justify-content: center;
+  }
+
+  .grid-deportistas {
+    --listado-grid-min: 1fr;
+    --listado-grid-gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tarjeta-deportista {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .estadisticas {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-numero {
+    font-size: 2rem;
+  }
+}
+
+/* --- Responsive para móvil pequeño (lista-deportistas) --- */
+@media (max-width: 480px) {
+  .estadisticas {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta-deportista {
+    padding: 1rem;
+  }
+
+  .imagen-deportista img {
+    width: 60px;
+    height: 60px;
+  }
+}
+

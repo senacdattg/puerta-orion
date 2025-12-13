@@ -1,0 +1,135 @@
+/* ===== ESTILOS PARA PÁGINA DE INICIO ===== */
+/* Siguiendo el principio SRP - este archivo solo maneja estilos del inicio */
+
+/* ===== IMPORTS Y VARIABLES ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* --- Mapeo de variables antiguas a nuevas (compatibilidad) --- */
+:root {
+  --primary-color: var(--color-primario);
+  --secondary-color: var(--color-secundario);
+  --accent-color: var(--color-primario-oscuro);
+  --text-dark: var(--color-gris-oscuro);
+  --text-light: var(--color-gris);
+  --background-light: var(--color-gris-claro);
+  --shadow-light: var(--sombra-suave);
+  --shadow-medium: var(--sombra-media);
+  --border-radius: var(--radio-borde-grande);
+  --transition: var(--transicion);
+}
+
+/* ===== ESTILOS BASE DE LAYOUT ===== */
+
+/* --- Secciones base --- */
+.section-base {
+  padding: 80px 20px;
+}
+
+/* --- Contenedores base --- */
+.container-base {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ===== ESTILOS BASE DE TIPOGRAFÍA ===== */
+
+/* --- Títulos base --- */
+.title-base {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 25px;
+}
+
+/* --- Subtítulos base --- */
+.subtitle-base {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+/* ===== ESTILOS BASE DE BOTONES ===== */
+
+/* --- Botón base --- */
+.button-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 32px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: var(--transition);
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+/* ===== ESTILOS BASE DE ANIMACIONES ===== */
+
+/* --- Animación fade-in --- */
+.fade-in {
+  animation: fadeIn 0.8s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== ESTILOS BASE DE EFECTOS HOVER ===== */
+
+/* --- Efecto hover lift --- */
+.hover-lift {
+  transition: var(--transition);
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px var(--shadow-medium);
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para estilos base --- */
+@media (max-width: 768px) {
+  .section-base {
+    padding: 60px 20px;
+  }
+
+  .title-base {
+    font-size: 2rem;
+  }
+
+  .subtitle-base {
+    font-size: 1.1rem;
+  }
+}
+
+
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para estilos base --- */
+@media (max-width: 768px) {
+  .section-base {
+    padding: 60px 20px;
+  }
+
+  .title-base {
+    font-size: 2rem;
+  }
+
+  .subtitle-base {
+    font-size: 1.1rem;
+  }
+}
+

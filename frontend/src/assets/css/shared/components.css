@@ -1,0 +1,124 @@
+/* ===== COMPONENTES CSS COMPARTIDOS - APLICANDO DRY ===== */
+
+/* Importar variables base para usar variables unificadas */
+@import '../base/variables.css';
+
+/* NOTA: Los estilos de componentes reutilizables (cards, forms, modals, tables, badges, alerts, navigation, loading)
+   se movieron a los archivos en components/ para evitar duplicación.
+
+   Este archivo ahora solo contiene utilidades CSS.
+*/
+
+/* ===== BOTONES ===== */
+/* NOTA: Los estilos de botones están en components/botones.css */
+/* Se mantiene aquí solo para compatibilidad temporal, pero se recomienda usar components/botones.css */
+
+/* ===== UTILIDADES ===== */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--color-primario); }
+.text-secondary { color: var(--color-secundario); }
+.text-success { color: var(--color-exito); }
+.text-danger { color: var(--color-peligro); }
+.text-warning { color: var(--color-advertencia); }
+.text-info { color: var(--color-info); }
+.text-muted { color: var(--color-gris); }
+
+.bg-primary { background-color: var(--color-primario); }
+.bg-secondary { background-color: var(--color-secundario); }
+.bg-success { background-color: var(--color-exito); }
+.bg-danger { background-color: var(--color-peligro); }
+.bg-warning { background-color: var(--color-advertencia); }
+.bg-info { background-color: var(--color-info); }
+.bg-light { background-color: var(--color-gris-claro); }
+
+.d-flex { display: flex; }
+.d-grid { display: grid; }
+.d-none { display: none; }
+
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-end { justify-content: flex-end; }
+
+.align-center { align-items: center; }
+.align-start { align-items: flex-start; }
+.align-end { align-items: flex-end; }
+
+.gap-1 { gap: var(--espaciado-xs); }
+.gap-2 { gap: var(--espaciado-sm); }
+.gap-3 { gap: var(--espaciado-md); }
+.gap-4 { gap: var(--espaciado-lg); }
+.gap-5 { gap: var(--espaciado-xl); }
+
+.m-0 { margin: 0; }
+.m-1 { margin: var(--espaciado-xs); }
+.m-2 { margin: var(--espaciado-sm); }
+.m-3 { margin: var(--espaciado-md); }
+.m-4 { margin: var(--espaciado-lg); }
+.m-5 { margin: var(--espaciado-xl); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--espaciado-xs); }
+.p-2 { padding: var(--espaciado-sm); }
+.p-3 { padding: var(--espaciado-md); }
+.p-4 { padding: var(--espaciado-lg); }
+.p-5 { padding: var(--espaciado-xl); }
+
+.rounded { border-radius: var(--radio-borde); }
+.rounded-sm { border-radius: var(--radio-borde-pequeno); }
+.rounded-lg { border-radius: var(--radio-borde-grande); }
+
+.shadow-sm { box-shadow: var(--sombra-suave); }
+.shadow { box-shadow: var(--sombra-media); }
+.shadow-lg { box-shadow: var(--sombra-fuerte); }
+
+.transition { transition: var(--transicion); }
+.transition-fast { transition: var(--transicion-rapida); }
+.transition-slow { transition: var(--transicion-lenta); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .btn {
+    padding: var(--espaciado-sm) var(--espaciado-md);
+    font-size: var(--tamano-fuente-sm);
+    min-height: 40px;
+  }
+
+  .btn-lg {
+    padding: var(--espaciado-md) var(--espaciado-lg);
+    font-size: var(--tamano-fuente-base);
+    min-height: 48px;
+  }
+
+  .btn-xl {
+    padding: var(--espaciado-lg) var(--espaciado-xl);
+    font-size: var(--tamano-fuente-lg);
+    min-height: 56px;
+  }
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .btn {
+    width: 100%;
+    margin-bottom: var(--espaciado-sm);
+  }
+
+  .table {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--espaciado-sm);
+  }
+}

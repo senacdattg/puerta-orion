@@ -1,0 +1,562 @@
+/* ===== ESTILOS PRINCIPALES (MAIN) ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS BASE ===== */
+
+/* --- Body --- */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background-color: var(--color-blanco);
+}
+
+/* ===== ESTILOS DEL COMPONENTE Inicio ===== */
+
+/* --- Página de inicio --- */
+.inicio-page {
+  min-height: 100vh;
+  background-color: var(--color-blanco);
+  display: flex;
+  flex-direction: column;
+}
+
+.inicio-page ::v-deep .dashboard-home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.inicio-page ::v-deep .dashboard-home .main-dashboard {
+  flex: 1;
+}
+
+/* ===== ESTILOS DE SECCIONES Y BLOQUES ===== */
+
+/* --- Sección de contenido --- */
+.seccion-contenido {
+  background-color: var(--color-primario);
+  margin: 0 auto;
+  margin-bottom: 2rem;
+  text-align: center;
+  border-radius: 1rem;
+  padding: 60px 40px;
+  max-width: 1700px;
+}
+
+/* --- Bloque de subtítulo --- */
+.bloque-subtitulo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  border-top: 2px solid var(--color-secundario-oro);
+  border-bottom: 2px solid var(--color-secundario-oro);
+  padding: 15px 0;
+  margin-bottom: 30px;
+}
+
+/* --- Subtítulo del bloque --- */
+.subtitulo-bloque {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-secundario-oro);
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* --- Línea arriba --- */
+.linea-arriba {
+  border-top: 2px solid var(--color-secundario-oro);
+  padding: 15px 0;
+  margin-bottom: 30px;
+}
+
+/* --- Línea abajo --- */
+.linea-abajo {
+  border-bottom: 2px solid var(--color-secundario-oro);
+  padding: 1px 0;
+  margin-bottom: 30px;
+}
+
+/* ===== ESTILOS DEL COMPONENTE encabezado ===== */
+/* NOTA: Los estilos de encabezado se movieron a layout.css */
+/* Los estilos antiguos (.encabezado) ya no se usan y fueron eliminados */
+
+/* ===== ESTILOS DEL COMPONENTE footer (básico) ===== */
+/* NOTA: Los estilos de footer se movieron a layout.css */
+/* Los estilos antiguos (.footer) ya no se usan y fueron eliminados */
+
+/* ===== ESTILOS DEL MENÚ ===== */
+
+/* --- Toggle del menú --- */
+.menu-toggle {
+  font-size: 28px;
+  cursor: pointer;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: var(--color-secundario);
+  user-select: none;
+  display: inline-block;
+}
+
+/* --- Menú de categorías --- */
+.menu-categorias {
+  background-color: var(--color-secundario);
+  border: 2px solid var(--color-secundario);
+  padding: 10px;
+  position: absolute;
+  top: 60px;
+  left: 10px;
+  z-index: 1000;
+  width: 220px;
+  box-shadow: var(--sombra-media);
+  border-radius: 12px;
+}
+
+/* --- Lista del menú --- */
+.menu-categorias ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* --- Items del menú --- */
+.menu-categorias li {
+  background-color: var(--color-secundario-oro);
+  border: 2px solid var(--color-primario);
+  margin: 10px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  color: var(--color-primario);
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: left;
+}
+
+.menu-categorias a {
+  text-decoration: none;
+  color: var(--color-primario);
+  font-weight: bold;
+}
+
+/* --- Icono del menú --- */
+.icono-menu {
+  margin-right: 8px;
+}
+
+/* ===== ESTILOS DE FORMULARIOS ===== */
+
+/* --- Fila de texto (inputs y selects) --- */
+.fila-texto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px 20px;
+  margin-bottom: 15px;
+}
+
+.fila-texto input,
+.fila-texto select {
+  padding: 12px 14px;
+  border: 2px solid var(--color-primario);
+  font-size: 16px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  min-width: 100px;
+}
+
+.fila-texto input:focus,
+.fila-texto select:focus {
+  outline: none;
+  border: 2px solid var(--color-primario);
+  box-shadow: 0 0 5px rgba(0, 71, 171, 0.3); /* Sombra específica con color primario - mantener hardcodeado */
+  transition: var(--transicion-rapida);
+}
+
+/* ===== ESTILOS DEL COMPONENTE titulo-club ===== */
+
+/* --- Título del club --- */
+.titulo-club {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40px;
+  position: relative;
+}
+
+/* --- Bloque base --- */
+.bloque {
+  padding: 18px 32px;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: var(--sombra-fuerte);
+  width: fit-content;
+  border: none;
+}
+
+/* --- Bloque amarillo --- */
+.bloque-amarillo {
+  background-color: var(--color-secundario-oro);
+  color: var(--color-negro);
+  position: relative;
+  z-index: 2;
+  margin-bottom: -5px;
+  transform: translateX(-50px);
+}
+
+/* --- Bloque azul --- */
+.bloque-azul {
+  background-color: var(--color-primario-oscuro);
+  color: var(--color-blanco);
+  position: relative;
+  z-index: 1;
+  transform: translateX(40px);
+}
+
+/* ===== ESTILOS DE FILTROS Y BÚSQUEDA ===== */
+
+/* --- Contenedor de filtros --- */
+.contenedor-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* --- Buscador --- */
+.buscador {
+  position: relative;
+  flex: 1;
+  min-width: 300px;
+}
+
+/* ===== ESTILOS DEL COMPONENTE hero-section ===== */
+
+/* --- Sección hero --- */
+.hero-section {
+  background-color: var(--color-gris-claro);
+  padding: 40px 20px;
+  min-height: 600px;
+}
+
+/* --- Contenido hero --- */
+.hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+/* --- Branding hero --- */
+.hero-branding {
+  text-align: center;
+}
+
+.logo-container {
+  margin-bottom: 20px;
+}
+
+.hero-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+/* --- Texto de marca --- */
+.brand-text {
+  margin-bottom: 30px;
+}
+
+.brand-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-gris-oscuro);
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+/* --- Botones de marca --- */
+.brand-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.brand-button {
+  padding: 15px 30px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
+  text-align: center;
+  box-shadow: var(--sombra-suave);
+}
+
+.brand-button--yellow {
+  background-color: var(--color-secundario-oro);
+  color: var(--color-primario);
+}
+
+.brand-button--blue {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+}
+
+.brand-tagline {
+  font-size: 1.1rem;
+  color: var(--color-gris);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* --- Elementos decorativos --- */
+.decorative-element {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.line {
+  height: 2px;
+  width: 40px;
+}
+
+.line--yellow {
+  background-color: var(--color-secundario-oro);
+}
+
+.line--blue {
+  background-color: var(--color-primario);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-secundario-oro);
+  border-radius: 50%;
+}
+
+/* ===== ESTILOS DEL COMPONENTE welcome-section ===== */
+
+/* --- Sección de bienvenida --- */
+.welcome-section {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.welcome-content {
+  margin-bottom: 20px;
+}
+
+.welcome-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-primario);
+  margin: 0 0 15px 0;
+}
+
+.welcome-description {
+  font-size: 1.1rem;
+  color: var(--color-gris);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ===== ESTILOS DE ESTADÍSTICAS ===== */
+
+/* --- Contenedor de tarjetas de estadísticas --- */
+.stats-cards {
+  display: flex;
+  gap: 20px;
+}
+
+/* --- Tarjeta de estadística --- */
+.stat-card {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-medio);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  flex: 1;
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Número de estadística --- */
+.stat-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 8px;
+}
+
+/* --- Etiqueta de estadística --- */
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--color-gris);
+  font-weight: 500;
+}
+
+/* ===== ESTILOS DEL COMPONENTE quick-nav-section ===== */
+
+/* --- Sección de navegación rápida --- */
+.quick-nav-section {
+  padding: 60px 20px 0 20px;
+  background-color: var(--color-blanco);
+}
+
+/* --- Contenedor --- */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- Título de sección --- */
+.section-title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-gris-oscuro);
+  margin-bottom: 40px;
+}
+
+/* --- Grid de navegación --- */
+.nav-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* --- Tarjeta de navegación --- */
+.nav-card {
+  background: var(--color-blanco);
+  border-radius: 12px;
+  padding: 25px 30px;
+  text-decoration: none;
+  color: var(--color-blanco);
+  box-shadow: var(--sombra-tarjeta);
+  transition: var(--transicion);
+  border: none;
+  position: relative;
+  overflow: hidden;
+  min-width: 200px;
+  text-align: center;
+}
+
+.nav-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-tarjeta-hover);
+}
+
+/* --- Variantes de color de tarjeta de navegación --- */
+.nav-card--blue {
+  background-color: var(--color-primario);
+}
+
+.nav-card--gray {
+  background-color: var(--color-gris);
+}
+
+.nav-card--red {
+  background-color: var(--color-peligro);
+}
+
+.nav-card--green {
+  background-color: var(--color-exito);
+}
+
+.nav-card--purple {
+  background-color: #6d05c2; /* Color específico - mantener hardcodeado por ser variante única */
+}
+
+.nav-card--orange {
+  background-color: #fd7e14; /* Color específico - mantener hardcodeado por ser variante única */
+}
+
+.nav-card--teal {
+  background-color: #20c997; /* Color específico - mantener hardcodeado por ser variante única */
+}
+
+/* --- Icono de navegación --- */
+.nav-icon {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* --- Título de navegación --- */
+.nav-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-blanco);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== ESTILOS DEL COMPONENTE footer-enhanced ===== */
+/* NOTA: Los estilos de footer-enhanced se movieron a layout.css */
+
+/* ===== ESTILOS DE MENSAJES DE FEEDBACK ===== */
+/* NOTA: Los estilos de mensajes (.mensaje-error, .mensaje-exito, .mensaje-info) 
+   se movieron a components/alerts.css para evitar duplicación.
+   Las animaciones también están en components/alerts.css.
+*/
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive del hero-section --- */
+@media (max-width: 768px) {
+  .hero-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 40px;
+  }
+
+  .stats-cards {
+    justify-content: center;
+  }
+
+  .welcome-title {
+    font-size: 2rem;
+  }
+
+  .brand-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* --- Responsive del quick-nav-section --- */
+@media (max-width: 768px) {
+  .nav-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .nav-card {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* NOTA: Los estilos responsive del footer-enhanced se movieron a layout.css */

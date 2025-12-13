@@ -1,0 +1,358 @@
+/* ===== COMPONENTES REUTILIZABLES: FORMULARIOS ===== */
+
+@import '../base/variables.css';
+
+/* ===== GRUPO DE FORMULARIO ===== */
+
+.form-group {
+  margin-bottom: var(--espaciado-lg);
+}
+
+.form-group label,
+.form-label {
+  display: block;
+  margin-bottom: var(--espaciado-sm);
+  font-weight: var(--peso-fuente-medio);
+  color: var(--color-gris-oscuro);
+}
+
+/* ===== INPUTS ===== */
+
+/* --- Input base --- */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="tel"],
+input[type="url"],
+.input-text,
+.input-busqueda input,
+.input-mensualidad,
+.input-edicion,
+.input-evento,
+.form-input-volleyball {
+  width: 100%;
+  padding: var(--espaciado-md);
+  border: 2px solid var(--color-gris-claro);
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  transition: var(--transicion);
+  background: var(--color-blanco);
+  box-sizing: border-box;
+}
+
+.form-control:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+.input-text:focus,
+.input-busqueda input:focus,
+.input-mensualidad:focus,
+.input-edicion:focus,
+.input-evento:focus,
+.form-input-volleyball:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
+}
+
+.form-control.is-invalid,
+input.is-invalid,
+.input-text.is-invalid,
+.input-mensualidad:invalid,
+.input-edicion:invalid {
+  border-color: var(--color-peligro);
+}
+
+.form-control.is-valid,
+input.is-valid,
+.input-mensualidad:valid,
+.input-edicion:valid {
+  border-color: var(--color-exito);
+}
+
+.form-control:disabled,
+input:disabled,
+.input-text:disabled,
+.form-input-volleyball:disabled {
+  background-color: var(--color-gris-claro);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* --- Placeholder --- */
+.form-control::placeholder,
+input::placeholder,
+.input-text::placeholder,
+.input-mensualidad::placeholder,
+.input-edicion::placeholder,
+.input-evento::placeholder,
+.form-input-volleyball::placeholder {
+  color: var(--color-gris);
+  opacity: 0.7;
+}
+
+/* ===== TEXTAREA ===== */
+
+textarea,
+.textarea-evento {
+  width: 100%;
+  padding: var(--espaciado-md);
+  border: 2px solid var(--color-gris-claro);
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  transition: var(--transicion);
+  background: var(--color-blanco);
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+textarea:focus,
+.textarea-evento:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
+}
+
+textarea:disabled,
+.textarea-evento:disabled {
+  background-color: var(--color-gris-claro);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===== SELECT ===== */
+
+select,
+.form-control[type="select"],
+.select-input,
+.select-mensualidad,
+.select-edicion,
+.select-evento,
+.select-rol {
+  width: 100%;
+  padding: var(--espaciado-md);
+  border: 2px solid var(--color-gris-claro);
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  transition: var(--transicion);
+  background: var(--color-blanco);
+  cursor: pointer;
+  box-sizing: border-box;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23343a40' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--espaciado-md) center;
+  padding-right: calc(var(--espaciado-md) * 2 + 12px);
+}
+
+select:focus,
+.form-control[type="select"]:focus,
+.select-input:focus,
+.select-mensualidad:focus,
+.select-edicion:focus,
+.select-evento:focus,
+.select-rol:focus {
+  outline: none;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.1);
+}
+
+select:disabled,
+.form-control[type="select"]:disabled,
+.select-input:disabled,
+.select-mensualidad:disabled,
+.select-evento:disabled {
+  background-color: var(--color-gris-claro);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+select option {
+  padding: var(--espaciado-sm);
+}
+
+select option:disabled {
+  color: var(--color-gris);
+}
+
+/* ===== CHECKBOX Y RADIO ===== */
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--color-primario);
+}
+
+.form-group-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+}
+
+.form-group-checkbox label {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+/* ===== GRUPO DE INPUT CON ICONO ===== */
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group .form-control,
+.input-group input {
+  padding-left: calc(var(--espaciado-md) + 20px + var(--espaciado-sm));
+}
+
+.input-group-icon {
+  position: absolute;
+  left: var(--espaciado-md);
+  color: var(--color-gris);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-group-icon i {
+  width: 20px;
+  text-align: center;
+}
+
+/* ===== INPUT CON SÍMBOLO ===== */
+
+.input-with-symbol {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-symbol::before {
+  content: '$';
+  position: absolute;
+  left: var(--espaciado-md);
+  color: var(--color-gris);
+  font-weight: var(--peso-fuente-semibold);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-with-symbol .form-control,
+.input-with-symbol input {
+  padding-left: calc(var(--espaciado-md) + 20px);
+}
+
+/* ===== MENSAJES DE FORMULARIO ===== */
+
+.form-text {
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris);
+  margin-top: var(--espaciado-sm);
+}
+
+.form-text.text-danger {
+  color: var(--color-peligro);
+}
+
+.form-text.text-success {
+  color: var(--color-exito);
+}
+
+.input-error {
+  color: var(--color-peligro);
+  font-size: var(--tamano-fuente-sm);
+  margin-top: var(--espaciado-xs);
+  display: block;
+}
+
+/* ===== FILA DE FORMULARIO ===== */
+
+.fila-texto {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.fila-texto input,
+.fila-texto textarea,
+.fila-texto select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ===== ACCIONES DE FORMULARIO ===== */
+
+.form-actions,
+.botones-formulario {
+  display: flex;
+  gap: var(--espaciado-md);
+  justify-content: flex-end;
+  margin-top: var(--espaciado-lg);
+  flex-wrap: wrap;
+}
+
+.form-actions .btn,
+.botones-formulario .btn {
+  min-width: 120px;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .fila-texto {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .form-actions,
+  .botones-formulario {
+    flex-direction: column;
+  }
+
+  .form-actions .btn,
+  .botones-formulario .btn {
+    width: 100%;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .fila-texto {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .form-actions,
+  .botones-formulario {
+    flex-direction: column;
+  }
+
+  .form-actions .btn,
+  .botones-formulario .btn {
+    width: 100%;
+  }
+}
+
+
+
+
+
+
+
+
+
+

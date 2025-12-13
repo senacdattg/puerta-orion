@@ -1,0 +1,1166 @@
+/* ===== ESTILOS PARA GALERÍA ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+@import './listados.css';
+
+/* ===== ESTILOS DEL COMPONENTE galeria ===== */
+
+/* --- Contenedor principal --- */
+.contenedor-galeria {
+	padding: var(--espaciado-lg);
+	background-color: var(--color-blanco);
+	min-height: 100vh;
+}
+
+/* --- Encabezado --- */
+.encabezado {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 20px;
+}
+
+/* --- Botones de categoría --- */
+.botones-categoria {
+	display: flex;
+	gap: 10px;
+}
+
+.btn-categoria {
+	background-color: var(--color-secundario);
+	color: var(--color-primario);
+	border: 2px solid var(--color-primario);
+	padding: var(--espaciado-sm) var(--espaciado-md);
+	border-radius: var(--radio-borde-pequeno);
+	font-weight: var(--peso-fuente-bold);
+	cursor: pointer;
+	transition: background-color var(--transicion);
+}
+
+.btn-categoria:hover {
+	background-color: var(--color-secundario-hover);
+}
+
+/* --- Título principal --- */
+.titulo-principal-galeria {
+	margin-top: var(--espaciado-xl);
+	text-align: center;
+	color: var(--color-gris-oscuro);
+	font-size: var(--tamano-fuente-xxxl);
+	font-weight: var(--peso-fuente-bold);
+	margin-bottom: var(--espaciado-xl);
+}
+
+/* --- Icono de usuario --- */
+.usuario-icono {
+	color: var(--color-gris-oscuro);
+	font-size: var(--tamano-fuente-xl);
+	cursor: pointer;
+}
+
+.usuario-icono:hover {
+	color: var(--color-primario-hover);
+}
+
+/* --- Sección de botones superiores --- */
+.seccion-botones {
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+/* --- Botón agregar (circular) --- */
+.boton-agregar {
+	background-color: var(--color-blanco);
+	border: 3px solid var(--color-secundario);
+	border-radius: var(--radio-borde-circular);
+	width: 90px;
+	height: 90px;
+	font-size: var(--tamano-fuente-xxxl);
+	font-weight: var(--peso-fuente-bold);
+	color: var(--color-negro);
+	cursor: pointer;
+	transition: transform var(--transicion), box-shadow var(--transicion);
+	box-shadow: var(--sombra-media);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+  }
+
+  .boton-agregar:hover {
+	transform: scale(1.1);
+	box-shadow: var(--sombra-fuerte);
+}
+
+
+/* --- Foto de perfil --- */
+.foto-perfil {
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+	border-radius: var(--radio-borde-circular);
+	margin-bottom: var(--espaciado-md);
+	border: 2px solid var(--color-primario);
+	background: var(--color-gris-50);
+}
+
+/* --- Nombre (compartido) --- */
+.nombre {
+	font-size: var(--tamano-fuente-xl);
+	font-weight: var(--peso-fuente-bold);
+	color: var(--color-gris-900-alt);
+	margin-bottom: 6px;
+	text-align: center;
+}
+
+.nombre-evento {
+	font-size: var(--tamano-fuente-xl);
+	font-weight: var(--peso-fuente-bold);
+	color: var(--color-gris-900-alt);
+	margin-bottom: var(--espaciado-sm);
+	text-align: center;
+}
+
+/* --- Texto placeholder --- */
+.placeholder-texto {
+	color: var(--color-gris);
+	font-size: var(--tamano-fuente-lg);
+	font-weight: var(--peso-fuente-medio);
+}
+
+/* ===== ESTILOS DEL COMPONENTE filtros-galeria ===== */
+
+/* --- Sección de filtros --- */
+.seccion-filtros {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	text-align: center;
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.filtro-select {
+	max-width: 200px;
+	min-width: 140px;
+}
+
+.filtro-input {
+	max-width: 250px;
+}
+
+/* --- Botón limpiar filtros --- */
+.btn-limpiar-filtros {
+	background: var(--color-gris);
+	color: var(--color-blanco);
+	border: none;
+	padding: var(--espaciado-sm) var(--espaciado-md);
+	border-radius: var(--radio-borde-pequeno);
+	cursor: pointer;
+	font-size: var(--tamano-fuente-sm);
+	font-weight: var(--peso-fuente-medio);
+	transition: background var(--transicion-rapida);
+	margin-left: var(--espaciado-md);
+}
+
+.btn-limpiar-filtros:hover {
+	background: var(--color-gris-oscuro);
+}
+
+/* ===== ESTILOS DEL COMPONENTE tarjeta-evento ===== */
+
+/* --- Tarjeta principal --- */
+.tarjeta {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 350px;
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  box-shadow: var(--sombra-media);
+  border: 1px solid var(--color-gris-200);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.tarjeta:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-fuerte);
+  border-color: var(--color-primario);
+}
+
+/* --- Contenido de la tarjeta --- */
+.contenido-tarjeta {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+/* --- Imagen del evento --- */
+.foto-evento {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: var(--radio-borde-pequeno) var(--radio-borde-pequeno) 0 0;
+  margin-bottom: 0;
+  display: block;
+  max-width: 100%;
+  background: var(--color-gris-claro);
+}
+
+/* --- Placeholder de imagen --- */
+.imagen-placeholder {
+  width: 100%;
+  height: 200px;
+  background: linear-gradient(135deg, var(--color-gris-claro) 0%, var(--color-gris-medio) 100%);
+  border-radius: var(--radio-borde-pequeno) var(--radio-borde-pequeno) 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--espaciado-md);
+  border: 2px dashed var(--color-gris-300);
+}
+
+.imagen-placeholder i {
+  font-size: var(--tamano-fuente-xxxl);
+  color: var(--color-gris);
+  margin-bottom: var(--espaciado-sm);
+}
+
+.imagen-placeholder span {
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris);
+  font-style: italic;
+}
+
+/* --- Fecha del evento --- */
+.fecha-evento {
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris);
+  margin-bottom: var(--espaciado-sm);
+  font-weight: var(--peso-fuente-medio);
+}
+
+/* --- Descripción del evento --- */
+.descripcion-evento {
+  font-size: var(--tamano-fuente-xs);
+  color: var(--color-gris-oscuro);
+  line-height: 1.4;
+  margin-bottom: var(--espaciado-md);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-clamp: 3;
+}
+
+/* --- Acciones de la tarjeta --- */
+.acciones-tarjeta {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tarjeta:hover .acciones-tarjeta {
+  opacity: 1;
+}
+
+/* --- Botones de acción (editar y eliminar) --- */
+.btn-editar, .btn-eliminar {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.btn-editar {
+  background: var(--color-info);
+  color: var(--color-blanco);
+}
+
+.btn-editar:hover {
+  background: var(--color-info-hover);
+}
+
+.btn-eliminar {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.btn-eliminar:hover {
+  background: var(--color-peligro-hover);
+}
+
+/* --- Acciones (compartido) --- */
+.acciones {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.acciones.centrado {
+  justify-content: center;
+  gap: 10px;
+}
+
+/* --- Información de archivo --- */
+.archivo-info {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  margin-top: var(--espaciado-sm);
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  background: var(--color-gris-claro);
+  border: 1px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-oscuro);
+}
+
+.archivo-info i {
+  color: var(--color-exito);
+}
+
+.btn-limpiar {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde-circular);
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: var(--tamano-fuente-xs);
+  margin-left: auto;
+}
+
+.btn-limpiar:hover {
+  background: var(--color-peligro-hover);
+}
+
+/* ===== ESTILOS DEL COMPONENTE tipo-evento ===== */
+
+/* --- Badge de tipo de evento --- */
+.tipo {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: auto;
+  align-self: center;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.tipo:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Colores específicos para cada tipo de evento --- */
+.tipo.entrenamiento {
+  background: var(--color-info, #0ea5e9) !important;
+  color: var(--color-blanco, #ffffff) !important;
+  border-color: var(--color-info, #0ea5e9);
+  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
+}
+
+.tipo.competencia {
+  background: var(--color-rol-entrenador, #f59e0b) !important;
+  color: var(--color-blanco, #ffffff) !important;
+  border-color: var(--color-rol-entrenador, #f59e0b);
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+}
+
+.tipo.exhibición,
+.tipo.exhibicion {
+  background: var(--color-morado, #764ba2) !important;
+  color: var(--color-blanco, #ffffff) !important;
+  border-color: var(--color-morado, #764ba2);
+  box-shadow: 0 2px 4px rgba(118, 75, 162, 0.3);
+}
+
+.tipo.torneo {
+  background: var(--color-exito, #28a745) !important;
+  color: var(--color-blanco, #ffffff) !important;
+  border-color: var(--color-exito, #28a745);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+.tipo.evento {
+  background: var(--color-peligro, #ef4444) !important;
+  color: var(--color-blanco, #ffffff) !important;
+  border-color: var(--color-peligro, #ef4444);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.tipo.evaluación-médica {
+  background: linear-gradient(135deg, var(--color-gris), var(--color-gris-700-alt));
+  color: white;
+  border-color: var(--color-gris);
+  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+/* --- Colores por categoría (legacy) --- */
+.tipo.entrenamientos {
+	background-color: var(--color-exito);
+}
+
+.tipo.eventos {
+	background-color: var(--color-rol-superadmin);
+}
+
+.tipo.competencias {
+	background-color: var(--color-info-alt);
+}
+
+/* --- Color por defecto para tipos no definidos --- */
+.tipo:not(.entrenamiento):not(.competencia):not(.exhibición):not(.exhibicion):not(.torneo):not(.evento):not(.evaluación-médica) {
+  background: var(--color-gris-600, #6b7280) !important;
+  color: var(--color-blanco, #ffffff) !important;
+  border-color: var(--color-gris-600, #6b7280);
+  box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+}
+
+/* ===== ESTILOS DEL COMPONENTE formulario-galeria ===== */
+
+/* --- Campo del formulario --- */
+.campo-formulario {
+  margin-bottom: 20px;
+}
+
+.campo-formulario label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--color-gris-900-alt);
+}
+
+.campo-formulario label i {
+  color: var(--color-primario);
+  width: 16px;
+}
+
+/* --- Inputs del formulario --- */
+.input-evento::placeholder {
+  color: #6c757d;
+}
+
+.textarea-evento {
+  resize: vertical;
+  min-height: 140px;
+}
+
+/* --- Estilos para campos de solo lectura --- */
+.input-evento[readonly] {
+  background-color: var(--color-gris-claro);
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.select-evento[disabled] {
+  background-color: var(--color-gris-claro);
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+textarea[readonly] {
+  background-color: var(--color-gris-claro);
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* --- Imagen actual/preview --- */
+.imagen-preview-vista {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.imagen-vista {
+  text-align: center;
+}
+
+.imagen-actual {
+  margin-top: 0.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background: #f8fafc;
+}
+
+.imagen-actual img,
+.imagen-preview {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #ffffff;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.12);
+}
+
+.texto-imagen-actual {
+  font-size: 0.85rem;
+  color: #475569;
+  font-style: italic;
+  text-align: center;
+}
+
+/* --- Botón cambiar imagen --- */
+.btn-cambiar-imagen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-cambiar-imagen:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
+}
+
+.btn-cambiar-imagen i {
+  margin-right: 0;
+}
+
+/* ===== ESTILOS DEL COMPONENTE modal-galeria ===== */
+
+/* --- Modal principal --- */
+.galeria-modal {
+  --modal-max-width: 780px;
+  --modal-radius: 20px;
+  border-radius: var(--modal-radius, 20px);
+}
+
+.modal-content.galeria-modal {
+  border-radius: var(--modal-radius, 20px);
+  overflow: hidden;
+}
+
+/* --- Modal pequeño --- */
+.galeria-modal.modal-sm {
+  --modal-max-width: 600px;
+}
+
+/* --- Header del modal --- */
+.galeria-modal .modal-header h3,
+.galeria-modal .modal-header .modal-title {
+  font-size: 1.65rem;
+}
+
+/* --- Estilos para modal pequeño --- */
+.galeria-modal.modal-sm .modal-header .modal-title {
+  font-size: 1.4rem;
+}
+
+.galeria-modal.modal-sm .input-edicion,
+.galeria-modal.modal-sm .select-edicion {
+  padding: 0.875rem 1rem;
+  font-size: 0.95rem;
+}
+
+.galeria-modal.modal-sm .campo-formulario label {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.galeria-modal.modal-sm .campo-formulario label i {
+  font-size: 0.85rem;
+}
+
+.galeria-modal.modal-sm .seccion-form h6 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.galeria-modal.modal-sm .descripcion-seccion {
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.galeria-modal.modal-sm .modal-footer {
+  padding: 1rem 1.25rem;
+}
+
+/* --- Panel del formulario dentro del modal --- */
+.galeria-modal .form-modal-panel {
+  background: #ffffff;
+  padding: 1.35rem 1.5rem 1.6rem;
+  gap: 1.15rem;
+  border-radius: 16px;
+}
+
+/* --- Botón cerrar del modal --- */
+.galeria-modal .btn-cerrar {
+  background: var(--color-blanco-transparente-20);
+  color: var(--color-blanco);
+  border-color: var(--color-blanco-transparente-30);
+}
+
+.galeria-modal .btn-cerrar:hover {
+  background: var(--color-blanco-transparente-30);
+  color: var(--color-blanco);
+}
+
+/* ===== ESTILOS PARA MODAL DE VER EVENTO EN GALERÍA (VISTA SOLO LECTURA) ===== */
+
+/* ===== ESTILOS PARA MODAL DE VER EVENTO (VISTA SOLO LECTURA) - IGUAL AL CALENDARIO ===== */
+
+/* Sección principal - header del evento */
+.galeria-modal .evento-header {
+  margin-bottom: 1.25rem !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 2px solid var(--color-gris-200, #e2e8f0);
+}
+
+.galeria-modal .evento-header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+/* Título del evento - compacto */
+.galeria-modal .evento-titulo-grande {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+  margin: 0 !important;
+  color: var(--color-gris-900-alt, #0f172a);
+  letter-spacing: -0.01em;
+}
+
+/* Badge de tipo de evento - compacto */
+.galeria-modal .evento-badge-grande {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  padding: 0.4rem 1.25rem !important;
+  border-radius: 50px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+/* Colores específicos para badges según tipo de evento */
+.galeria-modal .evento-badge-grande.tipo-entrenamiento {
+  background: var(--color-info, #0ea5e9) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+.galeria-modal .evento-badge-grande.tipo-competencia {
+  background: var(--color-rol-entrenador, #f59e0b) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+.galeria-modal .evento-badge-grande.tipo-evento {
+  background: var(--color-peligro, #ef4444) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+.galeria-modal .evento-badge-grande.tipo-exhibicion,
+.galeria-modal .evento-badge-grande.tipo-exhibición {
+  background: var(--color-morado, #764ba2) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+.galeria-modal .evento-badge-grande.tipo-torneo {
+  background: var(--color-exito, #28a745) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+.galeria-modal .evento-badge-grande.tipo-evaluacion-medica,
+.galeria-modal .evento-badge-grande.tipo-evaluación-médica,
+.galeria-modal .evento-badge-grande.tipo-evaluacionmedica {
+  background: var(--color-gris-600, #6b7280) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+/* Color por defecto para tipos de evento no definidos en modal */
+.galeria-modal .evento-badge-grande:not(.tipo-entrenamiento):not(.tipo-competencia):not(.tipo-evento):not(.tipo-exhibicion):not(.tipo-exhibición):not(.tipo-torneo):not(.tipo-evaluacion-medica):not(.tipo-evaluación-médica):not(.tipo-evaluacionmedica) {
+  background: var(--color-gris-600, #6b7280) !important;
+  color: var(--color-blanco, #ffffff) !important;
+}
+
+/* Título de sección "Información General" - compacto */
+.galeria-modal .evento-titulo-seccion {
+  font-size: 1.1rem !important;
+  margin-bottom: 1rem !important;
+  font-weight: 600;
+  color: var(--color-gris-800, #1e293b);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.galeria-modal .evento-titulo-seccion i {
+  color: var(--color-primario, #2563eb);
+  font-size: 1rem;
+}
+
+/* Grid de detalles del evento - compacto */
+.galeria-modal .evento-grid {
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.875rem !important;
+}
+
+/* Items de detalle - compactos con iconos */
+.galeria-modal .evento-item {
+  padding: 0.75rem !important;
+  min-height: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: var(--color-gris-50, #f8fafc);
+  border-radius: 10px;
+  border: 1px solid var(--color-gris-200, #e2e8f0);
+  transition: all 0.2s ease;
+}
+
+.galeria-modal .evento-item:hover {
+  background: var(--color-blanco, #ffffff);
+  border-color: var(--color-primario, #2563eb);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Iconos de detalle - compactos */
+.galeria-modal .detalle-icono {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primario, #2563eb);
+  color: var(--color-blanco, #ffffff);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.galeria-modal .detalle-contenido {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+/* Items que ocupan ancho completo */
+.galeria-modal .evento-fecha-completa,
+.galeria-modal .evento-lugar-completo,
+.galeria-modal .evento-descripcion-completa {
+  grid-column: span 2;
+}
+
+/* Labels - compactos */
+.galeria-modal .evento-label-grande {
+  font-size: 0.7rem !important;
+  color: var(--color-gris-500, #64748b);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Valores - compactos */
+.galeria-modal .evento-valor-grande {
+  font-size: 0.95rem !important;
+  color: var(--color-gris-900-alt, #0f172a);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+}
+
+/* Descripción con mejor formato - compacto */
+.galeria-modal .evento-descripcion-texto {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-size: 0.9rem !important;
+}
+
+/* Fecha completa - ocupa todo el ancho con más espacio */
+.galeria-modal .evento-fecha-completa {
+  grid-column: span 2 !important;
+}
+
+/* Lugar completo - ocupa todo el ancho con más espacio */
+.galeria-modal .evento-lugar-completo {
+  grid-column: span 2 !important;
+}
+
+/* Descripción completa */
+.galeria-modal .evento-descripcion-completa {
+  grid-column: span 2 !important;
+}
+
+/* Campo de imagen - centrar contenido */
+.galeria-modal .evento-imagen-completa .detalle-contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem 0.5rem !important;
+  gap: 0.75rem !important;
+}
+
+.galeria-modal .evento-imagen-completa .detalle-contenido .detalle-label {
+  width: 100%;
+  text-align: center;
+}
+
+.galeria-modal .evento-imagen-completa .detalle-contenido img {
+  display: block;
+  margin: 0 auto;
+  margin-top: 15px;
+  margin-left: -20px;
+  align-items: center;
+  max-width: 100%;
+  max-height: 350px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* Ajustes para modal pequeño */
+.galeria-modal.modal-sm .evento-imagen-completa .detalle-contenido {
+  padding: 0.75rem 0.4rem !important;
+  gap: 0.5rem !important;
+}
+
+.galeria-modal.modal-sm .evento-imagen-completa .detalle-contenido img {
+  max-height: 250px;
+}
+
+/* Sección de detalles - compacto */
+.galeria-modal .evento-detalles {
+  padding: 0.25rem 0 !important;
+}
+
+/* Modal body más compacto para vista de evento */
+.galeria-modal.modal-sm .modal-body {
+  padding: 1rem 1.25rem !important;
+  max-height: calc(90vh - 100px);
+  overflow-y: auto;
+}
+
+/* Ajustes adicionales para que todo quepa sin scroll */
+.galeria-modal.modal-sm .seccion-principal {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.galeria-modal.modal-sm .seccion-detalles {
+  margin-top: 0.5rem !important;
+  padding-top: 0 !important;
+}
+
+/* Ajustes para modal pequeño - ultra compacto */
+.galeria-modal.modal-sm .evento-header {
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.galeria-modal.modal-sm .evento-header-content {
+  gap: 0.5rem !important;
+}
+
+.galeria-modal.modal-sm .evento-titulo-grande {
+  font-size: 1.25rem !important;
+  margin-bottom: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.galeria-modal.modal-sm .evento-badge-grande {
+  font-size: 0.75rem !important;
+  padding: 0.35rem 1rem !important;
+}
+
+.galeria-modal.modal-sm .evento-titulo-seccion {
+  font-size: 0.95rem !important;
+  margin-bottom: 0.75rem !important;
+  gap: 0.4rem !important;
+}
+
+.galeria-modal.modal-sm .evento-titulo-seccion i {
+  font-size: 0.85rem !important;
+}
+
+.galeria-modal.modal-sm .evento-grid {
+  gap: 0.625rem !important;
+}
+
+.galeria-modal.modal-sm .evento-item {
+  padding: 0.6rem !important;
+  gap: 0.6rem !important;
+  min-height: auto !important;
+}
+
+.galeria-modal.modal-sm .detalle-icono {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 0.75rem !important;
+  border-radius: 6px !important;
+}
+
+.galeria-modal.modal-sm .detalle-contenido {
+  gap: 0.2rem !important;
+}
+
+.galeria-modal.modal-sm .evento-label-grande {
+  font-size: 0.65rem !important;
+  line-height: 1.1 !important;
+}
+
+.galeria-modal.modal-sm .evento-valor-grande {
+  font-size: 0.85rem !important;
+  line-height: 1.2 !important;
+}
+
+.galeria-modal.modal-sm .evento-descripcion-texto {
+  font-size: 0.8rem !important;
+}
+
+/* ===== ESTILOS PARA MODAL DE IMAGEN COMPLETA (SWEETALERT) ===== */
+
+.swal-imagen-completa {
+  max-width: 95vw !important;
+  max-height: 95vh !important;
+  background: rgba(0, 0, 0, 0.95) !important;
+  border: none !important;
+}
+
+.swal-imagen-completa-container {
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.swal-imagen-completa-container img {
+  max-width: 100% !important;
+  max-height: 85vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ===== ESTADO SIN RESULTADOS ===== */
+
+/* --- Estado sin resultados con botón --- */
+.sin-resultados--con-boton {
+	margin-top: 20px;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para pantallas grandes --- */
+@media (max-width: 1200px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 250px;
+		--listado-grid-gap: 25px;
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.seccion-contenido.grande {
+		padding: 30px 10px;
+	}
+}
+
+/* --- Responsive para tablets --- */
+@media (max-width: 992px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 220px;
+		--listado-grid-gap: 20px;
+	}
+}
+
+/* --- Responsive para móviles --- */
+@media (max-width: 768px) {
+	.seccion-contenido.grande {
+		padding: 30px 15px;
+	}
+
+	.cuadricula-tarjetas {
+		--listado-grid-min: 280px;
+		--listado-grid-gap: 20px;
+	}
+}
+
+@media (max-width: 700px) {
+	.cuadricula-tarjetas {
+		grid-template-columns: 1fr;
+	}
+
+	.seccion-contenido.grande {
+		padding: 10px 2px;
+	}
+
+	.tarjeta {
+		min-width: 0;
+		max-width: 100%;
+	}
+}
+
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+
+@media (max-width: 700px) {
+	.cuadricula-tarjetas {
+		grid-template-columns: 1fr;
+	}
+
+	.seccion-contenido.grande {
+		padding: 10px 2px;
+	}
+
+	.tarjeta {
+		min-width: 0;
+		max-width: 100%;
+	}
+}
+
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+
+/* --- Responsive para móviles pequeños --- */
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+
+
+@media (max-width: 480px) {
+	.cuadricula-tarjetas {
+		--listado-grid-min: 100%;
+		--listado-grid-gap: 20px;
+		max-width: 100%;
+		padding: 0 10px;
+		grid-template-columns: 1fr;
+	}
+
+	.tarjeta {
+		max-width: 100%;
+	}
+
+	.seccion-contenido {
+		padding: 20px;
+	}
+}
+

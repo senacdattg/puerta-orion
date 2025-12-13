@@ -1,30 +1,75 @@
-# Logs
-logs
-*.log
+# ==================================================
+# GITIGNORE GLOBAL - PUERTA DE ORION
+# Reglas compartidas para todo el monorepo
+# ==================================================
+
+# ============ DEPENDENCIAS ============
+# Node.js (Frontend)
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+package-lock.json.backup
 
-node_modules
+# Python (Backend - reglas básicas)
+venv/
+env/
+.venv/
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ============ ARCHIVOS DE ENTORNO ============
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# Archivos temporales del sistema
 .DS_Store
-dist
-dist-ssr
-coverage
-*.local
+Thumbs.db
+*.tmp
+*.temp
 
-/cypress/videos/
-/cypress/screenshots/
+# ============ IDEs Y EDITORES ============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.vs/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+# ============ SISTEMA OPERATIVO ============
+.DS_Store
+Thumbs.db
+desktop.ini
 
-*.tsbuildinfo
+# ============ ARCHIVOS TEMPORALES ============
+*.tmp
+*.temp
+*.bak
+*.backup
+*~.nib
+*.swp
+tmp/
+
+# ============ BUILD / DIST ============
+dist/
+build/
+*.min.js
+*.min.css
+
+# ============ LOGS ============
+# Archivos de log generados por la aplicación
+*.log
+logs/
+backend/logs/
+
+# ============ DOCUMENTACIÓN TEMPORAL ============
+PENDIENTES_PROYECTO.md

@@ -1,0 +1,1507 @@
+/* ===== ESTILOS PARA PERFILES ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS BASE DE TARJETAS DE PERFIL ===== */
+
+/* --- Contenido principal --- */
+.contenido-principal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+/* --- Contenedor de tarjetas --- */
+.contenedor-tarjetas {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* --- Tarjeta de perfil --- */
+/* NOTA: Los estilos base de .tarjeta-perfil se movieron a components/cards.css para evitar duplicación.
+   Solo se mantienen aquí los estilos específicos de perfiles.
+*/
+
+/* --- Imagen de usuario --- */
+.imagen-usuario {
+  position: absolute;
+  top: -30px;
+  right: 37.5%;
+}
+
+.imagen-usuario img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid var(--color-primario);
+}
+
+/* --- Contenido de perfil --- */
+.contenido-perfil {
+  padding: 20px;
+}
+
+.contenido-perfil h2 {
+  margin: 10px 0;
+}
+
+/* --- Botón de perfil --- */
+.boton-perfil {
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* ===== ESTILOS DE TARJETA DE ACUDIENTE ===== */
+
+/* --- Tarjeta de acudiente --- */
+/* NOTA: Los estilos base de .tarjeta-acudiente se movieron a components/cards.css para evitar duplicación.
+   Solo se mantienen aquí los estilos específicos de perfiles.
+*/
+
+/* --- Lista de acudidos --- */
+.lista-acudidos {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* --- Imagen de acudiente --- */
+.imagen-acudiente img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primario);
+  flex-shrink: 0;
+}
+
+/* --- Contenido de acudiente --- */
+.contenido-acudiente {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  gap: 10px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.contenido-acudiente input {
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  border: 1px solid black;
+  padding: 5px;
+  border-radius: 3px;
+  background-color: white;
+  font-size: 14px;
+}
+
+/* --- Botón de acudiente --- */
+.boton-acudiente {
+  background-color: var(--color-primario);
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ===== ESTILOS PARA VISTA DE PERFIL ===== */
+
+/* --- Página de perfil --- */
+.perfil-page {
+  min-height: 100vh;
+  background-color: var(--color-gris-claro);
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Contenedor de perfil --- */
+.perfil-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+/* --- Footer en página de perfil --- */
+.perfil-page ::v-deep .footer-enhanced {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* --- Reducir el margen del TituloClub en el perfil --- */
+.perfil-page ::v-deep .titulo-club {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* --- Header de perfil --- */
+.perfil-page .perfil-container .perfil-header {
+  text-align: center !important;
+  margin-bottom: 24px !important;
+  position: relative !important;
+  padding: 20px 0 !important;
+  background: transparent !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* --- Hero de perfil --- */
+.perfil-page .perfil-container .perfil-header .perfil-hero {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  background: var(--color-blanco) !important;
+  border: 1px solid var(--color-gris-300) !important;
+  border-radius: var(--radio-borde-grande) !important;
+  padding: var(--espaciado-lg) var(--espaciado-xl) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  max-width: 1200px !important;
+  width: calc(100% - 32px) !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+}
+
+/* --- Avatar --- */
+.perfil-hero .avatar {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  display: grid !important;
+  place-items: center !important;
+  background: var(--color-gris-100) !important;
+  border: none !important;
+  flex-shrink: 0 !important;
+}
+
+.perfil-hero .avatar i {
+  font-size: 56px !important;
+  color: var(--color-gris-600) !important;
+}
+
+/* --- Información del hero --- */
+.perfil-hero .hero-info {
+  flex: 1 !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.perfil-hero .hero-info .perfil-title {
+  margin: 0 0 6px 0 !important;
+  font-size: 1.75rem !important;
+  font-weight: 700 !important;
+  color: var(--color-gris-900-alt) !important;
+  display: block !important;
+  text-align: center !important;
+  align-items: normal !important;
+  justify-content: normal !important;
+  gap: 0 !important;
+  line-height: 1.3 !important;
+}
+
+.perfil-hero .hero-info .perfil-subtitle {
+  margin: 0 !important;
+  color: var(--color-gris-700-alt) !important;
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+  text-align: center !important;
+}
+
+.perfil-hero .hero-actions {
+  flex-shrink: 0 !important;
+}
+
+/* --- Badges del hero --- */
+.hero-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* --- Chip (badge pequeño) --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border-radius: 999px;
+  border: 1px solid var(--color-chip-neutral-border);
+  background: var(--color-blanco);
+  color: var(--color-chip-neutral-text);
+  font-weight: var(--peso-fuente-semibold);
+  font-size: var(--tamano-fuente-sm);
+}
+
+.chip i {
+  font-size: var(--tamano-fuente-sm);
+  color: inherit;
+}
+
+.chip.primary {
+  border-color: var(--color-chip-primary-border);
+  background: var(--color-chip-primary-bg);
+  color: var(--color-chip-primary-text);
+}
+
+.chip.success {
+  border-color: var(--color-chip-success-border);
+  background: var(--color-chip-success-bg);
+  color: var(--color-chip-success-text);
+}
+
+.chip.neutral {
+  border-color: var(--color-chip-neutral-border);
+  background: var(--color-chip-neutral-bg);
+  color: var(--color-chip-neutral-text);
+}
+
+/* --- Acciones del hero --- */
+.hero-actions .btn {
+  white-space: nowrap;
+}
+
+/* --- Botón primario en el hero del perfil (estilo outline) --- */
+/* Override agresivo con máxima especificidad para sobrescribir TODOS los estilos base */
+.perfil-hero .hero-actions button.btn.btn-primary.btn-icon,
+.perfil-hero .hero-actions .btn.btn-primary.btn-icon,
+.perfil-hero .hero-actions button.btn-primary,
+.perfil-hero button.btn.btn-primary.btn-icon,
+.perfil-hero .btn.btn-primary.btn-icon {
+  padding: 8px 16px !important;
+  margin: 0 !important;
+  border: 2px solid var(--color-primario) !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  line-height: 1.4 !important;
+  color: var(--color-primario) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+  vertical-align: middle !important;
+  user-select: none !important;
+  text-decoration: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary i,
+.perfil-hero .hero-actions .btn.btn-primary .icon,
+.perfil-hero .btn.btn-primary.btn-icon i,
+.perfil-hero .btn.btn-primary.btn-icon .icon {
+  color: inherit !important;
+  font-size: 0.875rem !important;
+  line-height: 1 !important;
+  transition: color 0.3s ease;
+  display: inline-block !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:hover:not(:disabled),
+.perfil-hero .btn.btn-primary.btn-icon:hover:not(:disabled) {
+  background: var(--color-primario) !important;
+  background-color: var(--color-primario) !important;
+  background-image: none !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-primario) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.3) !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:hover:not(:disabled) i,
+.perfil-hero .hero-actions .btn.btn-primary:hover:not(:disabled) .icon,
+.perfil-hero .btn.btn-primary.btn-icon:hover:not(:disabled) i,
+.perfil-hero .btn.btn-primary.btn-icon:hover:not(:disabled) .icon {
+  color: var(--color-blanco) !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:active:not(:disabled),
+.perfil-hero .btn.btn-primary.btn-icon:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 71, 171, 0.2) !important;
+}
+
+.perfil-hero .hero-actions .btn.btn-primary:focus,
+.perfil-hero .btn.btn-primary.btn-icon:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 71, 171, 0.25) !important;
+}
+
+/* --- Título de perfil --- */
+.perfil-title {
+  font-size: var(--tamano-fuente-xxxl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-oscuro);
+  margin: 0 0 var(--espaciado-sm) 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaciado-sm);
+}
+
+/* --- Subtítulo de perfil --- */
+.perfil-subtitle {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Contenido de perfil --- */
+.perfil-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaciado-lg);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.perfil-content.is-loading {
+  opacity: 0.7;
+}
+
+/* ===== ESTILOS DE GRILLAS Y LAYOUT ===== */
+
+/* --- Grid base --- */
+.perfil-page .perfil-container .perfil-content .grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  max-width: 1200px !important;
+  width: calc(100% - 32px) !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* --- Grid de perfil --- */
+.perfil-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+  grid-column: 1 / -1;
+}
+
+/* --- Sección de deportista --- */
+.deportista-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- Grid de información --- */
+.info-grid {
+  display: grid;
+  gap: 12px;
+}
+
+/* ===== ESTILOS DE TARJETA DE PERFIL ===== */
+
+/* --- Tarjeta de perfil --- */
+.perfil-card {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-300);
+  border-radius: var(--radio-borde);
+  overflow: hidden;
+  box-shadow: var(--sombra-suave);
+}
+
+.perfil-card.full-width {
+  grid-column: 1 / -1;
+}
+
+/* --- Header de tarjeta --- */
+.card-header {
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  border-bottom: 1px solid var(--color-gris-300);
+  background: var(--color-gris-50);
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
+}
+
+.card-header .card-subtitle {
+  margin: 4px 0 0;
+  color: var(--color-gris-400);
+  font-size: var(--tamano-fuente-sm);
+}
+
+/* --- Contenido de tarjeta --- */
+.card-content {
+  padding: 16px 20px;
+}
+
+/* --- Fila de información --- */
+.info-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: var(--espaciado-md);
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--color-gris-100);
+  align-items: start;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row label {
+  color: var(--color-gris-400);
+  font-weight: var(--peso-fuente-semibold);
+  font-size: var(--tamano-fuente-sm);
+}
+
+.info-row span {
+  color: var(--color-gris-800);
+}
+
+/* ===== ESTILOS DE ROLES Y BADGES ===== */
+
+/* --- Lista de roles --- */
+.roles-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* --- Badge de rol --- */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.role-badge.single {
+  font-size: 1rem;
+}
+
+.role-badge i {
+  font-size: 1rem;
+}
+
+/* --- Variantes de rol --- */
+.role-admin {
+  background: var(--color-fondo-admin);
+  color: var(--color-texto-admin);
+}
+
+.role-coach {
+  background: var(--color-fondo-coach);
+  color: var(--color-texto-coach);
+}
+
+.role-athlete {
+  background: var(--color-fondo-athlete);
+  color: var(--color-texto-athlete);
+}
+
+.role-guardian {
+  background: var(--color-fondo-guardian);
+  color: var(--color-texto-guardian);
+}
+
+.role-user,
+.role-default {
+  background: var(--color-fondo-user);
+  color: var(--color-texto-user);
+}
+
+/* ===== ESTILOS DE MÉTRICAS Y ESTADÍSTICAS ===== */
+
+/* --- Grid de métricas --- */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--espaciado-md);
+  padding: var(--espaciado-md);
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-gris-300);
+}
+
+/* --- Tarjeta de métrica --- */
+.metric-card {
+  text-align: center;
+  padding: var(--espaciado-md);
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-300);
+}
+
+.metric-card label {
+  display: block;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-400);
+  font-weight: var(--peso-fuente-semibold);
+  margin-bottom: var(--espaciado-sm);
+}
+
+.metric-value {
+  display: block;
+  font-size: var(--tamano-fuente-xxl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
+}
+
+/* --- Subsección de información --- */
+.info-subsection {
+  padding: var(--espaciado-md);
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde-pequeno);
+  border: 1px solid var(--color-gris-300);
+}
+
+.info-subsection h4 {
+  margin: 0 0 var(--espaciado-md) 0;
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800);
+}
+
+/* ===== ESTILOS DE BADGES GENERALES ===== */
+
+/* --- Badge base --- */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* --- Variantes de badge --- */
+.badge-success {
+  background: var(--color-fondo-athlete);
+  color: var(--color-texto-athlete);
+}
+
+.badge-warning {
+  background: var(--color-fondo-admin);
+  color: var(--color-texto-admin);
+}
+
+.badge-muted {
+  background: var(--color-fondo-user);
+  color: var(--color-texto-user);
+}
+
+.badge-info {
+  background: var(--color-info-badge-bg);
+  color: var(--color-info-badge-text);
+  margin-right: 6px;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+/* --- Lista de badges --- */
+.badges-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ===== ESTILOS DE UTILIDADES ===== */
+
+/* --- Skeleton (carga) --- */
+.skeleton-row {
+  height: 16px;
+  background: linear-gradient(90deg, var(--color-gris-100) 25%, var(--color-gris-200) 50%, var(--color-gris-100) 75%);
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  border-radius: var(--radio-borde-pequeno);
+  margin: 10px 0;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+/* --- Estados vacíos --- */
+.empty-state {
+  padding: var(--espaciado-xxl);
+  text-align: center;
+  color: var(--color-gris-400);
+}
+
+.empty-state i {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+/* --- Utilidades de espaciado --- */
+.mr-1 {
+  margin-right: 6px;
+}
+
+.mt-3 {
+  margin-top: 20px;
+}
+/* ===== ESTILOS DEL COMPONENTE modal-perfil ===== */
+
+/* NOTA: Los estilos de modales (.modal-overlay, .modal-content, .modal-header, .modal-body, .modal-footer)
+   se movieron a modales.css para evitar duplicación y conflictos.
+   Solo se mantienen aquí los estilos específicos de perfiles que no son modales.
+*/
+
+/* ===== ESTILOS DE FORMULARIOS EN MODAL ===== */
+
+/* --- Grupo de formulario --- */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: var(--espaciado-sm);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-800);
+}
+
+/* --- Input de búsqueda --- */
+.input-busqueda {
+  display: flex;
+  gap: var(--espaciado-sm);
+}
+
+.input-busqueda .input-text {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+}
+
+.input-busqueda .input-text:focus {
+  outline: none;
+  border-color: var(--color-primario);
+}
+
+/* --- Lista de acudientes --- */
+.acudientes-lista {
+  margin-top: 1rem;
+}
+
+/* --- Tarjeta de acudiente --- */
+.acudiente-card {
+  padding: var(--espaciado-md);
+  border: 2px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-pequeno);
+  margin-bottom: var(--espaciado-sm);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.acudiente-card:hover {
+  border-color: var(--color-primario);
+  background: var(--color-gris-50);
+}
+
+.acudiente-card.seleccionado {
+  border-color: var(--color-primario);
+  background: var(--color-chip-primary-bg);
+}
+
+.acudiente-card strong {
+  display: block;
+  color: var(--color-gris-800);
+  margin-bottom: 0.25rem;
+}
+
+.acudiente-card p {
+  margin: 0;
+  color: var(--color-gris-400);
+  font-size: var(--tamano-fuente-sm);
+}
+
+/* --- Formulario de asociación --- */
+.formulario-asociacion {
+  margin-top: var(--espaciado-lg);
+  padding-top: var(--espaciado-lg);
+  border-top: 2px solid var(--color-gris-300);
+}
+
+/* --- Select input --- */
+.select-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+}
+
+/* --- Label de checkbox --- */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+/* ===== ESTILOS DE BOTONES ===== */
+
+/* --- Botón secundario --- */
+.btn-secondary {
+  padding: 0.75rem var(--espaciado-lg);
+  border: 2px solid var(--color-gris);
+  border-radius: var(--radio-borde-pequeno);
+  background: var(--color-blanco);
+  color: var(--color-gris);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.btn-secondary:hover {
+  background: var(--color-gris-claro);
+  border-color: var(--color-gris-oscuro);
+}
+
+/* ===== ESTILOS DE ALERTAS Y MENSAJES ===== */
+
+/* --- Alerta de advertencia --- */
+.alert-warning {
+  padding: 15px;
+  background: var(--color-fondo-naranja-claro);
+  border: 1px solid var(--color-advertencia);
+  border-radius: 8px;
+  color: var(--color-texto-admin);
+  margin-bottom: 15px;
+}
+
+.alert-warning strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* --- Acciones de perfil --- */
+.perfil-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* ===== ESTILOS PARA ACTUALIZAR INFORMACIÓN ===== */
+
+/* --- Página de actualizar información --- */
+.actualizar-info-page {
+  min-height: 100vh;
+  background-color: var(--color-gris-claro);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Contenedor de actualizar --- */
+.actualizar-container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+  padding: 0 1rem;
+  flex: 1;
+}
+
+/* --- Footer en página de actualizar --- */
+.actualizar-info-page ::v-deep .footer-enhanced {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* --- Header de actualizar --- */
+.actualizar-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.actualizar-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--color-gris-900-alt);
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.actualizar-subtitle {
+  font-size: 1.1rem;
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Contenido de actualizar --- */
+.actualizar-content {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* ===== ESTILOS DE ALERTAS ===== */
+
+/* --- Alerta base --- */
+.alert {
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --- Alerta de error --- */
+.alert-error {
+  background: var(--color-fondo-error-claro);
+  border: 1px solid var(--color-borde-error-claro);
+  color: var(--color-peligro);
+}
+
+/* --- Alerta de éxito --- */
+.alert-success {
+  background: var(--color-fondo-exito);
+  border: 1px solid var(--color-borde-exito);
+  color: var(--color-exito);
+}
+
+/* --- Alerta informativa --- */
+.alert-info {
+  background: var(--color-fondo-naranja-claro);
+  border: 1px solid var(--color-advertencia);
+  color: var(--color-texto-admin);
+}
+
+/* ===== ESTILOS DE ESTADOS ===== */
+
+/* --- Estado de carga --- */
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--color-gris);
+}
+
+.loading-state i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+/* ===== ESTILOS DE FORMULARIOS ===== */
+
+/* --- Sección de formulario --- */
+.form-section {
+  margin-bottom: 2.5rem;
+}
+
+.form-section:last-of-type {
+  margin-bottom: 2rem;
+}
+
+.form-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-gris-900-alt);
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-gris-medio);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* --- Fila de formulario --- */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* --- Inputs y textareas --- */
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid var(--color-gris-medio);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-primario);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* --- Acciones de formulario --- */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 2px solid #e9ecef;
+  margin-top: 2rem;
+}
+
+/* --- Botón cancelar --- */
+.btn-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  background: var(--color-gris);
+  color: white;
+}
+
+.btn-cancel:hover {
+  background: #5a6268;
+}
+
+/* --- Botón guardar --- */
+.btn-save {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  background: var(--color-exito);
+  color: var(--color-blanco);
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #218838;
+}
+
+.btn-save:disabled {
+  background: var(--color-gris);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .actualizar-info-page {
+    padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+
+  .actualizar-title {
+    font-size: 2rem;
+  }
+
+  .actualizar-content {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===== ESTILOS PARA COMPLETAR PERFIL ===== */
+
+/* --- Contenedor de completar perfil --- */
+.completar-perfil-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* --- Contenido de completar perfil --- */
+.completar-perfil-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* --- Secciones de completar perfil --- */
+.seleccion-perfil,
+.formulario-perfil,
+.confirmacion-perfil {
+  width: 100%;
+  max-width: 800px;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Tarjeta de completar --- */
+.card-completar {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Icono de completar --- */
+.icono-completar {
+  width: 80px;
+  height: 80px;
+  display: block;
+  margin: 0 auto 1.5rem;
+}
+
+/* --- Título de completar --- */
+.titulo-completar {
+  text-align: center;
+  color: var(--color-gris-oscuro);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+/* --- Descripción de completar --- */
+.descripcion-completar {
+  text-align: center;
+  color: var(--color-gris);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* --- Opciones de perfil --- */
+.opciones-perfil {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* --- Botón de opción --- */
+.opcion-btn {
+  background: white;
+  border: 3px solid #e0e0e0;
+  border-radius: 15px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.opcion-btn:hover:not(:disabled) {
+  border-color: #667eea;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+.opcion-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.opcion-deportista:hover:not(:disabled) {
+  border-color: #667eea;
+}
+
+.opcion-acudiente:hover:not(:disabled) {
+  border-color: #764ba2;
+}
+
+.opcion-btn h3 {
+  color: var(--color-gris-oscuro);
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.opcion-btn p {
+  color: var(--color-gris);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* --- Icono de opción --- */
+.opcion-icono {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.opcion-icono-grande {
+  font-size: 6rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* --- Formulario de deportista --- */
+.form-deportista {
+  margin-top: 2rem;
+}
+
+/* ===== ESTILOS DE MENSAJES ===== */
+
+/* --- Mensaje de error --- */
+.mensaje-error {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid #fcc;
+}
+
+/* --- Mensaje de éxito --- */
+.mensaje-exito {
+  background-color: var(--color-fondo-exito);
+  color: var(--color-texto-exito);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  border: 1px solid var(--color-borde-exito);
+}
+
+/* --- Mensaje informativo --- */
+.mensaje-info {
+  background-color: var(--color-fondo-info);
+  color: var(--color-texto-info);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 2rem;
+  text-align: center;
+  border: 1px solid var(--color-borde-info);
+  grid-column: 1 / -1;
+}
+
+.mensaje-info p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* --- Botón primario (completar perfil) --- */
+/* NOTA: Este estilo solo aplica a botones fuera del hero del perfil */
+.perfil-content .btn-primary,
+.completar-perfil-container .btn-primary {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
+  color: var(--color-blanco);
+}
+
+.perfil-content .btn-primary:hover:not(:disabled),
+.completar-perfil-container .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para grid y perfil-grid --- */
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para métricas --- */
+@media (max-width: 640px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para completar perfil (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .card-completar {
+    padding: 2rem;
+  }
+
+  .titulo-completar {
+    font-size: 1.5rem;
+  }
+
+  .descripcion-completar {
+    font-size: 1rem;
+  }
+
+  .opciones-perfil {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-container {
+    padding: var(--espaciado-md) var(--espaciado-sm);
+  }
+
+  .perfil-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+
+  .perfil-card .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--espaciado-xs);
+  }
+
+  .perfil-card .info-row label {
+    min-width: auto;
+  }
+
+  .perfil-card .info-row span {
+    text-align: left;
+  }
+
+  .perfil-card .card-header {
+    flex-direction: column;
+    gap: var(--espaciado-md);
+    align-items: flex-start;
+  }
+
+  .actualizar-info-page {
+    padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+
+  .actualizar-title {
+    font-size: 2rem;
+  }
+
+  .actualizar-content {
+    padding: 1.5rem;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive para grid y perfil-grid --- */
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para métricas --- */
+@media (max-width: 640px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Responsive para completar perfil (max-width: 768px) --- */
+@media (max-width: 768px) {
+  .card-completar {
+    padding: 2rem;
+  }
+
+  .titulo-completar {
+    font-size: 1.5rem;
+  }
+
+  .descripcion-completar {
+    font-size: 1rem;
+  }
+
+  .opciones-perfil {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .perfil-container {
+    padding: var(--espaciado-md) var(--espaciado-sm);
+  }
+
+  .perfil-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+
+  .perfil-card .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--espaciado-xs);
+  }
+
+  .perfil-card .info-row label {
+    min-width: auto;
+  }
+
+  .perfil-card .info-row span {
+    text-align: left;
+  }
+
+  .perfil-card .card-header {
+    flex-direction: column;
+    gap: var(--espaciado-md);
+    align-items: flex-start;
+  }
+
+  .actualizar-info-page {
+    padding: 1rem 0.5rem;
+    padding-bottom: 0;
+  }
+
+  .actualizar-info-page ::v-deep .footer-enhanced {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    width: calc(100% + 1rem);
+  }
+
+  .actualizar-title {
+    font-size: 2rem;
+  }
+
+  .actualizar-content {
+    padding: 1.5rem;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+

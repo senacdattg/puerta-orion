@@ -1,0 +1,628 @@
+/* ===== ESTILOS PARA DASHBOARDS ===== */
+
+/* ===== IMPORTS Y VARIABLES ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* Nota: Las variables --color-azul-principal, --color-azul-oscuro, --color-amarillo-acento,
+   --color-amarillo-hover ya están definidas como alias en base/variables.css */
+
+/* ===== ESTILOS DEL COMPONENTE DashboardHome ===== */
+
+/* --- Contenedor principal --- */
+.dashboard-home {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--espaciado-xl) var(--espaciado-md);
+}
+
+/* ===== ESTILOS DEL COMPONENTE DeportistaDashboard ===== */
+
+/* --- Animaciones globales para el panel --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* --- Clases globales para animaciones de entrada --- */
+.fade-enter-active {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.slide-up-enter-active {
+  animation: slideUp 0.4s ease-out;
+}
+
+/* --- Mejoras de accesibilidad y usabilidad (scrollbar) --- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primario-transparente-30) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-primario-transparente-30);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primario-transparente-50);
+}
+
+/* --- Estilos para elementos interactivos --- */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-amarillo-acento);
+  outline-offset: 2px;
+}
+
+/* --- Transiciones suaves globales --- */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Utilidades de color --- */
+.text-azul {
+  color: var(--color-azul-principal);
+}
+
+.text-amarillo {
+  color: var(--color-amarillo-acento);
+}
+
+.bg-azul {
+  background-color: var(--color-azul-principal);
+}
+
+.bg-amarillo {
+  background-color: var(--color-amarillo-acento);
+}
+
+/* --- Efectos hover mejorados --- */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--color-primario-sombra-15);
+}
+
+/* --- Sombras personalizadas con colores del tema --- */
+.shadow-azul {
+  box-shadow: 0 4px 12px var(--color-primario-sombra-15);
+}
+
+.shadow-azul-hover {
+  transition: box-shadow 0.3s ease;
+}
+
+.shadow-azul-hover:hover {
+  box-shadow: 0 6px 20px var(--color-primario-sombra-25);
+}
+
+/* --- Contenedor principal --- */
+.deportista-dashboard-page {
+  min-height: 100vh;
+  background: var(--color-gris-claro);
+  display: flex;
+  flex-direction: column;
+  padding-top: 70px;
+}
+
+/* --- Layout del dashboard --- */
+.dashboard-layout {
+  display: flex;
+  flex: 1;
+  position: relative;
+}
+
+.dashboard-main {
+  flex: 1;
+  margin-left: 250px;
+  transition: margin-left var(--transicion);
+  min-height: calc(100vh - 70px);
+}
+
+/* --- Contenido principal (compartido con AcudienteDashboard) --- */
+.main-content {
+  padding: var(--espaciado-xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* --- Toggle para móvil --- */
+.mobile-sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 80px;
+  left: var(--espaciado-md);
+  z-index: calc(var(--z-fixed) + 1);
+  background: var(--color-azul-principal);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  cursor: pointer;
+  box-shadow: var(--sombra-media);
+  transition: var(--transicion);
+}
+
+.mobile-sidebar-toggle:hover {
+  background: var(--color-azul-oscuro);
+  transform: scale(1.05);
+}
+
+/* --- Responsive del componente DeportistaDashboard --- */
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+  }
+
+  .dashboard-main.sidebar-open {
+    margin-left: 0;
+  }
+
+  .mobile-sidebar-toggle {
+    display: block;
+  }
+
+  .main-content {
+    padding: var(--espaciado-md);
+  }
+
+  .welcome-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+
+  .welcome-subtitle {
+    font-size: var(--tamano-fuente-base);
+  }
+
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+}
+
+/* --- Overlay para móvil cuando sidebar está abierto --- */
+@media (max-width: 768px) {
+  .dashboard-main.sidebar-open::before {
+    content: '';
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--color-overlay-oscuro);
+    z-index: calc(var(--z-fixed) - 1);
+  }
+}
+
+/* ===== ESTILOS DEL COMPONENTE RegistrationBanner ===== */
+
+/* --- Banner principal --- */
+.registration-banner {
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-morado) 100%);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  margin-bottom: var(--espaciado-xl);
+  box-shadow: var(--sombra-media);
+  color: var(--color-blanco);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-xl);
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .banner-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .banner-actions {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .registration-banner .banner-actions .btn {
+    width: 100%;
+    min-width: 100%;
+  }
+}
+
+.banner-icon {
+  font-size: var(--tamano-fuente-xxxl);
+  opacity: 0.9;
+}
+
+.banner-text {
+  flex: 1;
+  min-width: 300px;
+}
+
+.banner-text h3 {
+  font-size: var(--tamano-fuente-xxl);
+  margin: 0 0 var(--espaciado-sm) 0;
+  font-weight: var(--peso-fuente-semibold);
+}
+
+.banner-text p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: var(--tamano-fuente-base);
+}
+
+.banner-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* Estilos específicos para los botones del banner de registro */
+.registration-banner .banner-actions .btn {
+  min-width: 240px;
+  width: auto;
+  height: auto;
+  min-height: 52px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  text-align: center;
+  white-space: nowrap;
+  position: relative;
+  overflow: visible;
+  flex-shrink: 0;
+  word-break: keep-all;
+  text-overflow: clip;
+}
+
+.registration-banner .banner-actions .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.registration-banner .banner-actions .btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón Acudiente (azul) */
+.registration-banner .banner-actions .btn-primary {
+  background: #007bff;
+  color: var(--color-blanco);
+}
+
+.registration-banner .banner-actions .btn-primary:hover {
+  background: #0056b3;
+}
+
+/* Iconos dentro de los botones */
+.registration-banner .banner-actions .btn .icon {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  margin: 0;
+  vertical-align: middle;
+}
+
+.registration-banner .banner-actions .btn-primary .icon {
+  color: var(--color-blanco);
+  font-size: 1.1rem;
+}
+
+/* Botón Deportista (amarillo) */
+.registration-banner .banner-actions .btn-warning {
+  background: #ffc107;
+  color: #000000;
+}
+
+.registration-banner .banner-actions .btn-warning:hover {
+  background: #e0a800;
+}
+
+.registration-banner .banner-actions .btn-warning .icon {
+  color: #000000;
+  font-size: 1.1rem;
+}
+
+/* ===== ESTILOS DEL COMPONENTE admin-dashboard ===== */
+/* ===== ESTILOS DEL COMPONENTE basic-dashboard ===== */
+/* (Estilos compartidos para dashboards de rol) */
+
+/* --- Contenedor del dashboard de rol --- */
+.role-dashboard {
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Header del dashboard --- */
+.dashboard-header {
+  text-align: center;
+  margin-bottom: var(--espaciado-xl);
+  padding-bottom: var(--espaciado-md);
+  border-bottom: 2px solid var(--color-gris-claro);
+}
+
+.dashboard-title {
+  font-size: var(--tamano-fuente-xxxl);
+  font-weight: var(--peso-fuente-bold);
+  margin: 0 0 var(--espaciado-sm) 0;
+  color: var(--color-gris-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaciado-sm);
+}
+
+.dashboard-subtitle {
+  font-size: var(--tamano-fuente-lg);
+  color: var(--color-gris);
+  margin: 0;
+}
+
+/* --- Grid de tarjetas --- */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--espaciado-lg);
+}
+
+/* --- Tarjetas del dashboard --- */
+.dashboard-card {
+  background: var(--color-blanco);
+  border: 2px solid var(--color-gris-medio);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-lg);
+  cursor: pointer;
+  transition: var(--transicion);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--color-primario);
+  transition: width var(--transicion);
+}
+
+.dashboard-card:hover {
+  border-color: var(--color-primario);
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-media);
+}
+
+.dashboard-card:hover::before {
+  width: 8px;
+}
+
+/* --- Icono de la tarjeta --- */
+.card-icon {
+  width: 3rem;
+  height: 3rem;
+  background: var(--color-gris-claro);
+  border-radius: var(--radio-borde-pequeno);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--tamano-fuente-xl);
+  color: var(--color-primario);
+  flex-shrink: 0;
+}
+
+/* --- Contenido de la tarjeta --- */
+.card-content {
+  flex: 1;
+}
+
+.card-content h3 {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-semibold);
+  margin: 0 0 var(--espaciado-xs) 0;
+  color: var(--color-gris-oscuro);
+}
+
+.card-content p {
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ===== ESTILOS DEL COMPONENTE AcudienteDashboard ===== */
+
+/* --- Contenedor principal --- */
+.acudiente-dashboard-page {
+  min-height: 100vh;
+  background: var(--color-gris-claro);
+  display: flex;
+  flex-direction: column;
+  padding-top: 70px;
+}
+
+/* --- Layout del dashboard (compartido con DeportistaDashboard) --- */
+/* .dashboard-layout está definido arriba */
+/* .dashboard-main está definido arriba para DeportistaDashboard */
+/* .main-content está definido arriba y es compartido */
+/* AcudienteDashboard usa el mismo layout sin sidebar */
+
+/* --- Responsive del componente AcudienteDashboard --- */
+@media (max-width: 768px) {
+  /* .main-content responsive está definido arriba en DeportistaDashboard */
+}
+
+/* ===== VARIACIONES DE COLOR POR ROL ===== */
+/* (Estilos específicos para diferenciar dashboards por rol) */
+
+/* --- Acudiente Dashboard --- */
+.acudiente-dashboard .dashboard-title {
+  color: var(--color-primario);
+}
+
+.acudiente-dashboard .card-icon {
+  background: var(--color-fondo-azul-claro);
+  color: var(--color-primario);
+}
+
+.acudiente-dashboard .dashboard-card::before {
+  background: var(--color-primario);
+}
+
+.acudiente-dashboard .dashboard-card:hover {
+  border-color: var(--color-primario);
+}
+
+/* --- Deportista Dashboard --- */
+.deportista-dashboard .dashboard-title {
+  color: var(--color-advertencia);
+}
+
+.deportista-dashboard .card-icon {
+  background: var(--color-fondo-naranja-claro);
+  color: var(--color-advertencia);
+}
+
+.deportista-dashboard .dashboard-card::before {
+  background: var(--color-advertencia);
+}
+
+.deportista-dashboard .dashboard-card:hover {
+  border-color: var(--color-advertencia);
+}
+
+/* --- Admin Dashboard --- */
+.admin-dashboard .dashboard-title {
+  color: var(--color-peligro);
+}
+
+.admin-dashboard .card-icon {
+  background: var(--color-fondo-error);
+  color: var(--color-peligro);
+}
+
+.admin-dashboard .dashboard-card::before {
+  background: var(--color-peligro);
+}
+
+.admin-dashboard .dashboard-card:hover {
+  border-color: var(--color-peligro);
+}
+
+/* --- Basic Dashboard --- */
+.basic-dashboard .dashboard-title {
+  color: var(--color-gris);
+}
+
+.basic-dashboard .card-icon {
+  background: var(--color-gris-claro);
+  color: var(--color-gris);
+}
+
+.basic-dashboard .dashboard-card::before {
+  background: var(--color-gris);
+}
+
+.basic-dashboard .dashboard-card:hover {
+  border-color: var(--color-gris);
+}
+
+/* ===== RESPONSIVE COMPARTIDO PARA DASHBOARDS ===== */
+
+/* --- Responsive para dashboard-home --- */
+@media (max-width: 768px) {
+  .dashboard-home {
+    padding: var(--espaciado-md) var(--espaciado-sm);
+  }
+
+  .banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--espaciado-md);
+  }
+
+  .banner-actions {
+    justify-content: center;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: var(--espaciado-md);
+  }
+
+  .dashboard-card {
+    padding: var(--espaciado-md);
+  }
+
+  .dashboard-title {
+    font-size: var(--tamano-fuente-xxl);
+  }
+}
+
+/* --- Responsive para tarjetas en móvil pequeño --- */
+@media (max-width: 576px) {
+  .dashboard-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}

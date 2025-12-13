@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Logs
+logs/
+*.log
+
+# Database
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Tests (opcional, si no se necesitan en producción)
+tests/
+*.md
+README.md
+
+# Static files (si se suben dinámicamente)
+static/uploads/
+
+# Environment files (se pasan via env_file)
+.env
+.env.local
+.env.*.local
+.env.*
+config.env.example
+enviroment.example
+
+# Secrets and sensitive files
+*.key
+*.pem
+*.p12
+*.jks
+secrets/
+.secrets
+*.secret
+
+# Coverage and test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+coverage.xml
+junit.xml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+

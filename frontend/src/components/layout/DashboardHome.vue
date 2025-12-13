@@ -1,0 +1,57 @@
+<template>
+  <div class="dashboard-home">
+    <!-- Banner de registro incompleto para usuarios base -->
+    <RegistrationBanner v-if="showRegistrationBanner" />
+
+    <!-- Panel principal según rol -->
+    <div class="main-dashboard">
+      <!-- Panel para Acudiente -->
+      <!-- Nota: AcudienteDashboard se renderiza en su propia ruta /acudiente/dashboard -->
+      <!-- Si llegamos aquí, es porque el usuario aún no ha sido redirigido -->
+      <div v-if="isAcudiente" class="loading-redirect">
+        <p>Redirigiendo a tu panel...</p>
+      </div>
+
+      <!-- Panel para Entrenador (no para Administradores) -->
+      <AdminDashboard v-if="userRole === 'Entrenador'" />
+
+      <!-- Panel básico para usuarios sin rol específico -->
+      <BasicDashboard v-if="!isAcudiente && userRole !== 'Entrenador' && !isDeportista" />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserRole } from '@/composables/useUserRole'
+import RegistrationBanner from '@/components/ui/registration-banner.vue'
+import AdminDashboard from '@/components/admin/admin-dashboard.vue'
+import BasicDashboard from '@/components/ui/basic-dashboard.vue'
+
+// Definir nombre del componente para el linter
+defineOptions({
+  name: 'DashboardHome'
+})
+
+const router = useRouter()
+const { userRole, isDeportista, isAcudiente } = useUserRole()
+
+// Determinar si mostrar el banner de registro
+const showRegistrationBanner = computed(() => {
+  return userRole.value === 'Usuario' || userRole.value === 'usuario'
+})
+
+// Redirigir usuarios a sus paneles específicos
+onMounted(() => {
+  if (isDeportista.value) {
+    router.replace('/deportista/dashboard')
+  } else if (isAcudiente.value) {
+    router.replace('/acudiente/dashboard')
+  } else if (userRole.value === 'Administrador' || userRole.value === 'SuperAdmin') {
+    router.replace('/admin-manager')
+  }
+})
+</script>
+
+

@@ -1,0 +1,1628 @@
+/* ===== ESTILOS PARA PANEL ADMINISTRATIVO ===== */
+
+/* --- Importar variables base para usar variables unificadas --- */
+@import './base/variables.css';
+
+/* ===== ESTILOS BASE ===== */
+
+/* --- Página administrativa --- */
+.admin-page {
+  min-height: 100vh;
+  background-color: var(--color-gris-claro);
+}
+
+/* --- Contenedor --- */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* ===== ESTILOS DEL COMPONENTE admin-header ===== */
+
+/* --- Header del panel administrativo --- */
+.admin-header {
+  background: linear-gradient(135deg, var(--color-primario) 0%, var(--color-primario-oscuro) 100%);
+  color: var(--color-blanco);
+  padding: 40px 0;
+}
+
+/* --- Contenido del header --- */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* --- Título de página --- */
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+}
+
+/* --- Subtítulo de página --- */
+.page-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* --- Acciones del header --- */
+.header-actions {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* ===== ESTILOS DE BOTONES ===== */
+
+/* --- Botón base --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* --- Botón nuevo --- */
+.btn-nuevo {
+  background: linear-gradient(135deg, var(--color-secundario-oro) 0%, var(--color-secundario-hover) 100%) !important;
+  color: var(--color-primario) !important;
+  border: 2px solid var(--color-primario) !important;
+  box-shadow: 0 4px 12px rgba(255, 214, 0, 0.3) !important;
+  font-weight: 700 !important;
+  padding: 14px 24px !important;
+  border-radius: 12px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-nuevo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-nuevo:hover::before {
+  left: 100%;
+}
+
+.btn-nuevo:hover {
+  background: linear-gradient(135deg, var(--color-secundario-hover) 0%, var(--color-advertencia) 100%) !important;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(247, 214, 0, 0.5) !important;
+  border-color: var(--color-primario-oscuro) !important;
+}
+
+.btn-nuevo:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.btn-nuevo i {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+.btn-nuevo:hover i {
+  transform: rotate(90deg) scale(1.1);
+}
+
+/* --- Botón datos --- */
+.btn-datos {
+  background: linear-gradient(135deg, var(--color-secundario-oro) 0%, var(--color-secundario-hover) 100%) !important;
+  color: var(--color-primario) !important;
+  border: 2px solid var(--color-primario) !important;
+  box-shadow: 0 4px 12px rgba(255, 214, 0, 0.3) !important;
+  font-weight: 700 !important;
+  padding: 14px 24px !important;
+  border-radius: 12px !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-datos::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-datos:hover::before {
+  left: 100%;
+}
+
+.btn-datos:hover {
+  background: linear-gradient(135deg, var(--color-secundario-hover) 0%, var(--color-advertencia) 100%) !important;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(247, 214, 0, 0.5) !important;
+  border-color: var(--color-primario-oscuro) !important;
+}
+
+.btn-datos:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.btn-datos i {
+  font-size: 16px;
+  transition: transform 0.3s ease;
+}
+
+.btn-datos:hover i {
+  transform: scale(1.15) rotate(5deg);
+}
+
+/* --- Botón primario --- */
+.btn--primary:hover {
+  background-color: var(--color-advertencia) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(247, 214, 0, 0.4); /* Sombra específica - mantener hardcodeado */
+}
+
+/* --- Botón pequeño --- */
+.btn--small {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+}
+
+/* --- Botón filtros --- */
+/* --- Botón de filtros y búsqueda --- */
+.btn-filtros {
+  background-color: transparent;
+  color: var(--color-primario) !important;
+  border: 2px solid var(--color-primario) !important;
+  transition: all 0.3s ease;
+}
+
+.btn-filtros:hover {
+  background-color: var(--color-primario) !important;
+  color: var(--color-blanco) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.3);
+}
+
+.btn-filtros:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 71, 171, 0.2);
+}
+
+/* --- Botón outline --- */
+.btn--outline:hover {
+  background-color: var(--color-primario) !important;
+  color: var(--color-blanco);
+}
+
+/* --- Botón primario (alternativo) --- */
+.btn-primary {
+  padding: 10px 20px;
+  background: var(--color-primario);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s;
+}
+
+.btn-primary:hover {
+  background: var(--color-azul-oscuro);
+}
+
+/* --- Botón refresh --- */
+.btn-refresh {
+  padding: 10px 15px;
+  background: var(--color-primario) !important;
+  color: var(--color-blanco) !important;
+  border: none !important;
+  border-radius: var(--radio-borde-pequeno);
+  cursor: pointer;
+  font-size: var(--tamano-fuente-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: var(--color-azul-oscuro) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 71, 171, 0.3);
+}
+
+.btn-refresh:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 71, 171, 0.2);
+}
+
+.btn-refresh:disabled {
+  background: var(--color-gris-medio) !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* --- Botón cargar más --- */
+.btn-cargar-mas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaciado-md);
+  padding: var(--espaciado-md) var(--espaciado-xl);
+  background: linear-gradient(135deg, var(--color-morado-claro) 0%, var(--color-morado) 100%);
+  color: var(--color-blanco);
+  border: none;
+  border-radius: var(--radio-borde);
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  transition: var(--transicion);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.btn-cargar-mas:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); /* Sombra específica - mantener hardcodeado */
+}
+
+.btn-cargar-mas:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Botón de icono --- */
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+/* --- Botón editar (icono) --- */
+.btn-edit {
+  background: var(--color-advertencia);
+  color: var(--color-blanco);
+}
+
+.btn-edit:hover {
+  background: var(--color-advertencia-hover);
+}
+
+/* --- Botón eliminar (icono) --- */
+.btn-delete {
+  background: var(--color-peligro);
+  color: var(--color-blanco);
+}
+
+.btn-delete:hover {
+  background: var(--color-peligro-hover);
+}
+
+/* ===== ESTILOS DE ESTADÍSTICAS ===== */
+
+/* --- Sección de estadísticas --- */
+.stats-section {
+  padding: 40px 0;
+  background-color: var(--color-blanco);
+}
+
+/* --- Grid de estadísticas --- */
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* --- Tarjeta de estadística --- */
+.stat-card {
+  background: var(--color-blanco);
+  border: 1px solid var(--color-gris-200-alt);
+  border-radius: var(--radio-borde-grande);
+  padding: var(--espaciado-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--espaciado-md);
+  box-shadow: var(--sombra-suave);
+  transition: var(--transicion);
+  flex: 1;
+  min-width: 140px;
+  max-width: 160px;
+  min-height: 120px;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-media);
+}
+
+/* --- Icono de estadística --- */
+.stat-icon {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--color-blanco);
+}
+
+/* --- Contenido de estadística --- */
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+/* --- Número de estadística --- */
+.stat-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-gris-oscuro);
+  line-height: 1;
+}
+
+/* --- Label de estadística --- */
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--color-gris);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== ESTILOS DE VARIANTES DE ESTADÍSTICAS POR ROL ===== */
+
+/* --- Estilos para Usuarios Totales --- */
+.stat-icon--users {
+  background-color: var(--color-exito);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card:first-child {
+  border: 2px solid var(--color-exito);
+  background: linear-gradient(135deg, #f8fff9 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card:first-child .stat-number {
+  color: var(--color-exito);
+  font-size: 2.2rem;
+}
+
+/* --- Estilos para SuperAdmin --- */
+.stat-icon--superadmin {
+  background-color: var(--color-rol-superadmin);
+  box-shadow: 0 4px 15px rgba(142, 68, 173, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card[data-role="superadmin"] {
+  border: 2px solid var(--color-rol-superadmin);
+  background: linear-gradient(135deg, #f8f4ff 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card[data-role="superadmin"] .stat-number {
+  color: var(--color-rol-superadmin);
+}
+
+/* --- Estilos para Administrador --- */
+.stat-icon--administrador {
+  background-color: var(--color-peligro);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card[data-role="administrador"] {
+  border: 2px solid var(--color-peligro);
+  background: linear-gradient(135deg, #fff5f5 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card[data-role="administrador"] .stat-number {
+  color: var(--color-peligro);
+}
+
+/* --- Estilos para Entrenador --- */
+.stat-icon--entrenador {
+  background-color: var(--color-rol-entrenador);
+  box-shadow: 0 4px 15px rgba(253, 126, 20, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card[data-role="entrenador"] {
+  border: 2px solid var(--color-rol-entrenador);
+  background: linear-gradient(135deg, #fff8f0 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card[data-role="entrenador"] .stat-number {
+  color: var(--color-rol-entrenador);
+}
+
+/* --- Estilos para Deportista --- */
+.stat-icon--deportista {
+  background-color: var(--color-rol-deportista);
+  box-shadow: 0 4px 15px rgba(32, 201, 151, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card[data-role="deportista"] {
+  border: 2px solid var(--color-rol-deportista);
+  background: linear-gradient(135deg, #f0fffe 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card[data-role="deportista"] .stat-number {
+  color: var(--color-rol-deportista);
+}
+
+/* --- Estilos para Acudiente --- */
+.stat-icon--acudiente {
+  background-color: var(--color-rol-acudiente);
+  box-shadow: 0 4px 15px rgba(111, 66, 193, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card[data-role="acudiente"] {
+  border: 2px solid var(--color-rol-acudiente);
+  background: linear-gradient(135deg, #f8f6ff 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card[data-role="acudiente"] .stat-number {
+  color: var(--color-rol-acudiente);
+}
+
+/* --- Estilos para Usuario --- */
+.stat-icon--usuario {
+  background-color: var(--color-rol-usuario);
+  box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.stat-card[data-role="usuario"] {
+  border: 2px solid var(--color-rol-usuario);
+  background: linear-gradient(135deg, #fffdf0 0%, var(--color-blanco) 100%); /* Gradiente específico - mantener hardcodeado */
+}
+
+.stat-card[data-role="usuario"] .stat-number {
+  color: var(--color-rol-usuario);
+}
+
+
+/* ===== ESTILOS DE TABLA DE USUARIOS ===== */
+
+/* --- Tabla de usuarios --- */
+.tabla-usuarios {
+  width: 100%;
+  font-size: var(--tamano-fuente-lg);
+  border-collapse: collapse;
+  background-color: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  overflow: hidden;
+  box-shadow: var(--sombra-suave);
+  border: 1px solid var(--color-gris-300);
+  table-layout: fixed;
+}
+
+/* --- Header de la tabla --- */
+.tabla-usuarios thead tr {
+  background: linear-gradient(135deg, var(--color-gris-50) 0%, var(--color-gris-300) 100%);
+  color: var(--color-gris-700-alt);
+  font-weight: var(--peso-fuente-semibold);
+  text-align: left;
+}
+
+.tabla-usuarios th {
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  font-size: var(--tamano-fuente-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--color-gris-300);
+  text-align: center;
+}
+
+.tabla-usuarios th:nth-child(1) {
+  width: 30%;
+}
+
+.tabla-usuarios th:nth-child(2) {
+  width: 30%;
+}
+
+.tabla-usuarios th:nth-child(3) {
+  width: 40%;
+}
+
+/* --- Filas de la tabla --- */
+.tabla-usuarios tbody tr {
+  transition: var(--transicion);
+  border-bottom: 1px solid var(--color-gris-100);
+}
+
+.tabla-usuarios tbody tr:nth-child(even) {
+  background-color: var(--color-gris-50);
+}
+
+.tabla-usuarios tbody tr:hover {
+  background-color: var(--color-gris-50);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Celdas de la tabla --- */
+.tabla-usuarios td {
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-700-alt);
+  vertical-align: middle;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabla-usuarios td:first-child {
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-800-alt);
+}
+
+/* ===== ESTILOS DE FILAS DE USUARIO ===== */
+
+/* --- Fila de usuario --- */
+.user-row {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-row--even {
+  background-color: var(--color-gris-50);
+}
+
+.user-row--odd {
+  background-color: var(--color-blanco);
+}
+
+.user-row:hover {
+  background-color: var(--color-gris-50);
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Nombre de usuario --- */
+.user-name {
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-800-alt);
+}
+
+/* --- Rol de usuario --- */
+.user-role {
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* --- Acción de usuario --- */
+.user-action {
+  text-align: center;
+  vertical-align: middle;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* --- Estado de usuario --- */
+.user-status {
+  text-align: center;
+  padding: 12px;
+}
+
+/* ===== ESTILOS DE SELECCIÓN DE ROLES ===== */
+
+/* --- Select de rol --- */
+.role-select {
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border: 2px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-pequeno);
+  background-color: var(--color-blanco);
+  color: var(--color-gris-700-alt);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  cursor: pointer;
+  transition: var(--transicion);
+  min-width: 140px;
+}
+
+.role-select:focus {
+  outline: none;
+  border-color: var(--color-info-alt);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); /* Sombra específica - mantener hardcodeado */
+}
+
+.role-select:hover {
+  border-color: var(--color-gris-500);
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Select general --- */
+select {
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border: 2px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-pequeno);
+  background-color: var(--color-blanco);
+  color: var(--color-gris-700-alt);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  cursor: pointer;
+  transition: var(--transicion);
+  min-width: 140px;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--color-info-alt);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); /* Sombra específica - mantener hardcodeado */
+}
+
+select:hover {
+  border-color: var(--color-gris-500);
+  box-shadow: var(--sombra-suave);
+}
+
+/* ===== ESTILOS DE BADGES ===== */
+
+/* --- Badge base --- */
+.badge {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.5px;
+  border: 2px solid transparent;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+/* --- Badge de SuperAdmin --- */
+/* SuperAdmin usa el mismo estilo que Administrador (rojo) */
+.badge.badge-admin.badge-superadmin,
+.badge.badge-detalle.badge-admin.badge-superadmin {
+  background: linear-gradient(135deg, var(--color-peligro) 0%, var(--color-peligro) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-peligro) !important;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4) !important;
+}
+
+/* --- Badge de Administrador --- */
+.badge.badge-admin.badge-administrador,
+.badge.badge-detalle.badge-admin.badge-administrador {
+  background: linear-gradient(135deg, var(--color-peligro) 0%, var(--color-peligro-hover) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-peligro-hover) !important;
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.4) !important;
+}
+
+/* --- Badge de Entrenador --- */
+.badge.badge-moderator.badge-entrenador,
+.badge.badge-detalle.badge-moderator.badge-entrenador {
+  background: linear-gradient(135deg, var(--color-rol-entrenador) 0%, var(--color-advertencia-hover) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-advertencia-hover) !important;
+  box-shadow: 0 2px 6px rgba(253, 126, 20, 0.4) !important;
+}
+
+/* --- Badge de Deportista (Verde turquesa) --- */
+.badge.badge-user.badge-deportista,
+.badge.badge-detalle.badge-user.badge-deportista {
+  background: linear-gradient(135deg, var(--color-rol-deportista) 0%, var(--color-exito-oscuro) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-exito-oscuro) !important;
+  box-shadow: 0 2px 6px rgba(32, 201, 151, 0.4) !important;
+}
+
+/* --- Badge de Acudiente (Azul oscuro) --- */
+.badge.badge-user.badge-acudiente,
+.badge.badge-detalle.badge-user.badge-acudiente {
+  background: linear-gradient(135deg, var(--color-rol-acudiente) 0%, var(--color-primario-oscuro) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: var(--color-primario-oscuro) !important;
+  box-shadow: 0 2px 6px rgba(38, 20, 172, 0.4) !important;
+}
+
+/* --- Badge de Usuario (Amarillo - solo para rol genérico "Usuario") --- */
+.badge.badge-user.badge-usuario,
+.badge.badge-detalle.badge-user.badge-usuario {
+  background: linear-gradient(135deg, var(--color-rol-usuario) 0%, var(--color-advertencia-hover) 100%) !important;
+  color: var(--color-gris-800-alt) !important;
+  border-color: #e0a800 !important;
+  box-shadow: 0 2px 6px rgba(255, 193, 7, 0.4) !important;
+}
+
+/* --- Badge sin rol --- */
+.badge-none,
+.badge.badge-detalle.badge-none {
+  background: linear-gradient(135deg, var(--color-gris-600) 0%, var(--color-gris-700-alt) 100%) !important;
+  color: var(--color-blanco) !important;
+  border-color: #6b7280 !important;
+  box-shadow: 0 2px 6px rgba(107, 114, 128, 0.35) !important;
+}
+
+/* --- Badge de estado --- */
+.badge-estado {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-estado.activo {
+  background-color: var(--color-fondo-exito);
+  color: var(--color-texto-exito);
+  border: 1px solid var(--color-borde-exito);
+}
+
+.badge-estado.inactivo {
+  background-color: var(--color-fondo-error);
+  color: var(--color-texto-error);
+  border: 1px solid var(--color-borde-error);
+}
+
+/* --- Badge de detalle --- */
+.badge-detalle {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+/* --- Contenedor de badges de roles --- */
+.roles-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.roles-badges .badge {
+  min-width: 90px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.roles-container-detalle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ===== ESTILOS DE CHECKBOXES DE ROLES ===== */
+
+/* --- Contenedor de checkboxes de roles --- */
+.roles-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaciado-md);
+  min-width: 200px;
+  max-width: 250px;
+  padding: var(--espaciado-md);
+  background: linear-gradient(135deg, var(--color-gris-50) 0%, var(--color-blanco) 100%);
+  border-radius: var(--radio-borde);
+  border: 1px solid var(--color-gris-300);
+  box-shadow: var(--sombra-suave);
+  margin: 0 auto;
+}
+
+/* --- Lista de checkboxes de roles --- */
+.roles-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- Label de checkbox de rol --- */
+.role-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+  cursor: pointer;
+  padding: var(--espaciado-md);
+  border-radius: var(--radio-borde-pequeno);
+  background-color: var(--color-blanco);
+  border: 2px solid var(--color-gris-300);
+  transition: var(--transicion);
+  position: relative;
+  overflow: hidden;
+}
+
+.role-checkbox-label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background-color: var(--color-info-alt);
+  transform: scaleY(0);
+  transition: transform var(--transicion);
+}
+
+.role-checkbox-label:hover {
+  background-color: var(--color-gris-50);
+  border-color: var(--color-info-alt);
+  transform: translateX(4px);
+  box-shadow: var(--sombra-suave);
+}
+
+.role-checkbox-label:hover::before {
+  transform: scaleY(1);
+}
+
+.role-checkbox-label.role-checkbox-checked,
+.role-checkbox-label:has(.role-checkbox:checked) {
+  background-color: var(--color-info-badge-bg);
+  border-color: var(--color-info-alt);
+  box-shadow: var(--sombra-suave);
+}
+
+.role-checkbox-label.role-checkbox-checked::before,
+.role-checkbox-label:has(.role-checkbox:checked)::before {
+  transform: scaleY(1);
+}
+
+.role-checkbox-label.role-checkbox-checked .role-checkbox-text,
+.role-checkbox-label:has(.role-checkbox:checked) .role-checkbox-text {
+  color: var(--color-info-badge-text);
+  font-weight: var(--peso-fuente-semibold);
+}
+
+/* --- Checkbox de rol --- */
+.role-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  cursor: pointer;
+  accent-color: var(--color-info-alt);
+  border-radius: var(--radio-borde-pequeno);
+  border: 2px solid var(--color-gris-300);
+  transition: var(--transicion);
+  position: relative;
+}
+
+.role-checkbox:hover {
+  border-color: var(--color-info-alt);
+  transform: scale(1.1);
+}
+
+.role-checkbox:checked {
+  background-color: var(--color-info-alt);
+  border-color: var(--color-info-alt);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Sombra específica - mantener hardcodeado */
+}
+
+.role-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Sombra específica - mantener hardcodeado */
+}
+
+.role-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Texto de checkbox de rol --- */
+.role-checkbox-text {
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-medio);
+  color: var(--color-gris-700-alt);
+  user-select: none;
+  transition: color var(--transicion);
+  flex: 1;
+}
+
+.role-checkbox-label:hover .role-checkbox-text {
+  color: var(--color-info-badge-text);
+}
+
+/* --- Item de checkbox de rol (modal) --- */
+.role-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+  padding: var(--espaciado-md);
+  background: var(--color-blanco);
+  border: 2px solid var(--color-gris-300);
+  border-radius: var(--radio-borde);
+  cursor: pointer;
+  transition: var(--transicion);
+}
+
+.role-checkbox-item:hover {
+  border-color: var(--color-rol-superadmin);
+  background: var(--color-fondo-guardian);
+  transform: translateX(4px);
+}
+
+.role-checkbox-item.role-checkbox-selected {
+  border-color: var(--color-rol-superadmin);
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); /* Gradiente específico - mantener hardcodeado */
+  box-shadow: var(--sombra-suave);
+}
+
+/* --- Input de checkbox de rol (modal) --- */
+.role-checkbox-input {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #8b5cf6;
+}
+
+/* --- Contenido de checkbox de rol (modal) --- */
+.role-checkbox-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* --- Nombre de checkbox de rol (modal) --- */
+.role-checkbox-name {
+  font-size: var(--tamano-fuente-base);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-800-alt);
+  text-transform: capitalize;
+}
+
+/* --- Badge de checkbox de rol (modal) --- */
+.role-checkbox-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+/* ===== ESTILOS DE BOTONES DE ESTADO ===== */
+
+/* --- Botón de estado --- */
+.btn-estado {
+  padding: var(--espaciado-sm) var(--espaciado-md);
+  border: none;
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-sm);
+  font-weight: var(--peso-fuente-semibold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  transition: var(--transicion);
+  min-width: 110px;
+  justify-content: center;
+}
+
+.btn-estado:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-estado:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-estado i {
+  font-size: 16px;
+}
+
+/* --- Botón activo --- */
+.btn-activo {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: var(--color-blanco);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.btn-activo:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* --- Botón inactivo --- */
+.btn-inactivo {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: var(--color-blanco);
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+}
+
+.btn-inactivo:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4);
+}
+
+/* ===== ESTILOS DEL COMPONENTE modal-detalle ===== */
+/* Movido a modales.css */
+
+/* ===== ESTILOS DE DETALLE DE USUARIO ===== */
+
+/* --- Contenedor de detalle de usuario --- */
+.detalle-usuario {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* --- Sección de detalle --- */
+.seccion-detalle {
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  border: 1px solid var(--color-gris-300);
+}
+
+/* --- Título de sección --- */
+.titulo-seccion {
+  font-size: var(--tamano-fuente-xl);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800-alt);
+  margin: 0 0 var(--espaciado-lg) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+  padding-bottom: var(--espaciado-md);
+  border-bottom: 2px solid var(--color-gris-300);
+}
+
+.titulo-seccion i {
+  color: #667eea; /* Color específico del gradiente - mantener hardcodeado */
+}
+
+/* --- Título de sección de roles --- */
+.titulo-seccion-roles {
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-bold);
+  color: var(--color-gris-800-alt);
+  margin: 0 0 var(--espaciado-md) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-md);
+}
+
+.titulo-seccion-roles i {
+  color: var(--color-rol-superadmin);
+}
+
+/* --- Descripción de roles --- */
+.descripcion-roles {
+  margin: 0 0 var(--espaciado-lg) 0;
+  font-size: var(--tamano-fuente-sm);
+  color: var(--color-gris-600);
+  line-height: 1.5;
+}
+
+/* --- Grid de información de detalle --- */
+.info-grid-detalle {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+/* --- Grid de información de usuario --- */
+.info-grid-usuario {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* --- Item de información de detalle --- */
+.info-item-detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-item-detalle label {
+  font-size: var(--tamano-fuente-xs);
+  font-weight: var(--peso-fuente-semibold);
+  color: var(--color-gris-600);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item-detalle span {
+  font-size: var(--tamano-fuente-base);
+  color: var(--color-gris-800-alt);
+  font-weight: var(--peso-fuente-medio);
+}
+
+/* Centrar solo el texto de dirección en el modal de detalle */
+.info-item-direccion-detalle {
+  grid-column: 1 / -1;
+}
+
+.info-item-direccion-detalle span {
+  text-align: center !important;
+  display: block;
+  width: 100%;
+}
+
+/* --- Sección de acciones de detalle --- */
+.seccion-acciones-detalle {
+  background: var(--color-gris-50);
+  border-radius: var(--radio-borde);
+  padding: var(--espaciado-xl);
+  border: 1px solid var(--color-gris-300);
+}
+
+/* --- Botones de acciones de detalle --- */
+.botones-acciones-detalle {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 12px !important;
+  margin-top: 16px;
+  justify-content: center !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+
+/* --- Botón de acción de detalle (forzar tamaño uniforme) --- */
+.botones-acciones-detalle button,
+.botones-acciones-detalle > button,
+.botones-acciones-detalle button.btn-accion-detalle,
+.botones-acciones-detalle .btn-accion-detalle,
+.seccion-acciones-detalle .botones-acciones-detalle button,
+.seccion-acciones-detalle .botones-acciones-detalle > button,
+.seccion-acciones-detalle button.btn-accion-detalle,
+.seccion-acciones-detalle button.btn-editar,
+.seccion-acciones-detalle button.btn-roles,
+.seccion-acciones-detalle button.btn-activar,
+.seccion-acciones-detalle button.btn-desactivar,
+.seccion-acciones-detalle .botones-acciones-detalle button.btn-editar {
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  box-sizing: border-box !important;
+  padding: 14px 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-accion-detalle,
+button.btn-accion-detalle,
+button.btn-editar,
+button.btn-roles,
+button.btn-activar,
+button.btn-desactivar,
+.seccion-acciones-detalle button,
+.seccion-acciones-detalle .btn-accion-detalle {
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 14px 24px !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  color: var(--color-blanco) !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  line-height: 1.5 !important;
+}
+
+.btn-accion-detalle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-accion-detalle:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Botón desactivar --- */
+.btn-desactivar {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* --- Botón activar --- */
+.btn-activar {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* --- Botón editar --- */
+.btn-editar,
+button.btn-editar,
+.btn-accion-detalle.btn-editar,
+.seccion-acciones-detalle button.btn-editar,
+.botones-acciones-detalle button.btn-editar {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  padding: 14px 24px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* --- Botón roles --- */
+.btn-roles {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+/* ===== ESTILOS DE INFORMACIÓN DE USUARIO EN MODAL DE ROLES ===== */
+/* Movido a modales.css */
+
+/* ===== ESTILOS DE INPUTS Y CONTROLES ===== */
+
+/* --- Input de control --- */
+.control-input {
+  width: 100%;
+  padding: var(--espaciado-md);
+  border: 1px solid var(--color-gris-300);
+  border-radius: var(--radio-borde-pequeno);
+  font-size: var(--tamano-fuente-base);
+  transition: var(--transicion-rapida);
+  background-color: var(--color-blanco);
+  color: var(--color-gris-800-alt);
+}
+
+.control-input:focus {
+  outline: none;
+  border-color: #667eea; /* Color específico del gradiente - mantener hardcodeado */
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); /* Sombra específica - mantener hardcodeado */
+}
+
+.control-input:hover {
+  border-color: var(--color-gris-300);
+}
+
+/* --- Error de input --- */
+.input-error {
+  color: var(--color-error);
+  font-size: var(--tamano-fuente-xs);
+  margin-top: 4px;
+  display: block;
+}
+
+/* ===== ESTILOS DE CARGAR MÁS USUARIOS ===== */
+
+/* --- Contenedor de cargar más --- */
+.cargar-mas-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 20px 0;
+}
+
+
+.tabla-datos-container {
+  background: var(--color-blanco);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tabla-header {
+  margin-bottom: 20px;
+}
+
+.header-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.select-tema {
+  flex: 1;
+  max-width: 300px;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--color-blanco);
+}
+
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.empty-state, .loading-state, .error-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-gris);
+}
+
+.empty-icon {
+  font-size: 48px;
+  color: #ccc;
+  margin-bottom: 15px;
+}
+
+.loading-state .spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--color-primario);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px;
+}
+
+.error-state {
+  color: #dc3545;
+}
+
+.error-state i {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.tabla-datos {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.tabla-datos thead {
+  background: #f8f9fa;
+}
+
+.tabla-datos th {
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-gris-oscuro);
+  border-bottom: 2px solid #dee2e6;
+}
+
+.tabla-datos td {
+  padding: 12px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tabla-datos tbody tr:hover {
+  background: #f8f9fa;
+}
+
+.tabla-datos tbody tr.inactivo {
+  opacity: 0.6;
+  background: #f8f9fa;
+}
+
+.acciones-col {
+  width: 120px;
+  text-align: center;
+}
+
+.acciones-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+
+.descripcion-col {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Mensaje cuando no hay resultados de búsqueda/filtro --- */
+.sin-resultados {
+  padding: 60px 20px;
+  text-align: center;
+  background: var(--color-blanco);
+  border-radius: 12px;
+  margin: 30px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sin-resultados-content {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.sin-resultados-content i {
+  font-size: 4rem;
+  color: var(--color-gris-400);
+  margin-bottom: 20px;
+  opacity: 0.6;
+}
+
+.sin-resultados-content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-gris-800);
+  margin: 0 0 12px 0;
+}
+
+.sin-resultados-content p {
+  font-size: 1rem;
+  color: var(--color-gris-600);
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+}
+
+.sin-resultados-content .sin-resultados-sugerencia {
+  font-size: 0.9rem;
+  color: var(--color-gris-500);
+  font-style: italic;
+  margin-top: 16px;
+}
+
+.sin-mas-usuarios {
+  text-align: center;
+  padding: 20px 0;
+  color: #6b7280;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.sin-mas-usuarios p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Contenido Principal */
+.main-content {
+    padding: 40px 0;
+}
+
+.content-grid {
+
+    display: grid;
+    grid-column: span 1;
+    grid-template-columns: 1fr;
+    gap: 30px;
+}
+
+.content-panel {
+    background: var(--color-blanco);
+    border-radius: 16px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.panel-header {
+    background-color: var(--color-gris-claro);
+    padding: 20px 25px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-controls {
+    padding: 16px 25px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: var(--color-blanco);
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.control-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.control-label {
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 600;
+}
+
+.panel-title {
+    font-size: 1.9rem;
+    font-weight: 6px;
+    color: var(--color-gris-oscuro);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-actions {
+        justify-content: center;
+    }
+
+    .panel-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .panel-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}

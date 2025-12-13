@@ -1,0 +1,153 @@
+/* ===== COMPONENTES REUTILIZABLES: TABLAS ===== */
+
+@import '../base/variables.css';
+
+/* ===== TABLA BASE ===== */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  overflow: hidden;
+  box-shadow: var(--sombra-suave);
+}
+
+.table th {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  padding: var(--espaciado-md);
+  text-align: left;
+  font-weight: var(--peso-fuente-semibold);
+}
+
+.table td {
+  padding: var(--espaciado-md);
+  border-top: 1px solid var(--color-gris-claro);
+  color: var(--color-gris-oscuro);
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-gris-claro);
+}
+
+/* --- Filas alternadas --- */
+.table tbody tr:nth-child(even) {
+  background-color: var(--color-gris-50);
+}
+
+.table tbody tr:nth-child(odd) {
+  background-color: var(--color-blanco);
+}
+
+/* --- Tabla con bordes --- */
+.table.table-bordered {
+  border: 1px solid var(--color-gris-claro);
+}
+
+.table.table-bordered th,
+.table.table-bordered td {
+  border: 1px solid var(--color-gris-claro);
+}
+
+/* --- Tabla striped --- */
+.table.table-striped tbody tr:nth-child(even) {
+  background-color: var(--color-gris-50);
+}
+
+/* --- Tabla hover --- */
+.table.table-hover tbody tr:hover {
+  background-color: var(--color-gris-100);
+}
+
+/* ===== VARIANTES DE TABLA ===== */
+
+/* --- Tabla de historial --- */
+.tabla-historial {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-blanco);
+  border-radius: var(--radio-borde);
+  overflow: hidden;
+  box-shadow: var(--sombra-suave);
+}
+
+.tabla-historial thead th {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  padding: var(--espaciado-md);
+  text-align: left;
+  font-weight: var(--peso-fuente-semibold);
+}
+
+.tabla-historial tbody td {
+  padding: var(--espaciado-md);
+  border-top: 1px solid var(--color-gris-claro);
+  color: var(--color-gris-oscuro);
+}
+
+.tabla-historial tbody tr:hover {
+  background-color: var(--color-gris-claro);
+}
+
+.tabla-historial tbody tr:nth-child(odd) {
+  background-color: var(--color-blanco);
+}
+
+.tabla-historial tbody tr:nth-child(even) {
+  background-color: var(--color-gris-50);
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .table {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--espaciado-sm);
+  }
+
+  .tabla-historial {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .tabla-historial thead th,
+  .tabla-historial tbody td {
+    padding: var(--espaciado-sm);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .table {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .table th,
+  .table td {
+    padding: var(--espaciado-sm);
+  }
+
+  .tabla-historial {
+    font-size: var(--tamano-fuente-sm);
+  }
+
+  .tabla-historial thead th,
+  .tabla-historial tbody td {
+    padding: var(--espaciado-sm);
+  }
+}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,801 @@
+/* ===== ESTILOS PARA LAYOUT ===== */
+
+@import url('./base/variables.css');
+
+/* ===== ESTILOS DEL COMPONENTE encabezado ===== */
+
+/* --- Header principal --- */
+.header-deportista {
+  background: linear-gradient(135deg, var(--color-azul-principal) 0%, var(--color-azul-oscuro) 100%);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--sombra-media);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: calc(var(--z-fixed) + 10);
+  height: 70px;
+  min-height: 70px;
+}
+
+/* --- Contenedor interno del header --- */
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Sobrescribir padding del container cuando está en el header */
+.header-deportista .header-inner.container {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  max-width: 100% !important;
+}
+
+/* --- Sección izquierda del header --- */
+.header-left {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-start;
+  align-items: center !important;
+  gap: 12px !important;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  margin: 0;
+  padding-left: var(--espaciado-md);
+  flex-wrap: nowrap !important;
+}
+
+/* --- Botón del menú --- */
+.menu-trigger {
+  background: transparent;
+  border: 2px solid var(--color-amarillo-acento);
+  color: var(--color-amarillo-acento);
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 220ms ease, background 220ms ease;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.menu-trigger.open {
+  transform: rotate(90deg);
+}
+
+/* --- Logo del header --- */
+.header-logo {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform var(--transicion);
+  display: inline-block !important;
+  flex-shrink: 0;
+  align-self: center;
+  vertical-align: middle;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
+}
+
+/* --- Título del header --- */
+.header-title {
+  color: var(--color-blanco);
+  font-size: var(--tamano-fuente-xl);
+  font-weight: var(--peso-fuente-bold);
+  font-family: 'Poppins', sans-serif;
+}
+
+/* --- Sección central del header --- */
+.header-center {
+  flex: 1;
+  text-align: center;
+  margin: 0 var(--espaciado-lg);
+}
+
+/* --- Mensaje de bienvenida --- */
+.welcome-message {
+  color: var(--color-blanco);
+  font-size: var(--tamano-fuente-lg);
+  font-weight: var(--peso-fuente-semibold);
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+}
+
+/* --- Sección derecha del header --- */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--espaciado-sm);
+  flex: 0 0 auto;
+  margin: 0;
+  padding-right: var(--espaciado-md);
+}
+
+/* --- Contenedor del menú de perfil --- */
+.profile-menu-container {
+  position: relative;
+}
+
+/* --- Botón de perfil --- */
+.profile-button {
+  background: transparent;
+  border: 3px solid var(--color-amarillo-acento);
+  cursor: pointer;
+  padding: 0;
+  border-radius: var(--radio-borde-circular);
+  transition: var(--transicion);
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.profile-button:hover,
+.profile-button.active {
+  border-color: var(--color-amarillo-acento);
+  transform: scale(1.05);
+  background: transparent;
+}
+
+/* --- Imagen de perfil --- */
+.profile-image {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radio-borde-circular);
+  object-fit: cover;
+}
+
+/* --- Placeholder de perfil --- */
+.profile-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radio-borde-circular);
+  background: var(--color-azul-cielo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-blanco);
+  font-size: 22px;
+}
+
+/* --- Dropdown del perfil --- */
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + var(--espaciado-sm));
+  right: 0;
+  background: var(--color-blanco);
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 280px;
+  padding: 12px 0;
+  overflow: hidden;
+  z-index: var(--z-dropdown);
+  border: 1px solid var(--color-gris-200);
+  /* Removida animación CSS - Vue maneja la transición */
+}
+
+/* Removido @keyframes dropdownFadeIn - Vue maneja la transición */
+
+/* --- Items del dropdown --- */
+.dropdown-item {
+  width: calc(100% - 16px);
+  padding: 16px 24px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  color: var(--color-gris-700);
+  font-size: 16px;
+  font-weight: var(--peso-fuente-medio);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Poppins', sans-serif;
+  position: relative;
+  margin: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Barra lateral decorativa en hover */
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: linear-gradient(180deg, var(--color-azul-principal) 0%, var(--color-azul-oscuro) 100%);
+  border-radius: 0 3px 3px 0;
+  transition: height 0.25s ease;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(90deg, rgba(0, 74, 173, 0.08) 0%, rgba(0, 74, 173, 0.04) 100%);
+  color: var(--color-azul-principal);
+  transform: translateX(4px);
+}
+
+.dropdown-item:hover::before {
+  height: 50%;
+}
+
+/* Iconos con fondo circular - siempre al frente */
+.dropdown-item i {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  text-align: center;
+  font-size: 15px;
+  color: var(--color-azul-principal);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 74, 173, 0.1);
+  border-radius: 8px;
+  flex-shrink: 0;
+  order: -1;
+  margin-right: 0;
+}
+
+.dropdown-item:hover i {
+  transform: scale(1.1);
+  background: rgba(0, 74, 173, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 74, 173, 0.2);
+}
+
+/* --- Item de logout en el dropdown --- */
+.dropdown-item.logout {
+  color: var(--color-peligro);
+  margin-top: 4px;
+  margin-left: 8px;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  border-top: 1px solid var(--color-gris-200);
+  padding-top: 10px;
+  padding-bottom: 10px;
+  align-items: center; /* Asegurar alineación vertical */
+}
+
+.dropdown-item.logout::before {
+  background: linear-gradient(180deg, var(--color-peligro) 0%, var(--color-peligro-hover) 100%);
+}
+
+.dropdown-item.logout:hover {
+  background: linear-gradient(90deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+  color: var(--color-peligro-hover);
+  transform: translateX(4px);
+  margin-top: 4px; /* Mantener el mismo margin-top */
+  margin-left: 8px;
+  margin-right: 8px;
+  margin-bottom: 2px;
+  padding-top: 10px; /* Mantener el mismo padding-top */
+  padding-bottom: 10px;
+  align-items: center; /* Asegurar alineación vertical en hover */
+}
+
+.dropdown-item.logout i {
+  color: var(--color-peligro);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.dropdown-item.logout:hover i {
+  background: rgba(220, 53, 69, 0.2);
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.25);
+  transform: scale(1.1);
+}
+
+/* --- Divisor del dropdown --- */
+.dropdown-divider {
+  margin: 8px 20px;
+  border: none;
+  border-top: 1px solid var(--color-gris-300);
+  height: 0;
+  opacity: 1;
+  width: calc(100% - 40px);
+}
+
+/* --- Transiciones del dropdown --- */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--transicion), transform var(--transicion);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+
+/* ===== ESTILOS DEL COMPONENTE sidebar-deportista ===== */
+
+/* --- Sidebar principal --- */
+.sidebar-deportista {
+  background: linear-gradient(180deg, var(--color-azul-principal) 0%, var(--color-azul-oscuro) 100%);
+  width: 250px;
+  height: calc(100vh - 70px);
+  position: fixed;
+  left: 0;
+  top: 70px;
+  z-index: var(--z-fixed);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 12px var(--sombra-fuerte);
+  transition: transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 280ms ease;
+  border-right: 1px solid var(--color-negro-transparente-10);
+  overflow: hidden;
+  transform: translateX(-100%);
+}
+
+.sidebar-deportista.open {
+  transform: translateX(0);
+}
+
+/* --- Header del sidebar --- */
+.sidebar-header {
+  padding: var(--espaciado-md);
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid var(--color-blanco-transparente-15);
+  background: var(--color-negro-transparente-10);
+  flex-shrink: 0;
+}
+
+/* --- Toggle del sidebar --- */
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--color-blanco);
+  font-size: var(--tamano-fuente-lg);
+  cursor: pointer;
+  padding: var(--espaciado-xs);
+  transition: var(--transicion);
+}
+
+.sidebar-toggle:hover {
+  color: var(--color-amarillo-acento);
+  transform: rotate(90deg);
+}
+
+/* --- Navegación del sidebar --- */
+.sidebar-nav {
+  flex: 1;
+  padding: var(--espaciado-sm) 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* --- Items de navegación --- */
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: var(--espaciado-md) var(--espaciado-lg);
+  color: var(--color-blanco-transparente-95);
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid transparent;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--tamano-fuente-base);
+  gap: var(--espaciado-md);
+  cursor: pointer;
+  margin: 2px var(--espaciado-xs);
+  border-radius: 0 var(--radio-borde-pequeno) var(--radio-borde-pequeno) 0;
+  white-space: nowrap;
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--color-blanco-transparente-15);
+  color: var(--color-blanco);
+  border-left-color: var(--color-oro-transparente-60);
+  transform: translateX(4px);
+}
+
+.nav-item.active {
+  background: linear-gradient(90deg, var(--color-oro-transparente-25) 0%, var(--color-oro-transparente-10) 100%);
+  color: var(--color-amarillo-acento);
+  border-left-color: var(--color-amarillo-acento);
+  font-weight: var(--peso-fuente-semibold);
+  box-shadow: 0 2px 8px var(--color-oro-transparente-20);
+}
+
+/* --- Item de logout en el sidebar --- */
+.nav-item.logout-nav {
+  color: var(--color-blanco-transparente-90);
+  margin-top: auto;
+}
+
+.nav-item.logout-nav:hover {
+  background: var(--color-peligro-transparente-20);
+  color: var(--color-rojo-claro);
+  border-left-color: var(--color-peligro-transparente-60);
+}
+
+/* --- Icono y texto del nav-item --- */
+.nav-item i {
+  width: 20px;
+  text-align: center;
+  font-size: var(--tamano-fuente-lg);
+}
+
+.nav-text {
+  flex: 1;
+}
+
+/* --- Animación de aparición escalonada para items del menú --- */
+.sidebar-deportista.open .nav-item {
+  animation: fadeSlideIn 320ms ease both;
+}
+
+.sidebar-deportista.open .nav-item:nth-child(1) { animation-delay: 40ms; }
+.sidebar-deportista.open .nav-item:nth-child(2) { animation-delay: 80ms; }
+.sidebar-deportista.open .nav-item:nth-child(3) { animation-delay: 120ms; }
+.sidebar-deportista.open .nav-item:nth-child(4) { animation-delay: 160ms; }
+.sidebar-deportista.open .nav-item:nth-child(5) { animation-delay: 200ms; }
+.sidebar-deportista.open .nav-item:nth-child(6) { animation-delay: 240ms; }
+.sidebar-deportista.open .nav-item:nth-child(7) { animation-delay: 280ms; }
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* --- Scrollbar personalizado del sidebar --- */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: var(--color-negro-transparente-10);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--color-blanco-transparente-20);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--color-blanco-transparente-30);
+}
+
+/* ===== ESTILOS DEL COMPONENTE pie (footer) ===== */
+
+/* --- Footer mejorado --- */
+.footer-enhanced {
+  background-color: var(--color-primario);
+  color: var(--color-blanco);
+  padding: 40px 1rem 20px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  margin-top: auto;
+}
+
+.footer-enhanced .container {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+
+/* --- Contenido del footer --- */
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-bottom: 30px;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+}
+
+/* --- Sección del footer --- */
+.footer-section {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Título del footer --- */
+.footer-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: var(--color-secundario);
+}
+
+/* --- Descripción del footer --- */
+.footer-description {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 15px 0;
+  opacity: 0.9;
+}
+
+/* --- Enlaces sociales --- */
+.social-links {
+  display: flex;
+  gap: 15px;
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-secundario);
+  color: var(--color-primario);
+  border-radius: 50%;
+  text-decoration: none;
+  transition: var(--transicion);
+  font-size: 1.2rem;
+}
+
+.social-link:hover {
+  background-color: var(--color-blanco);
+  transform: translateY(-2px);
+}
+
+/* --- Subtítulo del footer --- */
+.footer-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: var(--color-secundario);
+}
+
+/* --- Lista de enlaces del footer --- */
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 8px;
+}
+
+.footer-links a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-blanco);
+  text-decoration: none;
+  opacity: 0.9;
+  transition: var(--transicion);
+}
+
+.footer-links a:hover {
+  opacity: 1;
+  color: var(--color-secundario);
+}
+
+.footer-links a i {
+  width: 1rem;
+  text-align: center;
+}
+
+/* --- Información de contacto --- */
+.contact-info p {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 8px 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.contact-info i {
+  color: var(--color-secundario);
+  width: 20px;
+}
+
+/* --- Pie del footer --- */
+.footer-bottom {
+  border-top: 1px solid var(--color-blanco-transparente-20);
+  padding-top: var(--espaciado-md);
+  text-align: center;
+  opacity: 0.8;
+  font-size: var(--tamano-fuente-sm);
+}
+
+/* --- Responsive del footer-enhanced --- */
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .social-links {
+    justify-content: center;
+  }
+
+  .contact-info p {
+    justify-content: center;
+  }
+}
+
+/* ===== ESTILOS DE LAYOUT DEL BODY ===== */
+
+/* --- Body con header fijo --- */
+body.has-fixed-header {
+  padding-top: 70px;
+  transition: padding-left 280ms ease;
+}
+
+/* --- Body con sidebar estático en desktop --- */
+@media (min-width: 768px) {
+  body.has-static-sidebar {
+    padding-left: 248px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body.has-static-sidebar {
+    padding-left: 0;
+  }
+}
+
+/* --- Footer con sidebar estático en desktop --- */
+@media (min-width: 768px) {
+  body.has-static-sidebar .footer-enhanced {
+    padding-left: 250px;
+  }
+}
+
+/* --- Body cuando el menú se está cerrando --- */
+@media (min-width: 768px) {
+  body.menu-closing {
+    padding-left: 0 !important;
+    transition: padding-left 280ms cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive del componente encabezado --- */
+@media (max-width: 768px) {
+  .header-deportista {
+    padding: var(--espaciado-sm) var(--espaciado-md);
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    display: none;
+  }
+
+  .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    margin: var(--espaciado-sm) 0 0 0;
+  }
+
+  .welcome-message {
+    font-size: var(--tamano-fuente-base);
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-right {
+    flex: 0 0 auto;
+  }
+}
+
+/* --- Responsive del componente sidebar-deportista --- */
+@media (max-width: 768px) {
+  .sidebar-deportista {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .sidebar-deportista.open {
+    transform: translateX(0);
+    box-shadow: 2px 0 10px var(--sombra-fuerte);
+  }
+}
+
+/* --- Body con sidebar estático en desktop --- */
+@media (min-width: 768px) {
+  body.has-static-sidebar {
+    padding-left: 248px !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  body.has-static-sidebar {
+    padding-left: 0;
+  }
+}
+
+/* --- Footer con sidebar estático en desktop --- */
+@media (min-width: 768px) {
+  body.has-static-sidebar .footer-enhanced {
+    padding-left: 250px;
+  }
+}
+
+/* --- Body cuando el menú se está cerrando --- */
+@media (min-width: 768px) {
+  body.menu-closing {
+    padding-left: 0 !important;
+    transition: padding-left 280ms cubic-bezier(0.22, 0.61, 0.36, 1) !important;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+/* --- Responsive del componente encabezado --- */
+@media (max-width: 768px) {
+  .header-deportista {
+    padding: var(--espaciado-sm) var(--espaciado-md);
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    display: none;
+  }
+
+  .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    margin: var(--espaciado-sm) 0 0 0;
+  }
+
+  .welcome-message {
+    font-size: var(--tamano-fuente-base);
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-right {
+    flex: 0 0 auto;
+  }
+}
+
+/* --- Responsive del componente sidebar-deportista --- */
+@media (max-width: 768px) {
+  .sidebar-deportista {
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .sidebar-deportista.open {
+    transform: translateX(0);
+    box-shadow: 2px 0 10px var(--sombra-fuerte);
+  }
+}
